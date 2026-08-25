@@ -802,6 +802,61 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isApi }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">API access</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:78ch">A read-only endpoint over exactly what <strong>Your records</strong> shows, for running your own inventory or reporting tooling instead of logging in. Owner only. It is the same authorization rendered a second way &mdash; never a second authorization &mdash; so a field this portal withholds cannot be reached through it.</p>
+<div style="margin:0 0 26px"><button type="button" onClick="{{ onApiIssue }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Issue a credential</button></div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">Credentials</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 1fr .9fr 1.1fr .7fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Name</div><div>Key</div><div>Scope</div><div>Last used</div><div>State</div><div>Actions</div>
+</div>
+<sc-for list="{{ apiKeys }}" as="k" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1fr 1fr .9fr 1.1fr .7fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ k.name }}</span></div><div style="font-size:11px;color:var(--ux-muted)">{{ k.created }}</div></div>
+<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted)">{{ k.mask }}</div>
+<div>{{ k.scope }}</div>
+<div style="color:var(--ux-muted);font-size:12px">{{ k.used }}</div>
+<div><span style="{{ k.stateStyle }}">{{ k.state }}</span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ k.live }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ k.onRotate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Rotate</button><button type="button" onClick="{{ k.onRevoke }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)" style-hover="background:var(--ux-surface)">Revoke</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:12px 0 0;max-width:78ch">The secret is shown once, at the moment it is issued. We keep a hash rather than the key, so it cannot be shown to you again &mdash; a lost secret is rotated, never recovered.</p>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Endpoints</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:.9fr 1.6fr 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Endpoint</div><div>Returns</div><div>Same as</div>
+</div>
+<sc-for list="{{ apiEndpoints }}" as="e" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:.9fr 1.6fr 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600">{{ e.path }}</div>
+<div>{{ e.returns }}</div>
+<div style="color:var(--ux-muted)">{{ e.mirrors }}</div>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:.9fr 1.6fr 1fr;gap:16px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px;align-items:baseline">
+<div style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600;color:var(--ux-signal-text)">No writes</div>
+<div>There is no endpoint that places, edits or approves an order. An order is placed in the portal or by your rep, so nothing reaches the licence, receivables or approval gates from outside them.</div>
+<div style="color:var(--ux-muted)">By design, not by omission</div>
+</div>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">What it can never return</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:78ch">The same fields this portal withholds on screen, withheld identically here &mdash; including inside error messages and pagination metadata, which is where a filtered field usually leaks.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ apiWithheld }}" as="w" hint-placeholder-count="7">
+<div style="padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">{{ w.text }}</div>
+</sc-for>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Reads, limits and the log</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Every read is logged</div><div>A read writes the same audit event an export writes &mdash; scope, row count and the field list. You can read your own entries under <strong>Your records</strong>, which is also where a revocation lands.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Scoped to your licences</div><div>A credential reaches the licences it was issued for and no others. Narrowing a credential to one location is the normal case, not the exception.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Rate limit and page size</div><div><strong>Not yet set.</strong> The numbers are carried as an open item under administration, alongside the unresolved question of whether a chain holding several licences resolves to one credential.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Revocation is immediate</div><div>Revoking stops reads at once rather than at the end of a session, and the credential cannot be un-revoked \u2014 issue a new one.</div></div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isReceivables }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Receivables</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 18px;max-width:76ch">Balance, terms, invoices and what the ordering gate is reading &mdash; for your organisation, by location. This screen exists for the owner only. A buyer learns that the gate fired and who to contact, and never sees a balance by any route.</p>
@@ -1534,6 +1589,33 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+const API_KEYS = [
+  { name: 'Inventory sync', mask: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20224f2a', scope: 'All three licenses', created: 'Issued 2 Jul 2026 by Dana Whitfield', used: 'Last read 24 Aug 2026 06:12 \u00b7 1,204 rows' },
+  { name: 'Nightly extract', mask: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20229c17', scope: 'Downtown only', created: 'Issued 19 May 2026 by Dana Whitfield', used: 'Last read 23 Aug 2026 02:00 \u00b7 486 rows' },
+  { name: 'Legacy spreadsheet import', mask: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20221b83', scope: 'All three licenses', created: 'Issued 11 Mar 2026 by Dana Whitfield', used: 'Last read 4 Apr 2026' }
+];
+
+const API_ENDPOINTS = [
+  { path: 'GET /orders', returns: 'Orders and their lines, scoped to your licenses', mirrors: 'Records \u2192 Orders' },
+  { path: 'GET /orders/:id', returns: 'One order with its lines, lots and dates', mirrors: 'Records \u2192 Orders' },
+  { path: 'GET /lots', returns: 'Lots you received, with the COA version current at receipt', mirrors: 'Records \u2192 Lots received' },
+  { path: 'GET /coa/:tag', returns: 'The COA pointer for a lot you received', mirrors: 'Records \u2192 Lots received' },
+  { path: 'GET /licenses', returns: 'Your locations, license numbers and expiry', mirrors: 'Records \u2192 Licenses' },
+  { path: 'GET /claims', returns: 'Claims you raised and their state', mirrors: 'Records \u2192 Claims' },
+  { path: 'GET /notices', returns: 'Notices sent to you, and your acknowledgement', mirrors: 'Records \u2192 Notices' },
+  { path: 'GET /documents', returns: 'Document metadata, expiry and review state', mirrors: 'Documents' }
+];
+
+const API_WITHHELD = [
+  'Unit cost, in any component',
+  'Margin or contribution, including as a band',
+  'Discount depth against list',
+  'Rate cards, yours or anyone else\u2019s',
+  'Ownership code and toll relationships',
+  'Exact inventory quantities',
+  'Any part of another organisation'
+];
+
 const INVOICES = [
   { id: 'INV-24187', loc: 'l1', issued: '18 Aug 2026', due: '17 Sep 2026', amount: 88280, state: 'Open', age: 0 },
   { id: 'INV-24098', loc: 'l1', issued: '6 Aug 2026', due: '5 Sep 2026', amount: 88620, state: 'Open', age: 0 },
@@ -1593,7 +1675,7 @@ class Component extends DCLogic {
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
-    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: []
+    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import']
   };
 
   set(patch) { this.setState(patch); }
@@ -1769,7 +1851,7 @@ class Component extends DCLogic {
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
     if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['receivables', 'Receivables', 'economics'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
 
@@ -2240,6 +2322,25 @@ class Component extends DCLogic {
       isRecall: s.screen === 'recall',
       isRecords: s.screen === 'records',
       isReceivables: s.screen === 'receivables' && role === 'owner',
+      isApi: s.screen === 'api' && role === 'owner',
+      apiKeys: API_KEYS.map(k => {
+        const revoked = s.apiRevoked.includes(k.name);
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        return { ...k,
+          state: revoked ? 'Revoked' : 'Active',
+          stateStyle: chip + (revoked ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff'),
+          live: !revoked,
+          onRotate: () => this.set({ toast: 'Rotating issues a new secret and retires the old one after a grace period. The secret is shown once at that moment and never again \u2014 we keep a hash, not the key, so we could not show it to you a second time even if you asked.', toastKind: 'NOT WIRED' }),
+          onRevoke: () => {
+            this.logAudit('API credential revoked', k.name, 'Scope: ' + k.scope + '. Reads with this credential stop immediately.');
+            this.setState(st => ({ apiRevoked: st.apiRevoked.concat([k.name]),
+              toast: k.name + ' is revoked. Reads stop immediately, and the revocation is in your own audit history under Your records.', toastKind: 'DONE' }));
+          }
+        };
+      }),
+      apiEndpoints: API_ENDPOINTS,
+      apiWithheld: API_WITHHELD.map(w => ({ text: w })),
+      onApiIssue: () => this.set({ toast: 'Issuing asks for a name and a licence scope, then shows the secret once. Nothing here can write \u2014 there is no endpoint that places an order, so no path reaches the order gates from outside them.', toastKind: 'NOT WIRED' }),
       ...(() => {
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
         const open = INVOICES.filter(i => i.state !== 'Paid');

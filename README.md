@@ -93,6 +93,11 @@ Paths worth walking because they refuse rather than proceed:
   because the ledger connector is not attached, and the threshold behind the
   gate is still an open blocking decision. How to pay is deliberately absent —
   remittance details stay in the onboarding record.
+- **API access** — owner only. Credentials with masked keys, scope, last use,
+  rotate and revoke; eight read-only endpoints each mapped to the records
+  section it mirrors; an explicit *no writes* row; the withheld-field list that
+  applies inside errors and pagination too; and rate limits stated as still
+  unset. Revoking writes an audit entry that appears under Your records.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight
