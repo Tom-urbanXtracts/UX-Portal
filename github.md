@@ -232,3 +232,54 @@ portal now says so in the toast rather than claiming the order was submitted.
 
 A rejection or an unreachable intake sets a `NOT SENT` toast carrying the
 reason, as well as the outbox state. Previously only the outbox changed.
+
+## Portal Orders board: what fills in, and what does not
+
+Every field the payload carried was arriving and being discarded by the Make
+mutation. Order detail, delivery and receiving, submitted-at and the account
+link were never written, which is why the board looked half-empty and the four
+mirrored columns had nothing to mirror.
+
+| Column | Source | State |
+|---|---|---|
+| Order number | the item's own id (`item_id` column) | auto, unique, cannot collide |
+| Portal reference | browser | filled — renamed, and no longer a join key |
+| Verified submitter | intake function, checked against Auth | filled |
+| Submitted by (self-declared) | browser | filled, and now labelled as unverified |
+| Submitted at | `sentAt`, first ten characters | filled |
+| Order detail | one segment per line, each keeping its own unit | filled |
+| Delivery and receiving | window, contact, instructions | filled |
+| Account | looked up on Licensed Retailers by licence number | filled when the licence exists there |
+| Rep, Licence number | mirrors of Account | resolve once Account links |
+| Licence expiry, AR balance | mirrors of Account | **empty at source** |
+
+### Order numbers
+
+Was `'SO-' + seq` with `seq` initialised to 24188 in browser state, so every
+page load restarted numbering and two sessions produced the same number for
+different orders. The order number is now the Monday item id: assigned by
+Monday, unique, immutable. The old value survives as "Portal reference" with a
+per-session tag so it stops colliding, and its description says not to join on
+it. The portal cannot display the item id at submission time without a webhook
+response module, which costs an extra operation per order — not done.
+
+### Two things that are not portal bugs
+
+The **account lookup matches on licence number**, and the prototype's sample
+licences (`OCM-RETL-24-000412`) are synthetic while Licensed Retailers holds
+real ones (`OCM-CAURD-…`). Sample orders will therefore never link an account.
+That is correct behaviour, not a fault, and it is why a real licence was used to
+prove the mapping.
+
+**Licence expiry and AR balance are null on the account master** for the
+retailer tested. The licence gate and the receivables gate read exactly those
+two mirrored fields, so for that account the gates have nothing to read. That is
+a data-completeness problem on Licensed Retailers.
+
+### The mapping bug worth remembering
+
+`monday:ExecuteGraphQLQueryV2` returns `body`, `headers`, `statusCode`. The
+lookup result is therefore at `{{6.body.data...}}`, not `{{6.data...}}`. The
+first attempt used the latter, which silently resolved to nothing and left the
+account link empty while everything else filled in correctly — no error, because
+`item_ids: []` is valid.

@@ -2326,6 +2326,14 @@ function readRecovery() {
 }
 const RECOVERY = readRecovery();
 
+// The portal used to mint SO-24188 on every page load, so two sessions produced
+// the same number for different orders. The authoritative order number is now
+// the Monday item id; this stays only as the reference the store saw on screen,
+// and a per-session tag keeps it from colliding.
+const SESSION_TAG = (typeof crypto !== 'undefined' && crypto.getRandomValues)
+  ? Array.from(crypto.getRandomValues(new Uint8Array(2))).map(b => b.toString(36).toUpperCase().padStart(2, '0')).join('').slice(0, 4)
+  : Math.floor(Math.random() * 1679616).toString(36).toUpperCase().padStart(4, '0');
+
 // Leaked-password rejection without Supabase Pro, against the same source its
 // paid feature uses. The browser hashes the password and sends only the first
 // five characters of the SHA-1. The password and its full hash never leave this
@@ -2940,7 +2948,7 @@ class Component extends DCLogic {
       firstSubmitMs: m.firstSubmitMs === null ? elapsed : m.firstSubmitMs }));
     const isBuyer = st.role === 'buyer';
     const state = isBuyer ? 'Awaiting approval' : 'Placed';
-    const id = 'SO-' + st.seq;
+    const id = 'SO-' + SESSION_TAG + '-' + st.seq;
     const order = {
       id, loc: st.loc, placed: TODAY, state,
       history: isBuyer ? { 'Awaiting approval': TODAY } : { 'Placed': TODAY },
@@ -2948,8 +2956,27 @@ class Component extends DCLogic {
     };
     const loc = LOCATIONS.find(x => x.id === st.loc) || {};
     const ds = st.deliverySettings[st.loc] || {};
+    // One line per order line, each keeping its own unit. Deliberately not
+    // summed into a single quantity: an order can mix grams and each, and those
+    // are never blended into one figure.
+    // These land in a GraphQL string inside a JSON string, where a raw newline
+    // or double quote terminates the literal and the whole mutation fails. The
+    // safe place to deal with that is here, not in a chain of escapes.
+    const flat = t => String(t == null ? '' : t).replace(/[\r\n]+/g, ' ').replace(/"/g, '\u2033').trim();
+    const detailText = flat(lines.map(l => {
+      const pp = P(l.id);
+      return pp.name + ' \u00b7 ' + pp.sku + ' \u00b7 tag ' + pp.lots[l.lot].tag
+        + ' \u00b7 ' + l.qty + ' each @ ' + MONEY(l.price) + ' = ' + MONEY(l.price * l.qty);
+    }).join('  |  '));
+    const deliveryText = flat([
+      'Window: ' + (ds.window || 'not set'),
+      'Receiving contact: ' + (ds.contact || 'not set'),
+      'Instructions: ' + (ds.instructions || 'none recorded')
+    ].join('  |  '));
     this.post('order', {
       summary: id + ' \u00b7 ' + ACTING_ORG + ' \u00b7 ' + MONEY(lines.reduce((a, l) => a + l.price * l.qty, 0)),
+      orderDetailText: detailText,
+      deliveryText: deliveryText,
       board: 'Portal Orders',
       orderNumber: id,
       account: ACTING_ORG,
