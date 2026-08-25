@@ -242,7 +242,7 @@ button{font-family:inherit}
 <div style="display:flex;gap:8px;margin-top:2px">
 <button type="button" onClick="{{ p.onOpen }}" style="flex:1;background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 12px Archivo,sans-serif;text-align:left;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
 <sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
-<button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
+<div style="display:flex;align-items:center;border:1px solid rgba(23,14,11,.28);background:#fdf0a8"><button type="button" onClick="{{ p.onQtyDown }}" aria-label="Decrease the quantity to add" style="background:transparent;border:0;width:26px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">&minus;</button><input type="text" value="{{ p.qty }}" onInput="{{ p.onQty }}" aria-label="Quantity to add" style="width:38px;text-align:center;border:0;background:transparent;font:600 12.5px Archivo,sans-serif;padding:0"><button type="button" onClick="{{ p.onQtyUp }}" aria-label="Increase the quantity to add" style="background:transparent;border:0;width:26px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">+</button></div><button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
 </sc-if>
 <sc-if value="{{ p.canRequest }}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{ p.onRequest }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-muted-strong)">Ask</button>
@@ -272,7 +272,7 @@ button{font-family:inherit}
 <div style="display:flex;gap:8px">
 <button type="button" onClick="{{ p.onOpen }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
 <sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
-<button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
+<div style="display:flex;align-items:center;border:1px solid rgba(23,14,11,.28);background:#fdf0a8"><button type="button" onClick="{{ p.onQtyDown }}" aria-label="Decrease the quantity to add" style="background:transparent;border:0;width:26px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">&minus;</button><input type="text" value="{{ p.qty }}" onInput="{{ p.onQty }}" aria-label="Quantity to add" style="width:38px;text-align:center;border:0;background:transparent;font:600 12.5px Archivo,sans-serif;padding:0"><button type="button" onClick="{{ p.onQtyUp }}" aria-label="Increase the quantity to add" style="background:transparent;border:0;width:26px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">+</button></div><button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
 </sc-if>
 <button type="button" onClick="{{ p.onFav }}" style="{{ p.favStyle }}" style-hover="border-color:var(--ux-accent)">{{ p.favLabel }}</button>
 </div>
@@ -316,7 +316,7 @@ button{font-family:inherit}
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px;align-items:center">
 <button type="button" onClick="{{ decQty }}" aria-label="Decrease the quantity to add" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
-<div style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ qty }}</span></div>
+<input type="text" value="{{ qtyInput }}" onInput="{{ onQtyInput }}" aria-label="Quantity to add" style="width:60px;text-align:center;background:#fdf0a8;border:1px solid rgba(23,14,11,.28);font:700 16px Archivo,sans-serif;padding:6px 4px">
 <button type="button" onClick="{{ incQty }}" aria-label="Increase the quantity to add" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 <button type="button" onClick="{{ addSelected }}" style="{{ addBtnStyle }}" style-hover="background:var(--ux-accent-press)">{{ addBtnLabel }}</button>
 </div>
@@ -437,7 +437,7 @@ button{font-family:inherit}
 <div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ line.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ line.packaged }}</div></div>
 <div style="display:flex;gap:6px;align-items:center">
 <button type="button" onClick="{{ line.onDec }}" aria-label="Decrease this line by one" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
-<span style="min-width:26px;text-align:center;font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.qty }}</span></span>
+<input type="text" value="{{ line.qty }}" onInput="{{ line.onQty }}" aria-label="Units on this line" style="width:52px;text-align:center;background:#fdf0a8;border:1px solid rgba(23,14,11,.28);font:600 13px Archivo,sans-serif;padding:5px 4px">
 <button type="button" onClick="{{ line.onInc }}" aria-label="Increase this line by one" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 </div>
 <div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.lineTotal }}</span></div>
@@ -1567,8 +1567,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="margin-top:20px;font-size:11.5px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Every line names the compliance tag and packaged date it was allocated from, so a receiving clerk can check the delivery against this document rather than a product name alone. Prices exclude tax. Sample data.</div>
 <div style="margin-top:28px;border-top:2px solid rgba(23,14,11,.4);padding-top:18px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Reported to the team</div>
-<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">Submitting this created one item on the <strong>Portal Orders</strong> board in Monday and alerted the account&rsquo;s rep and the fulfilment owner. Monday holds the workflow; Canix stays the subledger of record for the order itself. Every field below is a real column &mdash; nothing on that board is derived by parsing the item name.</p>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-signal-text);margin-bottom:8px">What would be reported to the team &mdash; not sent from here</div>
+<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">This is the payload a submitted order puts on the <strong>Portal Orders</strong> board in Monday, which then alerts the account&rsquo;s rep and the fulfilment owner. <strong>Nothing is sent from this page.</strong> This prototype is a static file, so it holds no credentials and cannot write to Monday &mdash; a token in a public page would be the wrong trade at any price. The live portal posts this to a relay that holds the token server-side. Every field below is a real column on that board: nothing there is derived by parsing the item name, and Canix stays the subledger of record for the order itself.</p>
 <div style="border-top:1px solid rgba(23,14,11,.2)">
 <sc-for list="{{ mondayRows }}" as="mr" hint-placeholder-count="13">
 <div style="display:grid;grid-template-columns:170px 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12.5px;align-items:baseline">
@@ -2067,7 +2067,7 @@ const INTEGRITY = [
 
 class Component extends DCLogic {
   state = {
-    authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
+    catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
     order: null, toast: null, toastKind: 'DONE', kioskInput: '', kioskMsg: null, kioskMsgKind: 'NOT FOUND',
@@ -2262,6 +2262,12 @@ class Component extends DCLogic {
   activeLines() {
     const d = this.state.drafts.find(x => x.id === this.state.activeDraft);
     return d ? d.lines : [];
+  }
+
+  cleanQty(v, fallback) {
+    const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10);
+    if (!isFinite(n) || n < 1) return fallback === undefined ? 1 : fallback;
+    return Math.min(n, 9999);
   }
 
   patchActive(fn) {
@@ -2481,7 +2487,11 @@ class Component extends DCLogic {
       canAdd: canOrder && this.priced(p) && !licenseBlocked && !p.oos,
       canRequest: canOrder && !this.priced(p),
       onOpen: () => this.set({ product: p.id, lot: 0, qty: 1, screen: 'product' }),
-      onAdd: () => this.addLine(p, 1, 0),
+      qty: String(s.catQty[p.id] || 1),
+      onQty: e => { const v = this.cleanQty(e.target.value, s.catQty[p.id] || 1); this.setState(st => ({ catQty: { ...st.catQty, [p.id]: v } })); },
+      onQtyUp: () => this.setState(st => ({ catQty: { ...st.catQty, [p.id]: (st.catQty[p.id] || 1) + 1 } })),
+      onQtyDown: () => this.setState(st => ({ catQty: { ...st.catQty, [p.id]: Math.max(1, (st.catQty[p.id] || 1) - 1) } })),
+      onAdd: () => this.addLine(p, s.catQty[p.id] || 1, 0),
       onRequest: () => this.requestPrice(p)
     }));
 
@@ -2490,9 +2500,10 @@ class Component extends DCLogic {
       return {
         name: p.name, brand: p.brand, sku: p.sku, tag: '…' + p.lots[line.lot].tag.slice(-8),
         packaged: p.lots[line.lot].packaged, qty: line.qty, lineTotal: MONEY(line.price * line.qty),
-        onInc: () => this.setState(st => ({ cart: st.cart.map((l, j) => j === i ? { ...l, qty: l.qty + 1 } : l) })),
-        onDec: () => this.setState(st => ({ cart: st.cart.map((l, j) => j === i ? { ...l, qty: Math.max(1, l.qty - 1) } : l) })),
-        onRemove: () => this.setState(st => ({ cart: st.cart.filter((_, j) => j !== i) }))
+        onInc: () => this.patchActive(lines => lines.map((l, j) => j === i ? { ...l, qty: l.qty + 1 } : l)),
+        onDec: () => this.patchActive(lines => lines.map((l, j) => j === i ? { ...l, qty: Math.max(1, l.qty - 1) } : l)),
+        onQty: e => { const v = this.cleanQty(e.target.value, line.qty); this.patchActive(lines => lines.map((l, j) => j === i ? { ...l, qty: v } : l)); },
+        onRemove: () => this.patchActive(lines => lines.filter((_, j) => j !== i))
       };
     });
     const cartTotalCents = cart.reduce((a, l) => a + l.price * l.qty, 0);
@@ -2873,6 +2884,8 @@ class Component extends DCLogic {
         : 'No qualifying order line for this account yet. Requesting a price notifies your account manager.',
       pdPerfText: perfEmptyText,
       qty: s.qty,
+      qtyInput: String(s.qty),
+      onQtyInput: e => { const v = this.cleanQty(e.target.value, s.qty); this.setState({ qty: v }); },
       incQty: () => this.setState(st => ({ qty: st.qty + 1 })),
       decQty: () => this.setState(st => ({ qty: Math.max(1, st.qty - 1) })),
       addSelected: () => licenseBlocked ? this.set({ screen: 'cart' }) : this.priced(product) ? this.addLine(product, s.qty, s.lot) : this.requestPrice(product),

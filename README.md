@@ -70,6 +70,12 @@ Paths worth walking because they refuse rather than proceed:
 
 ## Monday integration and sign-in
 
+**The prototype does not write to Monday, and cannot.** It is a static file on
+GitHub Pages: no server, no credentials. A Monday token in a public page would be
+the wrong trade at any price. The order confirmation shows the exact payload and
+says plainly that nothing is sent from there. Making it write needs a relay that
+holds the token server-side — see *Wiring the write* below.
+
 **Order intake board.** A submitted order lands on
 [Portal Orders — TEST](https://urban915991.monday.com/boards/18428025898) in the
 IT workspace (test mode; move to Distribution at go-live). 21 structured columns,
@@ -88,6 +94,23 @@ intake board and links onward rather than into either.
 gone. There is a sign-in screen; role is a property of the account, and signing
 out returns to it. A signed-in buyer has no navigation entry for receivables at
 all — restricted routes are not rendered.
+
+## Wiring the write
+
+Not built. The portal needs to POST the order to something that holds the Monday
+token and creates the item. Three options, cheapest first:
+
+1. **A Make.com webhook.** Portal POSTs JSON, a Make scenario creates the item.
+   Token lives in Make. No code to host. The webhook URL is public, so a public
+   portal page can be spammed with fake orders — acceptable against a test board,
+   not against production without a shared secret.
+2. **A Supabase edge function.** Token in Supabase, the function authenticates
+   the store user before writing, which is what production needs anyway.
+3. **Monday's own form** on the board. Zero code, but it collects the order again
+   rather than carrying what the portal already knows.
+
+The alert automation on the board is live either way: item created → Intake status
+set to *Needs acknowledgement* → notify the people in `Notify` and the board owner.
 
 ## The prototype, updated
 
