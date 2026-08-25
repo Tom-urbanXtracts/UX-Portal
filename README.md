@@ -25,8 +25,8 @@ control — anyone with the link can read everything here.
 | `index.html` | Landing page for the hosted site. Links to the prototype and every document. |
 | `dist/portal.html` | Self-contained prototype. Open it in a browser — no build, no server, no dependencies. |
 | `ux-portal-prototype.dc.html` | Prototype source (streaming design component). |
-| `ux-portal-phase-1-architecture.dc.html` | Sitemap, role and permission matrix, gates, flows, source map, audit events, open items, acceptance. |
-| `ux-portal-build-plan.dc.html` | What remains, sequenced by dependency: 9 blockers, 22 build tasks, 3 waves. |
+| `ux-portal-phase-1-architecture.dc.html` | **Rev 2.** Sitemap, role and permission matrix, gates, flows, source map, audit events, open items, acceptance — plus recall and lot impact, life after submission, approval delegation, store account and records, store data access, measurement. |
+| `ux-portal-build-plan.dc.html` | **Rev 2.** What remains, sequenced by dependency: 15 blockers, 43 build tasks, 4 waves. |
 | `Sitemap-A-*`, `Sitemap-B-*` | Two sitemap treatments. |
 | `Doc-Format-A-*`, `Doc-Format-B-*` | Two document treatments. |
 | `brand/` | The uX mark, trimmed, plus a reversed version generated for dark surfaces. |
@@ -67,6 +67,19 @@ Paths worth walking because they refuse rather than proceed:
 - Four external order states; ten internal, kept as the subledger holds them.
 - Two signal colours only: green for released, passed and primary action; clay
   for blocked and exception. Everything pending is monochrome.
+
+## What changed in rev 2
+
+The 24 Aug review of the built prototype against its own architecture produced
+wave 4 — fourteen items, of which three close contradictions inside rev 1 rather
+than adding anything: lineage that could not answer *who has this lot*, an
+amended-COA notification promised in one section and absent from another, and
+`Placed` promising edit and cancel that no screen offered. It also added the two
+capabilities asked for — a store records surface and a read-only store API — and
+rep-held ordering approval, which is the only genuinely new requirement and the
+only one that needs Legal as well as the CCO.
+
+**The interactive prototype is unchanged.** Wave 4 is specified, not built.
 
 ## Before this can ship
 
