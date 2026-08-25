@@ -129,6 +129,12 @@ Paths worth walking because they refuse rather than proceed:
   holding them, and visit notes a rep can add from a car park. Closes with what
   a rep cannot do: set a price, approve an order, lift a gate, or see an account
   off their book.
+- **Measurement** — internal, and the numbers are live from your own use of the
+  prototype. Walk the catalog, trip a gate, look a tag up on the kiosk and they
+  move: sign-in to first submitted order, blocks per gate, searches and filters
+  against adds, scanned against typed, store-placed against rep-placed. States
+  what is never counted (nothing ties a kiosk lookup to a consumer) and what one
+  session cannot tell you.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

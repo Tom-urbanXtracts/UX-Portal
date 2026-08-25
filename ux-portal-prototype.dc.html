@@ -1297,6 +1297,31 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<sc-if value="{{ isMeasure }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Measurement</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:78ch">The build plan says amazing is a buyer reordering in under thirty seconds without calling a rep. That is a measurable claim, so it is measured. <strong>These figures are live from your own use of this prototype</strong> &mdash; walk the catalog, trip a gate, look a tag up on the kiosk, and they move.</p>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 6px">{{ measureSession }}</p>
+<div style="margin:0 0 26px"><button type="button" onClick="{{ onMeasureReset }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 13px;font:600 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Reset the session</button></div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ measureRows }}" as="r" hint-placeholder-count="5">
+<div style="padding:16px 0 18px;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="font:700 15px Archivo,sans-serif;margin-bottom:4px">{{ r.q }}</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">{{ r.counted }}</div>
+<div style="{{ r.valueStyle }};margin-bottom:8px">{{ r.value }}</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted);max-width:78ch">{{ r.why }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:26px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">WHAT IS NEVER COUNTED</div>
+<div style="font-size:13px;line-height:1.62">Nothing ties a budtender lookup to a consumer. The kiosk has no person behind it and gains none here: a lookup is counted per device and per day, and the thing looked up is never joined to who was standing there. There is no identifier for a shopper anywhere in this, and adding one later would be a decision with its own sign-off rather than a schema change.</div>
+</div>
+<div style="margin-top:20px;border-left:3px solid var(--ux-ink);padding:12px 0 12px 16px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:6px">WHAT THIS PROTOTYPE CANNOT SEE</div>
+<div style="font-size:13px;line-height:1.62">One session is one observation. A median and a ninetieth percentile need a population, and the interesting half of the gate question &mdash; what a blocked user did in the next ten minutes &mdash; needs a real deployment and a real telephone log. What is proven here is that the events exist and can be counted at the moment they happen, which is the part that cannot be added afterwards.</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isField }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:414px">
 <h1 style="font:800 26px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Field view</h1>
@@ -2016,8 +2041,10 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
+    metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
+      searches: 0, filters: 0, adds: 0, kioskScan: 0, kioskTyped: 0, kioskAmbiguous: 0, byStore: 0, byRep: 0, calls: 0 },
     repNotes: {}, repNoteFor: null, repNoteText: '',
-    delivery: JSON.parse(JSON.stringify(DELIVERY)), acctEditing: null, acctWindow: '', acctInstr: '', acctContact: '',
+    deliverySettings: JSON.parse(JSON.stringify(DELIVERY)), acctEditing: null, acctWindow: '', acctInstr: '', acctContact: '',
     coaAmended: false, coaAcks: [], pubInput: '', pubResult: null, pubMsg: null, pubMsgKind: 'NO RESULT', pubAttempts: 0, claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
 
@@ -2045,6 +2072,13 @@ class Component extends DCLogic {
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
   }
 
+  bump(patch) {
+    this.setState(st => ({ metrics: { ...st.metrics, ...(typeof patch === 'function' ? patch(st.metrics) : patch) } }));
+  }
+  blocked(kind) {
+    this.setState(st => ({ metrics: { ...st.metrics, blocks: { ...st.metrics.blocks, [kind]: st.metrics.blocks[kind] + 1 } } }));
+  }
+
   repNoteOpen(name) { this.set({ repNoteFor: name, repNoteText: '' }); }
   repNoteCancel() { this.set({ repNoteFor: null, repNoteText: '' }); }
   repNoteSave() {
@@ -2060,7 +2094,7 @@ class Component extends DCLogic {
   }
 
   acctEdit(id) {
-    const d = this.state.delivery[id] || { window: '', instructions: '', contact: '' };
+    const d = this.state.deliverySettings[id] || { window: '', instructions: '', contact: '' };
     this.set({ acctEditing: id, acctWindow: d.window, acctInstr: d.instructions, acctContact: d.contact });
   }
   acctCancel() { this.set({ acctEditing: null }); }
@@ -2070,7 +2104,7 @@ class Component extends DCLogic {
     const name = this.locName(id);
     this.logAudit('Delivery settings changed', name, 'Window, receiving instructions and contact updated by the owner.');
     this.setState(st => ({
-      delivery: { ...st.delivery, [id]: { window: st.acctWindow, instructions: st.acctInstr, contact: st.acctContact } },
+      deliverySettings: { ...st.deliverySettings, [id]: { window: st.acctWindow, instructions: st.acctInstr, contact: st.acctContact } },
       acctEditing: null,
       toast: name + ' delivery settings saved. Fulfilment reads these at pick time, and the change is in your audit history.', toastKind: 'DONE'
     }));
@@ -2163,6 +2197,7 @@ class Component extends DCLogic {
 
 
   componentDidMount() {
+    this.bump({ sessionStart: Date.now() });
     this._onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this._onResize);
     this._onResize();
@@ -2234,6 +2269,7 @@ class Component extends DCLogic {
   addLine(p, qty, lotIdx) {
     const lot = Math.min(lotIdx || 0, p.lots.length - 1);
     this.patchActive(lines => lines.concat([{ id: p.id, lot, qty, price: p.price }]));
+    this.bump(m => ({ adds: m.adds + 1 }));
     this.setState({ screen: 'cart', toast: qty + ' × ' + p.name + ' added to your draft.', toastKind: 'ADDED' });
   }
 
@@ -2248,10 +2284,13 @@ class Component extends DCLogic {
     const st = this.state;
     const lines = this.activeLines();
     if (!lines.length) return;
-    if (st.impersonating) { this.set({ toast: 'This is a read-only administrator session — an order cannot be submitted from it.', toastKind: 'BLOCKED — READ ONLY' }); return; }
+    if (st.impersonating) { this.blocked('readOnly'); this.set({ toast: 'This is a read-only administrator session — an order cannot be submitted from it.', toastKind: 'BLOCKED — READ ONLY' }); return; }
     const l = this.loc();
-    if (l.expired) { this.set({ toast: 'Cannot submit: the license record for ' + l.name + ' has expired. Other locations are unaffected.', toastKind: 'BLOCKED — LICENSE' }); return; }
-    if (l.pastDue) { this.set({ toast: 'Cannot submit: ' + l.name + ' has a past-due balance. The receivables check runs at order entry, not at shipping — the draft is kept as it is.', toastKind: 'BLOCKED — RECEIVABLES' }); return; }
+    if (l.expired) { this.blocked('licence'); this.set({ toast: 'Cannot submit: the license record for ' + l.name + ' has expired. Other locations are unaffected.', toastKind: 'BLOCKED — LICENSE' }); return; }
+    if (l.pastDue) { this.blocked('receivables'); this.set({ toast: 'Cannot submit: ' + l.name + ' has a past-due balance. The receivables check runs at order entry, not at shipping — the draft is kept as it is.', toastKind: 'BLOCKED — RECEIVABLES' }); return; }
+    const elapsed = st.metrics.sessionStart ? Date.now() - st.metrics.sessionStart : null;
+    this.bump(m => ({ submits: m.submits + 1, byStore: m.byStore + 1,
+      firstSubmitMs: m.firstSubmitMs === null ? elapsed : m.firstSubmitMs }));
     const isBuyer = st.role === 'buyer';
     const state = isBuyer ? 'Awaiting approval' : 'Placed';
     const id = 'SO-' + st.seq;
@@ -2286,6 +2325,7 @@ class Component extends DCLogic {
   }
 
   kioskFind() {
+    this.bump(m => ({ kioskTyped: m.kioskTyped + 1 }));
     const raw = this.state.kioskInput.trim();
     if (!raw) { this.set({ kioskMsg: 'Enter or scan a tag first.', kioskMsgKind: 'NOTHING ENTERED' }); return; }
     const all = [];
@@ -2296,6 +2336,7 @@ class Component extends DCLogic {
     if (partial.length === 1) {
       this.set({ kioskMsg: 'That looks like part of a tag. One package matches — ' + partial[0].p.name + ' — but a partial tag is never resolved automatically. Enter the full tag to open it.', kioskMsgKind: 'PARTIAL TAG' });
     } else if (partial.length > 1) {
+      this.bump(m => ({ kioskAmbiguous: m.kioskAmbiguous + 1 }));
       this.set({ kioskMsg: partial.length + ' packages contain that sequence, so it cannot resolve to one lot. Scan the package or enter the full tag.', kioskMsgKind: 'AMBIGUOUS' });
     } else {
       this.set({ kioskMsg: 'No package matches that tag. Check the digits, or scan the barcode. This never tells you whether a nearby tag exists.', kioskMsgKind: 'NOT FOUND' });
@@ -2304,7 +2345,7 @@ class Component extends DCLogic {
 
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Field view', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Field view', 'accounts'], ['measure', 'Measurement', 'economics'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
@@ -2745,12 +2786,12 @@ class Component extends DCLogic {
       catalogSub: canOrder
         ? 'Released finished goods available to this location, with your account price.'
         : isInternal ? 'All items including bulk material.' : 'Product information only. No price appears on this device.',
-      query: s.query, onQuery: e => this.set({ query: e.target.value }),
+      query: s.query, onQuery: e => { if (!s.query && e.target.value) this.bump(m => ({ searches: m.searches + 1 })); this.set({ query: e.target.value }); },
       catFilters: CATS.map(c => ({
         label: c,
         style: 'background:' + (s.cat === c ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.cat === c ? 'var(--ux-ground)' : 'var(--ux-ink)') +
           ';border:1px solid ' + (s.cat === c ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.cat === c ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
-        onPick: () => this.set({ cat: c })
+        onPick: () => { if (c !== 'All' && s.cat !== c) this.bump(m => ({ filters: m.filters + 1 })); this.set({ cat: c }); }
       })),
       catalogItems, resultCount: catalogItems.length + ' products', noResults: catalogItems.length === 0,
 
@@ -2823,7 +2864,7 @@ class Component extends DCLogic {
         : 'You see status only. Exception ownership and internal notes are not rendered here.',
       ...odVals,
 
-      kioskScan: () => this.set({ product: 'p1', lot: 0, screen: 'product', kioskMsg: null }),
+      kioskScan: () => { this.bump(m => ({ kioskScan: m.kioskScan + 1 })); this.set({ product: 'p1', lot: 0, screen: 'product', kioskMsg: null }); },
       kioskInput: s.kioskInput, onKioskInput: e => this.set({ kioskInput: e.target.value }),
       kioskLookup: () => this.kioskFind(),
       kioskHasMsg: !!s.kioskMsg, kioskMsg: s.kioskMsg || '', kioskMsgKind: s.kioskMsgKind,
@@ -2839,6 +2880,37 @@ class Component extends DCLogic {
         + (d.state === 'Accepted' ? 'var(--ux-accent);color:#fff' : d.state === 'Rejected' ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
         onOpen: () => this.set({ toast: 'Opening ' + d.name + ' would render the stored document. File storage is out of scope for the prototype.', toastKind: 'NOT WIRED' }) })),
       onUpload: () => this.set({ toast: 'Upload picks a type first, then the file. Nothing uploaded here lifts a gate \u2014 an internal reviewer updating the licence record does that. Banking and signatory details are refused and stay in the onboarding record.', toastKind: 'NOT WIRED' }),
+      isMeasure: s.screen === 'measure' && isInternal,
+      ...(() => {
+        const m = s.metrics;
+        const secs = v => v === null ? null : (v / 1000).toFixed(1) + 's';
+        const b = m.blocks;
+        const totalBlocks = b.licence + b.receivables + b.quantity + b.readOnly;
+        const rows = [
+          { q: 'Does the hero path work?', counted: 'Sign-in to first submitted order',
+            value: m.firstSubmitMs === null ? 'Not yet in this session' : secs(m.firstSubmitMs),
+            why: 'The target is under thirty seconds. One session is one observation \u2014 a median and a ninetieth percentile need a population, and this screen cannot give you one.' },
+          { q: 'Which gate costs most?', counted: 'Blocks per gate',
+            value: totalBlocks === 0 ? 'No gate has fired' : (b.licence + ' licence \u00b7 ' + b.receivables + ' receivables \u00b7 ' + b.quantity + ' quantity \u00b7 ' + b.readOnly + ' read-only'),
+            why: 'A gate that fires often and ends in a phone call is a policy problem, not a copy problem. What the user did in the ten minutes after is the half this prototype cannot see.' },
+          { q: 'Is the catalog findable?', counted: 'Searches and filters against adds',
+            value: m.searches + ' searches \u00b7 ' + m.filters + ' filters \u00b7 ' + m.adds + ' adds',
+            why: 'Sessions that search and never add separate a findability problem from a pricing one.' },
+          { q: 'Is the kiosk used?', counted: 'Lookups per device, scanned against typed',
+            value: m.kioskScan + ' scanned \u00b7 ' + m.kioskTyped + ' typed \u00b7 ' + m.kioskAmbiguous + ' refused as ambiguous',
+            why: 'Decides whether the device-framed pass earns its place. A high refusal count says the printed tag is the problem, not the screen.' },
+          { q: 'Is the phone call gone?', counted: 'Store-placed against rep-placed',
+            value: m.byStore + ' by the store \u00b7 ' + m.byRep + ' by a rep \u00b7 ' + m.calls + ' calls started',
+            why: 'The single number that says whether any of this worked. If reps still place everything, the portal is a catalogue and not a channel.' }
+        ];
+        return {
+          measureRows: rows.map(r => ({ ...r, valueStyle: 'font:800 20px/1.15 Archivo,sans-serif;letter-spacing:-.01em' })),
+          measureSession: m.sessionStart ? 'Session started ' + Math.round((Date.now() - m.sessionStart) / 1000) + 's ago' : 'Session clock not started',
+          onMeasureReset: () => this.bump({ sessionStart: Date.now(), firstSubmitMs: null, submits: 0,
+            blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
+            searches: 0, filters: 0, adds: 0, kioskScan: 0, kioskTyped: 0, kioskAmbiguous: 0, byStore: 0, byRep: 0, calls: 0 })
+        };
+      })(),
       isField: s.screen === 'field' && isInternal,
       repBook: REP_BOOK.map(a => {
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
@@ -2850,8 +2922,8 @@ class Component extends DCLogic {
           noteOpen: s.repNoteFor === a.name, noteClosed: s.repNoteFor !== a.name,
           onNote: () => this.repNoteOpen(a.name),
           onPrice: () => this.set({ toast: 'A price request goes to sales operations with the account and the SKU. A rep never sets a price \u2014 that is why this is a request and not a field.', toastKind: 'NOT WIRED' }),
-          onOrder: () => this.set({ toast: 'Ordering on behalf opens the store\u2019s own draft with price read-only. Approval stays with the store: whether a rep may hold it is still an open decision.', toastKind: 'NOT WIRED' }),
-          onCall: () => this.set({ toast: 'Would dial ' + a.contact + '. Telephony is out of scope for the prototype.', toastKind: 'NOT WIRED' })
+          onOrder: () => { this.bump(m => ({ byRep: m.byRep + 1 })); this.set({ toast: 'Ordering on behalf opens the store\u2019s own draft with price read-only. Approval stays with the store: whether a rep may hold it is still an open decision.', toastKind: 'NOT WIRED' }); },
+          onCall: () => { this.bump(m => ({ calls: m.calls + 1 })); this.set({ toast: 'Would dial ' + a.contact + '. Telephony is out of scope for the prototype.', toastKind: 'NOT WIRED' }); }
         };
       }),
       repNoteText: s.repNoteText, onRepNoteText: e => this.set({ repNoteText: e.target.value }),
@@ -2865,7 +2937,7 @@ class Component extends DCLogic {
       isApproval: s.screen === 'approval' && role === 'owner',
       isAccountSettings: s.screen === 'account' && role === 'owner',
       acctLocs: LOCATIONS.map(l => {
-        const d = s.delivery[l.id] || { window: '', instructions: '', contact: '' };
+        const d = s.deliverySettings[l.id] || { window: '', instructions: '', contact: '' };
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
         return {
           name: l.name, license: l.license,
