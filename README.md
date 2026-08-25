@@ -25,8 +25,8 @@ control — anyone with the link can read everything here.
 | `index.html` | Landing page for the hosted site. Links to the prototype and every document. |
 | `dist/portal.html` | Self-contained prototype. Open it in a browser — no build, no server, no dependencies. |
 | `ux-portal-prototype.dc.html` | Prototype source (streaming design component). |
-| `ux-portal-phase-1-architecture.dc.html` | **Rev 2.** Sitemap, role and permission matrix, gates, flows, source map, audit events, open items, acceptance — plus recall and lot impact, life after submission, approval delegation, store account and records, store data access, measurement. |
-| `ux-portal-build-plan.dc.html` | **Rev 2.** What remains, sequenced by dependency: 15 blockers, 43 build tasks, 4 waves. |
+| `ux-portal-phase-1-architecture.dc.html` | **Rev 2.1.** Sitemap, matrix, gates, flows, source map, audit events, open items, acceptance — plus recall and lot impact, life after submission, approval delegation, store account and records, store data access, measurement, document exchange, and internal store onboarding. |
+| `ux-portal-build-plan.dc.html` | **Rev 2.1.** What remains, sequenced by dependency: 10 blockers, 48 items still open, 4 waves. |
 | `Sitemap-A-*`, `Sitemap-B-*` | Two sitemap treatments. |
 | `Doc-Format-A-*`, `Doc-Format-B-*` | Two document treatments. |
 | `brand/` | The uX mark, trimmed, plus a reversed version generated for dark surfaces. |
@@ -67,6 +67,24 @@ Paths worth walking because they refuse rather than proceed:
 - Four external order states; ten internal, kept as the subledger holds them.
 - Two signal colours only: green for released, passed and primary action; clay
   for blocked and exception. Everything pending is monochrome.
+
+## What changed in rev 2.1
+
+One blocking convention across both documents — *blocking* now means the item
+stops a screen, a gate or a publication from being correct, and both documents
+count the same ten. Rev 2 had the architecture flagging eight and the build plan
+counting fifteen, and `case quantity` was blocking in one and not the other.
+
+**Store sell-through is decided out of scope.** The portal stays semi-internal
+and does not connect to a retailer's point-of-sale. That answers a standing
+blocking question the prototype still carries — *a data source, or a decision to
+ship without one* — with the second. Performance panels report the account's own
+ordering with urbanXtracts, permanently, and no velocity claim is made anywhere.
+
+Two capabilities added: **document exchange** (owner and buyer upload against a
+typed list, with expiry, review state and versions — the license gate has said
+"upload the renewal" since rev 1 with nowhere to upload it) and **internal store
+onboarding** (six stages from intake to ready-to-order).
 
 ## What changed in rev 2
 
