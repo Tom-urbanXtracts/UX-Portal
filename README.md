@@ -114,6 +114,11 @@ Paths worth walking because they refuse rather than proceed:
   them unmutably, marks the COA `AMENDED` while version 1 stays resolvable,
   records acknowledgement per account, and appears in the store's notices and
   audit history. The notice never states what changed or what it means.
+- **Public COA resolver** — a working lookup on the public COA page with the
+  hardening controls live: non-sequential codes, full-code-or-nothing, no
+  listing or search, a per-source rate limit, and — the one that matters — an
+  unknown code and a real-but-unpublished code returning the identical
+  response, so the resolver never confirms that something exists.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

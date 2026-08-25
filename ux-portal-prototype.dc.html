@@ -1309,6 +1309,50 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 10px">Try the resolver</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 16px;max-width:78ch">This is the page a consumer reaches from a printed code. <strong>K7M2-QX48-RB91</strong> and <strong>T4J9-LW07-ZC63</strong> are published. <strong>P2R6-HN35-VD82</strong> is a real lot whose certificate is not published &mdash; note that it answers exactly as a code that never existed does.</p>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px">
+<input type="text" value="{{ pubInput }}" onInput="{{ onPubInput }}" placeholder="Code printed on the package" style="flex:1;min-width:260px;padding:11px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 12px ui-monospace,Menlo,monospace">
+<button type="button" onClick="{{ onPubResolve }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Look it up</button>
+<button type="button" onClick="{{ onPubReset }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Reset limit</button>
+</div>
+<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ pubAttemptsText }}</div>
+
+<sc-if value="{{ pubHasMsg }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin-bottom:20px;max-width:78ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:5px">{{ pubMsgKind }}</div>
+<div style="font-size:13px;line-height:1.6">{{ pubMsg }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ pubHasResult }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:22px 24px;margin-bottom:20px;max-width:560px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Certificate of analysis</div>
+<div style="font:700 16px Archivo,sans-serif;margin-bottom:4px">{{ pubProduct }}</div>
+<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:16px">{{ pubTag }}</div>
+<sc-if value="{{ pubAmended }}" hint-placeholder-val="{{ false }}">
+<div style="margin-bottom:14px"><span style="display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">AMENDED &middot; VERSION 2 CURRENT</span></div>
+</sc-if>
+<div style="border-top:1px solid rgba(23,14,11,.14)">
+<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Lab result</div><div style="font-weight:700">{{ pubResult }}</div></div>
+<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Batch</div><div>Not recorded &mdash; the compliance tag is the lot identity</div></div>
+<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Packaged</div><div>{{ pubPackaged }}</div></div>
+<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Tested</div><div>{{ pubTested }}</div></div>
+</div>
+<div style="margin-top:16px;font-size:12px;color:var(--ux-muted);line-height:1.6">Lab result, batch and dates. Nothing here interprets the result, restates a value from the document, or makes a claim about effects or benefits. What this page displays, and how long a printed code keeps resolving, are the CCO&rsquo;s to set.</div>
+</div>
+</sc-if>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">The controls, and why</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:78ch">Rev 1 specified what this page shows and never specified that a third party could walk it. A walkable code space hands over a picture of batch and testing history to anyone patient.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ pubControls }}" as="p" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:210px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font-weight:700">{{ p.control }}</div><div>{{ p.detail }}</div>
+</div>
+</sc-for>
+</div>
 </div>
 </sc-if>
 
@@ -1735,6 +1779,21 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+const PUBLIC_CODES = [
+  { code: 'K7M2-QX48-RB91', tag: '1A4060300019F21000004182', product: 'Apple Motorbreath 1g Cart', packaged: '13 Aug 2026', tested: '11 Aug 2026', result: 'Passed', published: true },
+  { code: 'T4J9-LW07-ZC63', tag: '1A4060300019F21000003907', product: 'Apple Motorbreath 1g Cart', packaged: '24 Jul 2026', tested: '22 Jul 2026', result: 'Passed', published: true },
+  { code: 'P2R6-HN35-VD82', tag: '1A4060300021C08000001174', product: 'Watermelon Zkittlez 0.5g Cart', packaged: '3 Mar 2026', tested: '1 Mar 2026', result: 'Passed', published: false }
+];
+
+const PUBLIC_CONTROLS = [
+  { control: 'Non-sequential code', detail: 'The printed code is not derived from the compliance tag and carries no order. K7M2-QX48-RB91 tells you nothing about what K7M2-QX48-RB92 might be, and there is no arithmetic from one lot to the next.' },
+  { control: 'Full code or nothing', detail: 'The resolver answers a code presented in full. There is no partial match, because a partial match is a search, and a search over this space is the thing we are preventing.' },
+  { control: 'No listing, no search', detail: 'There is no endpoint that returns a list of codes, no browse, and no index. The only way in is a code somebody printed on a package.' },
+  { control: 'Unknown and unpublished are identical', detail: 'A code that does not exist and a real code whose COA is not published return the same response, word for word. Confirming that something exists is itself a disclosure.' },
+  { control: 'Rate limited per source', detail: 'Attempts from one source are throttled, so walking the space costs time that grows. The number is not set yet and is carried as an open item.' },
+  { control: 'No account, no price, ever', detail: 'The page never carries who bought the lot, what they paid, cost, margin, or the ownership code. It is a lab result, a batch and dates.' }
+];
+
 const API_KEYS = [
   { name: 'Inventory sync', mask: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20224f2a', scope: 'All three licenses', created: 'Issued 2 Jul 2026 by Dana Whitfield', used: 'Last read 24 Aug 2026 06:12 \u00b7 1,204 rows' },
   { name: 'Nightly extract', mask: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u20229c17', scope: 'Downtown only', created: 'Issued 19 May 2026 by Dana Whitfield', used: 'Last read 23 Aug 2026 02:00 \u00b7 486 rows' },
@@ -1822,7 +1881,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
-    coaAmended: false, coaAcks: [], claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
+    coaAmended: false, coaAcks: [], pubInput: '', pubResult: null, pubMsg: null, pubMsgKind: 'NO RESULT', pubAttempts: 0, claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
 
   set(patch) { this.setState(patch); }
@@ -1848,6 +1907,29 @@ class Component extends DCLogic {
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
   }
+
+  pubResolve() {
+    const raw = (this.state.pubInput || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (this.state.pubAttempts >= 5) {
+      this.set({ pubResult: null, pubMsg: 'Too many attempts from this source. Further lookups are throttled. A person holding a package is not affected; somebody walking the code space is.', pubMsgKind: 'RATE LIMITED' });
+      return;
+    }
+    this.setState(st => ({ pubAttempts: st.pubAttempts + 1 }));
+    if (!raw) { this.set({ pubResult: null, pubMsg: 'Enter the code printed on the package.', pubMsgKind: 'NOTHING ENTERED' }); return; }
+    const normalised = raw.replace(/-/g, '');
+    if (normalised.length < 12) {
+      this.set({ pubResult: null, pubMsg: 'A code is answered in full or not at all. There is no partial match here \u2014 a partial match would be a search.', pubMsgKind: 'INCOMPLETE CODE' });
+      return;
+    }
+    const hit = PUBLIC_CODES.find(c => c.code.replace(/-/g, '') === normalised);
+    if (hit && hit.published) {
+      this.set({ pubResult: hit, pubMsg: null, pubInput: '' });
+      return;
+    }
+    this.set({ pubResult: null, pubMsg: 'No published certificate for that code.', pubMsgKind: 'NO RESULT' });
+  }
+
+  pubReset() { this.set({ pubAttempts: 0, pubResult: null, pubMsg: null, pubInput: '' }); }
 
   amendCoa() {
     if (this.state.coaAmended) return;
@@ -2781,6 +2863,20 @@ class Component extends DCLogic {
         stageStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
           + (o.stage >= 5 ? 'var(--ux-accent);color:#fff' : o.stage <= 2 ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)') })),
       isTraining: s.screen === 'training', isCoaLookup: s.screen === 'coalookup',
+      pubInput: s.pubInput,
+      onPubInput: e => this.set({ pubInput: e.target.value }),
+      onPubResolve: () => this.pubResolve(),
+      onPubReset: () => this.pubReset(),
+      pubAttemptsText: s.pubAttempts + ' of 5 attempts used from this source',
+      pubHasMsg: !!s.pubMsg, pubMsg: s.pubMsg || '', pubMsgKind: s.pubMsgKind,
+      pubHasResult: !!s.pubResult,
+      pubProduct: s.pubResult ? s.pubResult.product : '',
+      pubTag: s.pubResult ? s.pubResult.tag : '',
+      pubResult: s.pubResult ? s.pubResult.result : '',
+      pubPackaged: s.pubResult ? s.pubResult.packaged : '',
+      pubTested: s.pubResult ? s.pubResult.tested : '',
+      pubAmended: !!(s.pubResult && s.coaAmended && s.pubResult.tag === (s.recallTag || RECALL_TAG)),
+      pubControls: PUBLIC_CONTROLS,
       isAccess: s.screen === 'access', isLineage: s.screen === 'lineage',
       users, adminTitle: isInternal ? 'Users and roles' : 'Your users',
       onInvite: () => this.set({ toast: 'An invite names the person, their role and the locations they cover. Until now an owner could only change a role \u2014 not add a buyer, and not remove one who had left.', toastKind: 'NOT WIRED' }),
