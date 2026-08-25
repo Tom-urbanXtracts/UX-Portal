@@ -554,6 +554,70 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+
+<sc-if value="{{ odClaimOpen }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:24px;border:1px solid rgba(23,14,11,.3);padding:20px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Report a problem with this delivery</div>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 16px;max-width:74ch">Short, damaged or refused &mdash; per line, against what was ordered. It joins the exception queue we already run. You will see its state and nothing else: never who is working it, never against what clock.</p>
+
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Which line</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+<sc-for list="{{ odClaimLines }}" as="cl" hint-placeholder-count="3">
+<button type="button" onClick="{{ cl.onPick }}" style="{{ cl.style }}">{{ cl.label }}</button>
+</sc-for>
+</div>
+
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">What happened</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+<sc-for list="{{ odClaimKinds }}" as="ck" hint-placeholder-count="3">
+<button type="button" onClick="{{ ck.onPick }}" style="{{ ck.style }}">{{ ck.label }}</button>
+</sc-for>
+</div>
+
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">How many units</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
+<button type="button" onClick="{{ onClaimQtyDown }}" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">&minus;</button>
+<span style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif">{{ claimQty }}</span>
+<button type="button" onClick="{{ onClaimQtyUp }}" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">+</button>
+<span style="font-size:12px;color:var(--ux-muted)">Capped at the quantity on the line.</span>
+</div>
+
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">In your own words</div>
+<input type="text" value="{{ claimReason }}" onInput="{{ onClaimReason }}" placeholder="What was wrong with it" style="width:100%;padding:11px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:16px">
+
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<button type="button" onClick="{{ onClaimPhoto }}" style="{{ claimPhotoStyle }}">{{ claimPhotoLabel }}</button>
+<button type="button" onClick="{{ onClaimSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Raise the claim</button>
+<button type="button" onClick="{{ onClaimCancel }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Cancel</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ odHasClaims }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:24px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Claims on this order</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ odClaims }}" as="c" hint-placeholder-count="1">
+<div style="padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:5px">
+<span style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600">{{ c.id }}</span>
+<span style="{{ c.stateStyle }}">{{ c.state }}</span>
+<span style="color:var(--ux-muted);font-size:12px">raised {{ c.raised }}</span>
+</div>
+<div style="font-weight:600">{{ c.line }}</div>
+<div style="color:var(--ux-muted)">{{ c.reason }}</div>
+<sc-if value="{{ odInternal }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:8px;border-left:2px solid var(--ux-ink);padding:6px 0 6px 12px;font-size:12px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:3px">INTERNAL ONLY</div>
+Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&rsquo;s view of this order.
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
 <div style="margin-top:24px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">{{ odFooter }}</div>
 </div>
 </sc-if>
@@ -1675,8 +1739,8 @@ const INVOICES = [
 const TERMS = { 'l1': 'Net 30', 'l2': 'Net 30', 'l3': 'Net 30' };
 
 const CLAIMS = [
-  { order: 'SO-23964', loc: 'l3', line: 'Hudson Valley Kush Badder 1g', reason: 'Short \u2014 18 of 20 received', raised: '12 Jul 2026', state: 'Resolved \u00b7 credited' },
-  { order: 'SO-24020', loc: 'l2', line: 'Grape Gas Infused Pre-Roll 5pk', reason: 'Damaged outer packaging on 4 units', raised: '27 Jul 2026', state: 'Open' }
+  { id: 'CLM-241', order: 'SO-23964', loc: 'l3', line: 'Hudson Valley Kush Badder 1g', reason: 'Short \u2014 18 of 20 received', raised: '12 Jul 2026', state: 'Resolved \u00b7 credited' },
+  { id: 'CLM-242', order: 'SO-24020', loc: 'l2', line: 'Grape Gas Infused Pre-Roll 5pk', reason: 'Damaged outer packaging on 4 units', raised: '27 Jul 2026', state: 'Open' }
 ];
 
 const STORE_AUDIT = [
@@ -1721,7 +1785,8 @@ class Component extends DCLogic {
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
-    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026'
+    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
+    claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
 
   set(patch) { this.setState(patch); }
@@ -1746,6 +1811,33 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  openClaim(id) { this.set({ claimFor: id, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false }); }
+  closeClaim() { this.set({ claimFor: null }); }
+
+  submitClaim(od) {
+    const s = this.state;
+    const line = od.lines[s.claimLine];
+    const pp = P(line.id);
+    if (!s.claimReason.trim()) {
+      this.set({ toast: 'A claim needs a reason in your own words. It is read by a person, not matched against a list.', toastKind: 'NOTHING ENTERED' });
+      return;
+    }
+    if (s.claimQty > line.qty) {
+      this.set({ toast: 'Refused: you cannot claim ' + s.claimQty + ' units against a line of ' + line.qty + '. The claim is capped at what was ordered.', toastKind: 'BLOCKED \u2014 QUANTITY' });
+      return;
+    }
+    const id = 'CLM-' + (240 + s.claimSeq);
+    const claim = {
+      id, order: od.id, loc: od.loc, line: pp ? pp.name : line.id,
+      reason: s.claimKind + ' \u2014 ' + s.claimQty + ' of ' + line.qty + ' \u00b7 ' + s.claimReason.trim() + (s.claimPhoto ? ' \u00b7 photo attached' : ''),
+      raised: TODAY, state: 'Open',
+      owner: 'Operations \u2014 fulfilment', clock: 'Target: two working days', internalNote: 'Raised from the order by the store. Owner and clock are internal; the store sees state only.'
+    };
+    this.logAudit('Receiving claim raised', id + ' on ' + od.id, s.claimKind + ' on ' + (pp ? pp.name : line.id) + '. Visible to your organisation as a state, and to us as an exception.');
+    this.setState(st => ({ claims: [claim].concat(st.claims), claimFor: null, claimSeq: st.claimSeq + 1,
+      toast: id + ' raised on ' + od.id + '. It joins the exception queue. You will see its state on this order and in Your records \u2014 never who is working it or against what clock.', toastKind: 'DONE' }));
   }
 
   delegate(name, role) {
@@ -2110,7 +2202,7 @@ class Component extends DCLogic {
         actions.push({ label: 'Request a change', style: secondary, onDo: () => this.set({ toast: 'The edit window closed at approval. A change is now a request routed to your account manager, and the order shows that it was requested.', toastKind: 'NOT WIRED' }) });
       }
       if (!isInternal && od.state === 'Received') {
-        actions.push({ label: 'Report a problem', style: secondary, onDo: () => this.set({ toast: 'Short, damaged or refused, per line, with quantity, reason and an optional photo. It joins the exception queue and you see its status only \u2014 never the internal owner, the clock, or internal notes.', toastKind: 'NOT WIRED' }) });
+        actions.push({ label: 'Report a problem', style: secondary, onDo: () => this.openClaim(od.id) });
       }
       if (canOrder) actions.push({ label: 'Reorder these lines', style: secondary, onDo: () => this.reorder(od) });
       actions.push({ label: 'Download confirmation', style: secondary, onDo: () => this.set({ toast: 'A PDF confirmation for ' + od.id + ' would download here. Document generation is out of scope for the prototype.', toastKind: 'NOT WIRED' }) });
@@ -2136,6 +2228,37 @@ class Component extends DCLogic {
         }),
         odUnits: String(this.orderUnits(od)), odValue: MONEY(this.orderValue(od)),
         odNotes: notes, odHasNotes: notes.length > 0,
+        odClaims: s.claims.filter(c => c.order === od.id).map(c => ({
+          id: c.id || '\u2014', line: c.line, reason: c.reason, raised: c.raised, state: c.state,
+          owner: c.owner || 'Operations \u2014 fulfilment', clock: c.clock || 'Target: two working days',
+          stateStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;'
+            + (c.state === 'Open' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
+        })),
+        odHasClaims: s.claims.some(c => c.order === od.id),
+        odInternal: isInternal,
+        odClaimOpen: s.claimFor === od.id,
+        odClaimLines: od.lines.map((l, i) => {
+          const pp = P(l.id);
+          return { label: (pp ? pp.name : l.id) + ' \u00b7 ' + l.qty + ' units', idx: i, selected: s.claimLine === i,
+            style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+              + (s.claimLine === i ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+            onPick: () => this.set({ claimLine: i, claimQty: 1 }) };
+        }),
+        odClaimKinds: ['Short', 'Damaged', 'Refused'].map(k => ({ label: k,
+          style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+            + (s.claimKind === k ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+          onPick: () => this.set({ claimKind: k }) })),
+        claimQty: String(s.claimQty),
+        onClaimQtyDown: () => this.setState(st => ({ claimQty: Math.max(1, st.claimQty - 1) })),
+        onClaimQtyUp: () => this.setState(st => ({ claimQty: st.claimQty + 1 })),
+        claimReason: s.claimReason,
+        onClaimReason: e => this.set({ claimReason: e.target.value }),
+        claimPhotoLabel: s.claimPhoto ? 'Photo attached' : 'Attach a photo',
+        claimPhotoStyle: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+          + (s.claimPhoto ? 'background:var(--ux-accent);color:#fff' : 'background:transparent'),
+        onClaimPhoto: () => this.setState(st => ({ claimPhoto: !st.claimPhoto })),
+        onClaimSubmit: () => this.submitClaim(od),
+        onClaimCancel: () => this.closeClaim(),
         odFooter: isInternal
           ? 'Internally this order sits at subledger state ' + INTERNAL_STATE[od.state] + '. The store sees one of four collapsed states, so the portal and the subledger can never contradict each other in front of a customer.'
           : 'You see status only. Exception ownership, internal notes and cost never appear on this screen by any route, including export.'
@@ -2485,7 +2608,7 @@ class Component extends DCLogic {
           state: l.expired ? 'Expired 12 Aug 2026' : 'Active',
           stateStyle: chip + (l.expired ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff')
         }));
-        const claims = CLAIMS.filter(c => locIds.includes(c.loc)).map(c => ({ ...c, locName: this.locName(c.loc), stateStyle: chip + (c.state === 'Open' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)') }));
+        const claims = s.claims.filter(c => locIds.includes(c.loc)).map(c => ({ ...c, locName: this.locName(c.loc), stateStyle: chip + (c.state === 'Open' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)') }));
         const notices = s.recallIssued
           ? [{ kind: 'Recall or withdrawal', subject: 'Tag ' + (s.recallTag || RECALL_TAG), when: '24 Aug 2026',
                state: s.recallAcks.includes(ACTING_ORG) ? 'Acknowledged by your organisation' : 'Awaiting your acknowledgement',

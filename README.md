@@ -104,6 +104,11 @@ Paths worth walking because they refuse rather than proceed:
   not a decided capability. The three gates a delegate can never lift are named,
   and the clock is stated as unset. An order awaiting approval names who holds
   authority and until when.
+- **Receiving claim** — on a received order: pick the line, pick short, damaged
+  or refused, set a quantity capped at what was ordered, say what happened in
+  your own words, optionally attach a photo. It lands on the order, in Your
+  records, and in the audit trail. The store sees state only; the same claim
+  viewed internally carries the owner and the clock.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight
