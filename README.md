@@ -119,6 +119,11 @@ Paths worth walking because they refuse rather than proceed:
   listing or search, a per-source rate limit, and — the one that matters — an
   unknown code and a real-but-unpublished code returning the identical
   response, so the resolver never confirms that something exists.
+- **Account and delivery** — owner only; in the sitemap since rev 1 and never
+  built. Per-location delivery window, receiving contact and receiving
+  instructions, editable and saved with an audit entry. Paired with a plain
+  list of what cannot be changed here and where it lives instead — the licence
+  number, expiry, adding a location, banking, and payment terms.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

@@ -902,6 +902,48 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<sc-if value="{{ isAccountSettings }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Account and delivery</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:78ch">Your locations, and how each of them wants a delivery to arrive. Fulfilment reads these at pick time, so a change here reaches the next order rather than needing a phone call. Some things on this page you can change and some you cannot &mdash; the difference is stated on each.</p>
+<sc-for list="{{ acctLocs }}" as="a" hint-placeholder-count="3">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding:18px 0 22px">
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:6px">
+<div style="font:800 18px/1 Archivo,sans-serif;letter-spacing:-.01em">{{ a.name }}</div>
+<span style="{{ a.licStyle }}">{{ a.licState }}</span>
+</div>
+<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:16px">{{ a.license }} &mdash; the account key. Not editable here: it lives in the onboarding record, and changing it means re-qualification. A renewal is uploaded under Documents.</div>
+<sc-if value="{{ a.notEditing }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-bottom:14px">
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Delivery window</div><div style="font-size:13px;line-height:1.55"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ a.window }}</span></div></div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Receiving contact</div><div style="font-size:13px;line-height:1.55"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ a.contact }}</span></div></div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Receiving instructions</div><div style="font-size:13px;line-height:1.55"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ a.instructions }}</span></div></div>
+</div>
+<button type="button" onClick="{{ a.onEdit }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Edit delivery settings</button>
+</sc-if>
+<sc-if value="{{ a.editing }}" hint-placeholder-val="{{ false }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Delivery window</div>
+<input type="text" value="{{ acctWindow }}" onInput="{{ onAcctWindow }}" style="width:100%;padding:10px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Receiving contact</div>
+<input type="text" value="{{ acctContact }}" onInput="{{ onAcctContact }}" style="width:100%;padding:10px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Receiving instructions</div>
+<input type="text" value="{{ acctInstr }}" onInput="{{ onAcctInstr }}" style="width:100%;padding:10px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:16px">
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button type="button" onClick="{{ onAcctSave }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12px Archivo,sans-serif;cursor:pointer">Save</button>
+<button type="button" onClick="{{ onAcctCancel }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Cancel</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">What you cannot change here, and where it lives</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Licence number</div><div>The account key the whole system joins on. It is captured once at onboarding and changing it is a re-qualification, not an edit. Shown here so you can check it against your paperwork.</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Licence expiry</div><div>Read from the licence record. A renewal is uploaded under Documents and an urbanXtracts reviewer updates the record &mdash; landing a file does not lift the gate by itself.</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Adding or closing a location</div><div>Handled at onboarding, because a new location needs a licence qualified against the state record before it can order.</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Banking and remittance</div><div>Not on this page and nowhere else in the portal. Those details stay in the onboarding record by design.</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payment terms and credit limit</div><div>Set by urbanXtracts finance. You can see the effect under Receivables; the figures themselves are not editable by either side here.</div></div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isApproval }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Approval authority</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 22px;max-width:78ch">Who may approve an order for your organisation, until when, and what a delegate can and cannot do. Approval is yours to give and yours to take back &mdash; in one action, at any moment.</p>
@@ -1779,6 +1821,12 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+const DELIVERY = {
+  l1: { window: 'Weekdays, 9am to 12pm', instructions: 'Rear loading door on Pike Alley. Buzz unit 2. Do not leave a delivery with front-of-house staff.', contact: 'Marcus Reyes \u00b7 206-555-0142' },
+  l2: { window: 'Tuesdays and Thursdays, any time', instructions: 'Street-level delivery only, no loading bay. Ask for the duty manager on arrival.', contact: 'Sam Okafor \u00b7 206-555-0188' },
+  l3: { window: 'Weekdays, 1pm to 5pm', instructions: 'Loading bay is shared with the unit next door \u2014 call ahead so it is clear.', contact: 'Priya Anand \u00b7 206-555-0119' }
+};
+
 const PUBLIC_CODES = [
   { code: 'K7M2-QX48-RB91', tag: '1A4060300019F21000004182', product: 'Apple Motorbreath 1g Cart', packaged: '13 Aug 2026', tested: '11 Aug 2026', result: 'Passed', published: true },
   { code: 'T4J9-LW07-ZC63', tag: '1A4060300019F21000003907', product: 'Apple Motorbreath 1g Cart', packaged: '24 Jul 2026', tested: '22 Jul 2026', result: 'Passed', published: true },
@@ -1881,6 +1929,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
+    delivery: JSON.parse(JSON.stringify(DELIVERY)), acctEditing: null, acctWindow: '', acctInstr: '', acctContact: '',
     coaAmended: false, coaAcks: [], pubInput: '', pubResult: null, pubMsg: null, pubMsgKind: 'NO RESULT', pubAttempts: 0, claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
 
@@ -1906,6 +1955,23 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  acctEdit(id) {
+    const d = this.state.delivery[id] || { window: '', instructions: '', contact: '' };
+    this.set({ acctEditing: id, acctWindow: d.window, acctInstr: d.instructions, acctContact: d.contact });
+  }
+  acctCancel() { this.set({ acctEditing: null }); }
+  acctSave() {
+    const id = this.state.acctEditing;
+    if (!id) return;
+    const name = this.locName(id);
+    this.logAudit('Delivery settings changed', name, 'Window, receiving instructions and contact updated by the owner.');
+    this.setState(st => ({
+      delivery: { ...st.delivery, [id]: { window: st.acctWindow, instructions: st.acctInstr, contact: st.acctContact } },
+      acctEditing: null,
+      toast: name + ' delivery settings saved. Fulfilment reads these at pick time, and the change is in your audit history.', toastKind: 'DONE'
+    }));
   }
 
   pubResolve() {
@@ -2137,7 +2203,7 @@ class Component extends DCLogic {
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
     if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
 
@@ -2677,6 +2743,25 @@ class Component extends DCLogic {
       isReceivables: s.screen === 'receivables' && role === 'owner',
       isApi: s.screen === 'api' && role === 'owner',
       isApproval: s.screen === 'approval' && role === 'owner',
+      isAccountSettings: s.screen === 'account' && role === 'owner',
+      acctLocs: LOCATIONS.map(l => {
+        const d = s.delivery[l.id] || { window: '', instructions: '', contact: '' };
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        return {
+          name: l.name, license: l.license,
+          licState: l.expired ? 'Licence expired 12 Aug 2026' : 'Licence active',
+          licStyle: chip + (l.expired ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff'),
+          window: d.window, instructions: d.instructions, contact: d.contact,
+          editing: s.acctEditing === l.id,
+          notEditing: s.acctEditing !== l.id,
+          onEdit: () => this.acctEdit(l.id)
+        };
+      }),
+      acctWindow: s.acctWindow, onAcctWindow: e => this.set({ acctWindow: e.target.value }),
+      acctInstr: s.acctInstr, onAcctInstr: e => this.set({ acctInstr: e.target.value }),
+      acctContact: s.acctContact, onAcctContact: e => this.set({ acctContact: e.target.value }),
+      onAcctSave: () => this.acctSave(),
+      onAcctCancel: () => this.acctCancel(),
       ...(() => {
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
         const held = s.delegateTo || 'Dana Whitfield';
