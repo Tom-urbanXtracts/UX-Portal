@@ -908,7 +908,17 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
 <input type="text" value="{{ auEmail }}" onInput="{{ onAuEmail }}" aria-label="New user email" style="width:100%;max-width:380px;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:12px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Locations</div>
-<input type="text" value="{{ auLoc }}" onInput="{{ onAuLoc }}" aria-label="New user locations" style="width:100%;max-width:380px;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="max-width:380px;margin-bottom:14px">
+<button type="button" onClick="{{ onAuLocOpen }}" aria-label="Choose locations" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;cursor:pointer"><span>{{ auLocLabel }}</span><span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">{{ auLocCount }}</span></button>
+<sc-if value="{{ auLocOpen }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.3);border-top:0;background:#fff">
+<button type="button" onClick="{{ onAuLocAll }}" style="width:100%;text-align:left;background:var(--ux-surface);border:0;border-bottom:1px solid rgba(23,14,11,.2);padding:9px 11px;font:700 12px Archivo,sans-serif;cursor:pointer">{{ auLocAllLabel }}</button>
+<sc-for list="{{ auLocOptions }}" as="al" hint-placeholder-count="3">
+<button type="button" onClick="{{ al.onPick }}" aria-label="{{ al.aria }}" style="{{ al.style }}"><span style="{{ al.boxStyle }}">{{ al.mark }}</span>{{ al.name }}</button>
+</sc-for>
+</div>
+</sc-if>
+</div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Role</div>
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
 <sc-for list="{{ auRoles }}" as="ar" hint-placeholder-count="3">
@@ -2300,7 +2310,8 @@ const RECOVERY = readRecovery();
 
 class Component extends DCLogic {
   state = {
-    deactivated: [], apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auLoc: '', auErr: null,
+    deactivated: [], apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
+    token: null, auLocs: [], auLocOpen: false,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
     onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
@@ -2416,14 +2427,16 @@ class Component extends DCLogic {
             const me = (rows || []).find(r => r.id === uid) || null;
             if (!me) throw new Error('no profile');
             if (me.active === false) throw new Error('inactive');
-            return me;
+            return { me: me, token: tok.access_token };
           });
       })
-      .then(me => {
-        const known = USERS.find(x => x.email === email);
+      .then(({ me, token }) => {
         const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
-        this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '' });
-        this.signIn(known || { name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
+        // Built only from this account's own profile row. Matching the address
+        // against the sample directory would hand somebody that record's role
+        // and locations instead of their own.
+        this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '', token: token });
+        this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
       })
       .catch(e => this.set({ loginBusy: false, loginPass: '',
         loginErr: e && e.message === 'inactive'
@@ -2624,13 +2637,53 @@ class Component extends DCLogic {
       toast: 'Sent for review. Nothing about your licence gate has changed yet \u2014 it reads the licence record, and that moves when a reviewer has looked at this.', toastKind: 'SENT FOR REVIEW' });
   }
 
-  auToggle() { this.setState(st => ({ auOpen: !st.auOpen, auErr: null })); }
+  auToggle() { this.setState(st => ({ auOpen: !st.auOpen, auErr: null, auLocOpen: false })); }
+  auLocOpenToggle() { this.setState(st => ({ auLocOpen: !st.auLocOpen })); }
+  auLocPick(id) {
+    this.setState(st => ({ auLocs: st.auLocs.indexOf(id) === -1
+      ? st.auLocs.concat([id]) : st.auLocs.filter(x => x !== id) }));
+  }
+  auLocAll() {
+    this.setState(st => ({ auLocs: st.auLocs.length === LOCATIONS.length ? [] : LOCATIONS.map(l => l.id) }));
+  }
+  auLocText(ids) {
+    if (!ids.length) return '';
+    if (ids.length === LOCATIONS.length) return 'All ' + LOCATIONS.length + ' locations';
+    return LOCATIONS.filter(l => ids.indexOf(l.id) !== -1).map(l => l.name).join(', ');
+  }
   auSubmit() {
     const s = this.state;
     if (!s.auName.trim() || !s.auEmail.trim()) { this.set({ auErr: 'A name and an email are both needed. The email is the username they will sign in with.' }); return; }
+    const email = s.auEmail.trim().toLowerCase();
+    if (email.indexOf('@') < 1) { this.set({ auErr: 'That is not an email address, and the email is the username they sign in with.' }); return; }
+    if (!s.auLocs.length) { this.set({ auErr: 'Pick at least one location. A user with no location has nothing to order for.' }); return; }
     const org = s.role === 'internal' && s.auRole === 'Account management' ? 'urbanXtracts' : ACTING_ORG;
-    const u = { name: s.auName.trim(), email: s.auEmail.trim(), org, role: s.auRole, locs: s.auLoc.trim() || 'All 3 locations', last: 'Never signed in' };
-    this.logAudit('User added', u.name, u.role + ' at ' + org + '. Added directly rather than invited; access begins when they set a password.');
+    const locs = this.auLocText(s.auLocs);
+    const dbRole = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender', 'Account management': 'internal' }[s.auRole];
+    const u = { name: s.auName.trim(), email: email, org, role: s.auRole, locs: locs, last: 'Never signed in' };
+    this.logAudit('User added', u.name, u.role + ' at ' + org + ', ' + locs + '. Added directly rather than invited; access begins when they set a password.');
+
+    // Their profile is written against their address and belongs to them alone.
+    // When the account first appears it is provisioned from this row, so the
+    // role and locations chosen here are what they get \u2014 not a default, and
+    // not another person's record. The row is consumed on use, so it can never
+    // apply to a second account.
+    if (this.state.token) {
+      fetch(SUPABASE_URL + '/rest/v1/portal_pending_profile', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + this.state.token, 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify({ email: email, full_name: u.name, org: org, role: dbRole,
+          locations: locs, added_by: s.authUser ? s.authUser.name : null }) })
+        .then(r => r.ok ? null : r.text().then(t => { throw new Error(t || 'rejected'); }))
+        .then(() => this.set({ toast: u.name + ' added as ' + u.role + ' for ' + locs
+          + '. Their own profile is held against ' + email + ' and becomes theirs when they set a password.',
+          toastKind: 'USER ADDED' }))
+        .catch(() => this.set({ toast: u.name + ' is listed here, but the profile did not save \u2014 so they would arrive with default access instead of '
+          + u.role + '. Worth adding them again before they sign in.', toastKind: 'PROFILE NOT SAVED' }));
+    } else {
+      this.set({ toast: u.name + ' is listed here only. This build has no signed-in session to write a profile with, so nothing was saved for them.', toastKind: 'NOT SAVED' });
+    }
+
     this.post('onboarding', {
       summary: 'People change \u00b7 ' + u.name + ' as ' + u.role,
       board: 'Store Onboarding',
@@ -2642,8 +2695,8 @@ class Component extends DCLogic {
       budtenderCount: s.auRole === 'Budtender' ? 1 : 0,
       submittedBy: s.authUser ? s.authUser.name : 'Unknown'
     });
-    this.setState(st => ({ extraUsers: st.extraUsers.concat([u]), auOpen: false, auName: '', auEmail: '', auLoc: '', auErr: null,
-      toast: u.name + ' added as ' + u.role + '. They cannot sign in until a password is set, and the change is on the Store Onboarding board as a people change.', toastKind: 'USER ADDED' }));
+    this.setState(st => ({ extraUsers: st.extraUsers.concat([u]), auOpen: false, auName: '', auEmail: '',
+      auLocs: [], auLocOpen: false, auErr: null }));
   }
 
   onbSetBud(i, field, v) {
@@ -3759,7 +3812,24 @@ class Component extends DCLogic {
       onAuToggle: () => this.auToggle(),
       auName: s.auName, onAuName: e => this.set({ auName: e.target.value }),
       auEmail: s.auEmail, onAuEmail: e => this.set({ auEmail: e.target.value }),
-      auLoc: s.auLoc, onAuLoc: e => this.set({ auLoc: e.target.value }),
+      auLocOpen: s.auLocOpen,
+      onAuLocOpen: () => this.auLocOpenToggle(),
+      auLocLabel: s.auLocs.length ? this.auLocText(s.auLocs) : 'Choose locations',
+      auLocCount: s.auLocs.length + ' of ' + LOCATIONS.length,
+      auLocAllLabel: s.auLocs.length === LOCATIONS.length ? 'Clear all locations' : 'Select all locations',
+      onAuLocAll: () => this.auLocAll(),
+      auLocOptions: LOCATIONS.map(l => {
+        const on = s.auLocs.indexOf(l.id) !== -1;
+        return { id: l.id, name: l.name, mark: on ? '\u2713' : '',
+          aria: (on ? 'Remove ' : 'Add ') + l.name,
+          style: 'display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:0;'
+            + 'border-bottom:1px solid rgba(23,14,11,.12);padding:9px 11px;cursor:pointer;background:'
+            + (on ? 'var(--ux-surface)' : '#fff') + ';font:' + (on ? '600' : '400') + ' 12.5px Archivo,sans-serif',
+          boxStyle: 'flex:0 0 auto;width:14px;height:14px;border:1px solid rgba(23,14,11,.45);display:flex;'
+            + 'align-items:center;justify-content:center;font:700 10px Archivo,sans-serif;'
+            + (on ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:#fff'),
+          onPick: () => this.auLocPick(l.id) };
+      }),
       auRoles: (isInternal ? ['Store owner', 'Buyer', 'Budtender', 'Account management'] : ['Store owner', 'Buyer', 'Budtender']).map(r => ({
         label: r, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.auRole === r ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),

@@ -52,3 +52,32 @@ SPF passing. **SendGrid click tracking rewrites the reset link**, which puts a
 one-time recovery token through a third-party redirector and exposes it to link
 scanners that pre-fetch URLs; turning click tracking off for this traffic is
 recommended and has not been done.
+
+## Each created user gets their own profile
+
+Adding a user writes a row to `public.portal_pending_profile`, keyed on their
+address. When that account first appears, `handle_new_portal_user()` provisions
+`portal_profile` from that row and then **deletes it**, so the record applies to
+exactly one account and can never be inherited by a second. With no pending row
+the old defaults still apply (`budtender` / `Unassigned`).
+
+Nothing is shared: sign-in builds the identity only from the account's own
+profile row. It no longer matches the address against the sample directory,
+which previously let a matching address take that sample record's role and
+locations instead of its own.
+
+Who may add whom is enforced in the database, not the interface:
+
+| Acting as | Adding | Result |
+|---|---|---|
+| Owner | buyer/budtender in its own organisation | allowed |
+| Owner | an internal account | denied |
+| Owner | anyone in another organisation | denied |
+| Budtender | anyone | denied |
+| Internal | any role, any organisation | allowed |
+| Not signed in | anyone | denied (`42501`) |
+
+Verified by executing each case under that account's own JWT claims. Note that
+RLS decides which rows; the table `GRANT` decides whether the role may ask at
+all — the first version of this table had policies but no grant, so every write
+failed on permission before a policy was consulted.
