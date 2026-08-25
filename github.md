@@ -283,3 +283,38 @@ lookup result is therefore at `{{6.body.data...}}`, not `{{6.data...}}`. The
 first attempt used the latter, which silently resolved to nothing and left the
 account link empty while everything else filled in correctly — no error, because
 `item_ids: []` is valid.
+
+## The portal shows the order number Monday assigned
+
+The order route now ends in a `gateway:WebhookRespond` module that answers with
+`{"orderNumber": "<created item id>", "portalReference": "<what the store saw>"}`.
+The intake function parses that and hands the number back, and the confirmation
+screen shows it.
+
+Until the reply arrives the screen shows the portal reference and says the order
+number is still coming, rather than presenting the reference as one. Measured
+through the portal: before the reply, "Portal reference. The order number is
+assigned when the board accepts it"; after, the heading reads `12889595924` with
+"Order number, assigned by the order board. Portal reference SO-3F39-24188."
+
+The function also now treats an order that comes back with no id as a failure.
+Make answers 200 with "Accepted" even when a route filter drops the payload, so
+a missing id means it may never have been created — reporting that is better
+than reporting success.
+
+**This costs a fourth operation per order** (webhook, lookup, create, respond).
+
+## Adding a user who already has an account does nothing
+
+`portal_pending_profile` is consumed by a trigger on **auth user creation**. If
+the address already has an account there is nothing to trigger, so the row sits
+unconsumed and the intended role and locations are never applied. Observed on a
+real attempt: a pending row for `tom@urbanxtracts.com` written 2026-08-25
+08:41:55 by Toni Alvarez, for `internal`, still queued and with no effect.
+
+Fixing it means applying the pending row to the existing profile instead of
+queueing it, which needs a guard: an owner must not be able to write a pending
+row for somebody in another organisation and thereby rewrite their profile. The
+insert policy already blocks an owner from granting `internal`, but it does not
+check the *target's* current organisation. Not implemented — it is a policy
+decision, not a mechanical fix.

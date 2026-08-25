@@ -1774,6 +1774,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="text-align:left">
 <div style="font:800 18px Archivo,sans-serif">{{ confirmId }}</div>
+<div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px;max-width:34ch;line-height:1.5">{{ confirmRef }}</div>
 <div style="font-size:11.5px;color:var(--ux-muted);margin-top:3px">{{ confirmMeta }}</div>
 </div>
 </div>
@@ -2824,7 +2825,7 @@ class Component extends DCLogic {
       toast: 'Submitted. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' });
   }
 
-  post(kind, payload) {
+  post(kind, payload, onOk) {
     const s = this.state;
     // Everything a static page carries is public, so the published portal cannot
     // hold the Make URL or the shared secret. It posts to the portal's own
@@ -2858,6 +2859,9 @@ class Component extends DCLogic {
           return;
         }
         this.setState(st => ({ outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Accepted by Make' } : o) }));
+        let reply = null;
+        try { reply = JSON.parse(t); } catch (e) {}
+        if (onOk) onOk(reply);
       })
       .catch(() => failed('Could not reach the intake', 'the intake could not be reached'));
     return 'sending';
@@ -2973,6 +2977,18 @@ class Component extends DCLogic {
       'Receiving contact: ' + (ds.contact || 'not set'),
       'Instructions: ' + (ds.instructions || 'none recorded')
     ].join('  |  '));
+    // The order number is assigned by Monday, so it is not known until the
+    // intake answers. Until then the screen shows the portal reference and says
+    // the number is still coming, rather than presenting the reference as one.
+    const onAccepted = reply => {
+      const num = reply && reply.orderNumber;
+      if (!num) return;
+      this.setState(st => ({
+        orders: st.orders.map(o => o.id === id ? { ...o, orderNo: num } : o),
+        toast: 'Order number ' + num + ' assigned. That is the number on the board, and the number to quote.',
+        toastKind: 'ORDER NUMBER'
+      }));
+    };
     this.post('order', {
       summary: id + ' \u00b7 ' + ACTING_ORG + ' \u00b7 ' + MONEY(lines.reduce((a, l) => a + l.price * l.qty, 0)),
       orderDetailText: detailText,
@@ -2991,7 +3007,7 @@ class Component extends DCLogic {
       lines: lines.map(l => { const pp = P(l.id); return { product: pp.name, sku: pp.sku, tag: pp.lots[l.lot].tag, quantity: l.qty, unit: 'each', unitPriceCents: l.price }; }),
       deliveryWindow: ds.window || '', receivingContact: ds.contact || '', receivingInstructions: ds.instructions || '',
       gatesAtSubmission: 'Licence clear at ' + loc.name + '; receivables clear; available quantity clear.'
-    });
+    }, onAccepted);
     this.setState({
       orders: [order].concat(st.orders),
       drafts: st.drafts.map(d => d.id === st.activeDraft ? { ...d, lines: [] } : d),
@@ -4026,7 +4042,16 @@ class Component extends DCLogic {
         stateStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:' + (t.state === 'To verify per screen' ? 'var(--ux-signal-text)' : 'var(--ux-accent-text)')
       })),
 
-      confirmId: s.confirmed || '',
+      confirmId: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return (o && o.orderNo) ? o.orderNo : (s.confirmed || '');
+      })(),
+      confirmRef: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return (o && o.orderNo)
+          ? 'Order number, assigned by the order board. Portal reference ' + o.id + '.'
+          : 'Portal reference. The order number is assigned when the board accepts it \u2014 quote this until then.';
+      })(),
       confirmState: (() => {
         const o = s.orders.find(x => x.id === s.confirmed);
         return o ? (o.state === 'Awaiting approval' ? 'SENT FOR APPROVAL' : 'ORDER ' + o.state.toUpperCase()) : 'ORDER SUBMITTED';
