@@ -154,7 +154,12 @@ button{font-family:inherit}
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">A KIOSK IS A DEVICE, NOT A LOGIN</div>
 <div style="font-size:13px;line-height:1.62">{{ kioskPairNote }}</div>
 </div>
-<div style="margin-top:20px;font-size:12.5px;color:var(--ux-muted);line-height:1.62;max-width:74ch">Multi-factor authentication is not designed here &mdash; it is recorded as an open assumption, not a decision. Restricted routes are not rendered rather than disabled, so a signed-in buyer has no navigation entry for receivables at all.</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:20px;margin-top:6px">
+<div style="font:700 15px Archivo,sans-serif;margin-bottom:5px">New store, or adding people?</div>
+<div style="font-size:13px;color:var(--ux-muted);line-height:1.6;margin-bottom:12px;max-width:70ch">You do not need an account to ask. Send your licences and your people, and we qualify each licence against the state record before anything can be ordered.</div>
+<button type="button" onClick="{{ goOnboard }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:11px 14px;font:600 12.5px Archivo,sans-serif;cursor:pointer">Request access</button>
+</div>
+<div style="margin-top:22px;font-size:12.5px;color:var(--ux-muted);line-height:1.62;max-width:74ch">Multi-factor authentication is not designed here &mdash; it is recorded as an open assumption, not a decision. Restricted routes are not rendered rather than disabled, so a signed-in buyer has no navigation entry for receivables at all.</div>
 </div>
 </sc-if>
 
@@ -1132,6 +1137,118 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:660px">
+<button type="button" onClick="{{ backFromOnboard }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">&larr; BACK</button>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Request access</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:70ch">For a new store, or an existing one adding and changing people. Everything here is a request: we qualify each licence against the state record ourselves, and terms are set before an account can order.</p>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 22px;max-width:70ch">Banking, remittance and signatory details are not asked for here and should not be sent. They are collected once, in the onboarding record, and never live in the portal.</p>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">What is this</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+<sc-for list="{{ onbTypes }}" as="ot" hint-placeholder-count="3">
+<button type="button" onClick="{{ ot.onPick }}" style="{{ ot.style }}">{{ ot.label }}</button>
+</sc-for>
+</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The business</div></div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Legal entity name</div>
+<input type="text" value="{{ onbEntity }}" onInput="{{ onOnbEntity }}" aria-label="Legal entity name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Trading name, if different</div>
+<input type="text" value="{{ onbDba }}" onInput="{{ onOnbDba }}" aria-label="Trading name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Locations and licence numbers</div>
+<input type="text" value="{{ onbLocs }}" onInput="{{ onOnbLocs }}" aria-label="Locations and licence numbers" placeholder="One per line: name, licence number, address" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
+<div style="font-size:11.5px;color:var(--ux-muted);margin-bottom:20px">A location with no licence number cannot proceed &mdash; the licence number is the account key we join everything on.</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The owner</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 12px">Holds approval for the organisation, sees every location, and is the only store user who sees receivables.</div></div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Name</div>
+<input type="text" value="{{ onbOwnerName }}" onInput="{{ onOnbOwnerName }}" aria-label="Owner name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
+<input type="text" value="{{ onbOwnerEmail }}" onInput="{{ onOnbOwnerEmail }}" aria-label="Owner email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Phone</div>
+<input type="text" value="{{ onbOwnerPhone }}" onInput="{{ onOnbOwnerPhone }}" aria-label="Owner phone" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The buyer</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 12px">Builds and submits orders for one location, and never sees a balance.</div></div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Name</div>
+<input type="text" value="{{ onbBuyerName }}" onInput="{{ onOnbBuyerName }}" aria-label="Buyer name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
+<input type="text" value="{{ onbBuyerEmail }}" onInput="{{ onOnbBuyerEmail }}" aria-label="Buyer email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Location they buy for</div>
+<input type="text" value="{{ onbBuyerLoc }}" onInput="{{ onOnbBuyerLoc }}" aria-label="Buyer location" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">Budtenders &mdash; {{ onbCount }}</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 14px">Education and COA lookup only. No price appears anywhere in a budtender view. Five per submission; send another for more.</div></div>
+<sc-for list="{{ onbBuds }}" as="bd" hint-placeholder-count="1">
+<div style="border:1px solid rgba(23,14,11,.2);padding:14px;margin-bottom:10px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">Budtender {{ bd.n }}</div>
+<sc-if value="{{ bd.canRemove }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ bd.onRemove }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)">Remove</button></sc-if>
+</div>
+<input type="text" value="{{ bd.name }}" onInput="{{ bd.onName }}" aria-label="Budtender name" placeholder="Name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:8px">
+<input type="text" value="{{ bd.email }}" onInput="{{ bd.onEmail }}" aria-label="Budtender email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:8px">
+<input type="text" value="{{ bd.loc }}" onInput="{{ bd.onLoc }}" aria-label="Budtender location" placeholder="Location" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif">
+</div>
+</sc-for>
+<sc-if value="{{ onbUnderCap }}" hint-placeholder-val="{{ true }}">
+<div style="margin-bottom:20px"><button type="button" onClick="{{ onAddBud }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer">Add another budtender</button></div>
+</sc-if>
+<sc-if value="{{ onbAtCap }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--ux-muted);margin-bottom:20px">Five is the cap on one submission.</div>
+</sc-if>
+<sc-if value="{{ onbHasErr }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;max-width:72ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">NOT READY TO SEND</div>
+<div style="font-size:13px;line-height:1.55">{{ onbErr }}</div>
+</div>
+</sc-if>
+<button type="button" onClick="{{ onOnbSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">Submit the request</button>
+<sc-if value="{{ onbSent }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:20px;border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:72ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SUBMITTED &middot; STAGE 01 INTAKE</div>
+<div style="font-size:13px;line-height:1.62">It is on the Store Onboarding board at stage 01. Next is qualification, which is ours: we record what the state record says about each licence and never assert validity on our own authority. A location that fails it does not become orderable, and the rest of the account still proceeds.</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLicense }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:620px">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Send a document for review</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:70ch">A lapsed licence pauses ordering at that location only. Send the renewal here and it reaches a reviewer with your account already attached.</p>
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin-bottom:24px;max-width:72ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">SENDING THIS DOES NOT LIFT THE GATE</div>
+<div style="font-size:13px;line-height:1.62">The gate reads your licence record, not this upload. A reviewer looks at the document and updates that record, and the gate moves then. Nothing you attach here can clear a block on its own &mdash; that is the point of it.</div>
+</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Document type</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+<sc-for list="{{ licTypes }}" as="lt" hint-placeholder-count="4">
+<button type="button" onClick="{{ lt.onPick }}" style="{{ lt.style }}">{{ lt.label }}</button>
+</sc-for>
+</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Which location</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+<sc-for list="{{ licLocs }}" as="ll" hint-placeholder-count="3">
+<button type="button" onClick="{{ ll.onPick }}" style="{{ ll.style }}">{{ ll.label }}</button>
+</sc-for>
+</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Expiry the renewal carries</div>
+<input type="text" value="{{ licExpiry }}" onInput="{{ onLicExpiry }}" aria-label="Expiry the renewal carries" placeholder="e.g. 31 Aug 2027" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
+<div style="font-size:11.5px;color:var(--ux-muted);margin-bottom:18px">Recorded as claimed. A reviewer confirms it against the state record before your licence record moves.</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">The document</div>
+<input type="file" onChange="{{ onLicFile }}" aria-label="Choose the document" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
+<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ licFileLabel }} &mdash; up to 2 MB, because the file travels inside the message.</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Anything the reviewer should know</div>
+<input type="text" value="{{ licNote }}" onInput="{{ onLicNote }}" aria-label="Note for the reviewer" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:20px">
+<sc-if value="{{ licHasErr }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;max-width:74ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">CANNOT SEND YET</div>
+<div style="font-size:13px;line-height:1.55">{{ licErr }}</div>
+</div>
+</sc-if>
+<button type="button" onClick="{{ onLicSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">Send for review</button>
+<sc-if value="{{ licSent }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:20px;border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:72ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SENT</div>
+<div style="font-size:13px;line-height:1.62">It is on the License Verification board as <strong>Submitted</strong>, with your account, location and licence number attached. You will see its state under Documents. Ordering at that location stays paused until the licence record is updated.</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
 <sc-if value="{{ isRecords }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Your records</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:74ch">Everything urbanXtracts holds about your organisation, in one place, without asking a rep. Orders and their lines, the lots you received with the COA version current at receipt, licenses, claims, documents, notices we have sent you, and your own audit history.</p>
@@ -1308,7 +1425,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ isDocuments }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Documents</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px;max-width:72ch">The paper between us, in one place &mdash; what you send and what we issue. The license gate has told a blocked shop to upload its renewal since the first draft of this design, and until now there was nowhere to upload it.</p>
-<div style="margin:0 0 24px"><button type="button" onClick="{{ onUpload }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Upload a document</button></div>
+<div style="margin:0 0 24px;display:flex;gap:10px;flex-wrap:wrap"><button type="button" onClick="{{ goLicense }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Send a document for review</button><button type="button" onClick="{{ goOnboard }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:11px 14px;font:600 12.5px Archivo,sans-serif;cursor:pointer">Add or change people</button></div>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.6fr 1fr 1.2fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Document</div><div>Type</div><div>Dates</div><div>State</div>
@@ -1575,8 +1692,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="margin-top:20px;font-size:11.5px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Every line names the compliance tag and packaged date it was allocated from, so a receiving clerk can check the delivery against this document rather than a product name alone. Prices exclude tax. Sample data.</div>
 <div style="margin-top:28px;border-top:2px solid rgba(23,14,11,.4);padding-top:18px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-signal-text);margin-bottom:8px">What would be reported to the team &mdash; not sent from here</div>
-<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">This is the payload a submitted order puts on the <strong>Portal Orders</strong> board in Monday, which then alerts the account&rsquo;s rep and the fulfilment owner. <strong>Nothing is sent from this page.</strong> This prototype is a static file, so it holds no credentials and cannot write to Monday &mdash; a token in a public page would be the wrong trade at any price. The live portal posts this to a relay that holds the token server-side. Every field below is a real column on that board: nothing there is derived by parsing the item name, and Canix stays the subledger of record for the order itself.</p>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Reported to the team</div>
+<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">Submitting this posted the payload below to Monday, where it created an item on the <strong>Portal Orders</strong> board and alerted the account&rsquo;s rep and the fulfilment owner. It travels through a webhook rather than an API key, which is why a page with no server can send it at all &mdash; and why the URL needs a shared secret before this carries production traffic. Every field is a real column: nothing on that board is derived by parsing the item name, and Canix stays the subledger of record for the order itself.</p>
 <div style="border-top:1px solid rgba(23,14,11,.2)">
 <sc-for list="{{ mondayRows }}" as="mr" hint-placeholder-count="13">
 <div style="display:grid;grid-template-columns:170px 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12.5px;align-items:baseline">
@@ -2087,6 +2204,12 @@ const INTEGRITY = [
 
 class Component extends DCLogic {
   state = {
+    licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
+    licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
+    onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
+    onbOwnerName: '', onbOwnerEmail: '', onbOwnerPhone: '',
+    onbBuyerName: '', onbBuyerEmail: '', onbBuyerLoc: '',
+    onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
@@ -2295,6 +2418,77 @@ class Component extends DCLogic {
   activeLines() {
     const d = this.state.drafts.find(x => x.id === this.state.activeDraft);
     return d ? d.lines : [];
+  }
+
+  MAX_UPLOAD() { return 2 * 1024 * 1024; }
+
+  licPickFile(e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (f.size > this.MAX_UPLOAD()) {
+      this.set({ licErr: f.name + ' is ' + Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB. This route carries up to 2 MB, because the bytes travel inside the webhook payload. A larger scan needs file storage in front of it \u2014 email it to your rep for now.', licFileName: '', licFileData: null, licFileSize: 0 });
+      return;
+    }
+    const r = new FileReader();
+    r.onload = () => this.set({ licFileName: f.name, licFileSize: f.size, licFileData: String(r.result).split(',').pop(), licErr: null });
+    r.onerror = () => this.set({ licErr: 'That file could not be read.', licFileName: '', licFileData: null });
+    r.readAsDataURL(f);
+  }
+
+  licSubmit() {
+    const s = this.state;
+    if (!s.licFileData) { this.set({ licErr: 'Choose the document first. There is nothing to review without it.' }); return; }
+    if (!s.licExpiry.trim()) { this.set({ licErr: 'Give the expiry the renewal carries. It is recorded as claimed, and a reviewer checks it against the state record.' }); return; }
+    const loc = LOCATIONS.find(x => x.id === s.licLoc) || {};
+    this.logAudit('Document uploaded', s.licType + ' \u00b7 ' + loc.name, 'Sent for internal review. Visible to your organisation.');
+    this.post('license', {
+      summary: s.licType + ' \u00b7 ' + loc.name + ' \u00b7 ' + s.licFileName,
+      board: 'License Verification',
+      account: ACTING_ORG, licenceNumber: loc.license, location: loc.name,
+      documentType: s.licType, expiryClaimed: s.licExpiry.trim(), note: s.licNote.trim(),
+      uploadedBy: s.authUser ? s.authUser.name + ' (' + s.authUser.role + ')' : 'Unknown',
+      reviewState: 'Submitted',
+      file: { name: s.licFileName, sizeBytes: s.licFileSize, base64: s.licFileData }
+    });
+    this.set({ licSent: true, licErr: null, licFileName: '', licFileData: null, licFileSize: 0, licExpiry: '', licNote: '',
+      toast: 'Sent for review. Nothing about your licence gate has changed yet \u2014 it reads the licence record, and that moves when a reviewer has looked at this.', toastKind: 'SENT FOR REVIEW' });
+  }
+
+  onbSetBud(i, field, v) {
+    this.setState(st => ({ onbBud: st.onbBud.map((b, j) => j === i ? { ...b, [field]: v } : b) }));
+  }
+  onbAddBud() {
+    this.setState(st => st.onbBud.length >= 5
+      ? { toast: 'Five budtenders per submission. Send another once these are set up \u2014 the cap is there so a list of thirty names does not arrive as one item.', toastKind: 'AT THE CAP' }
+      : { onbBud: st.onbBud.concat([{ name: '', email: '', loc: '' }]) });
+  }
+  onbRemoveBud(i) {
+    this.setState(st => ({ onbBud: st.onbBud.length <= 1 ? st.onbBud : st.onbBud.filter((_, j) => j !== i) }));
+  }
+
+  onbSubmit() {
+    const s = this.state;
+    const miss = [];
+    if (!s.onbEntity.trim()) miss.push('the legal entity name');
+    if (!s.onbLocs.trim()) miss.push('at least one location with its licence number');
+    if (!s.onbOwnerName.trim() || !s.onbOwnerEmail.trim()) miss.push('the owner\u2019s name and email');
+    if (miss.length) { this.set({ onbErr: 'Still needed: ' + miss.join(', ') + '. A location without a licence number cannot proceed at all \u2014 the licence number is the account key.' }); return; }
+    const buds = s.onbBud.filter(b => b.name.trim() || b.email.trim());
+    this.post('onboarding', {
+      summary: s.onbType + ' \u00b7 ' + s.onbEntity.trim(),
+      board: 'Store Onboarding',
+      submissionType: s.onbType,
+      legalEntity: s.onbEntity.trim(), dba: s.onbDba.trim(),
+      locations: s.onbLocs.trim(),
+      owner: { name: s.onbOwnerName.trim(), email: s.onbOwnerEmail.trim(), phone: s.onbOwnerPhone.trim() },
+      buyer: { name: s.onbBuyerName.trim(), email: s.onbBuyerEmail.trim(), location: s.onbBuyerLoc.trim() },
+      budtenders: buds.map(b => ({ name: b.name.trim(), email: b.email.trim(), location: b.loc.trim() })),
+      budtenderCount: buds.length,
+      stage: '01 Intake',
+      submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store')
+    });
+    this.set({ onbSent: true, onbErr: null,
+      toast: 'Submitted. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' });
   }
 
   post(kind, payload) {
@@ -2837,7 +3031,51 @@ class Component extends DCLogic {
     return {
       roleBadge: !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
       roleBadgeStyle: !s.authUser ? 'display:none' : '',
-      isSignIn: !s.authUser, isSignedIn: !!s.authUser,
+      isLicense: s.screen === 'license' && !!s.authUser,
+      isOnboard: s.screen === 'onboard',
+      goLicense: () => this.set({ screen: 'license', licSent: false, licErr: null }),
+      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null }),
+      backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin' }),
+      licTypes: ['Licence renewal', 'Insurance certificate', 'Resale or exemption', 'Other'].map(t => ({
+        label: t, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+          + (s.licType === t ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+        onPick: () => this.set({ licType: t }) })),
+      licLocs: LOCATIONS.map(l => ({
+        label: l.name + (l.expired ? ' \u00b7 expired' : ''),
+        style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+          + (s.licLoc === l.id ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+        onPick: () => this.set({ licLoc: l.id }) })),
+      licExpiry: s.licExpiry, onLicExpiry: e => this.set({ licExpiry: e.target.value }),
+      licNote: s.licNote, onLicNote: e => this.set({ licNote: e.target.value }),
+      onLicFile: e => this.licPickFile(e),
+      licFileLabel: s.licFileName ? s.licFileName + ' \u00b7 ' + Math.max(1, Math.round(s.licFileSize / 1024)) + ' KB ready' : 'No document chosen',
+      licHasErr: !!s.licErr, licErr: s.licErr || '',
+      licSent: s.licSent, onLicSubmit: () => this.licSubmit(),
+      onbTypes: ['New store', 'Existing store, people change', 'Existing store, new location'].map(t => ({
+        label: t, style: 'padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+          + (s.onbType === t ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+        onPick: () => this.set({ onbType: t }) })),
+      onbEntity: s.onbEntity, onOnbEntity: e => this.set({ onbEntity: e.target.value }),
+      onbDba: s.onbDba, onOnbDba: e => this.set({ onbDba: e.target.value }),
+      onbLocs: s.onbLocs, onOnbLocs: e => this.set({ onbLocs: e.target.value }),
+      onbOwnerName: s.onbOwnerName, onOnbOwnerName: e => this.set({ onbOwnerName: e.target.value }),
+      onbOwnerEmail: s.onbOwnerEmail, onOnbOwnerEmail: e => this.set({ onbOwnerEmail: e.target.value }),
+      onbOwnerPhone: s.onbOwnerPhone, onOnbOwnerPhone: e => this.set({ onbOwnerPhone: e.target.value }),
+      onbBuyerName: s.onbBuyerName, onOnbBuyerName: e => this.set({ onbBuyerName: e.target.value }),
+      onbBuyerEmail: s.onbBuyerEmail, onOnbBuyerEmail: e => this.set({ onbBuyerEmail: e.target.value }),
+      onbBuyerLoc: s.onbBuyerLoc, onOnbBuyerLoc: e => this.set({ onbBuyerLoc: e.target.value }),
+      onbBuds: s.onbBud.map((b, i) => ({
+        n: String(i + 1), name: b.name, email: b.email, loc: b.loc,
+        onName: e => this.onbSetBud(i, 'name', e.target.value),
+        onEmail: e => this.onbSetBud(i, 'email', e.target.value),
+        onLoc: e => this.onbSetBud(i, 'loc', e.target.value),
+        canRemove: s.onbBud.length > 1, onRemove: () => this.onbRemoveBud(i) })),
+      onbCount: s.onbBud.length + ' of 5',
+      onbAtCap: s.onbBud.length >= 5, onbUnderCap: s.onbBud.length < 5,
+      onAddBud: () => this.onbAddBud(),
+      onbHasErr: !!s.onbErr, onbErr: s.onbErr || '',
+      onbSent: s.onbSent, onOnbSubmit: () => this.onbSubmit(),
+      isSignIn: !s.authUser && s.screen !== 'onboard', isSignedIn: !!s.authUser,
       loginUser: s.loginUser, onLoginUser: e => this.set({ loginUser: e.target.value }),
       loginPass: s.loginPass, onLoginPass: e => this.set({ loginPass: e.target.value }),
       onLoginSubmit: () => this.submitLogin(),

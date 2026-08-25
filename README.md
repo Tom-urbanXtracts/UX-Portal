@@ -114,21 +114,23 @@ The portal now POSTs a full JSON payload to a Make webhook on submit:
 A webhook needs no API token, which is why a static page can post to it at all.
 CORS is not a problem — verified by probe, Make answers a cross-origin POST.
 
-**What is still missing is the Make scenario behind that webhook.** The hook
-currently answers `410 There is no scenario listening for this webhook.` Two
-things block it:
+Behind it sits Make scenario **UX Portal intake to monday** (`6043707`), active,
+with a router on `kind` and three branches that each create a monday item through
+a GraphQL mutation. Verified end to end from a browser — all three routes create
+real items:
 
-1. **No scenario slot.** The Make org is on Free: 2 scenarios, and three already
-   exist.
-2. **Operations nearly exhausted.** `UrbanXtracts Manual Creative Prompt
-   Generator` shows 831 operations across 745 executions and polls every 15
-   minutes while active. Roughly 938 of 1,000 monthly operations are consumed.
+| `kind` | Board | Item created in test |
+|---|---|---|
+| `order` | Portal Orders | `SO-24190 · Downtown Provisions (Downtown)` |
+| `license` | License Verification | `Licence renewal · Downtown Provisions (Northgate)` |
+| `onboarding` | Store Onboarding | `New store · Cedar & Pine Provisions LLC` |
 
-Pausing that polling scenario frees both the slot and the budget. Until then a
-relay would accept traffic and then stop, which is worse than not having one.
+Two things to settle before this carries real traffic. The webhook URL is public,
+so it needs a shared secret — anyone with the URL can post a fake order today.
+And Make is on Free: 1,000 operations a month, roughly two per submission, so
+about 500 submissions before it stops.
 
-Two security notes for before this carries real traffic: the webhook URL is
-public, so it needs a shared secret, and the sign-in below is not authentication.
+The sign-in is not authentication either. See below.
 
 ## The prototype, updated
 
