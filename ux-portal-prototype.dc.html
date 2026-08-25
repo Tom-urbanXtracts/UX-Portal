@@ -802,6 +802,86 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isRecall }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Recall and lot impact</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:74ch">Lineage runs forward from an inbound lot to one allocation. This runs the other way and answers the only question a recall asks: <em>who has this</em>. Internal only &mdash; and it is not the escalation path. A product-safety issue goes to the CCO immediately and is itself a recall trigger; this is what the escalation uses once the CCO has decided.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px">
+<input type="text" value="{{ recallInput }}" onInput="{{ onRecallInput }}" placeholder="Full compliance tag" style="flex:1;min-width:280px;padding:11px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 13px ui-monospace,Menlo,monospace">
+<button type="button" onClick="{{ recallLookup }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Resolve lot</button>
+</div>
+<sc-if value="{{ recallHasMsg }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:18px;max-width:74ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">{{ recallMsgKind }}</div>
+<div style="font-size:13px;line-height:1.55">{{ recallMsg }}</div>
+</div>
+</sc-if>
+
+<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.14);padding:14px 0;margin:14px 0 0">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Lot under review</div>
+<div style="font:700 16px Archivo,sans-serif;margin-bottom:4px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ recallLotName }}</span></div>
+<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted)">{{ recallTagText }}</div>
+<div style="font-size:12px;color:var(--ux-muted);margin-top:3px">{{ recallLotMeta }}</div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Delivered</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ recallDeliveredQty }}</div><div style="font-size:11.5px;color:var(--ux-muted)">Out of our hands. Notice is the only lever.</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Not yet delivered</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ recallInflightQty }}</div><div style="font-size:11.5px;color:var(--ux-muted)">Allocated or in transit &mdash; stoppable at our end.</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">In our custody</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ recallCustodyQty }}</div><div style="font-size:11.5px;color:var(--ux-muted)">Quarantine on the spot; nobody needs telling.</div></div><div style="padding:14px 18px 14px 0;flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">In open drafts</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ recallDraftQty }}</div><div style="font-size:11.5px;color:var(--ux-muted)">Blocked at submit, never silently dropped.</div></div>
+</div>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">Where it went</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.3fr 1fr .8fr .6fr .9fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Account</div><div>Location</div><div>Order</div><div>Units</div><div>State</div>
+</div>
+<sc-for list="{{ recallRows }}" as="r" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:1.3fr 1fr .8fr .6fr .9fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ r.org }}</span></div><div style="font-size:11px;color:var(--ux-muted)">{{ r.license }}</div></div>
+<div>{{ r.loc }}</div>
+<div style="font:500 12px ui-monospace,Menlo,monospace">{{ r.order }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ r.qty }}</span></div>
+<div><span style="{{ r.stateStyle }}">{{ r.state }}</span><div style="font-size:11px;color:var(--ux-muted);margin-top:4px">{{ r.when }} · signed {{ r.signed }}</div></div>
+</div>
+</sc-for>
+</div>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Still stoppable</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:74ch">A recall that only chases delivered stock misses the three places it is easiest to stop.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ recallStoppable }}" as="c" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1.2fr .4fr 1.6fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font-weight:600">{{ c.where }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ c.qty }}</span></div>
+<div style="color:var(--ux-muted)">{{ c.note }}</div>
+</div>
+</sc-for>
+</div>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Notice and acknowledgement</h2>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px">
+<span style="{{ recallNoticeStyle }}">{{ recallNoticeText }}</span>
+<button type="button" onClick="{{ onRecallIssue }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Issue the notice</button>
+</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.3fr 1fr .5fr 1fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Account</div><div>Locations</div><div>Units</div><div>Acknowledgement</div><div></div>
+</div>
+<sc-for list="{{ recallAccounts }}" as="a" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:1.3fr 1fr .5fr 1fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ a.org }}</span></div>
+<div style="color:var(--ux-muted)">{{ a.locs }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ a.qty }}</span></div>
+<div><span style="{{ a.ackStyle }}">{{ a.ackText }}</span></div>
+<div><sc-if value="{{ a.canAck }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ a.onAck }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Record acknowledgement</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+
+<div style="margin-top:24px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">THE WORDING IS NOT OURS TO WRITE</div>
+<div style="font-size:13px;line-height:1.62">The portal carries whatever wording the CCO has approved and never composes it. Acknowledgement is recorded against the account, never against a named person &mdash; the store decides who answers for it. A store sees the notice on the affected order and on the lot, and nothing else: no internal owner, no clock, no lineage, and never another account&rsquo;s row.</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isDocuments }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Documents</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px;max-width:72ch">The paper between us, in one place &mdash; what you send and what we issue. The license gate has told a blocked shop to upload its renewal since the first draft of this design, and until now there was nowhere to upload it.</p>
@@ -1305,6 +1385,19 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+const RECALL_TAG = '1A4060300019F21000003907';
+
+const RECALL_OTHER = [
+  { org: 'Marigold Street Dispensary', loc: 'Marigold Street', license: 'OCM-RETL-24-000774', qty: 24, order: 'SO-24041', when: 'Received 28 Jul 2026', signed: 'D. Okafor', state: 'Delivered' },
+  { org: 'Harborline Cannabis Co.', loc: 'Harborline', license: 'OCM-RETL-24-000904', qty: 12, order: 'SO-24066', when: 'Received 31 Jul 2026', signed: 'R. Nakamura', state: 'Delivered' },
+  { org: 'Cedar & Pine Provisions', loc: 'Cedar Street', license: 'OCM-RETL-24-000871', qty: 18, order: 'SO-24129', when: 'Shipped 14 Aug 2026', signed: '—', state: 'In transit' }
+];
+
+const RECALL_CUSTODY = [
+  { where: 'Finished goods, Facility A', qty: 46, note: 'Never shipped. Quarantine on the spot rather than notify anyone.' },
+  { where: 'Allocated, not yet picked', qty: 20, note: 'Held against an unshipped order line; the allocation releases when the lot is withdrawn.' }
+];
+
 const ONBOARDING_STAGES = ['Intake', 'Qualification', 'Commercial terms', 'Account creation', 'Access', 'Ready to order'];
 
 const INTEGRITY = [
@@ -1326,10 +1419,39 @@ class Component extends DCLogic {
     audit: SEED_AUDIT.slice(), impersonating: null, notifRead: false, compare: [],
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
-    account: null, loading: false, stale: false, confirmed: null
+    account: null, loading: false, stale: false, confirmed: null,
+    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: []
   };
 
   set(patch) { this.setState(patch); }
+
+  recallFind() {
+    const raw = (this.state.recallInput || '').trim().toUpperCase();
+    if (!raw) { this.set({ recallMsg: 'Enter a compliance tag. This view resolves one lot, never a product.', recallMsgKind: 'NOTHING ENTERED' }); return; }
+    const all = [];
+    PRODUCTS.forEach(p => p.lots.forEach((l, i) => all.push({ pid: p.id, name: p.name, idx: i, tag: l.tag, packaged: l.packaged })));
+    const exact = all.find(x => x.tag === raw);
+    if (exact) { this.set({ recallTag: exact.tag, recallMsg: null, recallInput: '' }); return; }
+    const partial = all.filter(x => x.tag.includes(raw));
+    if (partial.length > 1) {
+      this.set({ recallMsg: partial.length + ' packages contain that sequence. A recall resolves to one lot or it resolves to nothing \u2014 enter the full tag.', recallMsgKind: 'AMBIGUOUS' });
+      return;
+    }
+    if (partial.length === 1) { this.set({ recallTag: partial[0].tag, recallMsg: null, recallInput: '' }); return; }
+    this.set({ recallMsg: 'No package carries that tag.', recallMsgKind: 'NOT FOUND' });
+  }
+
+  recallIssue() {
+    if (this.state.recallIssued) return;
+    this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
+    this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  recallAck(org) {
+    this.setState(st => ({ recallAcks: st.recallAcks.includes(org) ? st.recallAcks : st.recallAcks.concat([org]) }));
+    this.logAudit('Recall notice acknowledged', org, 'Acknowledged by the account, not by a named person');
+  }
+
 
   componentDidMount() {
     this._onResize = () => this.setState({ vw: window.innerWidth });
@@ -1473,7 +1595,7 @@ class Component extends DCLogic {
 
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
@@ -1677,6 +1799,7 @@ class Component extends DCLogic {
       const notes = [];
       if (od.state === 'Awaiting approval') notes.push({ kind: 'AWAITING OWNER APPROVAL', text: 'Submitted by the buyer. Approval is a store-side action — switch to the Owner role to approve or decline it.' });
       if (od.state === 'Flagged') notes.push({ kind: 'EXCEPTION', text: 'This order carries an exception. The store sees status only: never the internal owner, the clock, or internal notes.' });
+      if (s.recallIssued && od.lines.some(l => { const pp = P(l.id); return pp && pp.lots[l.lot] && pp.lots[l.lot].tag === (s.recallTag || RECALL_TAG); })) notes.push({ kind: 'RECALL NOTICE ON A LOT ON THIS ORDER', text: 'A lot on this order has been withdrawn. The approved wording appears here \u2014 the portal carries it and never writes it. Acknowledge on behalf of your organisation; we record the account, not the person.' });
       const drift = od.lines.filter(l => P(l.id).price !== null && P(l.id).price !== l.price);
       if (drift.length) notes.push({ kind: 'PRICE ON THIS ORDER DIFFERS FROM TODAY', text: drift.length + ' line(s) were priced at the figure derived when the order was placed. Reordering refreshes them to today\u2019s derived price.' });
 
@@ -1941,6 +2064,62 @@ class Component extends DCLogic {
         onOpen: () => this.set({ toast: 'Opening ' + d.name + ' would render the stored document. File storage is out of scope for the prototype.', toastKind: 'NOT WIRED' }) })),
       onUpload: () => this.set({ toast: 'Upload picks a type first, then the file. Nothing uploaded here lifts a gate \u2014 an internal reviewer updating the licence record does that. Banking and signatory details are refused and stay in the onboarding record.', toastKind: 'NOT WIRED' }),
       isOnboarding: s.screen === 'onboarding',
+      isRecall: s.screen === 'recall',
+      ...(() => {
+        const tag = s.recallTag || RECALL_TAG;
+        let prod = null, idx = -1;
+        PRODUCTS.forEach(p => p.lots.forEach((l, i) => { if (l.tag === tag) { prod = p; idx = i; } }));
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        const rows = [];
+        s.orders.forEach(o => o.lines.forEach(l => {
+          if (prod && l.id === prod.id && l.lot === idx) {
+            const loc = LOCATIONS.find(x => x.id === o.loc) || { name: o.loc, license: '' };
+            const delivered = o.state === 'Received';
+            rows.push({ org: ACTING_ORG, loc: loc.name, license: loc.license, qty: l.qty, order: o.id,
+              when: (o.history && o.history[o.state] ? o.state + ' ' + o.history[o.state] : o.state), signed: delivered ? 'M. Reyes' : '\u2014',
+              state: delivered ? 'Delivered' : 'Not yet delivered' });
+          }
+        }));
+        RECALL_OTHER.forEach(r => rows.push({ ...r }));
+        const draftHold = [];
+        s.drafts.forEach(d => d.lines.forEach(l => {
+          if (prod && l.id === prod.id && l.lot === idx) draftHold.push({ where: 'Open draft \u2014 ' + d.name, qty: l.qty, note: 'Blocked rather than silently dropped when the lot is withdrawn.' });
+        }));
+        const stoppable = draftHold
+          .concat(rows.filter(r => r.state !== 'Delivered').map(r => ({ where: r.state === 'In transit' ? 'In transit \u2014 ' + r.order : 'Allocated, unshipped \u2014 ' + r.order, qty: r.qty, note: 'Stopped at our end, not at theirs.' })))
+          .concat(RECALL_CUSTODY.map(c => ({ where: c.where, qty: c.qty, note: c.note })));
+        const orgs = [];
+        rows.forEach(r => { if (!orgs.some(o => o.org === r.org)) orgs.push({ org: r.org, qty: 0, locs: [] }); });
+        rows.forEach(r => { const o = orgs.find(x => x.org === r.org); o.qty += r.qty; if (!o.locs.includes(r.loc)) o.locs.push(r.loc); });
+        const delivered = rows.filter(r => r.state === 'Delivered').reduce((a, r) => a + r.qty, 0);
+        const inflight = rows.filter(r => r.state !== 'Delivered').reduce((a, r) => a + r.qty, 0);
+        return {
+          recallTagText: tag,
+          recallLotName: prod ? prod.name : 'Unresolved',
+          recallLotMeta: prod ? (prod.sku + ' \u00b7 packaged ' + prod.lots[idx].packaged + ' \u00b7 ' + prod.brand) : '',
+          recallInput: s.recallInput,
+          onRecallInput: e => this.set({ recallInput: e.target.value }),
+          recallLookup: () => this.recallFind(),
+          recallHasMsg: !!s.recallMsg, recallMsg: s.recallMsg || '', recallMsgKind: s.recallMsgKind,
+          recallRows: rows.map(r => ({ ...r, stateStyle: chip + (r.state === 'Delivered' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)') })),
+          recallStoppable: stoppable,
+          recallDeliveredQty: delivered, recallInflightQty: inflight,
+          recallCustodyQty: RECALL_CUSTODY.reduce((a, c) => a + c.qty, 0),
+          recallDraftQty: draftHold.reduce((a, c) => a + c.qty, 0),
+          recallAccountCount: orgs.length,
+          recallIssued: s.recallIssued,
+          recallNoticeText: s.recallIssued ? 'Issued to ' + orgs.length + ' accounts' : 'Not issued',
+          recallNoticeStyle: chip + (s.recallIssued ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)'),
+          onRecallIssue: () => this.recallIssue(),
+          recallAccounts: orgs.map(o => ({
+            org: o.org, qty: o.qty, locs: o.locs.join(', '),
+            ackText: !s.recallIssued ? 'Notice not issued' : (s.recallAcks.includes(o.org) ? 'Acknowledged 24 Aug 2026' : 'Awaiting acknowledgement'),
+            ackStyle: chip + (s.recallAcks.includes(o.org) ? 'background:var(--ux-accent);color:#fff' : s.recallIssued ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)'),
+            canAck: s.recallIssued && !s.recallAcks.includes(o.org),
+            onAck: () => this.recallAck(o.org)
+          }))
+        };
+      })(),
       onboarding: ONBOARDING.map(o => ({ ...o,
         stageLabel: String(o.stage).padStart(2, '0') + ' \u00b7 ' + ONBOARDING_STAGES[o.stage - 1],
         stageStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'

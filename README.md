@@ -75,6 +75,12 @@ Paths worth walking because they refuse rather than proceed:
 - **Sample data is highlighted** wherever it appears — names, prices and
   quantities. Highlighting rather than red font, because clay already means
   *blocked* in the two-signal system and a second red would collide with it.
+- **Recall and lot impact** — a new internal screen: resolve a compliance tag
+  (a partial never resolves), see every account and location that received it
+  computed from the order data, what is still stoppable in transit, custody and
+  open drafts, then issue the notice and record acknowledgement per account.
+  Issuing it puts a notice on the affected store's order — the wording stays the
+  CCO's and the portal never composes it.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight
