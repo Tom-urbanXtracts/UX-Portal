@@ -87,6 +87,12 @@ Paths worth walking because they refuse rather than proceed:
   including an administrator viewing their screen. Scoped to the organisation
   for an owner and to one location for a buyer. Export writes its own audit
   entry, which then appears in the history on the same screen.
+- **Receivables** — owner only; the route is not rendered for a buyer at all.
+  Balance, past due and terms by location, invoices with age, and a plain
+  statement of what the gate reads. Every figure is a labelled placeholder
+  because the ledger connector is not attached, and the threshold behind the
+  gate is still an open blocking decision. How to pay is deliberately absent —
+  remittance details stay in the onboarding record.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

@@ -802,6 +802,62 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isReceivables }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Receivables</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 18px;max-width:76ch">Balance, terms, invoices and what the ordering gate is reading &mdash; for your organisation, by location. This screen exists for the owner only. A buyer learns that the gate fired and who to contact, and never sees a balance by any route.</p>
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin:0 0 24px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">EVERY FIGURE HERE IS PENDING</div>
+<div style="font-size:13px;line-height:1.62">The ledger connector is not attached, so no balance on this screen is read from the ledger &mdash; the figures are placeholders and are highlighted as such. The structure is real; the numbers are not, and the portal will show a pending state rather than an estimate until the connection exists.</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:28px">
+<div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Outstanding</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ arOutstanding }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">Across {{ arOpenCount }} unpaid invoices.</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Past due</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ arOverdue }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">What the gate is firing on today.</div></div><div style="padding:14px 18px 14px 0;flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Locations blocked</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ arBlockedCount }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">Blocked at order entry, not at shipping.</div></div></div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">By location</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr .7fr .7fr .8fr .6fr 1fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Location</div><div>Outstanding</div><div>Past due</div><div>Oldest</div><div>Terms</div><div>Receivables gate</div>
+</div>
+<sc-for list="{{ arRows }}" as="r" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1fr .7fr .7fr .8fr .6fr 1fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div><div style="font-weight:600">{{ r.name }}</div><div style="font:500 12px ui-monospace,Menlo,monospace;font-size:11px;color:var(--ux-muted)">{{ r.license }}</div></div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ r.outstanding }}</span></div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ r.overdue }}</span></div>
+<div style="color:var(--ux-muted)">{{ r.oldest }}</div>
+<div>{{ r.terms }}</div>
+<div><span style="{{ r.gateStyle }}">{{ r.gate }}</span><div style="font-size:11px;color:var(--ux-muted);margin-top:5px">{{ r.otherGate }}</div></div>
+</div>
+</sc-for>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Invoices</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:.8fr .9fr .8fr .8fr .5fr .7fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Invoice</div><div>Location</div><div>Issued</div><div>Due</div><div>Age</div><div>Amount</div><div>State</div>
+</div>
+<sc-for list="{{ arInvoices }}" as="i" hint-placeholder-count="7">
+<div style="display:grid;grid-template-columns:.8fr .9fr .8fr .8fr .5fr .7fr .8fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600">{{ i.id }}</div>
+<div>{{ i.loc }}</div>
+<div style="color:var(--ux-muted)">{{ i.issued }}</div>
+<div style="color:var(--ux-muted)">{{ i.due }}</div>
+<div style="color:var(--ux-muted)">{{ i.ageText }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ i.amount }}</span></div>
+<div><span style="{{ i.stateStyle }}">{{ i.state }}</span></div>
+</div>
+</sc-for>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">What the gate is reading</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">When it fires</div><div>At order entry, never at shipping. A blocked draft is kept exactly as it is &mdash; nothing is discarded and nothing is silently reduced.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">What a buyer sees</div><div>That the gate fired, and who to contact. Not the balance, not the invoice, not the age. That distinction is the whole reason this screen is owner-only.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Scope</div><div>The location, not the organisation. Riverside being blocked does not stop Downtown ordering &mdash; and this column reports the receivables gate alone. A location can be clear here and still be unable to order, because another gate is holding it.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">The threshold</div><div><strong>Undefined.</strong> Whether past due means a number of days, an amount, or both has not been decided, so today the flag is set by hand rather than computed. It is carried as a blocking item in the validation queue, owned by finance.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">The source</div><div>The ledger, once connected. Until then every figure here is a placeholder and the portal says so rather than estimating one.</div></div>
+</div>
+<div style="margin-top:26px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">HOW TO PAY IS NOT ON THIS SCREEN</div>
+<div style="font-size:13px;line-height:1.62">Banking, remittance and signatory details live in the onboarding record and are not rendered anywhere in the portal, here included. Settling an invoice goes through the contact on your account, and this screen tells you what is owed rather than how to send money.</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isRecords }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Your records</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:74ch">Everything urbanXtracts holds about your organisation, in one place, without asking a rep. Orders and their lines, the lots you received with the COA version current at receipt, licenses, claims, documents, notices we have sent you, and your own audit history.</p>
@@ -1478,6 +1534,18 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+const INVOICES = [
+  { id: 'INV-24187', loc: 'l1', issued: '18 Aug 2026', due: '17 Sep 2026', amount: 88280, state: 'Open', age: 0 },
+  { id: 'INV-24098', loc: 'l1', issued: '6 Aug 2026', due: '5 Sep 2026', amount: 88620, state: 'Open', age: 0 },
+  { id: 'INV-23855', loc: 'l1', issued: '14 Jun 2026', due: '14 Jul 2026', amount: 41300, state: 'Paid', age: 0 },
+  { id: 'INV-24020', loc: 'l2', issued: '26 Jul 2026', due: '25 Aug 2026', amount: 109180, state: 'Open', age: 0 },
+  { id: 'INV-23901', loc: 'l2', issued: '28 Jun 2026', due: '28 Jul 2026', amount: 74250, state: 'Past due', age: 27 },
+  { id: 'INV-23840', loc: 'l2', issued: '5 Jun 2026', due: '5 Jul 2026', amount: 38640, state: 'Past due', age: 50 },
+  { id: 'INV-23964', loc: 'l3', issued: '12 Jul 2026', due: '11 Aug 2026', amount: 58000, state: 'Paid', age: 0 }
+];
+
+const TERMS = { 'l1': 'Net 30', 'l2': 'Net 30', 'l3': 'Net 30' };
+
 const CLAIMS = [
   { order: 'SO-23964', loc: 'l3', line: 'Hudson Valley Kush Badder 1g', reason: 'Short \u2014 18 of 20 received', raised: '12 Jul 2026', state: 'Resolved \u00b7 credited' },
   { order: 'SO-24020', loc: 'l2', line: 'Grape Gas Infused Pre-Roll 5pk', reason: 'Damaged outer packaging on 4 units', raised: '27 Jul 2026', state: 'Open' }
@@ -1701,7 +1769,7 @@ class Component extends DCLogic {
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
     if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['receivables', 'Receivables', 'economics'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
 
@@ -2171,6 +2239,38 @@ class Component extends DCLogic {
       isOnboarding: s.screen === 'onboarding',
       isRecall: s.screen === 'recall',
       isRecords: s.screen === 'records',
+      isReceivables: s.screen === 'receivables' && role === 'owner',
+      ...(() => {
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        const open = INVOICES.filter(i => i.state !== 'Paid');
+        const byLoc = LOCATIONS.map(l => {
+          const mine = INVOICES.filter(i => i.loc === l.id);
+          const outstanding = mine.filter(i => i.state !== 'Paid').reduce((a, i) => a + i.amount, 0);
+          const overdue = mine.filter(i => i.state === 'Past due').reduce((a, i) => a + i.amount, 0);
+          const oldest = mine.filter(i => i.state === 'Past due').reduce((a, i) => Math.max(a, i.age), 0);
+          return {
+            name: l.name, license: l.license, terms: TERMS[l.id] || '\u2014',
+            outstanding: MONEY(outstanding), overdue: MONEY(overdue),
+            oldest: oldest ? oldest + ' days past due' : 'Nothing overdue',
+            gate: l.pastDue ? 'Blocked at entry' : 'Clear',
+            gateStyle: chip + (l.pastDue ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff'),
+            otherGate: l.expired ? 'Ordering is paused here anyway \u2014 the license record expired. A different gate, and clearing this balance would not lift it.' : ''
+          };
+        });
+        return {
+          arRows: byLoc,
+          arInvoices: INVOICES.map(i => ({
+            id: i.id, loc: this.locName(i.loc), issued: i.issued, due: i.due, amount: MONEY(i.amount),
+            state: i.state, ageText: i.age ? i.age + ' days' : '\u2014',
+            stateStyle: chip + (i.state === 'Past due' ? 'background:var(--ux-signal);color:#fff'
+              : i.state === 'Paid' ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
+          })),
+          arOutstanding: MONEY(open.reduce((a, i) => a + i.amount, 0)),
+          arOverdue: MONEY(INVOICES.filter(i => i.state === 'Past due').reduce((a, i) => a + i.amount, 0)),
+          arBlockedCount: String(LOCATIONS.filter(l => l.pastDue).length),
+          arOpenCount: String(open.length)
+        };
+      })(),
       ...(() => {
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
         const wholeOrg = role === 'owner' || isInternal;
