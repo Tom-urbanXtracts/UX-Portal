@@ -95,22 +95,40 @@ gone. There is a sign-in screen; role is a property of the account, and signing
 out returns to it. A signed-in buyer has no navigation entry for receivables at
 all — restricted routes are not rendered.
 
+## Monday boards
+
+| Board | What lands there |
+|---|---|
+| [Portal Orders — TEST](https://urban915991.monday.com/boards/18428025898) | One item per submitted order. Alert automation live. |
+| [License Verification — TEST](https://urban915991.monday.com/boards/18428027057) | A lapsed-licence document uploaded from the portal, for internal review. Accepting it here does **not** lift the gate — a reviewer must update the licence record on Licensed Retailers, which is what the gate reads. |
+| [Store Onboarding — TEST](https://urban915991.monday.com/boards/18428027063) | New stores and existing stores changing people: owner, buyer, up to five budtenders, locations and licence numbers. |
+
+All three are in the IT workspace for testing, and all three link `Account` to
+**Licensed Retailers** so the rep and account data mirror rather than duplicate.
+
 ## Wiring the write
 
-Not built. The portal needs to POST the order to something that holds the Monday
-token and creates the item. Three options, cheapest first:
+The portal now POSTs a full JSON payload to a Make webhook on submit:
+`https://hook.us2.make.com/rwncarli53x0tx3xwwtggo9nkphtjbcr`
 
-1. **A Make.com webhook.** Portal POSTs JSON, a Make scenario creates the item.
-   Token lives in Make. No code to host. The webhook URL is public, so a public
-   portal page can be spammed with fake orders — acceptable against a test board,
-   not against production without a shared secret.
-2. **A Supabase edge function.** Token in Supabase, the function authenticates
-   the store user before writing, which is what production needs anyway.
-3. **Monday's own form** on the board. Zero code, but it collects the order again
-   rather than carrying what the portal already knows.
+A webhook needs no API token, which is why a static page can post to it at all.
+CORS is not a problem — verified by probe, Make answers a cross-origin POST.
 
-The alert automation on the board is live either way: item created → Intake status
-set to *Needs acknowledgement* → notify the people in `Notify` and the board owner.
+**What is still missing is the Make scenario behind that webhook.** The hook
+currently answers `410 There is no scenario listening for this webhook.` Two
+things block it:
+
+1. **No scenario slot.** The Make org is on Free: 2 scenarios, and three already
+   exist.
+2. **Operations nearly exhausted.** `UrbanXtracts Manual Creative Prompt
+   Generator` shows 831 operations across 745 executions and polls every 15
+   minutes while active. Roughly 938 of 1,000 monthly operations are consumed.
+
+Pausing that polling scenario frees both the slot and the budget. Until then a
+relay would accept traffic and then stop, which is worse than not having one.
+
+Two security notes for before this carries real traffic: the webhook URL is
+public, so it needs a shared secret, and the sign-in below is not authentication.
 
 ## The prototype, updated
 

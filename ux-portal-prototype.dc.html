@@ -132,15 +132,23 @@ button{font-family:inherit}
 <div style="max-width:620px">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Sign in</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:66ch">What you can see and do follows from the account you sign in with. There is no role switch in the product &mdash; owner, buyer, budtender and internal are properties of a person&rsquo;s account, not settings in the interface.</p>
-<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 24px;max-width:66ch">These four accounts stand in for a real identity provider so the whole portal can be walked. Pick one and the interface is built from it; sign out to come back here.</p>
-<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:26px">
-<sc-for list="{{ signInUsers }}" as="u" hint-placeholder-count="4">
-<button type="button" onClick="{{ u.onPick }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:16px 18px;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">
-<div style="font:700 15px Archivo,sans-serif;margin-bottom:3px">{{ u.name }}</div>
-<div style="font-size:12px;color:var(--ux-muted);margin-bottom:7px">{{ u.email }} · {{ u.role }} · {{ u.org }}</div>
-<div style="font-size:12.5px;line-height:1.5">{{ u.derived }}</div>
-</button>
-</sc-for>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 24px;max-width:66ch">One set of credentials per person, across every store on the platform. Your username identifies your organisation as well as you, so two stores never see each other &mdash; and a new store asks for access rather than picking itself out of a list.</p>
+<div style="max-width:380px;margin-bottom:26px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Username</div>
+<input type="text" value="{{ loginUser }}" onInput="{{ onLoginUser }}" aria-label="Username" autocomplete="username" style="width:100%;padding:12px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13.5px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Password</div>
+<input type="password" value="{{ loginPass }}" onInput="{{ onLoginPass }}" aria-label="Password" autocomplete="current-password" style="width:100%;padding:12px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13.5px Archivo,sans-serif;margin-bottom:16px">
+<button type="button" onClick="{{ onLoginSubmit }}" style="width:100%;background:var(--ux-accent);color:#fff;border:0;padding:13px 15px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">Sign in</button>
+<sc-if value="{{ loginHasErr }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-top:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">SIGN IN FAILED</div>
+<div style="font-size:12.5px;line-height:1.55">{{ loginErr }}</div>
+</div>
+</sc-if>
+</div>
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch;margin-bottom:22px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">THIS IS NOT AUTHENTICATION</div>
+<div style="font-size:13px;line-height:1.62">This page checks what you type against a list held in its own source. Anyone can read that list, so it proves nothing and protects nothing &mdash; it is a shell of the right shape, so the screens behind it can be reviewed. Real sign-in needs an identity provider holding password hashes server-side, with per-store accounts, reset, lockout and a decision on multi-factor. That is not built.<br><br><strong>To walk the portal:</strong> <code>dana@downtownprovisions.com</code> (owner), <code>marcus@downtownprovisions.com</code> (buyer), <code>priya@downtownprovisions.com</code> (budtender) with password <code>portal-demo</code>; or <code>toni@urbanxtracts.com</code> with <code>internal-demo</code> for the internal side.</div>
 </div>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">A KIOSK IS A DEVICE, NOT A LOGIN</div>
@@ -1946,6 +1954,18 @@ const STORE_VISIBLE_AUDIT = [
   'COA amended', 'Amended COA acknowledged', 'COA published'
 ];
 
+// The Make webhook is the single door from the portal into Monday. A webhook needs
+// no API token, which is why a static page can post to it at all — but the URL is
+// public, so a shared secret belongs here before this carries production traffic.
+const MAKE_WEBHOOK = 'https://hook.us2.make.com/rwncarli53x0tx3xwwtggo9nkphtjbcr';
+
+const DEMO_LOGINS = [
+  { username: 'dana@downtownprovisions.com', password: 'portal-demo', person: 'Dana Whitfield' },
+  { username: 'marcus@downtownprovisions.com', password: 'portal-demo', person: 'Marcus Reyes' },
+  { username: 'priya@downtownprovisions.com', password: 'portal-demo', person: 'Priya Anand' },
+  { username: 'toni@urbanxtracts.com', password: 'internal-demo', person: 'Toni Alvarez' }
+];
+
 const REP_BOOK = [
   { name: 'Riverside Collective', license: 'OCM-RETL-24-000518', signal: 'STOPPED',
     interval: 'Usually every 28 days', since: 'Last ordered 62 days ago',
@@ -2067,7 +2087,7 @@ const INTEGRITY = [
 
 class Component extends DCLogic {
   state = {
-    catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
+    outbox: [], loginUser: '', loginPass: '', loginErr: null, catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
     order: null, toast: null, toastKind: 'DONE', kioskInput: '', kioskMsg: null, kioskMsgKind: 'NOT FOUND',
@@ -2105,6 +2125,19 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account', 'urbanXtracts quality');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  submitLogin() {
+    const s = this.state;
+    const u = (s.loginUser || '').trim().toLowerCase();
+    const hit = DEMO_LOGINS.find(l => l.username === u && l.password === s.loginPass);
+    if (!hit) {
+      this.set({ loginErr: 'That username and password do not match an account. Nothing here tells you which half was wrong \u2014 saying so would help somebody guessing.', loginPass: '' });
+      return;
+    }
+    const person = USERS.find(x => x.name === hit.person);
+    this.set({ loginErr: null, loginUser: '', loginPass: '' });
+    this.signIn(person);
   }
 
   signIn(u) {
@@ -2264,6 +2297,18 @@ class Component extends DCLogic {
     return d ? d.lines : [];
   }
 
+  post(kind, payload) {
+    const body = { kind, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload };
+    this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Sending', detail: payload.summary || kind }].concat(st.outbox) }));
+    fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(r => this.setState(st => ({
+        outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: r.ok ? 'Accepted by Make' : 'Rejected: HTTP ' + r.status } : o)
+      })))
+      .catch(() => this.setState(st => ({
+        outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Could not reach Make' } : o)
+      })));
+  }
+
   cleanQty(v, fallback) {
     const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10);
     if (!isFinite(n) || n < 1) return fallback === undefined ? 1 : fallback;
@@ -2355,6 +2400,25 @@ class Component extends DCLogic {
       history: isBuyer ? { 'Awaiting approval': TODAY } : { 'Placed': TODAY },
       lines: lines.map(l => ({ ...l })), delivery: st.delivery, submittedBy: isBuyer ? 'Buyer' : 'Owner'
     };
+    const loc = LOCATIONS.find(x => x.id === st.loc) || {};
+    const ds = st.deliverySettings[st.loc] || {};
+    this.post('order', {
+      summary: id + ' \u00b7 ' + ACTING_ORG + ' \u00b7 ' + MONEY(lines.reduce((a, l) => a + l.price * l.qty, 0)),
+      board: 'Portal Orders',
+      orderNumber: id,
+      account: ACTING_ORG,
+      licenceNumber: loc.license,
+      location: loc.name,
+      submittedBy: st.authUser ? st.authUser.name + ' (' + st.authUser.role + ')' : 'Unknown',
+      submittedVia: 'Store portal',
+      approvalState: isBuyer ? 'Awaiting store approval' : 'Placed by store',
+      approvalHeldBy: (st.delegateTo || 'the store owner') + (st.delegateTo ? ' until ' + st.delegateExpiry : ' by default'),
+      orderValue: lines.reduce((a, l) => a + l.price * l.qty, 0) / 100,
+      lineCount: lines.length,
+      lines: lines.map(l => { const pp = P(l.id); return { product: pp.name, sku: pp.sku, tag: pp.lots[l.lot].tag, quantity: l.qty, unit: 'each', unitPriceCents: l.price }; }),
+      deliveryWindow: ds.window || '', receivingContact: ds.contact || '', receivingInstructions: ds.instructions || '',
+      gatesAtSubmission: 'Licence clear at ' + loc.name + '; receivables clear; available quantity clear.'
+    });
     this.setState({
       orders: [order].concat(st.orders),
       drafts: st.drafts.map(d => d.id === st.activeDraft ? { ...d, lines: [] } : d),
@@ -2774,6 +2838,13 @@ class Component extends DCLogic {
       roleBadge: !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
       roleBadgeStyle: !s.authUser ? 'display:none' : '',
       isSignIn: !s.authUser, isSignedIn: !!s.authUser,
+      loginUser: s.loginUser, onLoginUser: e => this.set({ loginUser: e.target.value }),
+      loginPass: s.loginPass, onLoginPass: e => this.set({ loginPass: e.target.value }),
+      onLoginSubmit: () => this.submitLogin(),
+      loginHasErr: !!s.loginErr, loginErr: s.loginErr || '',
+      outbox: s.outbox.map(o => ({ ...o, style: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
+        + (o.state === 'Accepted by Make' ? 'var(--ux-accent);color:#fff' : o.state === 'Sending' ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-signal);color:#fff') })),
+      hasOutbox: s.outbox.length > 0,
       signInUsers: USERS.filter(u => u.role !== 'Kiosk device' && (u.org === ACTING_ORG || u.org === 'urbanXtracts')).map(u => ({
         name: u.name, email: u.email, org: u.org, role: u.role,
         derived: u.role === 'Store owner' ? 'Sees its own organisation across every location, holds approval, sees receivables'
