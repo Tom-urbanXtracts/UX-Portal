@@ -146,6 +146,13 @@ button{font-family:inherit}
 <div style="font-size:12.5px;line-height:1.55">{{ rstErr }}</div>
 </div>
 </sc-if>
+<sc-if value="{{ rstHasNote }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-top:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">CHECK SKIPPED</div>
+<div style="font-size:12.5px;line-height:1.55">{{ rstNote }}</div>
+</div>
+</sc-if>
+<div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:14px">Passwords are checked against known breach data before they are accepted. Only the first five characters of a hash of what you typed are sent to do it &mdash; the password itself never leaves this page.</div>
 </div>
 </div>
 </sc-if>
@@ -2308,6 +2315,37 @@ function readRecovery() {
 }
 const RECOVERY = readRecovery();
 
+// Leaked-password rejection without Supabase Pro, against the same source its
+// paid feature uses. The browser hashes the password and sends only the first
+// five characters of the SHA-1. The password and its full hash never leave this
+// page, and the endpoint cannot tell which of the returned suffixes was being
+// asked about \u2014 that k-anonymity property is what the range API exists for.
+function sha1Hex(text) {
+  return crypto.subtle.digest('SHA-1', new TextEncoder().encode(text)).then(buf =>
+    Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase());
+}
+
+// Resolves to the number of times the password appears in breach data, 0 if it
+// does not, or -1 if the check could not run at all. It fails open on purpose:
+// a network problem at HaveIBeenPwned should not lock somebody out of their own
+// password reset, and the screen says when the check was skipped.
+function pwnedCount(password) {
+  if (typeof crypto === 'undefined' || !crypto.subtle) return Promise.resolve(-1);
+  return sha1Hex(password).then(hash => {
+    const prefix = hash.slice(0, 5), suffix = hash.slice(5);
+    // Add-Padding keeps the response size from revealing how many real matches
+    // there were. Padded entries come back with a count of zero.
+    return fetch('https://api.pwnedpasswords.com/range/' + prefix, { headers: { 'Add-Padding': 'true' } })
+      .then(r => { if (!r.ok) throw new Error('range lookup failed'); return r.text(); })
+      .then(body => {
+        const line = body.split('\n').find(l => l.slice(0, 35).toUpperCase() === suffix);
+        if (!line) return 0;
+        const n = parseInt((line.split(':')[1] || '0').trim(), 10);
+        return isNaN(n) ? 0 : n;
+      });
+  }).catch(() => -1);
+}
+
 class Component extends DCLogic {
   state = {
     deactivated: [], apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
@@ -2320,6 +2358,7 @@ class Component extends DCLogic {
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginBusy: false, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
+    rstStage: null, rstNote: null,
     fpBusy: false, fpMsg: null,
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
@@ -2382,18 +2421,27 @@ class Component extends DCLogic {
     const s = this.state;
     if ((s.rstPass || '').length < 8) { this.set({ rstErr: 'Eight characters or more.' }); return; }
     if (s.rstPass !== s.rstPass2) { this.set({ rstErr: 'Those two do not match.' }); return; }
-    this.set({ rstBusy: true, rstErr: null });
-    fetch(SUPABASE_URL + '/auth/v1/user', { method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + s.rstToken },
-      body: JSON.stringify({ password: s.rstPass }) })
+    this.set({ rstBusy: true, rstErr: null, rstStage: 'Checking against breach data\u2026', rstNote: null });
+    const token = s.rstToken, pass = s.rstPass;
+    pwnedCount(pass)
+      .then(n => {
+        if (n > 0) throw new Error('That password appears in known breach data '
+          + n.toLocaleString() + (n === 1 ? ' time' : ' times')
+          + '. Credential stuffing tries exactly these, so it is refused. Pick one you have not used anywhere else.');
+        this.set({ rstStage: 'Saving\u2026', rstNote: n === -1
+          ? 'The breach check could not reach HaveIBeenPwned, so it was skipped for this password.' : null });
+        return fetch(SUPABASE_URL + '/auth/v1/user', { method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ password: pass }) });
+      })
       .then(r => r.json().then(b => ({ ok: r.ok, b: b || {} })))
       .then(({ ok, b }) => {
         if (!ok) throw new Error(b.msg || b.message || b.error_description || 'rejected');
         // Drop the token out of the address bar so it cannot be replayed from history.
         if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
-        this.set({ rstBusy: false, rstDone: true, rstPass: '', rstPass2: '', rstToken: null });
+        this.set({ rstBusy: false, rstStage: null, rstDone: true, rstPass: '', rstPass2: '', rstToken: null });
       })
-      .catch(e => this.set({ rstBusy: false, rstErr: (e && e.message) || 'That did not work.' }));
+      .catch(e => this.set({ rstBusy: false, rstStage: null, rstErr: (e && e.message) || 'That did not work.' }));
   }
 
   leaveReset() {
@@ -3338,7 +3386,8 @@ class Component extends DCLogic {
       fpHasMsg: !!s.fpMsg, fpMsg: s.fpMsg || '',
       rstPass: s.rstPass, onRstPass: e => this.set({ rstPass: e.target.value }),
       rstPass2: s.rstPass2, onRstPass2: e => this.set({ rstPass2: e.target.value }),
-      rstBtnLabel: s.rstBusy ? 'Saving\u2026' : 'Set this password',
+      rstBtnLabel: s.rstBusy ? (s.rstStage || 'Saving\u2026') : 'Set this password',
+      rstHasNote: !!s.rstNote, rstNote: s.rstNote || '',
       rstHasErr: !!s.rstErr, rstErr: s.rstErr || '',
       rstDone: s.rstDone, rstLive: !!s.rstToken && !s.rstDone, rstDead: !s.rstToken && !s.rstDone,
       onRstSubmit: () => this.submitReset(), onLeaveReset: () => this.leaveReset(),

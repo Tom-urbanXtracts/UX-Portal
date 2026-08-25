@@ -81,3 +81,39 @@ Verified by executing each case under that account's own JWT claims. Note that
 RLS decides which rows; the table `GRANT` decides whether the role may ask at
 all — the first version of this table had policies but no grant, so every write
 failed on permission before a policy was consulted.
+
+## Leaked-password rejection without Supabase Pro
+
+Supabase's own leaked-password protection is **Pro plan and above**, and this
+org is on free, so the toggle is not available. The portal does the same check
+itself, against the same source, on its password-set screen.
+
+The browser SHA-1s the candidate password and sends **only the first five
+characters** of that hash to `api.pwnedpasswords.com/range/`. The password and
+its full hash never leave the page, and the endpoint cannot tell which of the
+returned suffixes was being asked about. `Add-Padding: true` is sent so the
+response size does not reveal how many real matches there were — measured at
+roughly 2,000 suffixes returned per lookup regardless of the answer.
+
+Measured behaviour:
+
+| Password | Result |
+|---|---|
+| `password` | 52,372,427 hits — refused |
+| `Summer2024!` | 3,614 hits — refused |
+| random 40-char | 0 hits — accepted, proceeds to Supabase |
+| endpoint unreachable | skipped, saved anyway, screen says so |
+
+**It fails open by design.** A network problem at HaveIBeenPwned should not lock
+somebody out of their own password reset, so the save proceeds and the screen
+carries a CHECK SKIPPED note. If you would rather it fail closed, that is a
+one-line change.
+
+**Coverage is the portal's own reset screen only.** A password set through the
+Supabase dashboard, or any future flow that calls GoTrue directly, bypasses this
+— the check lives in the page, not in Auth. Only the Pro feature enforces it
+inside Auth itself.
+
+Two settings that are available on free and are not set from here: minimum
+password length, and required character classes, both under
+Authentication → Sign In / Providers → Email.
