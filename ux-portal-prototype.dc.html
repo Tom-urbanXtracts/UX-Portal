@@ -128,6 +128,17 @@ button{font-family:inherit}
 
 <main style="{{ contentStyle }}" id="main-content">
 
+<sc-if value="{{ pwNoticeShown }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin:0 0 24px;max-width:74ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">TIME TO CHANGE YOUR PASSWORD</div>
+<div style="font-size:13px;line-height:1.62;margin-bottom:11px">{{ pwNotice }}<br><br>You are signed in and nothing is blocked. The rules changed after this password was set, so it still works &mdash; changing it now avoids being caught out later.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button type="button" onClick="{{ onPwFix }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12px Archivo,sans-serif;cursor:pointer;min-height:40px">Email me a reset link</button>
+<button type="button" onClick="{{ onPwDismiss }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer;min-height:40px">Not now</button>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:620px">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Set a new password</h1>
@@ -2349,7 +2360,7 @@ function pwnedCount(password) {
 class Component extends DCLogic {
   state = {
     deactivated: [], apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
-    token: null, auLocs: [], auLocOpen: false,
+    token: null, auLocs: [], auLocOpen: false, pwNotice: null,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
     onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
@@ -2459,13 +2470,13 @@ class Component extends DCLogic {
     fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method: 'POST', headers: H, body: JSON.stringify({ email, password }) })
       .then(r => r.json())
       .then(tok => {
-        // Raising the password rules does not invalidate an existing weaker
-        // password. Supabase accepts the credential and answers weak_password
-        // instead, which is a different thing from a wrong password and has to
-        // read differently \u2014 otherwise somebody with the right password is told
-        // it is wrong and has no idea what to do next.
-        if (tok.error_code === 'weak_password' || tok.weak_password) throw new Error('weak');
-        if (!tok.access_token) throw new Error('rejected');
+        // A weak password is not a failed sign-in. Raising the rules does not
+        // invalidate an existing password: Supabase issues the session and
+        // reports the weakness alongside it, so a successful response carries
+        // access_token and weak_password together. Treating the presence of
+        // weak_password as a failure locks out every account whose password
+        // predates a rules change. Only a response with no token is a failure.
+        if (!tok.access_token) throw new Error(tok.error_code === 'weak_password' ? 'weak' : 'rejected');
         // The role is read from the account, not sent by the browser. Row-level
         // security means a request for somebody else's row simply returns nothing.
         // Row-level security hands an owner their whole organisation and an
@@ -2481,15 +2492,16 @@ class Component extends DCLogic {
             const me = (rows || []).find(r => r.id === uid) || null;
             if (!me) throw new Error('no profile');
             if (me.active === false) throw new Error('inactive');
-            return { me: me, token: tok.access_token };
+            return { me: me, token: tok.access_token,
+              weak: tok.weak_password ? (tok.weak_password.message || 'It no longer meets this portal\u2019s password rules.') : null };
           });
       })
-      .then(({ me, token }) => {
+      .then(({ me, token, weak }) => {
         const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
         // Built only from this account's own profile row. Matching the address
         // against the sample directory would hand somebody that record's role
         // and locations instead of their own.
-        this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '', token: token });
+        this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '', token: token, pwNotice: weak });
         this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
       })
       .catch(e => this.set({ loginBusy: false, loginPass: '',
@@ -2691,6 +2703,18 @@ class Component extends DCLogic {
     });
     this.set({ licSent: true, licErr: null, licFileName: '', licFileData: null, licFileSize: 0, licExpiry: '', licNote: '',
       toast: 'Sent for review. Nothing about your licence gate has changed yet \u2014 it reads the licence record, and that moves when a reviewer has looked at this.', toastKind: 'SENT FOR REVIEW' });
+  }
+
+  fixPassword() {
+    const email = this.state.authUser && this.state.authUser.email;
+    if (!email) return;
+    this.set({ pwNotice: null });
+    const back = location.origin + location.pathname;
+    fetch(SUPABASE_URL + '/auth/v1/recover?redirect_to=' + encodeURIComponent(back),
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY }, body: JSON.stringify({ email }) })
+      .then(r => { if (!r.ok) throw new Error('rejected');
+        this.set({ toast: 'A reset link is on its way to ' + email + '. It is good for one use and expires.', toastKind: 'LINK SENT' }); })
+      .catch(() => this.set({ toast: 'That request never reached Supabase, so no mail was sent.', toastKind: 'NOT SENT' }));
   }
 
   auToggle() { this.setState(st => ({ auOpen: !st.auOpen, auErr: null, auLocOpen: false })); }
@@ -3382,6 +3406,8 @@ class Component extends DCLogic {
       onAddBud: () => this.onbAddBud(),
       onbHasErr: !!s.onbErr, onbErr: s.onbErr || '',
       onbSent: s.onbSent, onOnbSubmit: () => this.onbSubmit(),
+      pwNoticeShown: !!s.pwNotice && !!s.authUser, pwNotice: s.pwNotice || '',
+      onPwFix: () => this.fixPassword(), onPwDismiss: () => this.set({ pwNotice: null }),
       isSignIn: !s.authUser && s.screen !== 'onboard' && s.screen !== 'reset',
       isReset: !s.authUser && s.screen === 'reset', isSignedIn: !!s.authUser,
       loginUser: s.loginUser, onLoginUser: e => this.set({ loginUser: e.target.value }),

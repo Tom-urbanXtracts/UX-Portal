@@ -148,12 +148,34 @@ curl -s -X GET "https://api.supabase.com/v1/projects/cbhsavfbtcpdyxcvguay/config
 Then PATCH the same endpoint with those two keys. Copy the character-set string
 from the GET rather than typing one — a wrong value is rejected.
 
-### Sign-in had to learn about weak_password first
+### What is actually enforced
 
-Raising these rules does **not** invalidate an existing weaker password.
-Supabase accepts the credential and answers `weak_password` instead. The portal
-previously treated that as a failed sign-in and said "that username and password
-do not match an account", which is untrue and leaves the person with nothing to
-act on. It now says the password is right but no longer meets the rules, and
-points at the reset link on the same screen. A genuinely wrong password still
-gets the old, deliberately unhelpful message.
+Read off the API rather than the dashboard, since the config is not readable
+from here: **minimum length 8**, and **all four character classes required**
+(lowercase, uppercase, digits, symbols). Confirmed at the boundary — a
+seven-character password is refused for length, `Passwo1!` is accepted.
+
+### weak_password is not a failed sign-in
+
+Raising the rules does **not** invalidate an existing weaker password, and
+Supabase does **not** refuse the sign-in. It issues the session and reports the
+weakness alongside it: a successful token response carries `access_token` and
+`weak_password` **together**. On a compliant password the key is still present
+but `null`.
+
+This was got wrong once in both directions. First the portal treated
+`weak_password` as a failed sign-in and said "that username and password do not
+match an account" — untrue, and no way forward. The correction then keyed on the
+presence of `weak_password`, which would have **locked out every account whose
+password predates the rules change**, because the field is present on success.
+
+What it does now: signs the account in, and shows a non-blocking banner carrying
+Supabase's own message with a one-click reset. Verified against a live account,
+all four cases:
+
+| Sign-in | Result |
+|---|---|
+| Correct, no longer compliant | signed in, banner shown with Supabase's wording |
+| Correct and compliant | signed in, no banner (`weak_password` is `null`) |
+| Wrong password | refused, message does not say which half was wrong |
+| Deactivated / no profile | unchanged |
