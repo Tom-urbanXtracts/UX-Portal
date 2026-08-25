@@ -124,6 +124,11 @@ Paths worth walking because they refuse rather than proceed:
   instructions, editable and saved with an audit entry. Paired with a plain
   list of what cannot be changed here and where it lives instead — the licence
   number, expiry, adding a location, banking, and payment terms.
+- **Field view** — internal, built at phone width and kept there on a desktop.
+  Assigned accounts only, each with order interval, what they dropped, the gate
+  holding them, and visit notes a rep can add from a car park. Closes with what
+  a rep cannot do: set a price, approve an order, lift a gate, or see an account
+  off their book.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

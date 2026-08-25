@@ -1297,6 +1297,60 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<sc-if value="{{ isField }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:414px">
+<h1 style="font:800 26px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Field view</h1>
+<p style="font-size:13.5px;color:var(--ux-muted);margin:0 0 6px;line-height:1.6">Toni Alvarez &middot; three accounts assigned. Built at phone width and kept at phone width on a desktop, because a rep reads this in a car park and not at a desk.</p>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 22px;line-height:1.6">Assigned accounts only. Two other accounts exist on this book and are not rendered here, because a rep sees the accounts they carry.</p>
+<sc-for list="{{ repBook }}" as="r" hint-placeholder-count="3">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding:16px 0 20px">
+<div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:5px">
+<div style="font:800 17px/1.15 Archivo,sans-serif;letter-spacing:-.01em"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ r.name }}</span></div>
+<span style="{{ r.signalStyle }}">{{ r.signal }}</span>
+</div>
+<div style="font:500 11.5px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:12px">{{ r.license }}</div>
+<div style="font-size:13.5px;line-height:1.6;margin-bottom:4px">{{ r.since }}</div>
+<div style="font-size:12.5px;color:var(--ux-muted);margin-bottom:10px">{{ r.interval }}</div>
+<div style="font-size:13px;line-height:1.55;margin-bottom:10px">{{ r.dropped }}</div>
+<sc-if value="{{ r.gateShown }}" hint-placeholder-val="{{ true }}">
+<div style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 13px;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:3px">GATE</div>
+<div style="font-size:12.5px;line-height:1.5">{{ r.gate }}</div>
+</div>
+</sc-if>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Visit notes &mdash; internal only</div>
+<sc-if value="{{ r.hasNotes }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ r.notes }}" as="n" hint-placeholder-count="1">
+<div style="font-size:12.5px;line-height:1.55;padding:7px 0;border-bottom:1px solid rgba(23,14,11,.12)">{{ n.text }}</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{ r.noNotes }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--ux-muted);padding:7px 0 0">No visit recorded yet.</div>
+</sc-if>
+<sc-if value="{{ r.noteOpen }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:12px">
+<input type="text" value="{{ repNoteText }}" onInput="{{ onRepNoteText }}" placeholder="What was said" style="width:100%;padding:13px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13.5px Archivo,sans-serif;margin-bottom:10px">
+<button type="button" onClick="{{ onRepNoteSave }}" style="display:block;width:100%;background:var(--ux-accent);color:#fff;border:0;padding:14px 15px;font:700 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px;margin-bottom:8px">Save the note</button>
+<button type="button" onClick="{{ onRepNoteCancel }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:14px 15px;font:600 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">Cancel</button>
+</div>
+</sc-if>
+<sc-if value="{{ r.noteClosed }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+<button type="button" onClick="{{ r.onNote }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:14px 15px;font:600 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">Log a visit</button>
+<button type="button" onClick="{{ r.onCall }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:14px 15px;font:600 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">Call {{ r.contact }}</button>
+<button type="button" onClick="{{ r.onOrder }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:14px 15px;font:600 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">Order on behalf</button>
+<button type="button" onClick="{{ r.onPrice }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:14px 15px;font:600 13.5px Archivo,sans-serif;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">Request a price</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-top:6px;padding-top:16px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">What a rep cannot do from here</div>
+<div style="font-size:12.5px;line-height:1.65">Set a price &mdash; a rep requests and sales operations decides, which is why the button says request. Approve an order &mdash; that is the store&rsquo;s, and whether a rep may ever hold it is an open question with Legal. Lift a gate &mdash; the licence and receivables blocks above do not move for a rep. See an account not on this book. And a visit note is internal for good: a store reading its own account never sees one.</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:72ch">Six stages from intake to ready-to-order. Internal only &mdash; a store does not onboard itself, because two stages are ours to decide and one is a compliance qualification. Every account short of stage six shows exactly which stage it is sitting in.</p>
@@ -1821,6 +1875,39 @@ const ONBOARDING = [
   { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
 ];
 
+// Section 10: an audit event is store-visible only when the store is a party to it.
+// Anything not named here is internal, and a visit note is the clearest example.
+const STORE_VISIBLE_AUDIT = [
+  'Data export', 'Receiving claim raised', 'Delivery settings changed',
+  'Approval authority delegated', 'Approval authority withdrawn',
+  'User revoked', 'User invited', 'Permission changed',
+  'API credential revoked', 'API credential issued',
+  'Recall notice issued', 'Recall notice acknowledged',
+  'COA amended', 'Amended COA acknowledged', 'COA published'
+];
+
+const REP_BOOK = [
+  { name: 'Riverside Collective', license: 'OCM-RETL-24-000518', signal: 'STOPPED',
+    interval: 'Usually every 28 days', since: 'Last ordered 62 days ago',
+    dropped: 'Dropped Blueberry Chews 10ct and Watermelon Zkittlez 0.5g Cart since June',
+    gate: 'Past-due balance blocks submission at order entry',
+    contact: 'Sam Okafor \u00b7 206-555-0188',
+    seed: ['12 Aug \u2014 spoke to Sam, waiting on their bookkeeper to clear the balance.'] },
+  { name: 'Northgate Cannabis', license: 'OCM-RETL-24-000633', signal: 'BLOCKED',
+    interval: 'Usually every 31 days', since: 'Last ordered 24 days ago',
+    dropped: 'No lines dropped \u2014 the licence is the problem, not the range',
+    gate: 'Licence record expired 12 Aug. Ordering paused at this location only',
+    contact: 'Priya Anand \u00b7 206-555-0119',
+    seed: ['19 Aug \u2014 renewal is with the state, they expect it back this week.'] },
+  { name: 'Eastside Green', license: 'OCM-RETL-24-000844', signal: 'NEW',
+    interval: 'Six orders so far, roughly every 48 days',
+    since: 'Last ordered 19 days ago',
+    dropped: 'Buying flower only \u2014 has never tried a cartridge or an edible',
+    gate: 'No gate firing',
+    contact: 'Dana Whitfield \u00b7 206-555-0170',
+    seed: [] }
+];
+
 const DELIVERY = {
   l1: { window: 'Weekdays, 9am to 12pm', instructions: 'Rear loading door on Pike Alley. Buzz unit 2. Do not leave a delivery with front-of-house staff.', contact: 'Marcus Reyes \u00b7 206-555-0142' },
   l2: { window: 'Tuesdays and Thursdays, any time', instructions: 'Street-level delivery only, no loading bay. Ask for the duty manager on arrival.', contact: 'Sam Okafor \u00b7 206-555-0188' },
@@ -1929,6 +2016,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
+    repNotes: {}, repNoteFor: null, repNoteText: '',
     delivery: JSON.parse(JSON.stringify(DELIVERY)), acctEditing: null, acctWindow: '', acctInstr: '', acctContact: '',
     coaAmended: false, coaAcks: [], pubInput: '', pubResult: null, pubMsg: null, pubMsgKind: 'NO RESULT', pubAttempts: 0, claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
@@ -1953,8 +2041,22 @@ class Component extends DCLogic {
 
   recallIssue() {
     if (this.state.recallIssued) return;
-    this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
+    this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account', 'urbanXtracts quality');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  repNoteOpen(name) { this.set({ repNoteFor: name, repNoteText: '' }); }
+  repNoteCancel() { this.set({ repNoteFor: null, repNoteText: '' }); }
+  repNoteSave() {
+    const s = this.state;
+    if (!s.repNoteText.trim()) { this.set({ toast: 'A visit note needs words. It is the only record of what was said.', toastKind: 'NOTHING ENTERED' }); return; }
+    const name = s.repNoteFor;
+    this.logAudit('Visit note added', name, 'Recorded by the account rep. Internal only \u2014 a store never sees a visit note, and this event is not in the store-visible set.', 'urbanXtracts account management');
+    this.setState(st => ({
+      repNotes: { ...st.repNotes, [name]: (st.repNotes[name] || []).concat([TODAY + ' \u2014 ' + st.repNoteText.trim()]) },
+      repNoteFor: null, repNoteText: '',
+      toast: 'Visit note saved against ' + name + '. Internal only \u2014 it never appears in the store\u2019s view of their own account.', toastKind: 'DONE'
+    }));
   }
 
   acctEdit(id) {
@@ -2000,7 +2102,7 @@ class Component extends DCLogic {
   amendCoa() {
     if (this.state.coaAmended) return;
     const tag = this.state.recallTag || RECALL_TAG;
-    this.logAudit('COA amended', 'Tag ' + tag, 'Version 2 published. Version 1 stays resolvable. Accounts that received this lot are notified.');
+    this.logAudit('COA amended', 'Tag ' + tag, 'Version 2 published. Version 1 stays resolvable. Accounts that received this lot are notified.', 'urbanXtracts quality');
     this.set({ coaAmended: true, toast: 'Version 2 is now the current COA for this lot. Version 1 stays resolvable, the accounts that received the lot are notified, and the notice carries the wording the CCO has approved \u2014 the portal never writes it and never interprets a result.', toastKind: 'NOT WIRED' });
   }
 
@@ -2202,7 +2304,7 @@ class Component extends DCLogic {
 
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Field view', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
@@ -2737,6 +2839,24 @@ class Component extends DCLogic {
         + (d.state === 'Accepted' ? 'var(--ux-accent);color:#fff' : d.state === 'Rejected' ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
         onOpen: () => this.set({ toast: 'Opening ' + d.name + ' would render the stored document. File storage is out of scope for the prototype.', toastKind: 'NOT WIRED' }) })),
       onUpload: () => this.set({ toast: 'Upload picks a type first, then the file. Nothing uploaded here lifts a gate \u2014 an internal reviewer updating the licence record does that. Banking and signatory details are refused and stay in the onboarding record.', toastKind: 'NOT WIRED' }),
+      isField: s.screen === 'field' && isInternal,
+      repBook: REP_BOOK.map(a => {
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        const notes = (s.repNotes[a.name] || []).slice().reverse().concat(a.seed);
+        return { ...a,
+          signalStyle: chip + (a.signal === 'NEW' ? 'background:var(--ux-surface);color:var(--ux-muted-strong)' : 'background:var(--ux-signal);color:#fff'),
+          gateShown: a.gate !== 'No gate firing',
+          notes: notes.map(n => ({ text: n })), hasNotes: notes.length > 0, noNotes: notes.length === 0,
+          noteOpen: s.repNoteFor === a.name, noteClosed: s.repNoteFor !== a.name,
+          onNote: () => this.repNoteOpen(a.name),
+          onPrice: () => this.set({ toast: 'A price request goes to sales operations with the account and the SKU. A rep never sets a price \u2014 that is why this is a request and not a field.', toastKind: 'NOT WIRED' }),
+          onOrder: () => this.set({ toast: 'Ordering on behalf opens the store\u2019s own draft with price read-only. Approval stays with the store: whether a rep may hold it is still an open decision.', toastKind: 'NOT WIRED' }),
+          onCall: () => this.set({ toast: 'Would dial ' + a.contact + '. Telephony is out of scope for the prototype.', toastKind: 'NOT WIRED' })
+        };
+      }),
+      repNoteText: s.repNoteText, onRepNoteText: e => this.set({ repNoteText: e.target.value }),
+      onRepNoteSave: () => this.repNoteSave(),
+      onRepNoteCancel: () => this.repNoteCancel(),
       isOnboarding: s.screen === 'onboarding',
       isRecall: s.screen === 'recall',
       isRecords: s.screen === 'records',
@@ -2870,7 +2990,7 @@ class Component extends DCLogic {
                stateStyle: chip + (s.recallAcks.includes(ACTING_ORG) ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-signal);color:#fff') }]
           : [];
         recallNotice.forEach(n => notices.push(n));
-        const live = s.audit.filter(a => a.actor === 'You' || /Recall|acknowledg/i.test(a.action))
+        const live = s.audit.filter(a => STORE_VISIBLE_AUDIT.some(k => a.action.indexOf(k) === 0))
           .map(a => ({ ...a, actor: a.actor === 'You' ? 'Your organisation' : a.actor }));
         const storeAudit = live.concat(STORE_AUDIT);
         return {
