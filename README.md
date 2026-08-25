@@ -109,6 +109,11 @@ Paths worth walking because they refuse rather than proceed:
   your own words, optionally attach a photo. It lands on the order, in Your
   records, and in the audit trail. The store sees state only; the same claim
   viewed internally carries the owner and the clock.
+- **Amended COA** — publish version 2 from Release and quality: it reuses the
+  same reverse query as the recall view to find who holds the lot, notifies
+  them unmutably, marks the COA `AMENDED` while version 1 stays resolvable,
+  records acknowledgement per account, and appears in the store's notices and
+  audit history. The notice never states what changed or what it means.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

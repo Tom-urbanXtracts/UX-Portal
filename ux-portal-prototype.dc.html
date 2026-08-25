@@ -354,7 +354,7 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Lab result</div>{{ lotTest }}</div>
 <div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Packaged</div>{{ lotPackaged }}</div>
-<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Version</div><span style="color:var(--ux-muted)">{{ coaVersionText }}</span></div>
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Version</div><sc-if value="{{ coaAmendedHere }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff;margin-right:8px">AMENDED</span></sc-if><span style="color:var(--ux-muted)">{{ coaVersionText }}</span></div>
 <div style="padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Test date</div><span style="color:var(--ux-muted)">From the document — not held as a field</span></div>
 </div>
 <div style="margin-top:16px;font-size:11.5px;line-height:1.55;color:var(--ux-muted)">The public page for this code shows lab result, batch and dates only. Publication is bound to the release event, and retention needs sign-off before anything is published.</div>
@@ -709,6 +709,42 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
+
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">COA versions and amendment</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 16px;max-width:78ch">Publishing a new version does not overwrite the old one &mdash; both stay resolvable, and the accounts that received the lot are told. The portal carries the wording compliance has approved and never composes it, and it never states what a result means.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.14);padding:14px 0;margin-bottom:16px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Lot</div>
+<div style="font:700 15px Archivo,sans-serif;margin-bottom:4px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ coaLotName }}</span></div>
+<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:8px">{{ coaTag }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<span style="{{ coaVersionStyle }}">{{ coaVersionNow }} current</span>
+<span style="font-size:12px;color:var(--ux-muted)">{{ coaHolderCount }} accounts received this lot</span>
+</div>
+</div>
+<sc-if value="{{ coaNotAmended }}" hint-placeholder-val="{{ true }}">
+<div style="margin-bottom:8px"><button type="button" onClick="{{ onAmendCoa }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Publish an amended COA</button></div>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 8px;max-width:78ch">Publishing version 2 notifies every account holding the lot, marks the lot on their product page, and writes the amendment to the audit trail. It is one of two notices a store user cannot switch off.</p>
+</sc-if>
+<sc-if value="{{ coaAmended }}" hint-placeholder-val="{{ false }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Notified accounts</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.2fr 1.2fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Account</div><div>Acknowledgement</div><div></div>
+</div>
+<sc-for list="{{ coaHolders }}" as="h" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1.2fr 1.2fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ h.org }}</span></div>
+<div><span style="{{ h.ackStyle }}">{{ h.ackText }}</span></div>
+<div><sc-if value="{{ h.canAck }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ h.onAck }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Record acknowledgement</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:18px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">VERSION 1 IS NOT GONE</div>
+<div style="font-size:13px;line-height:1.62">A store that received the lot under version 1 can still resolve version 1, because that is what they held at the time and what their own records say they received. Overwriting it would make their history wrong. What changed between versions, and what it means, is not for this portal to state.</div>
+</div>
+</sc-if>
+
 <div style="margin-top:18px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Counts are measured from the live subledger on 2026-08-24 and are the real figures, not samples. A retailer never sees this screen, and a failed or quarantined lot has no external presence at all &mdash; not a disabled card, not an out-of-stock label.</div>
 </div>
 </sc-if>
@@ -1786,7 +1822,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
-    claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
+    coaAmended: false, coaAcks: [], claims: CLAIMS.slice(), claimFor: null, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false, claimSeq: 3
   };
 
   set(patch) { this.setState(patch); }
@@ -1811,6 +1847,18 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  amendCoa() {
+    if (this.state.coaAmended) return;
+    const tag = this.state.recallTag || RECALL_TAG;
+    this.logAudit('COA amended', 'Tag ' + tag, 'Version 2 published. Version 1 stays resolvable. Accounts that received this lot are notified.');
+    this.set({ coaAmended: true, toast: 'Version 2 is now the current COA for this lot. Version 1 stays resolvable, the accounts that received the lot are notified, and the notice carries the wording the CCO has approved \u2014 the portal never writes it and never interprets a result.', toastKind: 'NOT WIRED' });
+  }
+
+  coaAck(org) {
+    this.setState(st => ({ coaAcks: st.coaAcks.includes(org) ? st.coaAcks : st.coaAcks.concat([org]) }));
+    this.logAudit('Amended COA acknowledged', org, 'Acknowledged by the account, not by a named person');
   }
 
   openClaim(id) { this.set({ claimFor: id, claimLine: 0, claimKind: 'Short', claimQty: 1, claimReason: '', claimPhoto: false }); }
@@ -2293,6 +2341,12 @@ class Component extends DCLogic {
     });
 
     const notifications = [
+      ...(s.coaAmended ? [{ kind: 'AMENDED COA \u00b7 CANNOT BE MUTED', title: 'A COA has been amended on a lot you received',
+        body: 'Version 2 is now current for tag \u2026' + (s.recallTag || RECALL_TAG).slice(-8) + '. Version 1 stays resolvable. The notice carries the wording urbanXtracts compliance has approved; the portal does not interpret a result.',
+        when: TODAY, onOpen: () => this.set({ product: 'p1', lot: 1, screen: 'product' }) }] : []),
+      ...(s.recallIssued ? [{ kind: 'RECALL NOTICE \u00b7 CANNOT BE MUTED', title: 'A lot you received has been withdrawn',
+        body: 'Tag \u2026' + (s.recallTag || RECALL_TAG).slice(-8) + '. The approved wording appears on the affected order, where you can acknowledge on behalf of your organisation.',
+        when: TODAY, onOpen: () => this.set({ screen: 'records' }) }] : []),
       { kind: 'ORDER STATE', title: 'SO-24098 is on its way', body: 'Shipped 6 Aug to Downtown. Four lines, two lots.', when: '6 Aug 2026', onOpen: () => this.set({ order: 'SO-24098', screen: 'order' }) },
       { kind: 'LICENSE', title: 'Northgate license expires in 14 days', body: 'Ordering pauses at that location when it lapses. Other locations are unaffected.', when: '12 Aug 2026', onOpen: () => this.set({ loc: 'l3', screen: 'cart' }) },
       { kind: 'RECEIVABLES', title: 'Riverside balance is past due', body: 'Submission is blocked at order entry until it clears. The balance is shown to the owner only.', when: '18 Aug 2026', onOpen: () => this.set({ loc: 'l2', screen: 'cart' }) }
@@ -2402,6 +2456,33 @@ class Component extends DCLogic {
       isDash: s.screen === 'dash', isCatalog: s.screen === 'catalog', isProduct: s.screen === 'product',
       isCoa: s.screen === 'coa', isCart: s.screen === 'cart', isOrders: s.screen === 'orders',
       isKiosk: s.screen === 'kiosk', isEconomics: s.screen === 'economics', isQa: s.screen === 'qa',
+      ...(() => {
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        const tag = s.recallTag || RECALL_TAG;
+        let prod = null, idx = -1;
+        PRODUCTS.forEach(p => p.lots.forEach((l, i) => { if (l.tag === tag) { prod = p; idx = i; } }));
+        const holders = [];
+        s.orders.forEach(o => o.lines.forEach(l => {
+          if (prod && l.id === prod.id && l.lot === idx && o.state === 'Received' && !holders.includes(ACTING_ORG)) holders.push(ACTING_ORG);
+        }));
+        RECALL_OTHER.filter(r => r.state === 'Delivered').forEach(r => { if (!holders.includes(r.org)) holders.push(r.org); });
+        return {
+          coaTag: tag,
+          coaLotName: prod ? prod.name : '\u2014',
+          coaVersionNow: s.coaAmended ? 'Version 2' : 'Version 1',
+          coaVersionStyle: chip + (s.coaAmended ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff'),
+          coaAmended: s.coaAmended, coaNotAmended: !s.coaAmended,
+          coaHolderCount: String(holders.length),
+          onAmendCoa: () => this.amendCoa(),
+          coaHolders: holders.map(org => ({
+            org,
+            ackText: s.coaAcks.includes(org) ? 'Acknowledged 24 Aug 2026' : 'Notified, awaiting acknowledgement',
+            ackStyle: chip + (s.coaAcks.includes(org) ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)'),
+            canAck: !s.coaAcks.includes(org),
+            onAck: () => this.coaAck(org)
+          }))
+        };
+      })(),
       isAccounts: s.screen === 'accounts', isValidation: s.screen === 'validation',
 
       dashTitle: isInternal ? 'Internal dashboard' : role === 'owner' ? 'Store overview' : 'Your ordering',
@@ -2451,7 +2532,10 @@ class Component extends DCLogic {
       lotBatch: 'Not recorded for this package — the compliance tag is the lot identity',
       lotTest: 'Passed', lotRelease: 'Released — available and lab-passed',
       coaNote: 'Current published version. Amendments notify accounts that bought this lot.',
-      coaVersionText: 'Version resolution comes from the operating record — pending connector confirmation',
+      coaVersionText: (s.coaAmended && lot.tag === (s.recallTag || RECALL_TAG))
+        ? 'Version 2 — amended 24 Aug 2026. Version 1 stays resolvable and is what you received.'
+        : 'Version resolution comes from the operating record — pending connector confirmation',
+      coaAmendedHere: s.coaAmended && lot.tag === (s.recallTag || RECALL_TAG),
       openCoa: () => this.set({ screen: 'coa' }),
       backToCatalog: () => this.set({ screen: 'catalog' }),
       backToProduct: () => this.set({ screen: 'product' }),
@@ -2609,11 +2693,16 @@ class Component extends DCLogic {
           stateStyle: chip + (l.expired ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff')
         }));
         const claims = s.claims.filter(c => locIds.includes(c.loc)).map(c => ({ ...c, locName: this.locName(c.loc), stateStyle: chip + (c.state === 'Open' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)') }));
-        const notices = s.recallIssued
+        const notices = [];
+        if (s.coaAmended) notices.push({ kind: 'Amended COA', subject: 'Tag ' + (s.recallTag || RECALL_TAG), when: '24 Aug 2026',
+          state: s.coaAcks.includes(ACTING_ORG) ? 'Acknowledged by your organisation' : 'Awaiting your acknowledgement',
+          stateStyle: chip + (s.coaAcks.includes(ACTING_ORG) ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-signal);color:#fff') });
+        const recallNotice = s.recallIssued
           ? [{ kind: 'Recall or withdrawal', subject: 'Tag ' + (s.recallTag || RECALL_TAG), when: '24 Aug 2026',
                state: s.recallAcks.includes(ACTING_ORG) ? 'Acknowledged by your organisation' : 'Awaiting your acknowledgement',
                stateStyle: chip + (s.recallAcks.includes(ACTING_ORG) ? 'background:var(--ux-accent);color:#fff' : 'background:var(--ux-signal);color:#fff') }]
           : [];
+        recallNotice.forEach(n => notices.push(n));
         const live = s.audit.filter(a => a.actor === 'You' || /Recall|acknowledg/i.test(a.action))
           .map(a => ({ ...a, actor: a.actor === 'You' ? 'Your organisation' : a.actor }));
         const storeAudit = live.concat(STORE_AUDIT);
