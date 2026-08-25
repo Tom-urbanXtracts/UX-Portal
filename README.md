@@ -135,6 +135,11 @@ Paths worth walking because they refuse rather than proceed:
   against adds, scanned against typed, store-placed against rep-placed. States
   what is never counted (nothing ties a kiosk lookup to a consumer) and what one
   session cannot tell you.
+- **Screen-reader pass** — `lang="en"`, `nav` and `main` landmarks with a skip
+  link, `aria-pressed` on the role and category controls so selected state is not
+  carried by colour alone, `aria-current` on the active nav item, decorative
+  icons hidden, and named quantity steppers. Refusal toasts already carried
+  `role="status"`. Contrast is the half still untested.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight

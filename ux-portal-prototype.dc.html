@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,6 +56,7 @@ button{font-family:inherit}
 
 <template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#170e0b"></rect><g fill="none" stroke="#faf7f3" stroke-width="26" stroke-linecap="square"><path d="M120 120v-4a0 0 0 0 0 0 0"></path><path d="M132 118v18a68 68 0 0 0 136 0v-18"></path><path d="M132 282v-18a68 68 0 0 1 136 0v18"></path></g></svg></template>
 
+<a href="#main-content" style="position:absolute;left:-9999px;top:0;background:var(--ux-ink);color:var(--ux-ground);padding:10px 14px;font:700 12px Archivo,sans-serif;z-index:99" style-focus="left:0">Skip to the main content</a>
 <div style="min-height:100vh;display:flex;flex-direction:column">
 
 <div style="background:var(--ux-ink);color:var(--ux-ground);padding:8px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em">
@@ -77,7 +78,7 @@ button{font-family:inherit}
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted)">Sign in as</span>
 <div style="display:flex;gap:0;border:1px solid rgba(23,14,11,.3)">
 <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
-<button type="button" onClick="{{ r.onPick }}" style="{{ r.style }}" style-hover="background:var(--ux-accent-tint)">{{ r.label }}</button>
+<button type="button" onClick="{{ r.onPick }}" aria-pressed="{{ r.pressed }}" style="{{ r.style }}" style-hover="background:var(--ux-accent-tint)">{{ r.label }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
@@ -118,14 +119,14 @@ button{font-family:inherit}
 
 <div style="{{ shellStyle }}">
 
-<div style="{{ sidebarStyle }}">
+<nav style="{{ sidebarStyle }}" aria-label="Portal sections">
 <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
-<button type="button" onClick="{{ n.onPick }}" style="{{ n.style }}" style-hover="background:var(--ux-surface)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.75"><sc-for list="{{ n.icon }}" as="d" hint-placeholder-count="2"><path d="{{ d }}"></path></sc-for></svg><span style="flex:1">{{ n.label }}</span><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></button>
+<button type="button" onClick="{{ n.onPick }}" aria-current="{{ n.current }}" style="{{ n.style }}" style-hover="background:var(--ux-surface)"><svg aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.75"><sc-for list="{{ n.icon }}" as="d" hint-placeholder-count="2"><path d="{{ d }}"></path></sc-for></svg><span style="flex:1">{{ n.label }}</span><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></button>
 </sc-for>
 <div style="{{ navNoteStyle }}">{{ navNote }}</div>
-</div>
+</nav>
 
-<div style="{{ contentStyle }}">
+<main style="{{ contentStyle }}" id="main-content">
 
 <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
 <div>
@@ -187,7 +188,7 @@ button{font-family:inherit}
 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:16px;border-bottom:2px solid rgba(23,14,11,.4)">
 <input type="text" value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search product, SKU, strain or full tag" style="flex:1;min-width:220px;border:1px solid rgba(23,14,11,.35);background:#fff;padding:10px 12px;font:14px Archivo,sans-serif;border-radius:0">
 <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5">
-<button type="button" onClick="{{ c.onPick }}" style="{{ c.style }}" style-hover="border-color:var(--ux-accent)">{{ c.label }}</button>
+<button type="button" onClick="{{ c.onPick }}" aria-pressed="{{ c.pressed }}" style="{{ c.style }}" style-hover="border-color:var(--ux-accent)">{{ c.label }}</button>
 </sc-for>
 <button type="button" onClick="{{ toggleFavFilter }}" style="{{ favFilterStyle }}" style-hover="border-color:var(--ux-accent)">{{ favFilterLabel }}</button>
 <sc-for list="{{ viewToggle }}" as="v" hint-placeholder-count="2">
@@ -292,9 +293,9 @@ button{font-family:inherit}
 </div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px;align-items:center">
-<button type="button" onClick="{{ decQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
+<button type="button" onClick="{{ decQty }}" aria-label="Decrease the quantity to add" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
 <div style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ qty }}</span></div>
-<button type="button" onClick="{{ incQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
+<button type="button" onClick="{{ incQty }}" aria-label="Increase the quantity to add" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 <button type="button" onClick="{{ addSelected }}" style="{{ addBtnStyle }}" style-hover="background:var(--ux-accent-press)">{{ addBtnLabel }}</button>
 </div>
 </div>
@@ -413,9 +414,9 @@ button{font-family:inherit}
 <div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ line.brand }} · {{ line.sku }}</div></div>
 <div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ line.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ line.packaged }}</div></div>
 <div style="display:flex;gap:6px;align-items:center">
-<button type="button" onClick="{{ line.onDec }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
+<button type="button" onClick="{{ line.onDec }}" aria-label="Decrease this line by one" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
 <span style="min-width:26px;text-align:center;font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.qty }}</span></span>
-<button type="button" onClick="{{ line.onInc }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
+<button type="button" onClick="{{ line.onInc }}" aria-label="Increase this line by one" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 </div>
 <div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.lineTotal }}</span></div>
 <div><button type="button" onClick="{{ line.onRemove }}" style="background:transparent;border:1px solid rgba(23,14,11,.25);padding:6px 9px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="border-color:var(--ux-accent);color:var(--ux-accent-text)">Remove</button></div>
@@ -576,9 +577,9 @@ button{font-family:inherit}
 
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">How many units</div>
 <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px">
-<button type="button" onClick="{{ onClaimQtyDown }}" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">&minus;</button>
+<button type="button" onClick="{{ onClaimQtyDown }}" aria-label="Decrease the claimed quantity" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">&minus;</button>
 <span style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif">{{ claimQty }}</span>
-<button type="button" onClick="{{ onClaimQtyUp }}" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">+</button>
+<button type="button" onClick="{{ onClaimQtyUp }}" aria-label="Increase the claimed quantity" style="width:34px;height:34px;border:1px solid rgba(23,14,11,.3);background:transparent;font:700 15px Archivo,sans-serif;cursor:pointer">+</button>
 <span style="font-size:12px;color:var(--ux-muted)">Capped at the quantity on the line.</span>
 </div>
 
@@ -1671,7 +1672,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
-</div>
+</main>
 </div>
 </div>
 </x-dc>
@@ -2380,6 +2381,7 @@ class Component extends DCLogic {
       const n = badges[id] || 0;
       return {
         label, icon: ICON[icon] || ICON.dash, style: navBtn(s.screen === id || (id === 'orders' && s.screen === 'order')),
+        current: (s.screen === id || (id === 'orders' && s.screen === 'order')) ? 'page' : 'false',
         badge: n > 0 ? String(n) : '',
         badgeStyle: n > 0 ? 'background:var(--ux-ink);color:var(--ux-ground);font:700 10px ui-monospace,monospace;padding:1px 6px' : 'display:none',
         onPick: () => this.set({ screen: id })
@@ -2390,6 +2392,7 @@ class Component extends DCLogic {
       label,
       style: 'border:0;padding:8px 12px;font:' + (role === id ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer;background:' +
         (role === id ? 'var(--ux-ink)' : 'transparent') + ';color:' + (role === id ? 'var(--ux-ground)' : 'var(--ux-ink)'),
+      pressed: role === id ? 'true' : 'false',
       onPick: () => this.set({ role: id, screen: id === 'budtender' ? 'kiosk' : 'dash', order: null, toast: null })
     }));
 
@@ -2791,6 +2794,7 @@ class Component extends DCLogic {
         label: c,
         style: 'background:' + (s.cat === c ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.cat === c ? 'var(--ux-ground)' : 'var(--ux-ink)') +
           ';border:1px solid ' + (s.cat === c ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.cat === c ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+        pressed: s.cat === c ? 'true' : 'false',
         onPick: () => { if (c !== 'All' && s.cat !== c) this.bump(m => ({ filters: m.filters + 1 })); this.set({ cat: c }); }
       })),
       catalogItems, resultCount: catalogItems.length + ' products', noResults: catalogItems.length === 0,
