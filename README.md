@@ -113,7 +113,40 @@ A store account cannot read another organisation whatever it asks for. Wrong
 passwords return `Invalid login credentials` and the reason is never narrowed to
 which half was wrong.
 
-Still open: multi-factor, and how reset and lockout behave.
+Still open: multi-factor, and how lockout behaves.
+
+### Password reset
+
+Built and tested. The sign-in screen has **Email me a reset link**, which posts
+to `/auth/v1/recover` with `redirect_to` set to the page's own URL, so the link
+returns to whichever copy of the portal asked for it. Arriving back with a
+recovery token in the URL fragment puts the portal on a **Set a new password**
+screen; saving calls `PUT /auth/v1/user` with the recovery token as bearer, then
+clears the token out of the address bar so it cannot be replayed from history.
+A spent or expired link gets its own screen carrying Supabase's own reason,
+rather than an empty form.
+
+The reply to a reset request is identical whether or not the address has an
+account, so the page cannot be used to enumerate who is registered.
+
+**Two project settings are required and are not in this repository** — they live
+in Supabase Auth → URL Configuration, and until they are set the emailed link
+lands on whatever **Site URL** says rather than on the portal:
+
+| Setting | Value |
+|---|---|
+| Site URL | `https://tom-urbanxtracts.github.io/UX-Portal/dist/portal.html` |
+| Redirect URLs | `https://tom-urbanxtracts.github.io/UX-Portal/**` plus any local origin used for development |
+
+Supabase answers `200` to a reset request whether or not `redirect_to` is
+allow-listed — it falls back to Site URL silently instead of failing — so a
+successful request is not evidence the link will land in the right place.
+
+Custom SMTP is live (SendGrid, sender `tom@urbanxtracts.com`, DKIM and SPF
+passing). **SendGrid click tracking rewrites the reset link**, which puts a
+one-time recovery token through a third-party redirector and exposes it to link
+scanners that pre-fetch; turning click tracking off for this traffic is
+recommended and is not done here.
 
 **Role comes from the login.** The owner/buyer/budtender/internal switcher is
 gone. There is a sign-in screen; role is a property of the account, and signing
