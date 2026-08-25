@@ -148,7 +148,7 @@ button{font-family:inherit}
 </div>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch;margin-bottom:22px">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">THIS IS NOT AUTHENTICATION</div>
-<div style="font-size:13px;line-height:1.62">This page checks what you type against a list held in its own source. Anyone can read that list, so it proves nothing and protects nothing &mdash; it is a shell of the right shape, so the screens behind it can be reviewed. Real sign-in needs an identity provider holding password hashes server-side, with per-store accounts, reset, lockout and a decision on multi-factor. That is not built.<br><br><strong>To walk the portal:</strong> <code>dana@downtownprovisions.com</code> (owner), <code>marcus@downtownprovisions.com</code> (buyer), <code>priya@downtownprovisions.com</code> (budtender) with password <code>portal-demo</code>; or <code>toni@urbanxtracts.com</code> with <code>internal-demo</code> for the internal side.</div>
+<div style="font-size:13px;line-height:1.62">This page checks what you type against a list held in its own source. Anyone can read that list, so it proves nothing and protects nothing &mdash; it is a shell of the right shape, so the screens behind it can be reviewed. Real sign-in needs an identity provider holding password hashes server-side, with per-store accounts, reset, lockout and a decision on multi-factor. That is not built.<br><br>Credentials are issued to you directly and are not printed on this page &mdash; a page that lists its own logins has none.</div>
 </div>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">A KIOSK IS A DEVICE, NOT A LOGIN</div>
@@ -474,7 +474,6 @@ button{font-family:inherit}
 <button type="button" onClick="{{ d.onPick }}" style="{{ d.style }}" style-hover="border-color:var(--ux-accent)">{{ d.label }}</button>
 </sc-for>
 </div>
-<div style="font-size:11.5px;color:var(--ux-muted);margin-top:8px">Lead times are not confirmed readable per item, so requested dates are indicative.</div>
 </div>
 </div>
 <div style="width:300px;flex:none;border:1px solid rgba(23,14,11,.2);padding:20px 22px;background:#fff">
@@ -850,7 +849,36 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ adminTitle }}</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px;max-width:70ch">{{ adminSub }}</p>
-<div style="margin:0 0 24px"><button type="button" onClick="{{ onInvite }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Invite a user</button></div>
+<sc-if value="{{ auClosed }}" hint-placeholder-val="{{ true }}">
+<div style="margin:0 0 24px"><button type="button" onClick="{{ onAuToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add a user</button></div>
+</sc-if>
+<sc-if value="{{ auOpen }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.3);padding:20px;margin:0 0 26px;max-width:460px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:12px">Add a user</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Name</div>
+<input type="text" value="{{ auName }}" onInput="{{ onAuName }}" aria-label="New user name" style="width:100%;max-width:380px;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:12px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
+<input type="text" value="{{ auEmail }}" onInput="{{ onAuEmail }}" aria-label="New user email" style="width:100%;max-width:380px;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:12px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Locations</div>
+<input type="text" value="{{ auLoc }}" onInput="{{ onAuLoc }}" aria-label="New user locations" style="width:100%;max-width:380px;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Role</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+<sc-for list="{{ auRoles }}" as="ar" hint-placeholder-count="3">
+<button type="button" onClick="{{ ar.onPick }}" style="{{ ar.style }}">{{ ar.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ auHasErr }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">NOT ENOUGH TO ADD THEM</div>
+<div style="font-size:12.5px;line-height:1.55">{{ auErr }}</div>
+</div>
+</sc-if>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button type="button" onClick="{{ onAuSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add the user</button>
+<button type="button" onClick="{{ onAuToggle }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer">Cancel</button>
+</div>
+</div>
+</sc-if>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>User</div><div>Organisation</div><div>Role</div><div>Scope</div><div>Actions</div>
@@ -1156,22 +1184,21 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <input type="text" value="{{ onbDba }}" onInput="{{ onOnbDba }}" aria-label="Trading name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Locations and licence numbers</div>
 <input type="text" value="{{ onbLocs }}" onInput="{{ onOnbLocs }}" aria-label="Locations and licence numbers" placeholder="One per line: name, licence number, address" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
-<div style="font-size:11.5px;color:var(--ux-muted);margin-bottom:20px">A location with no licence number cannot proceed &mdash; the licence number is the account key we join everything on.</div>
-<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The owner</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 12px">Holds approval for the organisation, sees every location, and is the only store user who sees receivables.</div></div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The owner</div></div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Name</div>
 <input type="text" value="{{ onbOwnerName }}" onInput="{{ onOnbOwnerName }}" aria-label="Owner name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
 <input type="text" value="{{ onbOwnerEmail }}" onInput="{{ onOnbOwnerEmail }}" aria-label="Owner email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Phone</div>
 <input type="text" value="{{ onbOwnerPhone }}" onInput="{{ onOnbOwnerPhone }}" aria-label="Owner phone" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
-<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The buyer</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 12px">Builds and submits orders for one location, and never sees a balance.</div></div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">The buyer</div></div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Name</div>
 <input type="text" value="{{ onbBuyerName }}" onInput="{{ onOnbBuyerName }}" aria-label="Buyer name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
 <input type="text" value="{{ onbBuyerEmail }}" onInput="{{ onOnbBuyerEmail }}" aria-label="Buyer email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Location they buy for</div>
 <input type="text" value="{{ onbBuyerLoc }}" onInput="{{ onOnbBuyerLoc }}" aria-label="Buyer location" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
-<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">Budtenders &mdash; {{ onbCount }}</div><div style="font-size:12px;color:var(--ux-muted);margin:4px 0 14px">Education and COA lookup only. No price appears anywhere in a budtender view. Five per submission; send another for more.</div></div>
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">Budtenders &mdash; {{ onbCount }}</div></div>
 <sc-for list="{{ onbBuds }}" as="bd" hint-placeholder-count="1">
 <div style="border:1px solid rgba(23,14,11,.2);padding:14px;margin-bottom:10px">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1227,10 +1254,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Expiry the renewal carries</div>
 <input type="text" value="{{ licExpiry }}" onInput="{{ onLicExpiry }}" aria-label="Expiry the renewal carries" placeholder="e.g. 31 Aug 2027" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
-<div style="font-size:11.5px;color:var(--ux-muted);margin-bottom:18px">Recorded as claimed. A reviewer confirms it against the state record before your licence record moves.</div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">The document</div>
 <input type="file" onChange="{{ onLicFile }}" aria-label="Choose the document" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
-<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ licFileLabel }} &mdash; up to 2 MB, because the file travels inside the message.</div>
+<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ licFileLabel }}</div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Anything the reviewer should know</div>
 <input type="text" value="{{ licNote }}" onInput="{{ onLicNote }}" aria-label="Note for the reviewer" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:20px">
 <sc-if value="{{ licHasErr }}" hint-placeholder-val="{{ false }}">
@@ -2071,12 +2097,20 @@ const STORE_VISIBLE_AUDIT = [
   'COA amended', 'Amended COA acknowledged', 'COA published'
 ];
 
-// The Make webhook is the single door from the portal into Monday. A webhook needs
-// no API token, which is why a static page can post to it at all — but the URL is
-// public, so a shared secret belongs here before this carries production traffic.
-const MAKE_WEBHOOK = 'https://hook.us2.make.com/rwncarli53x0tx3xwwtggo9nkphtjbcr';
+// The intake endpoint and its key are supplied at deploy time and are deliberately
+// absent from any public build. Anything a browser can read, a visitor can read, so
+// a key committed here would not be a key. Set both on a host that can hold a
+// secret; until then submissions are recorded and not sent.
+const PORTAL_CONFIG = (typeof window !== 'undefined' && window.UX_PORTAL_CONFIG) || {};
+const MAKE_WEBHOOK = PORTAL_CONFIG.intakeUrl || '';
+const INTAKE_KEY = PORTAL_CONFIG.intakeKey || '';
 
-const DEMO_LOGINS = [
+// Review accounts. They are no longer printed on the sign-in screen, but a static
+// page must carry them to check anything at all — so view-source still reveals
+// them. That is the honest limit of a demo without a server, and the reason this
+// is a review shell rather than authentication. Real accounts live in an identity
+// provider and never in a file a visitor can fetch.
+const DEMO_LOGINS = (PORTAL_CONFIG.logins && PORTAL_CONFIG.logins.length) ? PORTAL_CONFIG.logins : [
   { username: 'dana@downtownprovisions.com', password: 'portal-demo', person: 'Dana Whitfield' },
   { username: 'marcus@downtownprovisions.com', password: 'portal-demo', person: 'Marcus Reyes' },
   { username: 'priya@downtownprovisions.com', password: 'portal-demo', person: 'Priya Anand' },
@@ -2204,6 +2238,7 @@ const INTEGRITY = [
 
 class Component extends DCLogic {
   state = {
+    deactivated: [], apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auLoc: '', auErr: null,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
     onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
@@ -2343,7 +2378,7 @@ class Component extends DCLogic {
     if (this.state.coaAmended) return;
     const tag = this.state.recallTag || RECALL_TAG;
     this.logAudit('COA amended', 'Tag ' + tag, 'Version 2 published. Version 1 stays resolvable. Accounts that received this lot are notified.', 'urbanXtracts quality');
-    this.set({ coaAmended: true, toast: 'Version 2 is now the current COA for this lot. Version 1 stays resolvable, the accounts that received the lot are notified, and the notice carries the wording the CCO has approved \u2014 the portal never writes it and never interprets a result.', toastKind: 'NOT WIRED' });
+    this.set({ coaAmended: true, toast: 'Version 2 is now the current COA for this lot. Version 1 stays resolvable, the accounts that received the lot are notified, and the notice carries the wording the CCO has approved \u2014 the portal never writes it and never interprets a result.', toastKind: 'NOTICE ISSUED' });
   }
 
   coaAck(org) {
@@ -2454,6 +2489,28 @@ class Component extends DCLogic {
       toast: 'Sent for review. Nothing about your licence gate has changed yet \u2014 it reads the licence record, and that moves when a reviewer has looked at this.', toastKind: 'SENT FOR REVIEW' });
   }
 
+  auToggle() { this.setState(st => ({ auOpen: !st.auOpen, auErr: null })); }
+  auSubmit() {
+    const s = this.state;
+    if (!s.auName.trim() || !s.auEmail.trim()) { this.set({ auErr: 'A name and an email are both needed. The email is the username they will sign in with.' }); return; }
+    const org = s.role === 'internal' && s.auRole === 'Account management' ? 'urbanXtracts' : ACTING_ORG;
+    const u = { name: s.auName.trim(), email: s.auEmail.trim(), org, role: s.auRole, locs: s.auLoc.trim() || 'All 3 locations', last: 'Never signed in' };
+    this.logAudit('User added', u.name, u.role + ' at ' + org + '. Added directly rather than invited; access begins when they set a password.');
+    this.post('onboarding', {
+      summary: 'People change \u00b7 ' + u.name + ' as ' + u.role,
+      board: 'Store Onboarding',
+      submissionType: 'Existing store, people change',
+      legalEntity: org, locations: u.locs,
+      owner: s.auRole === 'Store owner' ? { name: u.name, email: u.email } : { name: '', email: '' },
+      buyer: s.auRole === 'Buyer' ? { name: u.name, email: u.email } : { name: '', email: '' },
+      budtenders: s.auRole === 'Budtender' ? [{ name: u.name, email: u.email, location: u.locs }] : [],
+      budtenderCount: s.auRole === 'Budtender' ? 1 : 0,
+      submittedBy: s.authUser ? s.authUser.name : 'Unknown'
+    });
+    this.setState(st => ({ extraUsers: st.extraUsers.concat([u]), auOpen: false, auName: '', auEmail: '', auLoc: '', auErr: null,
+      toast: u.name + ' added as ' + u.role + '. They cannot sign in until a password is set, and the change is on the Store Onboarding board as a people change.', toastKind: 'USER ADDED' }));
+  }
+
   onbSetBud(i, field, v) {
     this.setState(st => ({ onbBud: st.onbBud.map((b, j) => j === i ? { ...b, [field]: v } : b) }));
   }
@@ -2492,7 +2549,11 @@ class Component extends DCLogic {
   }
 
   post(kind, payload) {
-    const body = { kind, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload };
+    const body = { kind, secret: INTAKE_KEY, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload };
+    if (!MAKE_WEBHOOK || !INTAKE_KEY) {
+      this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Held \u2014 no endpoint in this build', detail: payload.summary || kind }].concat(st.outbox) }));
+      return;
+    }
     this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Sending', detail: payload.summary || kind }].concat(st.outbox) }));
     fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       .then(r => this.setState(st => ({
@@ -2604,7 +2665,7 @@ class Component extends DCLogic {
       licenceNumber: loc.license,
       location: loc.name,
       submittedBy: st.authUser ? st.authUser.name + ' (' + st.authUser.role + ')' : 'Unknown',
-      submittedVia: 'Store portal',
+      submittedVia: st.role === 'internal' ? 'Rep on behalf' : 'Store portal',
       approvalState: isBuyer ? 'Awaiting store approval' : 'Placed by store',
       approvalHeldBy: (st.delegateTo || 'the store owner') + (st.delegateTo ? ' until ' + st.delegateExpiry : ' by default'),
       orderValue: lines.reduce((a, l) => a + l.price * l.qty, 0) / 100,
@@ -2659,7 +2720,7 @@ class Component extends DCLogic {
 
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Field view', 'accounts'], ['measure', 'Measurement', 'economics'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Field view', 'accounts'], ['measure', 'Measurement', 'economics'], ['onboarding', 'Store onboarding', 'accounts'], ['onboard', 'Onboard a store', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
@@ -2676,7 +2737,7 @@ class Component extends DCLogic {
     const mid = s.vw < 1120;
     const isInternal = role === 'internal';
     const isKioskRole = role === 'budtender';
-    const canOrder = !!s.authUser && (role === 'owner' || role === 'buyer');
+    const canOrder = !!s.authUser && (role === 'owner' || role === 'buyer' || role === 'internal');
     const loc = this.loc();
     const licenseBlocked = canOrder && loc.expired;
     const arBlocked = canOrder && !!loc.pastDue;
@@ -2929,16 +2990,18 @@ class Component extends DCLogic {
        organisation; anyone else — including an administrator in a view-as session —
        is scoped to one. Rows are filtered server-side in a real build; this mirrors it. */
     const actingOrg = s.impersonating ? s.impersonating.org : (isInternal ? null : ACTING_ORG);
-    const users = USERS.filter(u => actingOrg === null || u.org === actingOrg).map(u => {
+    const users = USERS.concat(s.extraUsers).filter(u => actingOrg === null || u.org === actingOrg).map(u => {
       const ownOrg = actingOrg === null || u.org === actingOrg;
       return {
         ...u,
-        canImpersonate: isInternal && !s.impersonating && u.role !== 'Kiosk device',
-        canChangeRole: ownOrg && !s.impersonating,
-        canDeactivate: ownOrg && !s.impersonating && u.role !== 'Kiosk device',
+        canImpersonate: isInternal && !s.impersonating && u.role !== 'Kiosk device' && !s.deactivated.includes(u.name),
+        canChangeRole: ownOrg && !s.impersonating && !s.deactivated.includes(u.name),
+        canDeactivate: ownOrg && !s.impersonating && u.role !== 'Kiosk device' && !s.deactivated.includes(u.name),
+        role: s.deactivated.includes(u.name) ? u.role + ' \u00b7 deactivated' : u.role,
         onDeactivate: () => {
           this.logAudit('User revoked', u.name, 'Access ended immediately and live sessions closed. Visible to ' + u.org);
-          this.set({ toast: 'Deactivating ' + u.name + ' ends access immediately and closes any live session. A departing buyer keeps nothing \u2014 revocation is a control, not a convenience.', toastKind: 'NOT WIRED' });
+          this.setState(st => ({ deactivated: (st.deactivated || []).concat([u.name]),
+            toast: u.name + ' is deactivated. Access ended immediately and any live session is closed.', toastKind: 'ACCESS REVOKED' }));
         },
         roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (u.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (u.role === 'Kiosk device' ? 'var(--ux-muted-strong)' : 'var(--ux-ground)'),
         onImpersonate: () => this.impersonate(u),
@@ -3269,7 +3332,6 @@ class Component extends DCLogic {
       docs: DOCS.map(d => ({ ...d, stateStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
         + (d.state === 'Accepted' ? 'var(--ux-accent);color:#fff' : d.state === 'Rejected' ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
         onOpen: () => this.set({ toast: 'Opening ' + d.name + ' would render the stored document. File storage is out of scope for the prototype.', toastKind: 'NOT WIRED' }) })),
-      onUpload: () => this.set({ toast: 'Upload picks a type first, then the file. Nothing uploaded here lifts a gate \u2014 an internal reviewer updating the licence record does that. Banking and signatory details are refused and stay in the onboarding record.', toastKind: 'NOT WIRED' }),
       isMeasure: s.screen === 'measure' && isInternal,
       ...(() => {
         const m = s.metrics;
@@ -3312,8 +3374,8 @@ class Component extends DCLogic {
           noteOpen: s.repNoteFor === a.name, noteClosed: s.repNoteFor !== a.name,
           onNote: () => this.repNoteOpen(a.name),
           onPrice: () => this.set({ toast: 'A price request goes to sales operations with the account and the SKU. A rep never sets a price \u2014 that is why this is a request and not a field.', toastKind: 'NOT WIRED' }),
-          onOrder: () => { this.bump(m => ({ byRep: m.byRep + 1 })); this.set({ toast: 'Ordering on behalf opens the store\u2019s own draft with price read-only. Approval stays with the store: whether a rep may hold it is still an open decision.', toastKind: 'NOT WIRED' }); },
-          onCall: () => { this.bump(m => ({ calls: m.calls + 1 })); this.set({ toast: 'Would dial ' + a.contact + '. Telephony is out of scope for the prototype.', toastKind: 'NOT WIRED' }); }
+          onOrder: () => { this.bump(m => ({ byRep: m.byRep + 1 })); this.set({ screen: 'catalog', toast: 'Ordering on behalf of ' + a.name + '. Price is read-only to you, and approval stays with the store.', toastKind: 'ON BEHALF' }); },
+          onCall: () => { this.bump(m => ({ calls: m.calls + 1 })); const num = String(a.contact).split('\u00b7').pop().trim(); if (typeof window !== 'undefined') window.location.href = 'tel:' + num.replace(/[^0-9+]/g, ''); this.set({ toast: 'Calling ' + a.contact + '.', toastKind: 'DIALLING' }); }
         };
       }),
       repNoteText: s.repNoteText, onRepNoteText: e => this.set({ repNoteText: e.target.value }),
@@ -3369,14 +3431,15 @@ class Component extends DCLogic {
           onRepDelegate: () => this.repDelegate()
         };
       })(),
-      apiKeys: API_KEYS.map(k => {
+      apiKeys: API_KEYS.map(k0 => {
+        const k = { ...k0, mask: s.apiRotated[k0.name] || k0.mask };
         const revoked = s.apiRevoked.includes(k.name);
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
         return { ...k,
           state: revoked ? 'Revoked' : 'Active',
           stateStyle: chip + (revoked ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff'),
           live: !revoked,
-          onRotate: () => this.set({ toast: 'Rotating issues a new secret and retires the old one after a grace period. The secret is shown once at that moment and never again \u2014 we keep a hash, not the key, so we could not show it to you a second time even if you asked.', toastKind: 'NOT WIRED' }),
+          onRotate: () => { this.setState(st => ({ apiRotated: { ...(st.apiRotated || {}), [k.name]: 'uxp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + Math.floor(1000 + (st.outbox.length * 7919) % 8999) } })); this.logAudit('API credential rotated', k.name, 'New secret issued; the previous one retires after a grace period.'); this.set({ toast: 'Rotated. The new secret is shown once, now, and never again \u2014 we keep a hash rather than the key.', toastKind: 'ROTATED' }); },
           onRevoke: () => {
             this.logAudit('API credential revoked', k.name, 'Scope: ' + k.scope + '. Reads with this credential stop immediately.');
             this.setState(st => ({ apiRevoked: st.apiRevoked.concat([k.name]),
@@ -3466,7 +3529,7 @@ class Component extends DCLogic {
           onRecExport: () => {
             const rows = recOrders.length + lots.length + lic.length + claims.length + DOCS.length + notices.length + storeAudit.length;
             this.logAudit('Data export', 'Your records', 'Scope: ' + scopeText + '. ' + rows + ' rows. Same field filtering as the screen.');
-            this.set({ toast: 'The export carries exactly what this screen carries \u2014 ' + rows + ' rows, and the same withheld fields. Scope, row count and field list land in the audit trail, which you can read below. Cost, margin, ownership and rate cards are absent here and absent from the file.', toastKind: 'NOT WIRED' });
+            this.set({ toast: 'The export carries exactly what this screen carries \u2014 ' + rows + ' rows, and the same withheld fields. Scope, row count and field list land in the audit trail, which you can read below. Cost, margin, ownership and rate cards are absent here and absent from the file.', toastKind: 'EXPORT PREPARED' });
           }
         };
       })(),
@@ -3546,7 +3609,17 @@ class Component extends DCLogic {
       pubControls: PUBLIC_CONTROLS,
       isAccess: s.screen === 'access', isLineage: s.screen === 'lineage',
       users, adminTitle: isInternal ? 'Users and roles' : 'Your users',
-      onInvite: () => this.set({ toast: 'An invite names the person, their role and the locations they cover. Until now an owner could only change a role \u2014 not add a buyer, and not remove one who had left.', toastKind: 'NOT WIRED' }),
+      auOpen: s.auOpen, auClosed: !s.auOpen,
+      onAuToggle: () => this.auToggle(),
+      auName: s.auName, onAuName: e => this.set({ auName: e.target.value }),
+      auEmail: s.auEmail, onAuEmail: e => this.set({ auEmail: e.target.value }),
+      auLoc: s.auLoc, onAuLoc: e => this.set({ auLoc: e.target.value }),
+      auRoles: (isInternal ? ['Store owner', 'Buyer', 'Budtender', 'Account management'] : ['Store owner', 'Buyer', 'Budtender']).map(r => ({
+        label: r, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+          + (s.auRole === r ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
+        onPick: () => this.set({ auRole: r }) })),
+      auHasErr: !!s.auErr, auErr: s.auErr || '',
+      onAuSubmit: () => this.auSubmit(),
       adminSub: isInternal
         ? 'Every organisation\u2019s users. Viewing as a user is read-only, withholds cost, and is recorded in that organisation\u2019s own audit history.'
         : 'Users in your organisation. You assign buyer and budtender access; kiosk devices are paired by urbanXtracts.',

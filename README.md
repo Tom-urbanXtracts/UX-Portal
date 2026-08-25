@@ -125,10 +125,22 @@ real items:
 | `license` | License Verification | `Licence renewal · Downtown Provisions (Northgate)` |
 | `onboarding` | Store Onboarding | `New store · Cedar & Pine Provisions LLC` |
 
-Two things to settle before this carries real traffic. The webhook URL is public,
-so it needs a shared secret — anyone with the URL can post a fake order today.
-And Make is on Free: 1,000 operations a month, roughly two per submission, so
-about 500 submissions before it stops.
+**The webhook now requires a shared key.** Every branch filters on it, so an
+unsigned or wrongly-signed post reaches Make, matches nothing and creates nothing
+— verified by probe. The key is not in this repository.
+
+That has a consequence worth stating: **a public static build cannot hold a key**,
+so the published prototype records submissions instead of sending them, and shows
+them as *Held — no endpoint in this build*. To make it send, host it somewhere
+that can hold configuration and set `window.UX_PORTAL_CONFIG` before the page
+loads:
+
+```js
+window.UX_PORTAL_CONFIG = { intakeUrl: '…', intakeKey: '…', logins: [ … ] };
+```
+
+Make is on Free: 1,000 operations a month, roughly two per submission, so about
+500 submissions before it stops.
 
 The sign-in is not authentication either. See below.
 
