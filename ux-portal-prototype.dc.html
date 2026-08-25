@@ -802,6 +802,52 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isApproval }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Approval authority</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 22px;max-width:78ch">Who may approve an order for your organisation, until when, and what a delegate can and cannot do. Approval is yours to give and yours to take back &mdash; in one action, at any moment.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);padding:18px 0;margin-bottom:26px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Currently held by</div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px"><div style="font:800 22px/1 Archivo,sans-serif;letter-spacing:-.02em"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ apHolder }}</span></div><span style="{{ apStateStyle }}">{{ apStateText }}</span></div>
+<div style="font-size:13px;color:var(--ux-muted);line-height:1.6">{{ apHolderRole }} · {{ apScope }}<br>{{ apUntil }}<br>{{ apHowGranted }}</div>
+<sc-if value="{{ apDelegated }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:14px"><button type="button" onClick="{{ onUndelegate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)" style-hover="background:var(--ux-surface)">Withdraw authority</button></div>
+</sc-if>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">Delegate inside your organisation</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.1fr .8fr 1.6fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Person</div><div>Role</div><div>Note</div><div>Action</div>
+</div>
+<sc-for list="{{ apCandidates }}" as="c" hint-placeholder-count="2">
+<div style="display:grid;grid-template-columns:1.1fr .8fr 1.6fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ c.name }}</span></div>
+<div>{{ c.role }}</div>
+<div style="color:var(--ux-muted)">{{ c.warn }}</div>
+<div><sc-if value="{{ c.canGrant }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ c.onGrant }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Grant until 30 Sep 2026</button></sc-if></div>
+</div>
+</sc-for>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Delegate to your urbanXtracts rep</h2>
+<div style="border-left:3px solid var(--ux-signal);padding:14px 0 14px 16px;max-width:80ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:8px">NOT A DECIDED CAPABILITY</div>
+<div style="font-size:13px;line-height:1.62;margin-bottom:12px">The mechanism is designed and the button is here so it can be reviewed, but it does not function and should not until three people have answered one question. A rep approving your order means <strong>the seller is approving the buyer&rsquo;s purchase commitment</strong> &mdash; a segregation-of-duties and contracting question before it is a feature: who is committed, on what authority, and what your written authorisation actually says.<br><br>Open with sales leadership, the CCO and Legal. It also needs a standing written authorisation held on your account &mdash; a document under <strong>Documents</strong>, not a click on this screen.</div>
+<button type="button" onClick="{{ onRepDelegate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Grant to Toni Alvarez, urbanXtracts</button>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">What a delegate can never do</h2>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:78ch">A delegate approves an order. A delegate does not lift a block, and no delegation can be configured to.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">License gate</div><div>A location whose licence has lapsed cannot be ordered for, whoever holds approval. Northgate is the live example.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Receivables gate</div><div>A past-due balance blocks submission at order entry. Approval authority does not reach it, and neither does the rep.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Available quantity</div><div>An order above what exists is not approvable into existence.</div></div>
+</div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">The clock</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">How long an approval may sit</div><div><strong>Not set.</strong> How long, and where it escalates, is an open decision with sales leadership. Until it is answered an order can wait indefinitely, which is the failure the clock exists to prevent.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">What an order will show</div><div>Whoever holds authority and until when, named on the order itself and kept there permanently. An order approved under a delegation says so on its face for the rest of its life.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">When authority is withdrawn</div><div>It takes effect at once. An approval already in flight still names the person who held it &mdash; the record does not rewrite itself.</div></div>
+</div>
+</sc-if>
+
 <sc-if value="{{ isApi }}" hint-placeholder-val="{{ false }}">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">API access</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:78ch">A read-only endpoint over exactly what <strong>Your records</strong> shows, for running your own inventory or reporting tooling instead of logging in. Owner only. It is the same authorization rendered a second way &mdash; never a second authorization &mdash; so a field this portal withholds cannot be reached through it.</p>
@@ -1675,7 +1721,7 @@ class Component extends DCLogic {
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null,
-    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import']
+    recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026'
   };
 
   set(patch) { this.setState(patch); }
@@ -1700,6 +1746,24 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  delegate(name, role) {
+    this.logAudit('Approval authority delegated', name, 'Granted by the owner, scoped to the organisation, expires ' + this.state.delegateExpiry + '. Revocable at any time.');
+    const warn = role === 'Buyer'
+      ? ' Note what you have just done: ' + name + ' submits orders, so orders they submit will now be approved by the person who raised them. The portal will do it, and it will say so on every order.'
+      : '';
+    this.set({ delegateTo: name, toast: name + ' now holds approval until ' + this.state.delegateExpiry + '. Every order approved under this delegation names the holder on its face, permanently.' + warn, toastKind: 'DONE' });
+  }
+
+  undelegate() {
+    const who = this.state.delegateTo;
+    this.logAudit('Approval authority withdrawn', who || '\u2014', 'Authority returns to the owner immediately.');
+    this.set({ delegateTo: null, toast: 'Authority is back with the owner. Withdrawal takes effect at once \u2014 an approval in flight under the old holder still names them.', toastKind: 'DONE' });
+  }
+
+  repDelegate() {
+    this.set({ toast: 'Refused: rep-held approval is not a decided capability. The seller approving the buyer\u2019s purchase commitment is a segregation-of-duties and contracting question, open with sales leadership, the CCO and Legal. It also needs a standing written authorisation on the account \u2014 a document, not a click on this screen.', toastKind: 'BLOCKED \u2014 NOT DECIDED' });
   }
 
   recallAck(org) {
@@ -1851,7 +1915,7 @@ class Component extends DCLogic {
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
     if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['recall', 'Recall and lot impact', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['approval', 'Approval authority', 'orders'], ['receivables', 'Receivables', 'economics'], ['api', 'API access', 'access'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
     return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
 
@@ -2052,7 +2116,7 @@ class Component extends DCLogic {
       actions.push({ label: 'Download confirmation', style: secondary, onDo: () => this.set({ toast: 'A PDF confirmation for ' + od.id + ' would download here. Document generation is out of scope for the prototype.', toastKind: 'NOT WIRED' }) });
 
       const notes = [];
-      if (od.state === 'Awaiting approval') notes.push({ kind: 'AWAITING OWNER APPROVAL', text: 'Submitted by the buyer. Approval is a store-side action — switch to the Owner role to approve or decline it.' });
+      if (od.state === 'Awaiting approval') notes.push({ kind: 'AWAITING APPROVAL', text: 'Submitted by the buyer. Approval is a store-side action — switch to the Owner role to approve or decline it. ' + 'Authority is held by ' + (s.delegateTo || 'the store owner') + (s.delegateTo ? ' under a delegation expiring ' + s.delegateExpiry : ' by default') + ', and whoever approves it is named on the order permanently. ' + 'No clock is set on how long this may wait — that decision is still open.' });
       if (od.state === 'Flagged') notes.push({ kind: 'EXCEPTION', text: 'This order carries an exception. The store sees status only: never the internal owner, the clock, or internal notes.' });
       if (s.recallIssued && od.lines.some(l => { const pp = P(l.id); return pp && pp.lots[l.lot] && pp.lots[l.lot].tag === (s.recallTag || RECALL_TAG); })) notes.push({ kind: 'RECALL NOTICE ON A LOT ON THIS ORDER', text: 'A lot on this order has been withdrawn. The approved wording appears here \u2014 the portal carries it and never writes it. Acknowledge on behalf of your organisation; we record the account, not the person.' });
       const drift = od.lines.filter(l => P(l.id).price !== null && P(l.id).price !== l.price);
@@ -2323,6 +2387,32 @@ class Component extends DCLogic {
       isRecords: s.screen === 'records',
       isReceivables: s.screen === 'receivables' && role === 'owner',
       isApi: s.screen === 'api' && role === 'owner',
+      isApproval: s.screen === 'approval' && role === 'owner',
+      ...(() => {
+        const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
+        const held = s.delegateTo || 'Dana Whitfield';
+        const delegated = !!s.delegateTo;
+        const holderRole = delegated ? (USERS.find(u => u.name === s.delegateTo) || {}).role : 'Store owner';
+        const candidates = USERS.filter(u => u.org === ACTING_ORG && u.role !== 'Kiosk device' && u.role !== 'Store owner');
+        return {
+          apHolder: held, apHolderRole: holderRole || '\u2014',
+          apDelegated: delegated, apNotDelegated: !delegated,
+          apScope: 'All three locations',
+          apUntil: delegated ? 'Until ' + s.delegateExpiry + ', then it returns to the owner on its own' : 'No expiry \u2014 the owner holds it by default',
+          apHowGranted: delegated ? 'Granted by the owner in this portal, revocable in one action, and recorded in your audit history' : 'Held by default; nothing was granted',
+          apStateStyle: chip + (delegated ? 'background:var(--ux-surface);color:var(--ux-muted-strong)' : 'background:var(--ux-accent);color:#fff'),
+          apStateText: delegated ? 'Delegated' : 'Held by the owner',
+          apCandidates: candidates.map(u => ({
+            name: u.name, role: u.role, locs: u.locs,
+            isHolder: s.delegateTo === u.name,
+            canGrant: s.delegateTo !== u.name,
+            warn: u.role === 'Buyer' ? 'Submits orders \u2014 delegating here means self-approval, and every such order will say so.' : '',
+            onGrant: () => this.delegate(u.name, u.role)
+          })),
+          onUndelegate: () => this.undelegate(),
+          onRepDelegate: () => this.repDelegate()
+        };
+      })(),
       apiKeys: API_KEYS.map(k => {
         const revoked = s.apiRevoked.includes(k.name);
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';

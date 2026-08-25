@@ -98,6 +98,12 @@ Paths worth walking because they refuse rather than proceed:
   section it mirrors; an explicit *no writes* row; the withheld-field list that
   applies inside errors and pagination too; and rate limits stated as still
   unset. Revoking writes an audit entry that appears under Your records.
+- **Approval authority** — owner only. Delegate inside the organisation with an
+  expiry and one-click withdrawal; delegating to a buyer warns that it becomes
+  self-approval. The rep option is present and **deliberately refuses** — it is
+  not a decided capability. The three gates a delegate can never lift are named,
+  and the clock is stated as unset. An order awaiting approval names who holds
+  authority and until when.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight
