@@ -90,6 +90,31 @@ Two findings from reading the live boards first: `Order Overview` is at 9,280 of
 parsing the item name with formulas — which is why the portal writes to its own
 intake board and links onward rather than into either.
 
+## Authentication
+
+Real, and working from the static page. **Supabase Auth** on project
+`Ux Automations`; passwords are checked by Supabase and never by this page. The
+project URL and publishable key are in the source because that is what they are
+for — they identify the project and grant nothing. There are no credentials in
+this repository.
+
+Role and organisation live on `public.portal_profile`, read from the account after
+sign-in. **Row-level security enforces the wall in the database, not the
+interface** — which is what the architecture said was required. Verified by
+signing in as each account and asking for the whole user list:
+
+| Signed in as | Rows returned |
+|---|---|
+| Budtender | 1 — their own |
+| Owner | 3 — their organisation |
+| Internal | 4 — all |
+
+A store account cannot read another organisation whatever it asks for. Wrong
+passwords return `Invalid login credentials` and the reason is never narrowed to
+which half was wrong.
+
+Still open: multi-factor, and how reset and lockout behave.
+
 **Role comes from the login.** The owner/buyer/budtender/internal switcher is
 gone. There is a sign-in screen; role is a property of the account, and signing
 out returns to it. A signed-in buyer has no navigation entry for receivables at

@@ -138,7 +138,7 @@ button{font-family:inherit}
 <input type="text" value="{{ loginUser }}" onInput="{{ onLoginUser }}" aria-label="Username" autocomplete="username" style="width:100%;padding:12px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13.5px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Password</div>
 <input type="password" value="{{ loginPass }}" onInput="{{ onLoginPass }}" aria-label="Password" autocomplete="current-password" style="width:100%;padding:12px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13.5px Archivo,sans-serif;margin-bottom:16px">
-<button type="button" onClick="{{ onLoginSubmit }}" style="width:100%;background:var(--ux-accent);color:#fff;border:0;padding:13px 15px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">Sign in</button>
+<button type="button" onClick="{{ onLoginSubmit }}" style="width:100%;background:var(--ux-accent);color:#fff;border:0;padding:13px 15px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">{{ loginBtnLabel }}</button>
 <sc-if value="{{ loginHasErr }}" hint-placeholder-val="{{ false }}">
 <div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-top:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">SIGN IN FAILED</div>
@@ -147,8 +147,8 @@ button{font-family:inherit}
 </sc-if>
 </div>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch;margin-bottom:22px">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">THIS IS NOT AUTHENTICATION</div>
-<div style="font-size:13px;line-height:1.62">This page checks what you type against a list held in its own source. Anyone can read that list, so it proves nothing and protects nothing &mdash; it is a shell of the right shape, so the screens behind it can be reviewed. Real sign-in needs an identity provider holding password hashes server-side, with per-store accounts, reset, lockout and a decision on multi-factor. That is not built.<br><br>Credentials are issued to you directly and are not printed on this page &mdash; a page that lists its own logins has none.</div>
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SIGN-IN IS REAL</div>
+<div style="font-size:13px;line-height:1.62">Passwords are checked by Supabase, not by this page. Nothing in this file grants anything &mdash; it carries a project identifier and a publishable key, and the database decides what each account may read. Your role and your organisation are read from your account after you sign in, which is why there is no role switch anywhere in the product.<br><br>Row-level security enforces the wall in the database rather than in the interface. A budtender asking for the user list gets one row, their own. An owner gets their organisation. Nobody gets another organisation, whatever they ask for.<br><br>Still open: multi-factor, and how reset and lockout should behave. Credentials are issued to you directly and are never printed here.</div>
 </div>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">A KIOSK IS A DEVICE, NOT A LOGIN</div>
@@ -2105,17 +2105,12 @@ const PORTAL_CONFIG = (typeof window !== 'undefined' && window.UX_PORTAL_CONFIG)
 const MAKE_WEBHOOK = PORTAL_CONFIG.intakeUrl || '';
 const INTAKE_KEY = PORTAL_CONFIG.intakeKey || '';
 
-// Review accounts. They are no longer printed on the sign-in screen, but a static
-// page must carry them to check anything at all — so view-source still reveals
-// them. That is the honest limit of a demo without a server, and the reason this
-// is a review shell rather than authentication. Real accounts live in an identity
-// provider and never in a file a visitor can fetch.
-const DEMO_LOGINS = (PORTAL_CONFIG.logins && PORTAL_CONFIG.logins.length) ? PORTAL_CONFIG.logins : [
-  { username: 'dana@downtownprovisions.com', password: 'portal-demo', person: 'Dana Whitfield' },
-  { username: 'marcus@downtownprovisions.com', password: 'portal-demo', person: 'Marcus Reyes' },
-  { username: 'priya@downtownprovisions.com', password: 'portal-demo', person: 'Priya Anand' },
-  { username: 'toni@urbanxtracts.com', password: 'internal-demo', person: 'Toni Alvarez' }
-];
+// Supabase Auth. The project URL and publishable key are designed to be public —
+// they identify the project, they do not grant anything. Row-level security in the
+// database decides what each signed-in user may read, so the browser can hold these
+// safely and there are no credentials in this file at all.
+const SUPABASE_URL = PORTAL_CONFIG.supabaseUrl || 'https://cbhsavfbtcpdyxcvguay.supabase.co';
+const SUPABASE_KEY = PORTAL_CONFIG.supabaseKey || 'sb_publishable_aIrwn28FxjXNT-MRFYJPYA_MUoWYXED';
 
 const REP_BOOK = [
   { name: 'Riverside Collective', license: 'OCM-RETL-24-000518', signal: 'STOPPED',
@@ -2245,7 +2240,7 @@ class Component extends DCLogic {
     onbOwnerName: '', onbOwnerEmail: '', onbOwnerPhone: '',
     onbBuyerName: '', onbBuyerEmail: '', onbBuyerLoc: '',
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
-    outbox: [], loginUser: '', loginPass: '', loginErr: null, catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
+    outbox: [], loginUser: '', loginPass: '', loginErr: null, loginBusy: false, catQty: {}, authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
     order: null, toast: null, toastKind: 'DONE', kioskInput: '', kioskMsg: null, kioskMsgKind: 'NOT FOUND',
@@ -2287,15 +2282,39 @@ class Component extends DCLogic {
 
   submitLogin() {
     const s = this.state;
-    const u = (s.loginUser || '').trim().toLowerCase();
-    const hit = DEMO_LOGINS.find(l => l.username === u && l.password === s.loginPass);
-    if (!hit) {
-      this.set({ loginErr: 'That username and password do not match an account. Nothing here tells you which half was wrong \u2014 saying so would help somebody guessing.', loginPass: '' });
-      return;
-    }
-    const person = USERS.find(x => x.name === hit.person);
-    this.set({ loginErr: null, loginUser: '', loginPass: '' });
-    this.signIn(person);
+    const email = (s.loginUser || '').trim();
+    const password = s.loginPass;
+    if (!email || !password) { this.set({ loginErr: 'Both a username and a password are needed.' }); return; }
+    this.set({ loginBusy: true, loginErr: null });
+    const H = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method: 'POST', headers: H, body: JSON.stringify({ email, password }) })
+      .then(r => r.json())
+      .then(tok => {
+        if (!tok.access_token) throw new Error('rejected');
+        // The role is read from the account, not sent by the browser. Row-level
+        // security means a request for somebody else's row simply returns nothing.
+        return fetch(SUPABASE_URL + '/rest/v1/portal_profile?select=full_name,org,role,locations,active',
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok.access_token } })
+          .then(r => r.json())
+          .then(rows => {
+            const me = (rows || []).find(r => r.full_name) || null;
+            if (!me) throw new Error('no profile');
+            if (me.active === false) throw new Error('inactive');
+            return me;
+          });
+      })
+      .then(me => {
+        const known = USERS.find(x => x.name === me.full_name);
+        const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
+        this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '' });
+        this.signIn(known || { name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
+      })
+      .catch(e => this.set({ loginBusy: false, loginPass: '',
+        loginErr: e && e.message === 'inactive'
+          ? 'That account is deactivated. Whoever administers your organisation can restore it.'
+          : e && e.message === 'no profile'
+            ? 'That account exists but has no portal profile yet, so there is no role to sign in with.'
+            : 'That username and password do not match an account. Nothing here tells you which half was wrong \u2014 saying so would help somebody guessing.' }));
   }
 
   signIn(u) {
@@ -3143,6 +3162,7 @@ class Component extends DCLogic {
       loginPass: s.loginPass, onLoginPass: e => this.set({ loginPass: e.target.value }),
       onLoginSubmit: () => this.submitLogin(),
       loginHasErr: !!s.loginErr, loginErr: s.loginErr || '',
+      loginBtnLabel: s.loginBusy ? 'Checking\u2026' : 'Sign in',
       outbox: s.outbox.map(o => ({ ...o, style: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
         + (o.state === 'Accepted by Make' ? 'var(--ux-accent);color:#fff' : o.state === 'Sending' ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-signal);color:#fff') })),
       hasOutbox: s.outbox.length > 0,
