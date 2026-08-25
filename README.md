@@ -81,6 +81,12 @@ Paths worth walking because they refuse rather than proceed:
   open drafts, then issue the notice and record acknowledgement per account.
   Issuing it puts a notice on the affected store's order — the wording stays the
   CCO's and the portal never composes it.
+- **Your records** — everything urbanXtracts holds about the account in one
+  place: orders, lots received with the COA version current at receipt,
+  licenses, claims, documents, notices, and the org's own audit history —
+  including an administrator viewing their screen. Scoped to the organisation
+  for an owner and to one location for a buyer. Export writes its own audit
+  entry, which then appears in the history on the same screen.
 - **Documents** — a new screen for owner and buyer: typed uploads, expiry,
   review state, and the rule that an upload never lifts a gate.
 - **Store onboarding** — a new internal screen: six stages, with each in-flight
