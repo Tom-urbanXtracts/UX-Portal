@@ -300,10 +300,10 @@ button{font-family:inherit}
 </div>
 <div style="flex:1"></div>
 <div style="font-size:13px;{{ p.priceStyle }}"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ p.priceText }}</span></div>
-<div style="display:flex;gap:8px;margin-top:2px">
-<button type="button" onClick="{{ p.onOpen }}" style="flex:1;background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 12px Archivo,sans-serif;text-align:left;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">
+<button type="button" onClick="{{ p.onOpen }}" style="flex:1 1 68px;min-width:68px;background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 9px;font:700 12px Archivo,sans-serif;text-align:left;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
 <sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
-<div style="display:flex;align-items:center;border:1px solid rgba(23,14,11,.28);background:#fdf0a8"><button type="button" onClick="{{ p.onQtyDown }}" aria-label="Decrease the quantity to add" style="background:transparent;border:0;width:26px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">&minus;</button><input type="text" value="{{ p.qty }}" onInput="{{ p.onQty }}" aria-label="Quantity to add" style="width:38px;text-align:center;border:0;background:transparent;font:600 12.5px Archivo,sans-serif;padding:0"><button type="button" onClick="{{ p.onQtyUp }}" aria-label="Increase the quantity to add" style="background:transparent;border:0;width:26px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">+</button></div><button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
+<div style="display:flex;align-items:center;border:1px solid rgba(23,14,11,.28);background:#fdf0a8"><button type="button" onClick="{{ p.onQtyDown }}" aria-label="Decrease the quantity to add" style="background:transparent;border:0;width:24px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">&minus;</button><input type="text" value="{{ p.qty }}" onInput="{{ p.onQty }}" aria-label="Quantity to add" style="width:32px;text-align:center;border:0;background:transparent;font:600 12.5px Archivo,sans-serif;padding:0"><button type="button" onClick="{{ p.onQtyUp }}" aria-label="Increase the quantity to add" style="background:transparent;border:0;width:24px;height:30px;font:700 14px Archivo,sans-serif;cursor:pointer;line-height:1">+</button></div><button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
 </sc-if>
 <sc-if value="{{ p.canRequest }}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{ p.onRequest }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-muted-strong)">Ask</button>
@@ -2403,18 +2403,24 @@ class Component extends DCLogic {
         if (!tok.access_token) throw new Error('rejected');
         // The role is read from the account, not sent by the browser. Row-level
         // security means a request for somebody else's row simply returns nothing.
-        return fetch(SUPABASE_URL + '/rest/v1/portal_profile?select=full_name,org,role,locations,active',
+        // Row-level security hands an owner their whole organisation and an
+        // internal account every row, so "the first row with a name" is not the
+        // person signing in \u2014 it is whoever sorts first. Narrow to the account
+        // the token belongs to, on the server rather than here.
+        const uid = tok.user && tok.user.id;
+        if (!uid) throw new Error('rejected');
+        return fetch(SUPABASE_URL + '/rest/v1/portal_profile?select=id,full_name,org,role,locations,active&id=eq.' + encodeURIComponent(uid),
           { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + tok.access_token } })
           .then(r => r.json())
           .then(rows => {
-            const me = (rows || []).find(r => r.full_name) || null;
+            const me = (rows || []).find(r => r.id === uid) || null;
             if (!me) throw new Error('no profile');
             if (me.active === false) throw new Error('inactive');
             return me;
           });
       })
       .then(me => {
-        const known = USERS.find(x => x.name === me.full_name);
+        const known = USERS.find(x => x.email === email);
         const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
         this.set({ loginBusy: false, loginErr: null, loginUser: '', loginPass: '' });
         this.signIn(known || { name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
@@ -3317,7 +3323,7 @@ class Component extends DCLogic {
       navNoteStyle: (!s.authUser || narrow) ? 'display:none' : 'margin:22px 20px 0;padding-top:16px;border-top:1px solid rgba(23,14,11,.2);font:12px/1.5 Archivo,sans-serif;color:var(--ux-muted)',
       contentStyle: 'flex:1;min-width:0;padding:' + (narrow ? '22px 18px 64px' : '30px 34px 80px') + ';max-width:1180px',
       tileGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:0;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
-      cardGridStyle: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (narrow ? 200 : 258) + 'px,1fr));gap:' + (narrow ? 12 : 18) + 'px',
+      cardGridStyle: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (narrow ? 240 : 300) + 'px,1fr));gap:' + (narrow ? 12 : 18) + 'px',
       isNarrow: narrow, isWide: !narrow,
       viewToggle: [['grid', 'Grid'], ['list', 'List']].map(([v, label]) => ({
         label,

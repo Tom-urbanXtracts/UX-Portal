@@ -29,3 +29,26 @@ repository root: https://tom-urbanxtracts.github.io/UX-Portal/
 Both the repository and the Pages site are public. Pages requires `.nojekyll`
 at the root — without it Jekyll drops every path beginning with `_`, which
 removes `_ds/` and leaves the `.dc.html` documents unstyled.
+
+## Supabase Auth settings that live outside this repository
+
+Password reset is built into the portal, but the emailed link only lands on it
+once these are set in Supabase → Authentication → URL Configuration. Until then
+the link goes wherever **Site URL** points, which is what sent it to `localhost`.
+
+| Setting | Value |
+|---|---|
+| Site URL | `https://tom-urbanxtracts.github.io/UX-Portal/dist/portal.html` |
+| Redirect URLs | `https://tom-urbanxtracts.github.io/UX-Portal/**` plus any local origin used for development |
+
+Supabase answers `200` to a reset request whether or not `redirect_to` is
+allow-listed — it falls back to Site URL silently rather than failing — so a
+successful request is not evidence the link will land in the right place.
+Verified by sending one with `redirect_to=https://evil.example.com/x`, which
+was also accepted.
+
+Custom SMTP is live through SendGrid, sender `tom@urbanxtracts.com`, DKIM and
+SPF passing. **SendGrid click tracking rewrites the reset link**, which puts a
+one-time recovery token through a third-party redirector and exposes it to link
+scanners that pre-fetch URLs; turning click tracking off for this traffic is
+recommended and has not been done.
