@@ -117,3 +117,43 @@ inside Auth itself.
 Two settings that are available on free and are not set from here: minimum
 password length, and required character classes, both under
 Authentication → Sign In / Providers → Email.
+
+## Password length and required characters
+
+Both are available on the free plan, and both live in project config rather than
+in this repository — Authentication → Sign In / Providers → Email. Recommended:
+
+| Setting | Value |
+|---|---|
+| Minimum password length | `12` (the docs call anything under 8 not recommended) |
+| Required characters | digits, lower and uppercase letters, and symbols — the strongest option offered |
+
+The allowed symbols, verbatim from the Supabase docs, are:
+
+```
+!@#$%^&*()_+-=[]{};'\:"|<>?,./`~
+```
+
+To do it from a terminal instead, get a token from
+https://supabase.com/dashboard/account/tokens and **read the config first** —
+the GET shows the exact format `password_required_characters` expects, which is
+a colon-separated list of character sets rather than a friendly enum:
+
+```bash
+curl -s -X GET "https://api.supabase.com/v1/projects/cbhsavfbtcpdyxcvguay/config/auth" \
+  -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+  | jq '{password_min_length, password_required_characters}'
+```
+
+Then PATCH the same endpoint with those two keys. Copy the character-set string
+from the GET rather than typing one — a wrong value is rejected.
+
+### Sign-in had to learn about weak_password first
+
+Raising these rules does **not** invalidate an existing weaker password.
+Supabase accepts the credential and answers `weak_password` instead. The portal
+previously treated that as a failed sign-in and said "that username and password
+do not match an account", which is untrue and leaves the person with nothing to
+act on. It now says the password is right but no longer meets the rules, and
+points at the reset link on the same screen. A genuinely wrong password still
+gets the old, deliberately unhelpful message.

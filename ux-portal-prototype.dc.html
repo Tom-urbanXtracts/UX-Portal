@@ -2459,6 +2459,12 @@ class Component extends DCLogic {
     fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method: 'POST', headers: H, body: JSON.stringify({ email, password }) })
       .then(r => r.json())
       .then(tok => {
+        // Raising the password rules does not invalidate an existing weaker
+        // password. Supabase accepts the credential and answers weak_password
+        // instead, which is a different thing from a wrong password and has to
+        // read differently \u2014 otherwise somebody with the right password is told
+        // it is wrong and has no idea what to do next.
+        if (tok.error_code === 'weak_password' || tok.weak_password) throw new Error('weak');
         if (!tok.access_token) throw new Error('rejected');
         // The role is read from the account, not sent by the browser. Row-level
         // security means a request for somebody else's row simply returns nothing.
@@ -2487,7 +2493,9 @@ class Component extends DCLogic {
         this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now' });
       })
       .catch(e => this.set({ loginBusy: false, loginPass: '',
-        loginErr: e && e.message === 'inactive'
+        loginErr: e && e.message === 'weak'
+          ? 'That password is right, but it no longer meets this portal\u2019s password rules. Use the reset link below to set a new one \u2014 nothing else about your account changes.'
+          : e && e.message === 'inactive'
           ? 'That account is deactivated. Whoever administers your organisation can restore it.'
           : e && e.message === 'no profile'
             ? 'That account exists but has no portal profile yet, so there is no role to sign in with.'
