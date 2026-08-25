@@ -71,16 +71,16 @@ button{font-family:inherit}
 <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
 <img src="brand/ux-mark.png" alt="urbanXtracts" style="height:28px;width:auto;display:block">
 <div style="display:flex;flex-direction:column;gap:2px"><div style="font:800 18px/1 Archivo,sans-serif;letter-spacing:-.015em;color:var(--ux-ink)">urbanXtracts</div><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ux-muted)">Wholesale portal</div></div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--ux-accent);color:#fff;padding:4px 7px">{{ roleBadge }}</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--ux-accent);color:#fff;padding:4px 7px;{{ roleBadgeStyle }}">{{ roleBadge }}</div>
 </div>
 <div style="flex:1"></div>
 <div style="display:flex;align-items:center;gap:14px;padding:8px 0;flex-wrap:wrap">
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted)">Sign in as</span>
-<div style="display:flex;gap:0;border:1px solid rgba(23,14,11,.3)">
-<sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
-<button type="button" onClick="{{ r.onPick }}" aria-pressed="{{ r.pressed }}" style="{{ r.style }}" style-hover="background:var(--ux-accent-tint)">{{ r.label }}</button>
-</sc-for>
+<sc-if value="{{ isSignedIn }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div><div style="font:700 13px Archivo,sans-serif;line-height:1.2">{{ authName }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ authMeta }}</div></div>
+<button type="button" onClick="{{ onSignOut }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Sign out</button>
 </div>
+</sc-if>
 <sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
 <button type="button" onClick="{{ goCart }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 13px;font:700 12px Archivo,sans-serif;cursor:pointer;display:flex;gap:8px;align-items:center" style-hover="background:var(--ux-muted-strong)">Draft order <span style="background:rgba(250,247,243,.18);padding:1px 6px;font:700 11px ui-monospace,monospace">{{ cartCount }}</span></button>
 </sc-if>
@@ -127,6 +127,28 @@ button{font-family:inherit}
 </nav>
 
 <main style="{{ contentStyle }}" id="main-content">
+
+<sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:620px">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Sign in</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:66ch">What you can see and do follows from the account you sign in with. There is no role switch in the product &mdash; owner, buyer, budtender and internal are properties of a person&rsquo;s account, not settings in the interface.</p>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 24px;max-width:66ch">These four accounts stand in for a real identity provider so the whole portal can be walked. Pick one and the interface is built from it; sign out to come back here.</p>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:26px">
+<sc-for list="{{ signInUsers }}" as="u" hint-placeholder-count="4">
+<button type="button" onClick="{{ u.onPick }}" style="display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(23,14,11,.28);padding:16px 18px;cursor:pointer;min-height:46px" style-hover="background:var(--ux-surface)">
+<div style="font:700 15px Archivo,sans-serif;margin-bottom:3px">{{ u.name }}</div>
+<div style="font-size:12px;color:var(--ux-muted);margin-bottom:7px">{{ u.email }} · {{ u.role }} · {{ u.org }}</div>
+<div style="font-size:12.5px;line-height:1.5">{{ u.derived }}</div>
+</button>
+</sc-for>
+</div>
+<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:74ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">A KIOSK IS A DEVICE, NOT A LOGIN</div>
+<div style="font-size:13px;line-height:1.62">{{ kioskPairNote }}</div>
+</div>
+<div style="margin-top:20px;font-size:12.5px;color:var(--ux-muted);line-height:1.62;max-width:74ch">Multi-factor authentication is not designed here &mdash; it is recorded as an open assumption, not a decision. Restricted routes are not rendered rather than disabled, so a signed-in buyer has no navigation entry for receivables at all.</div>
+</div>
+</sc-if>
 
 <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
 <div>
@@ -1544,6 +1566,18 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </div>
 <div style="margin-top:20px;font-size:11.5px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Every line names the compliance tag and packaged date it was allocated from, so a receiving clerk can check the delivery against this document rather than a product name alone. Prices exclude tax. Sample data.</div>
+<div style="margin-top:28px;border-top:2px solid rgba(23,14,11,.4);padding-top:18px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Reported to the team</div>
+<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">Submitting this created one item on the <strong>Portal Orders</strong> board in Monday and alerted the account&rsquo;s rep and the fulfilment owner. Monday holds the workflow; Canix stays the subledger of record for the order itself. Every field below is a real column &mdash; nothing on that board is derived by parsing the item name.</p>
+<div style="border-top:1px solid rgba(23,14,11,.2)">
+<sc-for list="{{ mondayRows }}" as="mr" hint-placeholder-count="13">
+<div style="display:grid;grid-template-columns:170px 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12.5px;align-items:baseline">
+<div style="font-weight:700">{{ mr.k }}</div><div>{{ mr.v }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+
 </div>
 </div>
 </sc-if>
@@ -2033,7 +2067,7 @@ const INTEGRITY = [
 
 class Component extends DCLogic {
   state = {
-    role: 'buyer', screen: 'dash', loc: 'l1', cat: 'All', query: '',
+    authUser: null, role: 'buyer', screen: 'signin', loc: 'l1', cat: 'All', query: '',
     product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
     orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
     order: null, toast: null, toastKind: 'DONE', kioskInput: '', kioskMsg: null, kioskMsgKind: 'NOT FOUND',
@@ -2071,6 +2105,21 @@ class Component extends DCLogic {
     if (this.state.recallIssued) return;
     this.logAudit('Recall notice issued', this.state.recallTag || RECALL_TAG, 'Accounts holding the lot notified; acknowledgement recorded per account', 'urbanXtracts quality');
     this.set({ recallIssued: true, toast: 'The notice goes out with the wording the CCO has approved. The portal carries that wording and never composes it \u2014 and a product-safety issue escalates to the CCO immediately rather than waiting for this screen.', toastKind: 'NOT WIRED' });
+  }
+
+  signIn(u) {
+    const map = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender', 'Account management': 'internal' };
+    const role = map[u.role];
+    if (!role) { this.set({ toast: 'That account has no portal role, so there is nothing to sign in to.', toastKind: 'NO ROLE' }); return; }
+    this.logAudit('Signed in', u.name, u.role + ' at ' + u.org + '. Role comes from the account, not from a choice in the interface.', u.name);
+    this.set({ authUser: u, role, screen: role === 'budtender' ? 'kiosk' : 'dash', order: null, loc: 'l1',
+      toast: 'Signed in as ' + u.name + '. What you can see and do follows from this account being a ' + u.role.toLowerCase() + ' \u2014 there is no role switch in the product.', toastKind: 'SIGNED IN' });
+  }
+
+  signOut() {
+    const u = this.state.authUser;
+    if (u) this.logAudit('Signed out', u.name, 'Session ended.', u.name);
+    this.set({ authUser: null, screen: 'signin', order: null, toast: null });
   }
 
   bump(patch) {
@@ -2363,7 +2412,7 @@ class Component extends DCLogic {
     const mid = s.vw < 1120;
     const isInternal = role === 'internal';
     const isKioskRole = role === 'budtender';
-    const canOrder = role === 'owner' || role === 'buyer';
+    const canOrder = !!s.authUser && (role === 'owner' || role === 'buyer');
     const loc = this.loc();
     const licenseBlocked = canOrder && loc.expired;
     const arBlocked = canOrder && !!loc.pastDue;
@@ -2711,9 +2760,23 @@ class Component extends DCLogic {
     const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
 
     return {
-      roleBadge: role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
-      roleTabs, nav, locations, licenseBlocked, showLocationBar: canOrder,
-      navNote: isInternal
+      roleBadge: !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
+      roleBadgeStyle: !s.authUser ? 'display:none' : '',
+      isSignIn: !s.authUser, isSignedIn: !!s.authUser,
+      signInUsers: USERS.filter(u => u.role !== 'Kiosk device' && (u.org === ACTING_ORG || u.org === 'urbanXtracts')).map(u => ({
+        name: u.name, email: u.email, org: u.org, role: u.role,
+        derived: u.role === 'Store owner' ? 'Sees its own organisation across every location, holds approval, sees receivables'
+          : u.role === 'Buyer' ? 'Sees its own location, builds and submits, never sees a balance'
+          : u.role === 'Budtender' ? 'Education and COA lookup only, no price anywhere'
+          : 'Internal: cost, margin, lineage, release and the accounts they carry',
+        onPick: () => this.signIn(u)
+      })),
+      authName: s.authUser ? s.authUser.name : '',
+      authMeta: s.authUser ? (s.authUser.role + ' \u00b7 ' + s.authUser.org) : '',
+      onSignOut: () => this.signOut(),
+      roleTabs, nav: s.authUser ? nav : [], locations, licenseBlocked, showLocationBar: canOrder && !!s.authUser,
+      navNote: !s.authUser ? ''
+        : isInternal
         ? 'Internal routes are not rendered for any external role — not disabled, not empty. Server-side authorization is the control.'
         : isKioskRole
           ? 'This device is authorised to a location. Ordering, pricing and account routes do not exist on it.'
@@ -2724,10 +2787,11 @@ class Component extends DCLogic {
       goValidation: () => this.set({ screen: 'validation' }),
 
       shellStyle: 'flex:1;display:flex;align-items:stretch;flex-wrap:wrap;flex-direction:' + (narrow ? 'column' : 'row'),
+      kioskPairNote: 'A shared floor tablet is paired to a location by an urbanXtracts administrator. It has no personal login, which is why kiosk mode is education-only \u2014 nothing it can do requires attribution.',
       sidebarStyle: narrow
         ? 'width:100%;border-bottom:2px solid rgba(23,14,11,.4);padding:8px 0;background:var(--ux-ground);display:flex;gap:0;overflow-x:auto'
         : 'width:212px;min-width:180px;border-right:2px solid rgba(23,14,11,.4);padding:22px 0 40px;background:var(--ux-ground)',
-      navNoteStyle: narrow ? 'display:none' : 'margin:22px 20px 0;padding-top:16px;border-top:1px solid rgba(23,14,11,.2);font:12px/1.5 Archivo,sans-serif;color:var(--ux-muted)',
+      navNoteStyle: (!s.authUser || narrow) ? 'display:none' : 'margin:22px 20px 0;padding-top:16px;border-top:1px solid rgba(23,14,11,.2);font:12px/1.5 Archivo,sans-serif;color:var(--ux-muted)',
       contentStyle: 'flex:1;min-width:0;padding:' + (narrow ? '22px 18px 64px' : '30px 34px 80px') + ';max-width:1180px',
       tileGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:0;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
       cardGridStyle: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (narrow ? 200 : 258) + 'px,1fr));gap:' + (narrow ? 12 : 18) + 'px',
@@ -3227,6 +3291,28 @@ class Component extends DCLogic {
         const o = s.orders.find(x => x.id === s.confirmed);
         const done = o && (o.state === 'Received' || o.state === 'Approved');
         return 'font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:4px 8px;background:' + (done ? 'var(--ux-accent)' : 'var(--ux-ink)') + ';color:' + (done ? '#fff' : 'var(--ux-ground)');
+      })(),
+      ...(() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        if (!o) return { mondayRows: [] };
+        const loc = LOCATIONS.find(x => x.id === o.loc) || { name: o.loc, license: '' };
+        const who = s.authUser ? s.authUser.name + ' (' + s.authUser.role + ')' : 'Unknown';
+        const rows = [
+          ['Item name', o.id + ' \u00b7 ' + ACTING_ORG + ' (' + loc.name + ')'],
+          ['Order number', o.id],
+          ['Account', ACTING_ORG + ' \u2014 linked to Licensed Retailers, which is where the rep comes from'],
+          ['Rep', 'Mirrored from Account Owner on the account record, not typed here'],
+          ['Location', loc.name + ' \u00b7 ' + loc.license],
+          ['Submitted by', who],
+          ['Submitted via', 'Store portal'],
+          ['Approval state', o.state === 'Awaiting approval' ? 'Awaiting store approval' : 'Placed by store'],
+          ['Approval held by', (s.delegateTo || 'the store owner') + (s.delegateTo ? ' under a delegation expiring ' + s.delegateExpiry : ' by default')],
+          ['Order value', MONEY(this.orderValue(o))],
+          ['Lines', String(o.lines.length) + ' \u2014 a line count, not a unit total, because an order can mix grams and each'],
+          ['Intake status', 'Needs acknowledgement \u2014 this is what alerts the team'],
+          ['Notify', 'The account rep and the fulfilment owner, by automation']
+        ];
+        return { mondayRows: rows.map(([k, v]) => ({ k, v })) };
       })(),
       confirmLines: (s.orders.find(o => o.id === s.confirmed) || { lines: [] }).lines.map(l => {
         const p = P(l.id);

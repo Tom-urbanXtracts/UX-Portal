@@ -68,6 +68,27 @@ Paths worth walking because they refuse rather than proceed:
 - Two signal colours only: green for released, passed and primary action; clay
   for blocked and exception. Everything pending is monochrome.
 
+## Monday integration and sign-in
+
+**Order intake board.** A submitted order lands on
+[Portal Orders — TEST](https://urban915991.monday.com/boards/18428025898) in the
+IT workspace (test mode; move to Distribution at go-live). 21 structured columns,
+nothing derived by parsing the item name. `Account` links to **Licensed
+Retailers** — which already holds **Account Owner**, i.e. the rep — so the rep,
+licence number, licence expiry and current AR balance are *mirrored* rather than
+retyped. `Lines` is deliberately a line count, not a unit total: an order can mix
+grams, millilitres and each, and those are never summed.
+
+Two findings from reading the live boards first: `Order Overview` is at 9,280 of
+10,000 items, and it derives Dollar Amount, Invoice #, Brand and Dispensary by
+parsing the item name with formulas — which is why the portal writes to its own
+intake board and links onward rather than into either.
+
+**Role comes from the login.** The owner/buyer/budtender/internal switcher is
+gone. There is a sign-in screen; role is a property of the account, and signing
+out returns to it. A signed-in buyer has no navigation entry for receivables at
+all — restricted routes are not rendered.
+
 ## The prototype, updated
 
 `dist/portal.html` and its source now carry a first pass at part of wave 4:
