@@ -9,21 +9,36 @@ states, unit types and date ranges were read from live Canix reporting on
 2026-08-24 and are real; everything else is either labelled sample data or shown
 as an explicit pending state.
 
+## Where it is hosted
+
+Served by GitHub Pages from `main` at the repository root:
+**https://tom-urbanxtracts.github.io/UX-Portal/**
+
+The repository and the Pages site are both **public**. `robots.txt` and a
+page-level `noindex` ask crawlers to stay out, but that is a request, not access
+control — anyone with the link can read everything here.
+
 ## What is in here
 
 | Path | What it is |
 |---|---|
+| `index.html` | Landing page for the hosted site. Links to the prototype and every document. |
 | `dist/portal.html` | Self-contained prototype. Open it in a browser — no build, no server, no dependencies. |
-| `UX Portal - Prototype.dc.html` | Prototype source (streaming design component). |
-| `UX Portal - Phase 1 Architecture.dc.html` | Sitemap, role and permission matrix, gates, flows, source map, audit events, open items, acceptance. |
-| `UX Portal - Build Plan.dc.html` | What remains, sequenced by dependency: 9 blockers, 22 build tasks, 3 waves. |
+| `ux-portal-prototype.dc.html` | Prototype source (streaming design component). |
+| `ux-portal-phase-1-architecture.dc.html` | Sitemap, role and permission matrix, gates, flows, source map, audit events, open items, acceptance. |
+| `ux-portal-build-plan.dc.html` | What remains, sequenced by dependency: 9 blockers, 22 build tasks, 3 waves. |
+| `Sitemap-A-*`, `Sitemap-B-*` | Two sitemap treatments. |
+| `Doc-Format-A-*`, `Doc-Format-B-*` | Two document treatments. |
 | `brand/` | The uX mark, trimmed, plus a reversed version generated for dark surfaces. |
 | `_ds/` | The design system the visual language builds on. |
 | `support.js` | Runtime for the `.dc.html` sources. Not needed by `dist/portal.html`. |
+| `.nojekyll` | Required. Without it GitHub Pages runs Jekyll, which drops any path starting with `_` — including all of `_ds/`, which every `.dc.html` page needs. |
+| `robots.txt` | Asks crawlers not to index an unreleased prototype. |
 
 ## Walking the prototype
 
-Open `dist/portal.html` and switch role in the top bar.
+Open the [hosted site](https://tom-urbanxtracts.github.io/UX-Portal/), or
+`dist/portal.html` locally, and switch role in the top bar.
 
 - **Buyer** — catalog → product → pick a lot → add → draft → send for approval.
 - **Owner** — approve or decline it; compare locations; manage your own users.
