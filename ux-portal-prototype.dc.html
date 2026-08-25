@@ -61,7 +61,7 @@ button{font-family:inherit}
 <div style="background:var(--ux-ink);color:var(--ux-ground);padding:8px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em">
 <img src="brand/ux-mark-reversed.png" alt="" style="height:13px;width:auto;display:block;opacity:.9">
 <span style="background:var(--ux-signal);color:#fff;padding:3px 7px">SAMPLE DATA</span>
-<span>Names, prices and quantities are synthetic. Catalog structure, release states, order states and date ranges are measured from live Canix reads, 2026-08-24.</span>
+<span>Names, prices and quantities are synthetic and <span style="background:#fdf0a8;color:var(--ux-ink);padding:1px 5px">highlighted like this</span> wherever they appear. Catalog structure, release states, order states and date ranges are measured from live Canix reads, 2026-08-24. Highlighting is used rather than red because clay already means blocked.</span>
 <span style="background:rgba(250,247,243,.16);padding:3px 7px">BRAND</span>
 <span>Mark as supplied, ink sampled from it. Monochrome with two signals — green for released, clay for blocked. Category hues appear in the catalog only.</span>
 </div>
@@ -207,7 +207,7 @@ button{font-family:inherit}
 <div style="height:118px;background:var(--ux-surface);border-bottom:1px solid rgba(23,14,11,.2);display:flex;align-items:flex-end;justify-content:center;padding-bottom:0"><div style="width:74px;height:58px;border:1px solid rgba(23,14,11,.22);border-bottom:0;border-radius:74px 74px 0 0;display:flex;align-items:center;justify-content:center;font:600 8.5px ui-monospace,monospace;letter-spacing:.1em;color:var(--ux-faint)">IMAGE</div></div>
 <div style="padding:14px 15px 16px;display:flex;flex-direction:column;gap:8px;flex:1">
 <div style="display:flex;align-items:center;gap:7px;font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)"><span style="{{ p.catDot }}"></span>{{ p.brand }} · {{ p.cat }}</div>
-<div style="font:700 15px/1.25 Archivo,sans-serif">{{ p.name }}</div>
+<div style="font:700 15px/1.25 Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ p.name }}</span></div>
 <div style="font-size:12px;color:var(--ux-muted)">{{ p.format }} · <span style="font-family:ui-monospace,monospace;font-size:11px">{{ p.sku }}</span></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ p.band }}</span>
@@ -215,7 +215,7 @@ button{font-family:inherit}
 <span style="{{ p.orderedStyle }}">{{ p.orderedTag }}</span>
 </div>
 <div style="flex:1"></div>
-<div style="font-size:13px;{{ p.priceStyle }}">{{ p.priceText }}</div>
+<div style="font-size:13px;{{ p.priceStyle }}"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ p.priceText }}</span></div>
 <div style="display:flex;gap:8px;margin-top:2px">
 <button type="button" onClick="{{ p.onOpen }}" style="flex:1;background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 12px Archivo,sans-serif;text-align:left;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
 <sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
@@ -240,12 +240,12 @@ button{font-family:inherit}
 <div style="width:38px;height:30px;border:1px solid rgba(23,14,11,.22);border-bottom:0;border-radius:38px 38px 0 0;flex:none;background:var(--ux-surface)"></div>
 <div style="flex:1;min-width:180px">
 <div style="display:flex;align-items:center;gap:7px;font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:3px"><span style="{{ p.catDot }}"></span>{{ p.brand }} · {{ p.cat }}</div>
-<div style="font:700 14px Archivo,sans-serif">{{ p.name }}</div>
+<div style="font:700 14px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ p.name }}</span></div>
 </div>
 <div style="min-width:120px;font-size:12px;color:var(--ux-muted)">{{ p.format }}</div>
 <div style="min-width:96px;font-family:ui-monospace,monospace;font-size:11.5px">{{ p.sku }}</div>
 <div style="min-width:86px;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-muted-strong)">{{ p.band }}</div>
-<div style="min-width:120px;font-size:13px;{{ p.priceStyle }}">{{ p.priceText }}</div>
+<div style="min-width:120px;font-size:13px;{{ p.priceStyle }}"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ p.priceText }}</span></div>
 <div style="display:flex;gap:8px">
 <button type="button" onClick="{{ p.onOpen }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
 <sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
@@ -276,7 +276,7 @@ button{font-family:inherit}
 </div>
 <div style="flex:1;min-width:300px">
 <div style="display:flex;align-items:center;gap:8px;font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px"><span style="{{ pdCatDot }}"></span>{{ pdBrand }} · {{ pdCat }}</div>
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 10px">{{ pdName }}</h1>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 10px"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ pdName }}</span></h1>
 <div style="font-size:14px;color:var(--ux-muted);margin-bottom:16px">{{ pdFormat }} · SKU <span style="font-family:ui-monospace,monospace;font-size:12.5px">{{ pdSku }}</span> · {{ pdStrain }}</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
 <span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:4px 7px;background:var(--ux-ink);color:var(--ux-ground)">RELEASED</span>
@@ -287,13 +287,13 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4);padding-top:18px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
 <div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Your price</div>
-<div style="font:800 22px/1 Archivo,sans-serif;{{ pdPriceStyle }}">{{ pdPriceText }}</div>
+<div style="font:800 22px/1 Archivo,sans-serif;{{ pdPriceStyle }}"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ pdPriceText }}</span></div>
 <div style="font-size:11px;color:var(--ux-muted);margin-top:5px">{{ pdPriceNote }}</div>
 </div>
 <div style="flex:1"></div>
 <div style="display:flex;gap:10px;align-items:center">
 <button type="button" onClick="{{ decQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
-<div style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif">{{ qty }}</div>
+<div style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ qty }}</span></div>
 <button type="button" onClick="{{ incQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 <button type="button" onClick="{{ addSelected }}" style="{{ addBtnStyle }}" style-hover="background:var(--ux-accent-press)">{{ addBtnLabel }}</button>
 </div>
@@ -381,7 +381,7 @@ button{font-family:inherit}
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:10px">A LINE IS NO LONGER AVAILABLE</div>
 <sc-for list="{{ oosLines }}" as="o" hint-placeholder-count="1">
 <div style="margin-bottom:10px">
-<div style="font-size:13.5px;line-height:1.55;margin-bottom:8px"><strong>{{ o.name }}</strong> has no released stock. Swap it rather than losing the line — same category, released now:</div>
+<div style="font-size:13.5px;line-height:1.55;margin-bottom:8px"><strong><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ o.name }}</span></strong> has no released stock. Swap it rather than losing the line — same category, released now:</div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <sc-for list="{{ o.alternatives }}" as="alt" hint-placeholder-count="2">
 <button type="button" onClick="{{ alt.onSwap }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 12px Archivo,sans-serif;cursor:pointer;text-align:left" style-hover="background:var(--ux-surface)">{{ alt.label }}</button>
@@ -410,14 +410,14 @@ button{font-family:inherit}
 </div>
 <sc-for list="{{ cartLines }}" as="line" hint-placeholder-count="2">
 <div style="display:grid;grid-template-columns:2fr .9fr 1fr .8fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div><div style="font-weight:600">{{ line.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ line.brand }} · {{ line.sku }}</div></div>
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ line.brand }} · {{ line.sku }}</div></div>
 <div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ line.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ line.packaged }}</div></div>
 <div style="display:flex;gap:6px;align-items:center">
 <button type="button" onClick="{{ line.onDec }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
-<span style="min-width:26px;text-align:center;font-weight:600">{{ line.qty }}</span>
+<span style="min-width:26px;text-align:center;font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.qty }}</span></span>
 <button type="button" onClick="{{ line.onInc }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
 </div>
-<div style="font-weight:600">{{ line.lineTotal }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ line.lineTotal }}</span></div>
 <div><button type="button" onClick="{{ line.onRemove }}" style="background:transparent;border:1px solid rgba(23,14,11,.25);padding:6px 9px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="border-color:var(--ux-accent);color:var(--ux-accent-text)">Remove</button></div>
 </div>
 </sc-for>
@@ -466,7 +466,7 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <sc-for list="{{ requests }}" as="rq" hint-placeholder-count="1">
 <div style="display:grid;grid-template-columns:1.6fr 1fr .9fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div style="font-weight:600">{{ rq.name }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ rq.name }}</span></div>
 <div style="color:var(--ux-muted)">{{ rq.loc }}</div>
 <div style="color:var(--ux-muted)">{{ rq.raised }}</div>
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ rq.tagStyle }}">{{ rq.state }}</div>
@@ -487,7 +487,7 @@ button{font-family:inherit}
 <span>{{ o.loc }}</span>
 <span style="color:var(--ux-muted)">{{ o.placed }}</span>
 <span>{{ o.lines }}</span>
-<span>{{ o.value }}</span>
+<span><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ o.value }}</span></span>
 <span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ o.tagStyle }}">{{ o.state }}</span>
 </button>
 </sc-for>
@@ -531,15 +531,15 @@ button{font-family:inherit}
 </div>
 <sc-for list="{{ odLines }}" as="l" hint-placeholder-count="3">
 <div style="display:grid;grid-template-columns:2fr .9fr .6fr .8fr .8fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div><div style="font-weight:600">{{ l.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ l.brand }} · {{ l.sku }}</div></div>
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ l.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ l.brand }} · {{ l.sku }}</div></div>
 <div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ l.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ l.packaged }}</div></div>
-<div>{{ l.qty }}</div>
+<div><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ l.qty }}</span></div>
 <div>{{ l.unit }}</div>
-<div style="font-weight:600">{{ l.total }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ l.total }}</span></div>
 </div>
 </sc-for>
 <div style="display:grid;grid-template-columns:2fr .9fr .6fr .8fr .8fr;gap:14px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px">
-<div style="font-weight:700">Order value</div><div></div><div>{{ odUnits }}</div><div></div><div style="font-weight:700">{{ odValue }}</div>
+<div style="font-weight:700">Order value</div><div></div><div><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ odUnits }}</span></div><div></div><div style="font-weight:700"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ odValue }}</span></div>
 </div>
 </div>
 
@@ -581,7 +581,7 @@ button{font-family:inherit}
 <sc-for list="{{ kioskItems }}" as="k" hint-placeholder-count="4">
 <button type="button" onClick="{{ k.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:16px 0;cursor:pointer;display:flex;gap:14px;align-items:center;min-height:60px" style-hover="background:var(--ux-surface)">
 <span style="width:46px;height:46px;background:var(--ux-surface);border:1px solid rgba(23,14,11,.18);flex:none"></span>
-<span><span style="display:block;font:700 15px Archivo,sans-serif">{{ k.name }}</span><span style="display:block;font-size:12px;color:var(--ux-muted)">{{ k.brand }} · {{ k.cat }}</span></span>
+<span><span style="display:block;font:700 15px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ k.name }}</span></span><span style="display:block;font-size:12px;color:var(--ux-muted)">{{ k.brand }} · {{ k.cat }}</span></span>
 </button>
 </sc-for>
 </div>
@@ -608,7 +608,7 @@ button{font-family:inherit}
 <tbody>
 <sc-for list="{{ econRows }}" as="e" hint-placeholder-count="5">
 <tr style="border-bottom:1px solid rgba(23,14,11,.14)">
-<td style="padding:11px 10px 11px 0;font-weight:600">{{ e.name }}</td>
+<td style="padding:11px 10px 11px 0;font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ e.name }}</span></td>
 <td style="padding:11px 10px;font-family:ui-monospace,monospace;font-size:11.5px">{{ e.unit }}</td>
 <td style="padding:11px 10px">{{ e.rev }}</td>
 <td style="padding:11px 10px">{{ e.cost }}</td>
@@ -639,7 +639,7 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <sc-for list="{{ integrityRows }}" as="i" hint-placeholder-count="7">
 <div style="display:grid;grid-template-columns:1.6fr .5fr 1.3fr;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
-<div style="font-weight:600">{{ i.name }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ i.name }}</span></div>
 <div style="font-family:ui-monospace,monospace;font-size:12px;{{ i.countStyle }}">{{ i.count }}</div>
 <div style="color:var(--ux-muted);font-size:12.5px;line-height:1.5">{{ i.effect }}</div>
 </div>
@@ -667,7 +667,7 @@ button{font-family:inherit}
 </button>
 </sc-for>
 </div>
-<div style="margin-top:22px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Reorder intervals are computed from each account&rsquo;s own order history and nothing else. There is no sell-through feed, so no velocity or sales-rate claim is made anywhere in the portal.</div>
+<div style="margin-top:22px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Reorder intervals are computed from each account&rsquo;s own order history and nothing else. There is no sell-through feed and none is planned, so no velocity or sales-rate claim is made anywhere in the portal.</div>
 </div>
 </sc-if>
 
@@ -713,14 +713,15 @@ button{font-family:inherit}
 <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ adminTitle }}</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">{{ adminSub }}</p>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px;max-width:70ch">{{ adminSub }}</p>
+<div style="margin:0 0 24px"><button type="button" onClick="{{ onInvite }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Invite a user</button></div>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>User</div><div>Organisation</div><div>Role</div><div>Scope</div><div>Actions</div>
 </div>
 <sc-for list="{{ users }}" as="u" hint-placeholder-count="6">
 <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div><div style="font-weight:600">{{ u.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ u.email }}</div></div>
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ u.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ u.email }}</div></div>
 <div>{{ u.org }}</div>
 <div><span style="{{ u.roleStyle }}">{{ u.role }}</span></div>
 <div style="color:var(--ux-muted)">{{ u.locs }}</div>
@@ -730,6 +731,9 @@ button{font-family:inherit}
 </sc-if>
 <sc-if value="{{ u.canChangeRole }}" hint-placeholder-val="{{ true }}">
 <button type="button" onClick="{{ u.onRoleChange }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Change role</button>
+</sc-if>
+<sc-if value="{{ u.canDeactivate }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ u.onDeactivate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)" style-hover="background:var(--ux-surface)">Deactivate</button>
 </sc-if>
 </div>
 </div>
@@ -795,6 +799,53 @@ button{font-family:inherit}
 </div>
 </sc-for>
 </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDocuments }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Documents</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px;max-width:72ch">The paper between us, in one place &mdash; what you send and what we issue. The license gate has told a blocked shop to upload its renewal since the first draft of this design, and until now there was nowhere to upload it.</p>
+<div style="margin:0 0 24px"><button type="button" onClick="{{ onUpload }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Upload a document</button></div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.6fr 1fr 1.2fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Document</div><div>Type</div><div>Dates</div><div>State</div>
+</div>
+<sc-for list="{{ docs }}" as="d" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:1.6fr 1fr 1.2fr .8fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><button type="button" onClick="{{ d.onOpen }}" style="background:transparent;border:0;padding:0;text-align:left;cursor:pointer;font:600 13px Archivo,sans-serif"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ d.name }}</span></button><div style="font-size:11.5px;color:var(--ux-muted)">{{ d.loc }}</div></div>
+<div>{{ d.type }}</div>
+<div style="color:var(--ux-muted)">{{ d.dates }}</div>
+<div><span style="{{ d.stateStyle }}">{{ d.state }}</span></div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:22px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:76ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">AN UPLOAD NEVER LIFTS A GATE</div>
+<div style="font-size:13px;line-height:1.62">Sending a license renewal does not clear your license gate. The gate reads the license record, and an urbanXtracts reviewer updates that record after looking at the document &mdash; otherwise a file attachment would clear a compliance block. Banking, remittance and signatory details are refused here and stay in the onboarding record.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:72ch">Six stages from intake to ready-to-order. Internal only &mdash; a store does not onboard itself, because two stages are ours to decide and one is a compliance qualification. Every account short of stage six shows exactly which stage it is sitting in.</p>
+<div style="display:flex;flex-wrap:wrap;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<div style="flex:1;min-width:120px;padding:12px 14px 12px 0;font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">01</div>Intake</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">02</div>Qualification</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">03</div>Commercial terms</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">04</div>Account creation</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">05</div>Access</div><div style="flex:1;min-width:120px;padding:12px 0 12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">06</div>Ready to order</div>
+</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.6fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Organisation</div><div>Licenses</div><div>Stage and what is holding it</div>
+</div>
+<sc-for list="{{ onboarding }}" as="o" hint-placeholder-count="4">
+<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.6fr;gap:16px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ o.org }}</span></div>
+<div style="color:var(--ux-muted);font-size:12px">{{ o.licenses }}</div>
+<div><span style="{{ o.stageStyle }}">{{ o.stageLabel }}</span><div style="margin-top:6px;line-height:1.55">{{ o.note }}</div></div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:22px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:76ch">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">WHAT THE ONBOARDING RECORD HOLDS, AND KEEPS</div>
+<div style="font-size:13px;line-height:1.62">License numbers, banking, remittance and signatory details are captured here and stay here. They are not surfaced on the account screen, in the store records surface, through the store API, or in any export. The account key the rest of the system uses is the license number; everything else in this sentence has no second home by design. At qualification we record what the state record says and never assert on our own authority that a license is valid.</div>
 </div>
 </sc-if>
 
@@ -887,7 +938,7 @@ button{font-family:inherit}
 </div>
 <sc-for list="{{ confirmLines }}" as="c" hint-placeholder-count="3">
 <div style="display:grid;grid-template-columns:1.7fr 1.5fr .5fr .7fr .7fr;gap:12px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline">
-<div><div style="font-weight:600">{{ c.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ c.brand }} · {{ c.sku }}</div></div>
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ c.name }}</span></div><div style="font-size:11px;color:var(--ux-muted)">{{ c.brand }} · {{ c.sku }}</div></div>
 <div><div style="font-family:ui-monospace,monospace;font-size:10.5px">{{ c.tag }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">Packaged {{ c.packaged }}</div></div>
 <div>{{ c.qty }}</div><div>{{ c.unit }}</div><div style="font-weight:600">{{ c.total }}</div>
 </div>
@@ -913,7 +964,7 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
 <sc-for list="{{ acctLocations }}" as="l" hint-placeholder-count="3">
 <div style="display:grid;grid-template-columns:1fr 1.2fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div style="font-weight:600">{{ l.name }}</div>
+<div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ l.name }}</span></div>
 <div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ l.license }}</div>
 <div><span style="{{ l.style }}">{{ l.status }}</span></div>
 </div>
@@ -924,7 +975,7 @@ button{font-family:inherit}
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
 <sc-for list="{{ acctContacts }}" as="c" hint-placeholder-count="3">
 <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">
-<div><div style="font-weight:600">{{ c.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ c.role }}</div></div>
+<div><div style="font-weight:600"><span style="background:#fdf0a8;box-shadow:0 0 0 2px #fdf0a8">{{ c.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ c.role }}</div></div>
 <div style="font-size:12px;color:var(--ux-muted-strong)">{{ c.reach }}</div>
 </div>
 </sc-for>
@@ -962,7 +1013,7 @@ button{font-family:inherit}
 <div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">{{ n }}</div>
 </sc-for>
 </div>
-<div style="margin-top:12px;font-size:11.5px;color:var(--ux-muted);line-height:1.55">Derived from this account&rsquo;s own order history against the released catalog — the only reorder signal available without sell-through data.</div>
+<div style="margin-top:12px;font-size:11.5px;color:var(--ux-muted);line-height:1.55">Derived from this account&rsquo;s own order history against the released catalog — the only reorder signal there will be, now that sell-through is out of scope.</div>
 </div>
 </div>
 </div>
@@ -971,7 +1022,7 @@ button{font-family:inherit}
 <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ false }}">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Compare locations</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Your three shops side by side. Sell-through is blank on every column because no point-of-sale feed is connected — the row stays visible so the gap is legible rather than silently absent.</p>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Your three shops side by side. Sell-through is blank on every column because urbanXtracts does not receive store sales data — decided out of scope on 24 Aug 2026, not pending — so the row states the boundary rather than promising a connection.</p>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Metric</div><div>Downtown</div><div>Riverside</div><div>Northgate</div>
@@ -1197,7 +1248,7 @@ const SEED_ORDERS = [
 const VALIDATION = [
   { cls: 'INFORMATION REQUIRED', closedBy: 'Closed by whoever holds the fact', items: [
     { severity: 'BLOCKING', screen: 'Product detail', question: 'Where do parsed potency, cannabinoid and terpene values live?', detail: 'No structured field for potency or terpenes exists in either reporting domain, and labs are manual. The product detail page therefore shows an explicit pending panel where the largest section of the hero screen should be.', blocks: 'Potency and profile layer; budtender education', owner: 'Quality', evidence: 'A named field or record per lot, and who maintains it' },
-    { severity: 'BLOCKING', screen: 'Performance panels', question: 'Is there any store sell-through feed, now or planned?', detail: 'Order history exists; sell-through does not. Every performance panel is an empty state, and reorder timing is based on order interval alone with that basis stated on screen.', blocks: 'Product performance, location comparison, velocity claims', owner: 'Sales leadership', evidence: 'A data source, or a decision to ship without one' },
+    { severity: 'DECIDED', screen: 'Performance panels', question: 'Is there any store sell-through feed, now or planned?', detail: 'Answered on 24 Aug 2026 with the second of its two answers: ship without one. The portal stays semi-internal and does not connect to a retailer point-of-sale. Performance panels report the account\u2019s own ordering with urbanXtracts, permanently rather than pending, and no velocity claim is made anywhere.', blocks: 'Nothing \u2014 closed', owner: 'The business', evidence: 'Decision recorded 24 Aug 2026' },
     { severity: 'Record and continue', screen: 'Lot panel', question: 'Which lot and batch identifiers will exist going forward?', detail: 'Most active packages carry no lot identifier and a large share carry no batch number either. The prototype treats the compliance tag as sufficient identity so it works either way.', blocks: 'Nothing today; affects lineage depth', owner: 'Operations', evidence: 'A go-forward identifier rule' }
   ] },
   { cls: 'CANIX VALIDATION REQUIRED', closedBy: 'Closed by a Canix test or a vendor answer', items: [
@@ -1210,22 +1261,50 @@ const VALIDATION = [
     { severity: 'Record and continue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
     { severity: 'Record and continue', screen: 'Internal lot view', question: 'Does the co-manufacturing record carry the ownership code?', detail: 'A co-manufacturing board exists. Ownership code is a property of the inbound lot and must never reach a counterparty view, so its source needs to be definite first.', blocks: 'Ownership display on the internal lot view', owner: 'Data contracts', evidence: 'A read of the co-man record structure' },
     { severity: 'Record and continue', screen: 'Account · Orders', question: 'Is the ledger reachable for balances and terms?', detail: 'The ledger connector was not attached for this work. Balance and terms are pending rather than estimated, and a buyer sees only that a gate fired, never a balance.', blocks: 'AR display; invoice access', owner: 'Finance', evidence: 'A connector read of balances for a sample account' },
-    { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' }
+    { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' },
+    { severity: 'Record and continue', screen: 'Account · API access', question: 'What scope, credential model and rate limits does the store API carry?', detail: 'A read-only endpoint over the store records surface, for chains running their own tooling. It is a second renderer of the same authorization, never a second authorization, and it depends on the unresolved multi-license question above.', blocks: 'The store API', owner: 'Administration', evidence: 'A scope, a credential model and a rate limit' }
   ] },
   { cls: 'FINANCE DECISION', closedBy: 'Closed by the finance owner', items: [
     { severity: 'BLOCKING', screen: 'Cost and margin', question: 'May a margin figure be shown when its cost components are incomplete, and at what coverage?', detail: 'Three quarters of active packages carry no total standard cost and labor cost is effectively unpopulated. Every figure on the cost and margin screen is synthetic and labelled, with a coverage column beside it.', blocks: 'The internal economics view', owner: 'Finance', evidence: 'A coverage threshold, and what displays below it' },
-    { severity: 'Record and continue', screen: 'Cost and margin', question: 'Which cost components belong in a unit cost?', detail: 'Cannabis, non-cannabis ingredient and labor components exist as separate fields. Which of them constitute the figure a margin is computed against is an accounting treatment, not a display choice.', blocks: 'Nothing today; defines the figure', owner: 'Finance', evidence: 'A stated treatment per component' }
+    { severity: 'Record and continue', screen: 'Cost and margin', question: 'Which cost components belong in a unit cost?', detail: 'Cannabis, non-cannabis ingredient and labor components exist as separate fields. Which of them constitute the figure a margin is computed against is an accounting treatment, not a display choice.', blocks: 'Nothing today; defines the figure', owner: 'Finance', evidence: 'A stated treatment per component' },
+    { severity: 'Record and continue', screen: 'Onboarding', question: 'May an account be created before payment terms and a credit limit exist?', detail: 'Stage 03 of onboarding is already waiting on the per-account rate card. Whether it is a hard stop or a soft one decides whether an account can exist without terms.', blocks: 'Stage 03 of onboarding', owner: 'Finance', evidence: 'A hard stop, or a stated soft path' }
   ] },
   { cls: 'BUSINESS DECISION', closedBy: 'Closed by the business owner', items: [
     { severity: 'BLOCKING', screen: 'Order builder', question: 'What order value triggers owner approval?', detail: 'Approval also fires when a buyer submits, when an order exceeds available quantity, and when receivables are past due — all settled. The value threshold is not, so the prototype applies the buyer rule only.', blocks: 'The order-submission gate', owner: 'Sales leadership', evidence: 'A number, and whether it varies by account' },
     { severity: 'Record and continue', screen: 'Exceptions', question: 'Who owns each exception type, and against what clock?', detail: 'A store sees status only, never the owner or the clock, so this is an internal decision that does not change any external screen.', blocks: 'Exception queue routing', owner: 'Operations', evidence: 'An owner and a target per exception type' },
-    { severity: 'Record and continue', screen: 'Sign-in', question: 'Multi-factor authentication was left open.', detail: 'This prototype assumes none in phase one, and no personal login at all on shared floor devices.', blocks: 'Nothing today', owner: 'Administration', evidence: 'A policy per role' }
+    { severity: 'Record and continue', screen: 'Sign-in', question: 'Multi-factor authentication was left open.', detail: 'This prototype assumes none in phase one, and no personal login at all on shared floor devices.', blocks: 'Nothing today', owner: 'Administration', evidence: 'A policy per role' },
+    { severity: 'BLOCKING', screen: 'Order builder · Approvals', question: 'May an urbanXtracts rep hold a store’s ordering approval, and on whose written authority?', detail: 'Asked for on 24 Aug 2026. The seller approving the buyer’s purchase commitment is a segregation-of-duties and contracting question before it is a feature. Designed as a store-granted, time-bounded, revocable delegation that is named on the order and cannot lift any gate.', blocks: 'Rep-held approval', owner: 'Sales leadership, with the CCO and Legal', evidence: 'A written authority, or a decision not to offer it' },
+    { severity: 'Record and continue', screen: 'Draft order', question: 'Does a draft hold inventory, for how long, and who wins when two accounts draft the last of a lot?', detail: 'Today a draft holds nothing, which is why the inventory-changed gate exists. The gate stays whichever way the policy lands; the policy has never been written.', blocks: 'Nothing today; the gate handles the symptom', owner: 'Operations with sales operations', evidence: 'A stated hold policy, or a stated refusal to hold' },
+    { severity: 'Record and continue', screen: 'Approvals', question: 'How long may an approval sit, and where does it escalate?', detail: 'One named human holds approval with no clock and no delegate, so an owner on holiday stalls every order over the threshold.', blocks: 'Nothing today; approvals can stall silently', owner: 'Sales leadership', evidence: 'A period and an escalation path' },
+    { severity: 'Record and continue', screen: 'Order · Received', question: 'How long after delivery may a store raise a short, damaged or refused line, and what evidence is required?', detail: 'Short shipments and damage are raised internally only today, so a store receiving eighteen of twenty-four has one route: the telephone.', blocks: 'The receiving claim', owner: 'Operations', evidence: 'A window and an evidence rule' },
+    { severity: 'Record and continue', screen: 'Notifications', question: 'Which channels carry a notification, and which notices may a user never switch off?', detail: 'Four events push. An amended COA and a recall notice are not mutable; the rest may be. Channel set and consent wording are unwritten.', blocks: 'Notification delivery', owner: 'Sales leadership, with the CCO on recall wording', evidence: 'A channel set and consent wording' },
+    { severity: 'Record and continue', screen: 'Account · Documents', question: 'Which document types may a store send, how long is each kept, and what happens at wind-down?', detail: 'The license gate has told blocked stores to upload a renewal since the first draft with nowhere to upload it. An untyped, unexpiring document store becomes unusable within a year.', blocks: 'Document exchange', owner: 'Operations, with the CCO on anything a regulator could ask for', evidence: 'A type list and a retention rule' },
+    { severity: 'Record and continue', screen: 'Onboarding', question: 'Who qualifies a license against the state record, and how often is it rechecked?', detail: 'We record what the state record says and never assert validity ourselves, so the question is who looks, what evidence is kept, and on what cycle.', blocks: 'Stage 02 of onboarding', owner: 'Quality and compliance', evidence: 'A named owner and a recheck cycle' }
   ] },
   { cls: 'CCO SIGN-OFF REQUIRED', closedBy: 'Closed by the Chief Compliance Officer', items: [
     { severity: 'BLOCKING', screen: 'Public COA page', question: 'What does the public page display, how long does a printed code keep resolving, and is retest history shown?', detail: 'The resolver mechanism is designed for either answer and nothing publishes while this is open. The payload is constrained to lab result, batch and dates, and the portal never interprets a result.', blocks: 'Publication of the public resolver', owner: 'CCO', evidence: 'A written display, retention and retest decision' },
-    { severity: 'BLOCKING', screen: 'Public COA page', question: 'What triggers a recall notice, what does it say, and how fast must it appear?', detail: 'Product safety escalates immediately and is itself a recall trigger, so it does not queue behind the normal exception path. The notice wording is not ours to write.', blocks: 'Recall behaviour on published pages', owner: 'CCO', evidence: 'Approved trigger and wording' }
+    { severity: 'BLOCKING', screen: 'Public COA page', question: 'What triggers a recall notice, what does it say, and how fast must it appear?', detail: 'Product safety escalates immediately and is itself a recall trigger, so it does not queue behind the normal exception path. The notice wording is not ours to write.', blocks: 'Recall behaviour on published pages', owner: 'CCO', evidence: 'Approved trigger and wording' },
+    { severity: 'BLOCKING', screen: 'Public COA page', question: 'May a third party walk the public code space?', detail: 'The page contents were specified without specifying the exposure. A non-sequential code, a per-source rate limit, no listing endpoint, and an unknown code answering identically to an unpublished one all follow from the same decision.', blocks: 'Publication of the public resolver', owner: 'CCO', evidence: 'A code format, a rate limit, and an enumeration position' }
   ] }
 ];
+
+const DOCS = [
+  { name: 'Downtown license renewal 2026.pdf', type: 'License renewal', dates: 'Effective 1 Sep 2026 · expires 31 Aug 2027', state: 'Accepted', loc: 'Downtown' },
+  { name: 'Northgate license renewal.pdf', type: 'License renewal', dates: 'Submitted 22 Aug 2026', state: 'In review', loc: 'Northgate' },
+  { name: 'General liability certificate.pdf', type: 'Insurance certificate', dates: 'Expires 14 Nov 2026', state: 'Accepted', loc: 'All locations' },
+  { name: 'Resale certificate 2026.pdf', type: 'Resale or exemption', dates: 'Expires 31 Dec 2026', state: 'Accepted', loc: 'All locations' },
+  { name: 'Riverside receiving instructions.pdf', type: 'Receiving instructions', dates: 'Updated 3 Aug 2026', state: 'Accepted', loc: 'Riverside' },
+  { name: 'SO-23964 short delivery photo.jpg', type: 'Claim evidence', dates: 'Submitted 12 Jul 2026', state: 'Rejected', loc: 'Northgate' }
+];
+
+const ONBOARDING = [
+  { org: 'Cedar & Pine Provisions', licenses: '2 locations · OCM-RETL-24-000871, OCM-RETL-24-000872', stage: 5, note: 'Owner invited 21 Aug. Waiting on the owner to accept and add their buyers.' },
+  { org: 'Harborline Cannabis Co.', licenses: '1 location · OCM-RETL-24-000904', stage: 3, note: 'Held at commercial terms — no per-account rate card record exists, so no price can be assigned.' },
+  { org: 'Marigold Street Dispensary', licenses: '4 locations · 3 qualified, 1 pending', stage: 2, note: 'One license failed qualification against the state record. The other three proceed; that location cannot order.' },
+  { org: 'Ninth Ward Wellness', licenses: '1 location · license number not yet supplied', stage: 1, note: 'A location without a license number cannot proceed — the license number is the account key.' }
+];
+
+const ONBOARDING_STAGES = ['Intake', 'Qualification', 'Commercial terms', 'Account creation', 'Access', 'Ready to order'];
 
 const INTEGRITY = [
   { name: 'Available with no lab result', count: '1', effect: 'Excluded from catalog by the release rule; flagged for correction' },
@@ -1393,9 +1472,9 @@ class Component extends DCLogic {
 
   navFor(role) {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
-    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['users', 'Your users', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
-    return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['onboarding', 'Store onboarding', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
   }
 
   renderVals() {
@@ -1581,6 +1660,16 @@ class Component extends DCLogic {
       if (isInternal && od.state === 'Placed') actions.push({ label: 'Confirm order', style: primary, onDo: () => this.advance(od.id, 'Approved', 'CONFIRMED') });
       if (isInternal && od.state === 'Approved') actions.push({ label: 'Mark shipped', style: primary, onDo: () => this.advance(od.id, 'Shipped', 'SHIPPED') });
       if (od.state === 'Shipped') actions.push({ label: 'Confirm received', style: primary, onDo: () => this.advance(od.id, 'Received', 'RECEIVED') });
+      if (!isInternal && od.state === 'Placed') {
+        actions.push({ label: 'Edit lines', style: secondary, onDo: () => this.set({ toast: 'A placed order stays editable by your organisation until it is approved. Every edit writes a line-level difference both sides can read.', toastKind: 'NOT WIRED' }) });
+        actions.push({ label: 'Cancel order', style: secondary, onDo: () => this.set({ toast: 'Cancellation is available on the same window as editing. After approval it becomes a request with a stated reason, not an action.', toastKind: 'NOT WIRED' }) });
+      }
+      if (!isInternal && (od.state === 'Approved' || od.state === 'Shipped')) {
+        actions.push({ label: 'Request a change', style: secondary, onDo: () => this.set({ toast: 'The edit window closed at approval. A change is now a request routed to your account manager, and the order shows that it was requested.', toastKind: 'NOT WIRED' }) });
+      }
+      if (!isInternal && od.state === 'Received') {
+        actions.push({ label: 'Report a problem', style: secondary, onDo: () => this.set({ toast: 'Short, damaged or refused, per line, with quantity, reason and an optional photo. It joins the exception queue and you see its status only \u2014 never the internal owner, the clock, or internal notes.', toastKind: 'NOT WIRED' }) });
+      }
       if (canOrder) actions.push({ label: 'Reorder these lines', style: secondary, onDo: () => this.reorder(od) });
       actions.push({ label: 'Download confirmation', style: secondary, onDo: () => this.set({ toast: 'A PDF confirmation for ' + od.id + ' would download here. Document generation is out of scope for the prototype.', toastKind: 'NOT WIRED' }) });
 
@@ -1620,6 +1709,11 @@ class Component extends DCLogic {
         ...u,
         canImpersonate: isInternal && !s.impersonating && u.role !== 'Kiosk device',
         canChangeRole: ownOrg && !s.impersonating,
+        canDeactivate: ownOrg && !s.impersonating && u.role !== 'Kiosk device',
+        onDeactivate: () => {
+          this.logAudit('User revoked', u.name, 'Access ended immediately and live sessions closed. Visible to ' + u.org);
+          this.set({ toast: 'Deactivating ' + u.name + ' ends access immediately and closes any live session. A departing buyer keeps nothing \u2014 revocation is a control, not a convenience.', toastKind: 'NOT WIRED' });
+        },
         roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (u.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (u.role === 'Kiosk device' ? 'var(--ux-muted-strong)' : 'var(--ux-ground)'),
         onImpersonate: () => this.impersonate(u),
         onRoleChange: () => {
@@ -1695,12 +1789,12 @@ class Component extends DCLogic {
     const validationGroups = VALIDATION.map(g => ({
       cls: g.cls, closedBy: g.closedBy,
       countLabel: g.items.length + ' item' + (g.items.length === 1 ? '' : 's') + ' · ' + g.items.filter(i => i.severity === 'BLOCKING').length + ' blocking',
-      items: g.items.map(i => ({ ...i, sevStyle: i.severity === 'BLOCKING' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)' }))
+      items: g.items.map(i => ({ ...i, sevStyle: i.severity === 'BLOCKING' ? 'background:var(--ux-signal);color:#fff' : i.severity === 'DECIDED' ? 'background:var(--ux-accent-deep);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)' }))
     }));
     const totalItems = VALIDATION.reduce((a, g) => a + g.items.length, 0);
     const totalBlocking = VALIDATION.reduce((a, g) => a + g.items.filter(i => i.severity === 'BLOCKING').length, 0);
 
-    const perfEmptyText = 'Performance will appear here once store sell-through data is connected. Nothing is estimated in the meantime, and reorder timing is based on your own order interval alone.';
+    const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
 
     return {
       roleBadge: role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
@@ -1840,9 +1934,20 @@ class Component extends DCLogic {
 
       isAdmin: s.screen === 'admin' || s.screen === 'users', isAuditLog: s.screen === 'auditlog',
       isNotifications: s.screen === 'notifications', isCompare: s.screen === 'compare',
+      isDocuments: s.screen === 'documents',
+      docs: DOCS.map(d => ({ ...d, stateStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
+        + (d.state === 'Accepted' ? 'var(--ux-accent);color:#fff' : d.state === 'Rejected' ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
+        onOpen: () => this.set({ toast: 'Opening ' + d.name + ' would render the stored document. File storage is out of scope for the prototype.', toastKind: 'NOT WIRED' }) })),
+      onUpload: () => this.set({ toast: 'Upload picks a type first, then the file. Nothing uploaded here lifts a gate \u2014 an internal reviewer updating the licence record does that. Banking and signatory details are refused and stay in the onboarding record.', toastKind: 'NOT WIRED' }),
+      isOnboarding: s.screen === 'onboarding',
+      onboarding: ONBOARDING.map(o => ({ ...o,
+        stageLabel: String(o.stage).padStart(2, '0') + ' \u00b7 ' + ONBOARDING_STAGES[o.stage - 1],
+        stageStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
+          + (o.stage >= 5 ? 'var(--ux-accent);color:#fff' : o.stage <= 2 ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)') })),
       isTraining: s.screen === 'training', isCoaLookup: s.screen === 'coalookup',
       isAccess: s.screen === 'access', isLineage: s.screen === 'lineage',
       users, adminTitle: isInternal ? 'Users and roles' : 'Your users',
+      onInvite: () => this.set({ toast: 'An invite names the person, their role and the locations they cover. Until now an owner could only change a role \u2014 not add a buyer, and not remove one who had left.', toastKind: 'NOT WIRED' }),
       adminSub: isInternal
         ? 'Every organisation\u2019s users. Viewing as a user is read-only, withholds cost, and is recorded in that organisation\u2019s own audit history.'
         : 'Users in your organisation. You assign buyer and budtender access; kiosk devices are paired by urbanXtracts.',

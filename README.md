@@ -68,6 +68,27 @@ Paths worth walking because they refuse rather than proceed:
 - Two signal colours only: green for released, passed and primary action; clay
   for blocked and exception. Everything pending is monochrome.
 
+## The prototype, updated
+
+`dist/portal.html` and its source now carry a first pass at part of wave 4:
+
+- **Sample data is highlighted** wherever it appears — names, prices and
+  quantities. Highlighting rather than red font, because clay already means
+  *blocked* in the two-signal system and a second red would collide with it.
+- **Documents** — a new screen for owner and buyer: typed uploads, expiry,
+  review state, and the rule that an upload never lifts a gate.
+- **Store onboarding** — a new internal screen: six stages, with each in-flight
+  account showing which stage is holding it and why.
+- **Order actions match the status vocabulary** — edit and cancel on a placed
+  order, request a change after approval, report a problem on receipt.
+- **User lifecycle** — invite and deactivate, not just change role.
+- **Validation queue reconciled** — ten blocking items, matching both documents,
+  with sell-through shown as decided rather than open.
+
+The source `.dc.html` and the bundled `dist/portal.html` are edited in lockstep
+and verified to render identically. Everything not listed above is still
+specified rather than built.
+
 ## What changed in rev 2.1
 
 One blocking convention across both documents — *blocking* now means the item
@@ -97,7 +118,8 @@ capabilities asked for — a store records surface and a read-only store API —
 rep-held ordering approval, which is the only genuinely new requirement and the
 only one that needs Legal as well as the CCO.
 
-**The interactive prototype is unchanged.** Wave 4 is specified, not built.
+*(Rev 2.1 superseded this — see below. The prototype now carries a first pass at
+five of the wave 4 items.)*
 
 ## Before this can ship
 
