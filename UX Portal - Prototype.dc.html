@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Brand tokens. Ink is sampled from the supplied logo; the rest is derived
+   from it. These intentionally supersede the bound design system's palette,
+   whose structural rules (0 radius, 2px rules, flush left, Archivo) are kept. */
+:root{
+  /* Ink sampled from uX Logo 2025-Black.png (#170e0b, a warm near-black).
+     Ground and neutrals are warmed to match it. Monochrome throughout, with
+     exactly two signals: green for released/passed and primary action, clay
+     for blocked/exception. Cannabis-adjacent hues appear only as catalog
+     category markers — never on an operational status. */
+  --ux-ink:#170e0b;
+  --ux-ground:#faf7f3;
+  --ux-surface:#efeae4;
+  --ux-accent:#1b5c37;
+  --ux-accent-press:#134427;
+  --ux-accent-text:#134a2b;
+  --ux-accent-deep:#0d3520;
+  --ux-accent-tint:#dde9e1;
+  --ux-accent-wash:#eef4ef;
+  --ux-accent-light:#8ccfa5;
+  --ux-signal:#a33116;
+  --ux-signal-text:#8a2a12;
+  --ux-signal-tint:#f7e2da;
+  --ux-muted:#6f6862;
+  --ux-muted-strong:#4b4640;
+  --ux-faint:#a09890;
+  --ux-faint-2:#c2bab2;
+  --ux-cat-vape:#8a6a2b;
+  --ux-cat-edible:#7d3f5c;
+  --ux-cat-preroll:#5f7a3a;
+  --ux-cat-flower:#3f6b57;
+  --ux-cat-concentrate:#a35a1f;
+  --ux-cat-infused:#5a4f7a;
+}
+
+body{margin:0;background:var(--ux-ground);font-family:Archivo,system-ui,sans-serif;color:var(--ux-ink);font-variant-numeric:tabular-nums}
+a{color:var(--ux-accent-text)}a:hover{color:var(--ux-accent-deep)}
+*{box-sizing:border-box}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--ux-accent);outline-offset:2px}
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#170e0b"></rect><g fill="none" stroke="#faf7f3" stroke-width="26" stroke-linecap="square"><path d="M120 120v-4a0 0 0 0 0 0 0"></path><path d="M132 118v18a68 68 0 0 0 136 0v-18"></path><path d="M132 282v-18a68 68 0 0 1 136 0v18"></path></g></svg></template>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+<div style="background:var(--ux-ink);color:var(--ux-ground);padding:8px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em">
+<img src="brand/ux-mark-reversed.png" alt="" style="height:13px;width:auto;display:block;opacity:.9">
+<span style="background:var(--ux-signal);color:#fff;padding:3px 7px">SAMPLE DATA</span>
+<span>Names, prices and quantities are synthetic. Catalog structure, release states, order states and date ranges are measured from live Canix reads, 2026-08-24.</span>
+<span style="background:rgba(250,247,243,.16);padding:3px 7px">BRAND</span>
+<span>Mark as supplied, ink sampled from it. Monochrome with two signals — green for released, clay for blocked. Category hues appear in the catalog only.</span>
+</div>
+
+<div style="background:var(--ux-ground);border-bottom:2px solid var(--ux-ink);padding:0 24px;display:flex;flex-wrap:wrap;gap:24px;align-items:stretch;min-height:58px">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+<img src="brand/ux-mark.png" alt="urbanXtracts" style="height:28px;width:auto;display:block">
+<div style="display:flex;flex-direction:column;gap:2px"><div style="font:800 18px/1 Archivo,sans-serif;letter-spacing:-.015em;color:var(--ux-ink)">urbanXtracts</div><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ux-muted)">Wholesale portal</div></div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;background:var(--ux-accent);color:#fff;padding:4px 7px">{{ roleBadge }}</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:14px;padding:8px 0;flex-wrap:wrap">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted)">Sign in as</span>
+<div style="display:flex;gap:0;border:1px solid rgba(23,14,11,.3)">
+<sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="4">
+<button type="button" onClick="{{ r.onPick }}" style="{{ r.style }}" style-hover="background:var(--ux-accent-tint)">{{ r.label }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ goCart }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 13px;font:700 12px Archivo,sans-serif;cursor:pointer;display:flex;gap:8px;align-items:center" style-hover="background:var(--ux-muted-strong)">Draft order <span style="background:rgba(250,247,243,.18);padding:1px 6px;font:700 11px ui-monospace,monospace">{{ cartCount }}</span></button>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{ impersonating }}" hint-placeholder-val="{{ false }}">
+<div style="background:var(--ux-signal);color:#fff;padding:11px 24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:rgba(255,255,255,.18);padding:3px 7px">VIEWING AS USER</span>
+<span style="font-size:13px">{{ impersonatingLabel }} — read-only. Cost is withheld, and this session is recorded in that organisation&rsquo;s audit history.</span>
+<span style="flex:1"></span>
+<button type="button" onClick="{{ stopImpersonating }}" style="background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;padding:5px 10px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="border-color:#fff">End session</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ showLocationBar }}" hint-placeholder-val="{{ true }}">
+<div style="background:var(--ux-surface);border-bottom:1px solid rgba(23,14,11,.2);padding:9px 24px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:12.5px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted)">Location</span>
+<sc-for list="{{ locations }}" as="loc" hint-placeholder-count="3">
+<button type="button" onClick="{{ loc.onPick }}" style="{{ loc.style }}" style-hover="border-color:var(--ux-accent)">{{ loc.name }} <span style="color:var(--ux-muted);font-weight:400">{{ loc.license }}</span></button>
+</sc-for>
+<sc-if value="{{ licenseBlocked }}" hint-placeholder-val="{{ false }}">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-signal);color:#fff;padding:4px 7px">ORDERING PAUSED — LICENSE EXPIRED</span>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div role="status" aria-live="polite" style="background:var(--ux-ink);color:var(--ux-ground);padding:11px 24px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+<span style="{{ toastChipStyle }}">{{ toastKind }}</span>
+<span style="font-size:13px">{{ toast }}</span>
+<span style="flex:1"></span>
+<button type="button" onClick="{{ clearToast }}" style="background:transparent;border:1px solid rgba(243,242,242,.4);color:var(--ux-ground);padding:5px 9px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="border-color:var(--ux-ground)">Dismiss</button>
+</div>
+</sc-if>
+
+<div style="{{ shellStyle }}">
+
+<div style="{{ sidebarStyle }}">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+<button type="button" onClick="{{ n.onPick }}" style="{{ n.style }}" style-hover="background:var(--ux-surface)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.75"><sc-for list="{{ n.icon }}" as="d" hint-placeholder-count="2"><path d="{{ d }}"></path></sc-for></svg><span style="flex:1">{{ n.label }}</span><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></button>
+</sc-for>
+<div style="{{ navNoteStyle }}">{{ navNote }}</div>
+</div>
+
+<div style="{{ contentStyle }}">
+
+<sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ dashTitle }}</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 14px">{{ dashSub }}</p>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:24px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:4px 8px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ dataStamp }}</span>
+<button type="button" onClick="{{ onRefresh }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Reload</button>
+<button type="button" onClick="{{ onStale }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Simulate stale data</button>
+</div>
+<sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<sc-for list="{{ skeletonRows }}" as="k" hint-placeholder-count="4">
+<div style="display:flex;gap:14px;padding:15px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="height:13px;width:34%;background:var(--ux-surface)"></div>
+<div style="height:13px;width:22%;background:var(--ux-surface)"></div>
+<div style="height:13px;width:16%;background:var(--ux-surface)"></div>
+</div>
+</sc-for>
+<div style="padding:12px 0;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">LOADING FROM THE SUBLEDGER</div>
+</div>
+</sc-if>
+<div style="{{ tileGridStyle }}">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+<div style="{{ t.style }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">{{ t.label }}</div>
+<div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:6px">{{ t.value }}</div>
+<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.45">{{ t.note }}</div>
+</div>
+</sc-for>
+</div>
+
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:34px 0 12px">{{ listTitle }}</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ dashRows }}" as="row" hint-placeholder-count="4">
+<button type="button" onClick="{{ row.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:12px 0;cursor:pointer;display:grid;grid-template-columns:1.4fr 1fr .8fr auto;gap:16px;font-size:13px;align-items:center" style-hover="background:var(--ux-surface)">
+<span style="font-weight:600">{{ row.a }}</span>
+<span style="color:var(--ux-muted)">{{ row.b }}</span>
+<span style="font-family:ui-monospace,monospace;font-size:11.5px">{{ row.c }}</span>
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ row.tagStyle }}">{{ row.tag }}</span>
+</button>
+</sc-for>
+</div>
+
+<sc-if value="{{ showPerfEmpty }}" hint-placeholder-val="{{ true }}">
+<div style="margin-top:32px;border:1px solid rgba(23,14,11,.2);padding:24px 26px;background:var(--ux-surface)">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Sell-through performance</div>
+<div style="font-size:14px;line-height:1.55;max-width:60ch">{{ perfEmptyText }}</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCatalog }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Catalog</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 22px">{{ catalogSub }}</p>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:16px;border-bottom:2px solid rgba(23,14,11,.4)">
+<input type="text" value="{{ query }}" onChange="{{ onQuery }}" placeholder="Search product, SKU, strain or full tag" style="flex:1;min-width:220px;border:1px solid rgba(23,14,11,.35);background:#fff;padding:10px 12px;font:14px Archivo,sans-serif;border-radius:0">
+<sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5">
+<button type="button" onClick="{{ c.onPick }}" style="{{ c.style }}" style-hover="border-color:var(--ux-accent)">{{ c.label }}</button>
+</sc-for>
+<button type="button" onClick="{{ toggleFavFilter }}" style="{{ favFilterStyle }}" style-hover="border-color:var(--ux-accent)">{{ favFilterLabel }}</button>
+<sc-for list="{{ viewToggle }}" as="v" hint-placeholder-count="2">
+<button type="button" onClick="{{ v.onPick }}" style="{{ v.style }}" style-hover="border-color:var(--ux-accent)">{{ v.label }}</button>
+</sc-for>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;font-size:12px;color:var(--ux-muted);flex-wrap:wrap;gap:10px">
+<span>{{ resultCount }}</span>
+<span style="font-family:ui-monospace,monospace;font-size:11px">Released finished goods only · unreleased and bulk material are not rendered</span>
+</div>
+
+<sc-if value="{{ isGrid }}" hint-placeholder-val="{{ true }}">
+<div style="{{ cardGridStyle }}">
+<sc-for list="{{ catalogItems }}" as="p" hint-placeholder-count="6">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;display:flex;flex-direction:column">
+<div style="height:118px;background:var(--ux-surface);border-bottom:1px solid rgba(23,14,11,.2);display:flex;align-items:flex-end;justify-content:center;padding-bottom:0"><div style="width:74px;height:58px;border:1px solid rgba(23,14,11,.22);border-bottom:0;border-radius:74px 74px 0 0;display:flex;align-items:center;justify-content:center;font:600 8.5px ui-monospace,monospace;letter-spacing:.1em;color:var(--ux-faint)">IMAGE</div></div>
+<div style="padding:14px 15px 16px;display:flex;flex-direction:column;gap:8px;flex:1">
+<div style="display:flex;align-items:center;gap:7px;font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)"><span style="{{ p.catDot }}"></span>{{ p.brand }} · {{ p.cat }}</div>
+<div style="font:700 15px/1.25 Archivo,sans-serif">{{ p.name }}</div>
+<div style="font-size:12px;color:var(--ux-muted)">{{ p.format }} · <span style="font-family:ui-monospace,monospace;font-size:11px">{{ p.sku }}</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ p.band }}</span>
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:var(--ux-ink);color:var(--ux-ground)">RELEASED</span>
+<span style="{{ p.orderedStyle }}">{{ p.orderedTag }}</span>
+</div>
+<div style="flex:1"></div>
+<div style="font-size:13px;{{ p.priceStyle }}">{{ p.priceText }}</div>
+<div style="display:flex;gap:8px;margin-top:2px">
+<button type="button" onClick="{{ p.onOpen }}" style="flex:1;background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 12px Archivo,sans-serif;text-align:left;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
+<sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
+</sc-if>
+<sc-if value="{{ p.canRequest }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ p.onRequest }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-muted-strong)">Ask</button>
+</sc-if>
+<button type="button" onClick="{{ p.onFav }}" style="{{ p.favStyle }}" style-hover="border-color:var(--ux-accent)">{{ p.favLabel }}</button>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+
+</sc-if>
+
+<sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ catalogItems }}" as="p" hint-placeholder-count="6">
+<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="width:38px;height:30px;border:1px solid rgba(23,14,11,.22);border-bottom:0;border-radius:38px 38px 0 0;flex:none;background:var(--ux-surface)"></div>
+<div style="flex:1;min-width:180px">
+<div style="display:flex;align-items:center;gap:7px;font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:3px"><span style="{{ p.catDot }}"></span>{{ p.brand }} · {{ p.cat }}</div>
+<div style="font:700 14px Archivo,sans-serif">{{ p.name }}</div>
+</div>
+<div style="min-width:120px;font-size:12px;color:var(--ux-muted)">{{ p.format }}</div>
+<div style="min-width:96px;font-family:ui-monospace,monospace;font-size:11.5px">{{ p.sku }}</div>
+<div style="min-width:86px;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-muted-strong)">{{ p.band }}</div>
+<div style="min-width:120px;font-size:13px;{{ p.priceStyle }}">{{ p.priceText }}</div>
+<div style="display:flex;gap:8px">
+<button type="button" onClick="{{ p.onOpen }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Details</button>
+<sc-if value="{{ p.canAdd }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ p.onAdd }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Add</button>
+</sc-if>
+<button type="button" onClick="{{ p.onFav }}" style="{{ p.favStyle }}" style-hover="border-color:var(--ux-accent)">{{ p.favLabel }}</button>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.2);padding:30px 32px;background:var(--ux-surface);max-width:62ch;display:flex;gap:20px;align-items:flex-start">
+<div style="width:44px;height:34px;border:1.5px solid rgba(23,14,11,.3);border-bottom:0;border-radius:44px 44px 0 0;flex:none"></div>
+<div style="font-size:14px;line-height:1.6">No products match that search. Try removing the category filter, or search the full compliance tag rather than part of it — partial tags are not resolved to a single lot.</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}">
+<div>
+<button type="button" onClick="{{ backToCatalog }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">&larr; CATALOG</button>
+<div style="display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start">
+<div style="width:280px;flex:none">
+<div style="height:270px;background:var(--ux-surface);border:1px solid rgba(23,14,11,.2);display:flex;align-items:flex-end;justify-content:center"><div style="width:150px;height:118px;border:1px solid rgba(23,14,11,.22);border-bottom:0;border-radius:150px 150px 0 0;display:flex;align-items:center;justify-content:center;font:600 9px ui-monospace,monospace;letter-spacing:.12em;color:var(--ux-faint)">PRODUCT IMAGE</div></div>
+</div>
+<div style="flex:1;min-width:300px">
+<div style="display:flex;align-items:center;gap:8px;font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px"><span style="{{ pdCatDot }}"></span>{{ pdBrand }} · {{ pdCat }}</div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 10px">{{ pdName }}</h1>
+<div style="font-size:14px;color:var(--ux-muted);margin-bottom:16px">{{ pdFormat }} · SKU <span style="font-family:ui-monospace,monospace;font-size:12.5px">{{ pdSku }}</span> · {{ pdStrain }}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:4px 7px;background:var(--ux-ink);color:var(--ux-ground)">RELEASED</span>
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:4px 7px;background:var(--ux-surface)">{{ pdBand }}</span>
+</div>
+<div style="font-size:15px;line-height:1.6;max-width:56ch;margin-bottom:22px">{{ pdDesc }}</div>
+<sc-if value="{{ canOrder }}" hint-placeholder-val="{{ true }}">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:18px;display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap">
+<div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Your price</div>
+<div style="font:800 22px/1 Archivo,sans-serif;{{ pdPriceStyle }}">{{ pdPriceText }}</div>
+<div style="font-size:11px;color:var(--ux-muted);margin-top:5px">{{ pdPriceNote }}</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px;align-items:center">
+<button type="button" onClick="{{ decQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
+<div style="min-width:44px;text-align:center;font:700 16px Archivo,sans-serif">{{ qty }}</div>
+<button type="button" onClick="{{ incQty }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;width:38px;height:40px;font:700 16px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
+<button type="button" onClick="{{ addSelected }}" style="{{ addBtnStyle }}" style-hover="background:var(--ux-accent-press)">{{ addBtnLabel }}</button>
+</div>
+</div>
+<div style="font-size:11.5px;color:var(--ux-muted);margin-top:10px">{{ caseNote }}</div>
+</sc-if>
+</div>
+</div>
+
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:38px 0 12px">Lot and COA</h2>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+<sc-for list="{{ pdLots }}" as="l" hint-placeholder-count="2">
+<button type="button" onClick="{{ l.onPick }}" style="{{ l.style }}" style-hover="border-color:var(--ux-accent)">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.03em">{{ l.tag }}</div>
+<div style="font-size:11px;color:var(--ux-muted);margin-top:3px">Packaged {{ l.packaged }}</div>
+</button>
+</sc-for>
+</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Compliance tag</div><div style="font-family:ui-monospace,monospace;font-size:12.5px">{{ lotTag }}</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Packaged date</div><div>{{ lotPackaged }}</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Batch / lot reference</div><div style="color:var(--ux-muted)">{{ lotBatch }}</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Lab result</div><div>{{ lotTest }}</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Release state</div><div>{{ lotRelease }}</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px;align-items:center"><div style="font-weight:600">Certificate of analysis</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="button" onClick="{{ openCoa }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Open COA</button><span style="font-size:11.5px;color:var(--ux-muted)">{{ coaNote }}</span></div></div>
+</div>
+
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:38px 0 12px">Potency and profile</h2>
+<div style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:24px 26px;max-width:70ch">
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 7px">AWAITING SOURCE</span>
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-signal);color:#fff;padding:3px 7px">INFORMATION REQUIRED</span>
+</div>
+<div style="font-size:14px;line-height:1.6">Cannabinoid values, terpene profile and flavour descriptors are lot-specific and come from the certificate of analysis. No structured field for them exists in the operations subledger today, so this panel intentionally shows nothing rather than an estimate.</div>
+<button type="button" onClick="{{ goValidation }}" style="margin-top:14px;background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-ground)">See it on the validation queue</button>
+</div>
+
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:38px 0 12px">Performance at your stores</h2>
+<div style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:24px 26px;max-width:70ch">
+<div style="font-size:14px;line-height:1.6">{{ pdPerfText }}</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCoa }}" hint-placeholder-val="{{ false }}">
+<div>
+<button type="button" onClick="{{ backToProduct }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">&larr; PRODUCT</button>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Certificate of analysis</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px">{{ pdName }} · tag <span style="font-family:ui-monospace,monospace">{{ lotTag }}</span></p>
+<div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start">
+<div style="flex:1;min-width:300px;border:1px solid rgba(23,14,11,.2);background:#fff;height:460px;display:flex;align-items:center;justify-content:center;text-align:left;padding:30px">
+<div style="max-width:38ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-faint);margin-bottom:10px">COA DOCUMENT VIEWER</div>
+<div style="font-size:13.5px;line-height:1.6;color:var(--ux-muted)">The lab document renders here. The portal never interprets a result, never restates a value outside the document, and never adds an effects or benefit claim. Version resolution comes from the operating record, not from picking the newest file.</div>
+</div>
+</div>
+<div style="width:290px;flex:none">
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Lab result</div>{{ lotTest }}</div>
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Packaged</div>{{ lotPackaged }}</div>
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Version</div><span style="color:var(--ux-muted)">{{ coaVersionText }}</span></div>
+<div style="padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:4px">Test date</div><span style="color:var(--ux-muted)">From the document — not held as a field</span></div>
+</div>
+<div style="margin-top:16px;font-size:11.5px;line-height:1.55;color:var(--ux-muted)">The public page for this code shows lab result, batch and dates only. Publication is bound to the release event, and retention needs sign-off before anything is published.</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCart }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Draft order</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 16px">{{ cartSub }}</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:24px">
+<sc-for list="{{ draftTabs }}" as="d" hint-placeholder-count="1">
+<span style="display:inline-flex;align-items:stretch">
+<button type="button" onClick="{{ d.onPick }}" style="{{ d.style }}" style-hover="border-color:var(--ux-accent)">{{ d.label }}</button>
+<button type="button" onClick="{{ d.onDelete }}" aria-label="Discard draft" style="background:transparent;border:1px solid rgba(23,14,11,.25);border-left:0;padding:8px 9px;font:700 11px Archivo,sans-serif;cursor:pointer;color:var(--ux-muted)" style-hover="color:var(--ux-signal-text);border-color:var(--ux-signal)">×</button>
+</span>
+</sc-for>
+<button type="button" onClick="{{ onNewDraft }}" style="background:transparent;border:1px dashed rgba(23,14,11,.4);padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="border-color:var(--ux-accent);color:var(--ux-accent-text)">+ New draft</button>
+</div>
+<sc-if value="{{ hasOos }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid var(--ux-signal);padding:18px 20px;margin-bottom:22px;max-width:70ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:10px">A LINE IS NO LONGER AVAILABLE</div>
+<sc-for list="{{ oosLines }}" as="o" hint-placeholder-count="1">
+<div style="margin-bottom:10px">
+<div style="font-size:13.5px;line-height:1.55;margin-bottom:8px"><strong>{{ o.name }}</strong> has no released stock. Swap it rather than losing the line — same category, released now:</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ o.alternatives }}" as="alt" hint-placeholder-count="2">
+<button type="button" onClick="{{ alt.onSwap }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 12px Archivo,sans-serif;cursor:pointer;text-align:left" style-hover="background:var(--ux-surface)">{{ alt.label }}</button>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ true }}">
+<div style="border:1px solid rgba(23,14,11,.2);padding:28px;background:var(--ux-surface);max-width:64ch">
+<div style="font-size:14px;line-height:1.6;margin-bottom:16px">Nothing in this draft yet. Add products from the catalog, or rebuild a draft from a previous order.</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button type="button" onClick="{{ goCatalogBtn }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-accent-press)">Browse catalog</button>
+<button type="button" onClick="{{ goOrdersBtn }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 12.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-ground)">Reorder from history</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ cartHasLines }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:2fr .9fr 1fr .8fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Product</div><div>Lot</div><div>Units</div><div>Line</div><div></div>
+</div>
+<sc-for list="{{ cartLines }}" as="line" hint-placeholder-count="2">
+<div style="display:grid;grid-template-columns:2fr .9fr 1fr .8fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600">{{ line.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ line.brand }} · {{ line.sku }}</div></div>
+<div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ line.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ line.packaged }}</div></div>
+<div style="display:flex;gap:6px;align-items:center">
+<button type="button" onClick="{{ line.onDec }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">&minus;</button>
+<span style="min-width:26px;text-align:center;font-weight:600">{{ line.qty }}</span>
+<button type="button" onClick="{{ line.onInc }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;width:28px;height:28px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">+</button>
+</div>
+<div style="font-weight:600">{{ line.lineTotal }}</div>
+<div><button type="button" onClick="{{ line.onRemove }}" style="background:transparent;border:1px solid rgba(23,14,11,.25);padding:6px 9px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="border-color:var(--ux-accent);color:var(--ux-accent-text)">Remove</button></div>
+</div>
+</sc-for>
+</div>
+
+<div style="display:flex;gap:26px;flex-wrap:wrap;margin-top:26px;align-items:flex-start">
+<div style="flex:1;min-width:280px">
+<sc-for list="{{ cartWarnings }}" as="w" hint-placeholder-count="2">
+<div style="border-left:2px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">{{ w.kind }}</div>
+<div style="font-size:13px;line-height:1.55">{{ w.text }}</div>
+</div>
+</sc-for>
+<div style="margin-top:18px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Delivery</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<sc-for list="{{ deliveryOptions }}" as="d" hint-placeholder-count="3">
+<button type="button" onClick="{{ d.onPick }}" style="{{ d.style }}" style-hover="border-color:var(--ux-accent)">{{ d.label }}</button>
+</sc-for>
+</div>
+<div style="font-size:11.5px;color:var(--ux-muted);margin-top:8px">Lead times are not confirmed readable per item, so requested dates are indicative.</div>
+</div>
+</div>
+<div style="width:300px;flex:none;border:1px solid rgba(23,14,11,.2);padding:20px 22px;background:#fff">
+<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:var(--ux-muted)">Lines</span><span>{{ cartCount }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:var(--ux-muted)">Units</span><span>{{ cartUnits }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:14px"><span style="color:var(--ux-muted)">Priced subtotal</span><span style="font-weight:700">{{ cartTotal }}</span></div>
+<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-bottom:16px">{{ cartTotalNote }}</div>
+<button type="button" onClick="{{ submitOrder }}" style="{{ submitStyle }}" style-hover="background:var(--ux-accent-press)">{{ submitLabel }}</button>
+<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-top:10px">{{ submitNote }}</div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOrders }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ ordersTitle }}</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px">{{ ordersSub }}</p>
+
+<sc-if value="{{ hasRequests }}" hint-placeholder-val="{{ false }}">
+<div style="margin-bottom:30px">
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Price requests</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ requests }}" as="rq" hint-placeholder-count="1">
+<div style="display:grid;grid-template-columns:1.6fr 1fr .9fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div style="font-weight:600">{{ rq.name }}</div>
+<div style="color:var(--ux-muted)">{{ rq.loc }}</div>
+<div style="color:var(--ux-muted)">{{ rq.raised }}</div>
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ rq.tagStyle }}">{{ rq.state }}</div>
+</div>
+</sc-for>
+</div>
+<div style="font-size:11.5px;color:var(--ux-muted);margin-top:10px">A request notifies the assigned representative and appears on the owner&rsquo;s dashboard. The representative cannot set the price &mdash; an override needs approval and is audited.</div>
+</div>
+</sc-if>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 1.2fr .9fr .6fr .8fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Order</div><div>Location</div><div>Placed</div><div>Lines</div><div>Value</div><div>State</div>
+</div>
+<sc-for list="{{ orders }}" as="o" hint-placeholder-count="5">
+<button type="button" onClick="{{ o.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:13px 0;cursor:pointer;display:grid;grid-template-columns:1fr 1.2fr .9fr .6fr .8fr auto;gap:14px;font-size:13px;align-items:center" style-hover="background:var(--ux-surface)">
+<span style="font-family:ui-monospace,monospace;font-size:12px;font-weight:600">{{ o.id }}</span>
+<span>{{ o.loc }}</span>
+<span style="color:var(--ux-muted)">{{ o.placed }}</span>
+<span>{{ o.lines }}</span>
+<span>{{ o.value }}</span>
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ o.tagStyle }}">{{ o.state }}</span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ noOrders }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.2);padding:26px;background:var(--ux-surface);font-size:14px;line-height:1.6;max-width:60ch;margin-top:16px">No orders for this location yet.</div>
+</sc-if>
+<div style="margin-top:22px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">{{ ordersNote }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOrder }}" hint-placeholder-val="{{ false }}">
+<div>
+<button type="button" onClick="{{ goOrdersBtn }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">&larr; ORDERS</button>
+<div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px">
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0">{{ odId }}</h1>
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:4px 8px;{{ odTagStyle }}">{{ odState }}</span>
+</div>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px">{{ odMeta }}</p>
+
+<div style="{{ odStepsStyle }}">
+<sc-for list="{{ odSteps }}" as="st" hint-placeholder-count="4">
+<div style="{{ st.style }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">{{ st.label }}</div>
+<div style="font-size:11.5px;line-height:1.4">{{ st.when }}</div>
+</div>
+</sc-for>
+</div>
+
+<sc-if value="{{ odHasActions }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:26px">
+<sc-for list="{{ odActions }}" as="act" hint-placeholder-count="2">
+<button type="button" onClick="{{ act.onDo }}" style="{{ act.style }}" style-hover="background:var(--ux-accent-press)">{{ act.label }}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:2fr .9fr .6fr .8fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Product</div><div>Lot</div><div>Units</div><div>Unit price</div><div>Line</div>
+</div>
+<sc-for list="{{ odLines }}" as="l" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:2fr .9fr .6fr .8fr .8fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600">{{ l.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ l.brand }} · {{ l.sku }}</div></div>
+<div><div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ l.tag }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:2px">{{ l.packaged }}</div></div>
+<div>{{ l.qty }}</div>
+<div>{{ l.unit }}</div>
+<div style="font-weight:600">{{ l.total }}</div>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:2fr .9fr .6fr .8fr .8fr;gap:14px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px">
+<div style="font-weight:700">Order value</div><div></div><div>{{ odUnits }}</div><div></div><div style="font-weight:700">{{ odValue }}</div>
+</div>
+</div>
+
+<sc-if value="{{ odHasNotes }}" hint-placeholder-val="{{ false }}">
+<div style="margin-top:24px">
+<sc-for list="{{ odNotes }}" as="n" hint-placeholder-count="1">
+<div style="border-left:2px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:12px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">{{ n.kind }}</div>
+<div style="font-size:13px;line-height:1.55;max-width:76ch">{{ n.text }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="margin-top:24px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">{{ odFooter }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isKiosk }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:520px">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:22px 24px;margin-bottom:22px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Shared floor device · no personal login</div>
+<div style="font-size:14px;line-height:1.6">This tablet is authorised to a location, not a person. It shows product education only: nothing it can do requires an audit trail, and no price appears anywhere on it.</div>
+</div>
+<button type="button" onClick="{{ kioskScan }}" style="width:100%;background:var(--ux-accent);color:#fff;border:0;padding:20px 22px;font:700 17px Archivo,sans-serif;text-align:left;cursor:pointer;margin-bottom:12px" style-hover="background:var(--ux-accent-press)">Scan a package tag</button>
+<div style="display:flex;gap:10px;margin-bottom:12px">
+<input type="text" value="{{ kioskInput }}" onChange="{{ onKioskInput }}" placeholder="Or type the full compliance tag" style="flex:1;border:1px solid rgba(23,14,11,.35);background:#fff;padding:14px;font:15px Archivo,sans-serif;border-radius:0">
+<button type="button" onClick="{{ kioskLookup }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:14px 18px;font:700 14px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-muted-strong)">Look up</button>
+</div>
+<sc-if value="{{ kioskHasMsg }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:2px solid var(--ux-signal);padding:12px 0 12px 14px;margin-bottom:16px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">{{ kioskMsgKind }}</div>
+<div style="font-size:13.5px;line-height:1.55">{{ kioskMsg }}</div>
+</div>
+</sc-if>
+<div style="font-size:12px;color:var(--ux-muted);line-height:1.55;margin-bottom:26px">The full tag is required when typing. Partial tags resolve to a list of candidates and never to a single lot &mdash; some tags in circulation share their last six digits. Try the last four digits of any tag to see that behaviour.</div>
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:0 0 12px">Recently viewed</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ kioskItems }}" as="k" hint-placeholder-count="4">
+<button type="button" onClick="{{ k.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:16px 0;cursor:pointer;display:flex;gap:14px;align-items:center;min-height:60px" style-hover="background:var(--ux-surface)">
+<span style="width:46px;height:46px;background:var(--ux-surface);border:1px solid rgba(23,14,11,.18);flex:none"></span>
+<span><span style="display:block;font:700 15px Archivo,sans-serif">{{ k.name }}</span><span style="display:block;font-size:12px;color:var(--ux-muted)">{{ k.brand }} · {{ k.cat }}</span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEconomics }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Cost and margin</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px">Internal only. Never rendered in a retailer view, and withheld while an administrator is viewing another user&rsquo;s screen.</p>
+<div style="border-left:2px solid var(--ux-signal);padding:12px 0 12px 16px;margin-bottom:26px;max-width:74ch">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:5px">FIGURES BELOW ARE SYNTHETIC</div>
+<div style="font-size:13.5px;line-height:1.6">Cost components exist as fields but are sparsely populated &mdash; labor cost in particular is effectively empty &mdash; so a margin computed from live data today would be wrong rather than partial. These values are placeholders for layout review; the coverage column is what makes that visible.</div>
+</div>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="border-bottom:2px solid rgba(23,14,11,.4)">
+<th style="text-align:left;padding:9px 10px 9px 0;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Cost object</th>
+<th style="text-align:left;padding:9px 10px;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Unit</th>
+<th style="text-align:left;padding:9px 10px;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Revenue</th>
+<th style="text-align:left;padding:9px 10px;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Cost</th>
+<th style="text-align:left;padding:9px 10px;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Margin</th>
+<th style="text-align:left;padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Cost coverage</th>
+</tr></thead>
+<tbody>
+<sc-for list="{{ econRows }}" as="e" hint-placeholder-count="5">
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)">
+<td style="padding:11px 10px 11px 0;font-weight:600">{{ e.name }}</td>
+<td style="padding:11px 10px;font-family:ui-monospace,monospace;font-size:11.5px">{{ e.unit }}</td>
+<td style="padding:11px 10px">{{ e.rev }}</td>
+<td style="padding:11px 10px">{{ e.cost }}</td>
+<td style="padding:11px 10px;font-weight:600">{{ e.margin }}</td>
+<td style="padding:11px 0 11px 10px;{{ e.covStyle }}">{{ e.coverage }}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+<div style="margin-top:18px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Units are never blended: a figure per gram and a figure per unit are separate rows, and no combined total is offered. Rows whose coverage falls below the threshold show no margin at all rather than an understated one.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isQa }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Release and quality</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px">A product becomes orderable only when its package status is available and its lab result has passed. Both conditions, measured together.</p>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<sc-for list="{{ qaTiles }}" as="q" hint-placeholder-count="4">
+<div style="{{ q.style }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">{{ q.label }}</div>
+<div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:6px">{{ q.value }}</div>
+<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.45">{{ q.note }}</div>
+</div>
+</sc-for>
+</div>
+<h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:0 0 12px">Integrity exceptions</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ integrityRows }}" as="i" hint-placeholder-count="7">
+<div style="display:grid;grid-template-columns:1.6fr .5fr 1.3fr;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font-weight:600">{{ i.name }}</div>
+<div style="font-family:ui-monospace,monospace;font-size:12px;{{ i.countStyle }}">{{ i.count }}</div>
+<div style="color:var(--ux-muted);font-size:12.5px;line-height:1.5">{{ i.effect }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:18px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Counts are measured from the live subledger on 2026-08-24 and are the real figures, not samples. A retailer never sees this screen, and a failed or quarantined lot has no external presence at all &mdash; not a disabled card, not an out-of-stock label.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAccounts }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Retailer accounts</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px">License number is the account key. A representative sees assigned accounts only, and cannot change a price on any of them.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.5fr 1fr .7fr .7fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Account</div><div>License</div><div>Orders</div><div>Interval</div><div>Status</div>
+</div>
+<sc-for list="{{ accounts }}" as="a" hint-placeholder-count="5">
+<button type="button" onClick="{{ a.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:13px 0;cursor:pointer;display:grid;grid-template-columns:1.5fr 1fr .7fr .7fr .8fr;gap:14px;font-size:13px;align-items:center" style-hover="background:var(--ux-surface)">
+<span style="font-weight:600">{{ a.name }}</span>
+<span style="font-family:ui-monospace,monospace;font-size:11.5px">{{ a.license }}</span>
+<span>{{ a.orders }}</span>
+<span style="color:var(--ux-muted)">{{ a.interval }}</span>
+<span style="display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ a.tagStyle }}">{{ a.status }}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top:22px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Reorder intervals are computed from each account&rsquo;s own order history and nothing else. There is no sell-through feed, so no velocity or sales-rate claim is made anywhere in the portal.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isValidation }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Validation queue</h1>
+<p style="font-size:15px;line-height:1.6;max-width:66ch;margin:0 0 8px">Everything the portal cannot yet show truthfully, grouped by the kind of answer that closes it. An item closes when the named answer exists &mdash; not when someone builds a screen around it.</p>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 28px">{{ validationSummary }}</p>
+
+<sc-for list="{{ validationGroups }}" as="g" hint-placeholder-count="6">
+<div style="margin-bottom:36px">
+<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:10px;margin-bottom:4px">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:4px 7px">{{ g.cls }}</span>
+<span style="font:600 13px Archivo,sans-serif">{{ g.closedBy }}</span>
+<span style="flex:1"></span>
+<span style="font:600 11px ui-monospace,monospace;color:var(--ux-muted)">{{ g.countLabel }}</span>
+</div>
+<sc-for list="{{ g.items }}" as="v" hint-placeholder-count="3">
+<div style="padding:15px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ v.sevStyle }}">{{ v.severity }}</span>
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ v.screen }}</span>
+</div>
+<div style="font:700 14.5px/1.4 Archivo,sans-serif;margin-bottom:6px">{{ v.question }}</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:78ch">{{ v.detail }}</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:10px;font-size:11.5px;color:var(--ux-muted)">
+<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Blocks</span><br>{{ v.blocks }}</div>
+<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Proposed owner</span><br>{{ v.owner }}</div>
+<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Evidence needed</span><br>{{ v.evidence }}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-for>
+
+<div style="margin-top:12px;background:var(--ux-ink);color:var(--ux-ground);padding:24px 26px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-light);margin-bottom:12px">Verified and in use</div>
+<div style="font-size:13.5px;line-height:1.7;max-width:78ch">Release state, lab result, compliance tag, packaged date, category, brand, SKU, unit type and quantity, order state, account license and order history were all read from live connectors on 2026-08-24 and are used as-is. Every other value in this prototype is either synthetic and labelled, or shown as a pending state above.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ adminTitle }}</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">{{ adminSub }}</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>User</div><div>Organisation</div><div>Role</div><div>Scope</div><div>Actions</div>
+</div>
+<sc-for list="{{ users }}" as="u" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600">{{ u.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ u.email }}</div></div>
+<div>{{ u.org }}</div>
+<div><span style="{{ u.roleStyle }}">{{ u.role }}</span></div>
+<div style="color:var(--ux-muted)">{{ u.locs }}</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-if value="{{ u.canImpersonate }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ u.onImpersonate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">View as</button>
+</sc-if>
+<sc-if value="{{ u.canChangeRole }}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{ u.onRoleChange }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Change role</button>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Both actions write an audit entry that the affected organisation can read. A kiosk device has no personal login, so it cannot be viewed as — there is no user behind it to attribute anything to.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAuditLog }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Audit history</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Eight actions generate an entry. Visible means the organisation affected can read it &mdash; a log only an administrator can see is not an audit trail from the retailer&rsquo;s side.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:.9fr 1fr 1.3fr 1.5fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>When</div><div>Actor</div><div>Action</div><div>Subject and detail</div>
+</div>
+<sc-for list="{{ auditRows }}" as="a" hint-placeholder-count="5">
+<div style="display:grid;grid-template-columns:.9fr 1fr 1.3fr 1.5fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline">
+<div style="font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">{{ a.ts }}</div>
+<div>{{ a.actor }}</div>
+<div style="font-weight:600">{{ a.action }}</div>
+<div><div>{{ a.subject }}</div><div style="color:var(--ux-muted);font-size:11.5px;margin-top:2px">{{ a.detail }}</div></div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Approve, decline, view-as and role changes in this prototype write real entries &mdash; drive the portal and watch this list grow. Retention is not set; it belongs with the records decision, not the interface.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isNotifications }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Notifications</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:70ch">{{ notifSub }}</p>
+<button type="button" onClick="{{ markNotifRead }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 13px;font:700 12px Archivo,sans-serif;cursor:pointer;margin-bottom:22px" style-hover="background:var(--ux-surface)">Mark all as read</button>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ notifications }}" as="n" hint-placeholder-count="3">
+<button type="button" onClick="{{ n.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:16px 0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:baseline" style-hover="background:var(--ux-surface)">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ n.kind }}</span>
+<span><span style="display:block;font:700 14.5px Archivo,sans-serif;margin-bottom:4px">{{ n.title }}</span><span style="display:block;font-size:13px;color:var(--ux-muted-strong);line-height:1.55">{{ n.body }}</span></span>
+<span style="font-size:11.5px;color:var(--ux-muted)">{{ n.when }}</span>
+</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Compare products</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Two released products side by side. Rows whose source does not exist yet say so rather than showing a plausible value &mdash; which is most of what a comparison is for.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.2)">
+<div></div>
+<div style="font:700 14px Archivo,sans-serif">{{ compareA }}</div>
+<div style="font:700 14px Archivo,sans-serif">{{ compareB }}</div>
+</div>
+<sc-for list="{{ compareRows }}" as="r" hint-placeholder-count="9">
+<div style="display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">{{ r.label }}</div>
+<div>{{ r.a }}</div>
+<div>{{ r.b }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTraining }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Training</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Process education, not product claims. Nothing here describes how a product feels or what it does &mdash; that language does not belong in a portal staff read from.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px">
+<sc-for list="{{ trainingCards }}" as="t" hint-placeholder-count="4">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:20px 22px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:9px">{{ t.kind }}</div>
+<div style="font:700 16px/1.3 Archivo,sans-serif;margin-bottom:8px">{{ t.title }}</div>
+<div style="font-size:13.5px;line-height:1.6;color:var(--ux-muted-strong)">{{ t.body }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCoaLookup }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Public COA page</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:70ch">Unauthenticated, reached by the printed code. The code is the only key &mdash; a QR simply prefills it rather than resolving by its own path.</p>
+<p style="font-size:13px;color:var(--ux-signal-text);margin:0 0 26px;max-width:70ch">Nothing publishes while the display, retention and recall decisions are open. The mechanism below is designed for either answer.</p>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px">
+<sc-for list="{{ coaStates }}" as="c" hint-placeholder-count="6">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:20px 22px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong);display:inline-block;margin-bottom:11px">{{ c.kind }}</div>
+<div style="font:700 15.5px/1.3 Archivo,sans-serif;margin-bottom:8px">{{ c.title }}</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong)">{{ c.body }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAccess }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Access and session states</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Every state a user can land in outside the normal flow. None of them reveals whether the thing behind the wall exists, and none relies on the interface for enforcement.</p>
+<div style="display:flex;flex-wrap:wrap;border:1px solid rgba(23,14,11,.2);margin-bottom:26px">
+<div style="flex:1;min-width:260px;background:var(--ux-ink);color:var(--ux-ground);padding:34px 32px;display:flex;flex-direction:column;gap:16px">
+<img src="brand/ux-mark-reversed.png" alt="" style="height:46px;width:auto;display:block;align-self:flex-start;object-fit:contain">
+<div style="font:800 26px/1.1 Archivo,sans-serif;letter-spacing:-.02em">urbanXtracts<br>Wholesale portal</div>
+<div style="font-size:13px;line-height:1.6;opacity:.72;max-width:34ch">Ordering, lot verification and certificates for licensed retail partners. Role and organisation come from your account, never from a picker.</div>
+</div>
+<div style="flex:1;min-width:280px;background:#fff;padding:34px 32px;display:flex;flex-direction:column;gap:14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ux-muted)">Sign in</div>
+<div style="border:1px solid rgba(23,14,11,.3);padding:12px 13px;font-size:13.5px;color:var(--ux-muted)">you@yourstore.com</div>
+<div style="border:1px solid rgba(23,14,11,.3);padding:12px 13px;font-size:13.5px;color:var(--ux-muted)">Password</div>
+<div style="background:var(--ux-accent);color:#fff;padding:12px 14px;font:700 13px Archivo,sans-serif">Sign in</div>
+<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Forgot password · Multi-factor authentication is not in phase one, recorded as an assumption rather than a decision.</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px">
+<sc-for list="{{ sessionStates }}" as="x" hint-placeholder-count="6">
+<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:22px 24px;display:flex;flex-direction:column;gap:10px">
+<span style="{{ x.chipStyle }}" style-hover="opacity:1">{{ x.kind }}</span>
+<div style="font:700 17px/1.25 Archivo,sans-serif">{{ x.title }}</div>
+<div style="font-size:13.5px;line-height:1.6;color:var(--ux-muted-strong);flex:1">{{ x.body }}</div>
+<div style="border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 12px Archivo,sans-serif;align-self:flex-start">{{ x.action }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isConfirm }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px">
+<span style="{{ confirmChipStyle }}">{{ confirmState }}</span>
+<button type="button" onClick="{{ onPrint }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Print or save as PDF</button>
+<button type="button" onClick="{{ goOrdersBtn }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">All orders</button>
+</div>
+<div style="border:1px solid rgba(23,14,11,.25);background:#fff;padding:36px 38px;max-width:820px">
+<div style="display:flex;gap:16px;align-items:flex-start;border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:18px;margin-bottom:22px">
+<img src="brand/ux-mark.png" alt="urbanXtracts" style="height:38px;width:auto;display:block;align-self:flex-start;object-fit:contain">
+<div style="flex:1">
+<div style="font:800 20px/1.1 Archivo,sans-serif;letter-spacing:-.015em">urbanXtracts</div>
+<div style="font:600 9px ui-monospace,monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--ux-muted);margin-top:3px">Order confirmation</div>
+</div>
+<div style="text-align:left">
+<div style="font:800 18px Archivo,sans-serif">{{ confirmId }}</div>
+<div style="font-size:11.5px;color:var(--ux-muted);margin-top:3px">{{ confirmMeta }}</div>
+</div>
+</div>
+<div style="border-top:1px solid rgba(23,14,11,.2)">
+<div style="display:grid;grid-template-columns:1.7fr 1.5fr .5fr .7fr .7fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Product</div><div>Compliance tag</div><div>Units</div><div>Unit</div><div>Line</div>
+</div>
+<sc-for list="{{ confirmLines }}" as="c" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1.7fr 1.5fr .5fr .7fr .7fr;gap:12px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline">
+<div><div style="font-weight:600">{{ c.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ c.brand }} · {{ c.sku }}</div></div>
+<div><div style="font-family:ui-monospace,monospace;font-size:10.5px">{{ c.tag }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">Packaged {{ c.packaged }}</div></div>
+<div>{{ c.qty }}</div><div>{{ c.unit }}</div><div style="font-weight:600">{{ c.total }}</div>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:1.7fr 1.5fr .5fr .7fr .7fr;gap:12px;padding:12px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px">
+<div style="font-weight:700">Order value</div><div></div><div></div><div></div><div style="font-weight:700">{{ confirmValue }}</div>
+</div>
+</div>
+<div style="margin-top:20px;font-size:11.5px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Every line names the compliance tag and packaged date it was allocated from, so a receiving clerk can check the delivery against this document rather than a product name alone. Prices exclude tax. Sample data.</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+<div>
+<button type="button" onClick="{{ goAccountsBtn }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">← ACCOUNTS</button>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">{{ acctName }}</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 26px">{{ acctMeta }}</p>
+
+<div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start">
+<div style="flex:1;min-width:300px">
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Locations</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<sc-for list="{{ acctLocations }}" as="l" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1fr 1.2fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div style="font-weight:600">{{ l.name }}</div>
+<div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ l.license }}</div>
+<div><span style="{{ l.style }}">{{ l.status }}</span></div>
+</div>
+</sc-for>
+</div>
+
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Contacts and assigned users</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<sc-for list="{{ acctContacts }}" as="c" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1fr 1.2fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">
+<div><div style="font-weight:600">{{ c.name }}</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ c.role }}</div></div>
+<div style="font-size:12px;color:var(--ux-muted-strong)">{{ c.reach }}</div>
+</div>
+</sc-for>
+</div>
+
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Account notes and follow-up</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ acctNotes }}" as="n" hint-placeholder-count="2">
+<div style="padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">{{ n.when }} · {{ n.who }}</div>
+<div style="font-size:13px;line-height:1.55">{{ n.text }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:12px;font-size:11.5px;color:var(--ux-muted);line-height:1.55">Notes come from the store visit record. Internal only — never rendered in any retailer view.</div>
+</div>
+
+<div style="width:320px;flex:none;min-width:280px">
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Product mix</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<sc-for list="{{ acctMix }}" as="m" hint-placeholder-count="5">
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px"><span>{{ m.cat }}</span><span style="font-weight:600">{{ m.share }}</span></div>
+<div style="background:var(--ux-surface);height:9px"><div style="{{ m.barStyle }}"></div></div>
+</div>
+</sc-for>
+</div>
+<div style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:18px 20px;margin-bottom:22px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Receivables</div>
+<div style="font-size:13px;line-height:1.55">Balance and terms are pending a ledger connection. The gate that blocks Riverside fires on a flag, not on a figure — no number is shown because none is sourced.</div>
+</div>
+<h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Released but never ordered</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ acctNotOrdered }}" as="n" hint-placeholder-count="3">
+<div style="padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px">{{ n }}</div>
+</sc-for>
+</div>
+<div style="margin-top:12px;font-size:11.5px;color:var(--ux-muted);line-height:1.55">Derived from this account&rsquo;s own order history against the released catalog — the only reorder signal available without sell-through data.</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLocations }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Compare locations</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Your three shops side by side. Sell-through is blank on every column because no point-of-sale feed is connected — the row stays visible so the gap is legible rather than silently absent.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Metric</div><div>Downtown</div><div>Riverside</div><div>Northgate</div>
+</div>
+<sc-for list="{{ locationRows }}" as="r" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font-weight:600">{{ r.metric }}</div>
+<div>{{ r.a }}</div><div>{{ r.b }}</div><div>{{ r.c }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Sample figures except ordering status, which reflects the live gates: Riverside is blocked on receivables and Northgate on its license record.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTests }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Required tests</h1>
+<p style="font-size:15px;line-height:1.6;max-width:66ch;margin:0 0 8px">Approved cases keep their wording exactly. Additions are labelled so a reader can tell them apart at a glance — including the one added after a real defect was found in this prototype.</p>
+<p style="font-size:13px;color:var(--ux-muted);margin:0 0 26px">Every case below is walkable in this build.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ tests }}" as="t" hint-placeholder-count="10">
+<div style="padding:15px 0;border-bottom:1px solid rgba(23,14,11,.14)">
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
+<span style="{{ t.labelStyle }}">{{ t.label }}</span>
+<span style="{{ t.stateStyle }}">{{ t.state }}</span>
+</div>
+<div style="font:700 14.5px/1.4 Archivo,sans-serif;margin-bottom:5px">{{ t.name }}</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:78ch">{{ t.how }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLineage }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Lots and lineage</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:70ch">Internal only. Ownership code lives on the inbound lot and never reaches a counterparty view by any route, including export and error messages.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<sc-for list="{{ lineageSteps }}" as="l" hint-placeholder-count="5">
+<div style="display:grid;grid-template-columns:.9fr 1fr 1.6fr .7fr;gap:16px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">{{ l.step }}</div>
+<div style="font-family:ui-monospace,monospace;font-size:12px;font-weight:600">{{ l.id }}</div>
+<div style="color:var(--ux-muted-strong);font-size:12.5px;line-height:1.5">{{ l.detail }}</div>
+<div style="color:var(--ux-muted)">{{ l.when }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Batch and lot references are enrichment: they are absent on most packages today, so the chain is anchored on the compliance tag, which always exists.</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+const MONEY = c => '$' + (c / 100).toFixed(2);
+const TODAY = '24 Aug 2026';
+
+const PRODUCTS = [
+  { id: 'p1', name: 'Apple Motorbreath 1g Cart', brand: 'Halcyon', cat: 'Vape cartridge', format: '1 g cartridge, 30 per case', sku: 'HLNV-000001', strain: 'Apple Motorbreath · hybrid', band: 'In stock', price: 1850, priceFrom: '2 Jul 2026',
+    lots: [{ tag: '1A4060300019F21000004182', packaged: '13 Aug 2026' }, { tag: '1A4060300019F21000003907', packaged: '24 Jul 2026' }] },
+  { id: 'p2', name: "Tiger's Blood 1g Cart", brand: 'Halcyon', cat: 'Vape cartridge', format: '1 g cartridge, 30 per case', sku: 'HLNV-000022', strain: "Tiger's Blood · hybrid", band: 'In stock', price: 1850, priceFrom: '19 Jun 2026',
+    lots: [{ tag: '1A4060300019F21000004310', packaged: '10 Aug 2026' }] },
+  { id: 'p3', name: 'Watermelon Zkittlez 0.5g Cart', brand: 'Northline', cat: 'Vape cartridge', format: '0.5 g cartridge, 30 per case', sku: 'NRLV-000008', strain: 'Watermelon Zkittlez · hybrid', band: 'Out of stock', oos: true, price: 1290, priceFrom: '11 Mar 2026',
+    lots: [{ tag: '1A4060300021C08000001174', packaged: '3 Mar 2026' }] },
+  { id: 'p4', name: 'New York Sunrise Gummies 10ct', brand: 'Wren & Ash', cat: 'Infused edible', format: '10 count pouch, 24 per case', sku: 'WRAE-000007', strain: 'New York Sunrise · hybrid', band: 'In stock', price: 1420, priceFrom: '4 Aug 2026',
+    lots: [{ tag: '1A4060300018B44000009021', packaged: '18 Aug 2026' }, { tag: '1A4060300018B44000008765', packaged: '4 Aug 2026' }] },
+  { id: 'p5', name: 'Blueberry Chews 10ct', brand: 'Kestrel', cat: 'Infused edible', format: '10 count pouch, 24 per case', sku: 'KSTE-000014', strain: 'Blueberry · hybrid', band: 'In stock', price: 1380, priceFrom: '22 May 2026',
+    lots: [{ tag: '1A4060300018B44000007702', packaged: '2 Jul 2026' }] },
+  { id: 'p6', name: 'Killer Kiwi Infused Pre-Roll', brand: 'Halcyon', cat: 'Infused pre-roll', format: '1 g single, 50 per case', sku: 'HLNF-000002', strain: 'Killer Kiwi', band: 'In stock', price: 640, priceFrom: '7 Aug 2026',
+    lots: [{ tag: '1A4060300017E19000006643', packaged: '7 Aug 2026' }] },
+  { id: 'p7', name: 'Grape Gas Infused Pre-Roll 5pk', brand: 'Foundry Line', cat: 'Infused pre-roll', format: '5 pack, 20 per case', sku: 'FDLF-000011', strain: 'Grape Gas', band: 'In stock', price: 2450, priceFrom: '28 May 2026',
+    lots: [{ tag: '1A4060300017E19000005512', packaged: '21 May 2026' }] },
+  { id: 'p8', name: 'Singapore Sling 3.5g Flower', brand: 'urbanXtracts', cat: 'Packaged flower', format: '3.5 g jar, 12 per case', sku: 'UXTB-000004', strain: 'Singapore Sling · hybrid', band: 'In stock', price: 1980, priceFrom: '2 Jun 2026',
+    lots: [{ tag: '1A4060300016D77000004401', packaged: '28 Jul 2026' }, { tag: '1A4060300016D77000004120', packaged: '20 May 2026' }] },
+  { id: 'p9', name: 'Permanent Marker 3.5g Flower', brand: 'urbanXtracts', cat: 'Packaged flower', format: '3.5 g jar, 12 per case', sku: 'UXTB-000009', strain: 'Permanent Marker · hybrid', band: 'Low stock', price: null, priceFrom: null,
+    lots: [{ tag: '1A4060300016D77000003988', packaged: '30 Mar 2026' }] },
+  { id: 'p10', name: 'Singapore Sling Live Rosin 1g', brand: 'urbanXtracts', cat: 'Concentrate', format: '1 g jar, 20 per case', sku: 'UXTC-000003', strain: 'Singapore Sling · hybrid', band: 'In stock', price: 3600, priceFrom: '15 Jul 2026',
+    lots: [{ tag: '1A4060300015C22000002210', packaged: '8 Jul 2026' }] },
+  { id: 'p11', name: 'Hudson Valley Kush Badder 1g', brand: 'urbanXtracts', cat: 'Concentrate', format: '1 g jar, 20 per case', sku: 'UXTC-000018', strain: 'Hudson Valley Kush · hybrid', band: 'Low stock', price: 2900, priceFrom: '8 Apr 2026',
+    lots: [{ tag: '1A4060300015C22000001845', packaged: '4 Mar 2026' }] },
+  { id: 'p12', name: 'Purple Dream Infused Flower 3.5g', brand: 'Bellwether', cat: 'Infused flower', format: '3.5 g jar, 12 per case', sku: 'BLWI-000006', strain: 'Purple Dream · hybrid', band: 'In stock', price: null, priceFrom: null,
+    lots: [{ tag: '1A4060300014A55000007731', packaged: '9 Jun 2026' }] }
+];
+
+const P = id => PRODUCTS.find(x => x.id === id);
+
+/* Lucide icon path data (path-only variants so they inline cleanly) */
+const ICON = {
+  dash: ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M14 14h7v7h-7z', 'M3 14h7v7H3z'],
+  catalog: ['M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z', 'M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12', 'M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17'],
+  cart: ['M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12', 'M7 20a1 1 0 1 0 2 0a1 1 0 1 0-2 0', 'M18 20a1 1 0 1 0 2 0a1 1 0 1 0-2 0'],
+  orders: ['M3 6h.01', 'M3 12h.01', 'M3 18h.01', 'M8 6h13', 'M8 12h13', 'M8 18h13'],
+  validation: ['M21.73 18l-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3', 'M12 9v4', 'M12 17h.01'],
+  accounts: ['M2 7l4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7', 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8', 'M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4', 'M2 7h20'],
+  qa: ['M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z', 'M9 12l2 2 4-4'],
+  economics: ['M16 7h6v6', 'M22 7l-8.5 8.5-5-5L2 17'],
+  kiosk: ['M3 7V5a2 2 0 0 1 2-2h2', 'M17 3h2a2 2 0 0 1 2 2v2', 'M21 17v2a2 2 0 0 1-2 2h-2', 'M7 21H5a2 2 0 0 1-2-2v-2', 'M7 12h10'],
+  admin: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'],
+  audit: ['M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8', 'M3 3v5h5', 'M12 7v5l4 2'],
+  bell: ['M10.268 21a2 2 0 0 0 3.464 0', 'M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326'],
+  access: ['M3 11h18v11H3z', 'M7 11V7a5 5 0 0 1 10 0v4'],
+  lineage: ['M6 3v12', 'M18 3a3 3 0 1 0 0 6a3 3 0 1 0 0-6', 'M6 15a3 3 0 1 0 0 6a3 3 0 1 0 0-6', 'M18 9a9 9 0 0 1-9 9'],
+  coa: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z', 'M14 2v4a2 2 0 0 0 2 2h4', 'M16 13H8', 'M16 17H8'],
+  compare: ['M3 3h18v18H3z', 'M9 3v18', 'M15 3v18'],
+  training: ['M12 7v14', 'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z']
+};
+
+/* The signed-in external organisation for this prototype session. */
+const ACTING_ORG = 'Downtown Provisions';
+
+const USERS = [
+  { name: 'Dana Whitfield', email: 'dana@downtownprovisions.com', org: 'Downtown Provisions', role: 'Store owner', locs: 'All 3 locations', last: '24 Aug 2026' },
+  { name: 'Marcus Reyes', email: 'marcus@downtownprovisions.com', org: 'Downtown Provisions', role: 'Buyer', locs: 'Downtown', last: '24 Aug 2026' },
+  { name: 'Priya Anand', email: 'priya@downtownprovisions.com', org: 'Downtown Provisions', role: 'Budtender', locs: 'Downtown', last: '22 Aug 2026' },
+  { name: 'Floor tablet 01', email: 'device · paired 4 Jun 2026', org: 'Downtown Provisions', role: 'Kiosk device', locs: 'Downtown', last: '24 Aug 2026' },
+  { name: 'Sam Okafor', email: 'sam@riversidecollective.com', org: 'Riverside Collective', role: 'Store owner', locs: 'Riverside', last: '19 Aug 2026' },
+  { name: 'Toni Alvarez', email: 'toni@urbanxtracts.com', org: 'urbanXtracts', role: 'Account management', locs: 'Assigned accounts', last: '24 Aug 2026' }
+];
+
+const SEED_AUDIT = [
+  { ts: '24 Aug 2026 09:12', actor: 'Toni Alvarez', action: 'Price override requested', subject: 'Purple Dream 3.5g · Riverside', detail: 'Awaiting approval — reps cannot set price' },
+  { ts: '23 Aug 2026 16:40', actor: 'System', action: 'Release state changed', subject: 'Tag …4310', detail: 'In progress → available, lab result passed' },
+  { ts: '22 Aug 2026 11:05', actor: 'Quality', action: 'COA published', subject: 'Tag …9021', detail: 'Version 1 — first publication' },
+  { ts: '21 Aug 2026 08:55', actor: 'Administration', action: 'Permission changed', subject: 'Priya Anand', detail: 'Buyer → Budtender, pricing no longer rendered' },
+  { ts: '19 Aug 2026 14:22', actor: 'Administration', action: 'Ownership code changed', subject: 'Inbound lot IL-0442', detail: 'TOLL → SPLIT, internal only' }
+];
+
+const SESSION_STATES = [
+  { title: 'Sign in', kind: 'ENTRY', body: 'Email and password, then the role and organisation come from the account — never from a picker the user controls. No multi-factor step in phase one, recorded as an assumption.', action: 'Sign in' },
+  { title: 'Session timed out', kind: 'EXPIRED', body: 'You were signed out after a period of inactivity. Your draft order was saved and nothing was submitted. Signing back in returns you to where you were.', action: 'Sign in again' },
+  { title: 'Access denied', kind: 'DENIED', body: 'Your account does not have access to this area. It never says whether the thing behind it exists, and the request was refused by the server, not hidden by the interface.', action: 'Back to dashboard' },
+  { title: 'Link expired', kind: 'EXPIRED LINK', body: 'This link is no longer valid. Request a fresh one — the original never discloses what it pointed at, including on a public COA page.', action: 'Request a new link' },
+  { title: 'Permissions changed', kind: 'RE-EVALUATED', body: 'Your access changed while you were working. The view has reloaded against your current permissions rather than degrading in place, and anything you could no longer see has been removed.', action: 'Reload' },
+  { title: 'Viewing as another user', kind: 'IMPERSONATION', body: 'An administrator is viewing this account read-only. A banner is visible for the whole session, cost is withheld even from an administrator who could otherwise see it, and the event is recorded in this organisation\u2019s own audit history.', action: 'Understood' }
+];
+
+const ACCOUNTS_DETAIL = {
+  'OCM-RETL-24-000412': {
+    name: 'Downtown Provisions', org: 'Downtown Provisions', state: 'NY', since: 'First order 14 Feb 2025',
+    locations: [
+      { name: 'Downtown', license: 'OCM-RETL-24-000412', status: 'Active' },
+      { name: 'Riverside', license: 'OCM-RETL-24-000518', status: 'Balance past due' },
+      { name: 'Northgate', license: 'OCM-RETL-24-000633', status: 'License expired 12 Aug' }
+    ],
+    contacts: [
+      { name: 'Dana Whitfield', role: 'Owner · approves orders', reach: 'dana@downtownprovisions.com' },
+      { name: 'Marcus Reyes', role: 'Buyer · Downtown', reach: 'marcus@downtownprovisions.com' },
+      { name: 'Priya Anand', role: 'Budtender · Downtown', reach: 'priya@downtownprovisions.com' }
+    ],
+    mix: [
+      { cat: 'Vape cartridge', share: 38 }, { cat: 'Infused edible', share: 26 },
+      { cat: 'Concentrate', share: 18 }, { cat: 'Infused pre-roll', share: 12 }, { cat: 'Packaged flower', share: 6 }
+    ],
+    notes: [
+      { when: '19 Aug 2026', who: 'Toni Alvarez', text: 'Store visit — asked about a larger edible pack. Logged as a request, no commitment made.' },
+      { when: '2 Aug 2026', who: 'Toni Alvarez', text: 'Northgate renewal in progress with their compliance consultant.' }
+    ],
+    notOrdered: ['Purple Dream Infused Flower 3.5g', 'Hudson Valley Kush Badder 1g', 'Grape Gas Infused Pre-Roll 5pk']
+  }
+};
+
+const LOCATION_ROWS = [
+  { metric: 'Orders, 90 days', a: '9', b: '6', c: '3' },
+  { metric: 'Spend, 90 days', a: '$24,180', b: '$16,940', c: '$7,090' },
+  { metric: 'Average order value', a: '$2,687', b: '$2,823', c: '$2,363' },
+  { metric: 'Reorder interval', a: '19 days', b: '31 days', c: '48 days' },
+  { metric: 'Largest category', a: 'Vape cartridge', b: 'Infused edible', c: 'Concentrate' },
+  { metric: 'Distinct SKUs ordered', a: '14', b: '9', c: '5' },
+  { metric: 'Ordering status', a: 'Open', b: 'Blocked — past due', c: 'Blocked — license' },
+  { metric: 'Sell-through', a: 'Not connected', b: 'Not connected', c: 'Not connected' }
+];
+
+const TESTS = [
+  { label: 'REQUIRED TEST', name: 'An expired license blocks ordering at that location only', how: 'Buyer role, switch to Northgate: submission refuses, other locations still submit.', state: 'Enforced' },
+  { label: 'REQUIRED TEST', name: 'Unreleased product is not visible', how: 'Catalog renders only packages that are available and lab-passed; failed and in-progress lots have no external presence.', state: 'Enforced' },
+  { label: 'REQUIRED TEST', name: 'The receivables gate fires at order entry, not at shipping', how: 'Buyer role, Riverside: submit refuses with a reason and the draft is kept.', state: 'Enforced' },
+  { label: 'REQUIRED TEST', name: 'One store cannot see another store\u2019s orders', how: 'Orders are filtered by the acting location for every external role.', state: 'Enforced' },
+  { label: 'REQUIRED TEST', name: 'A blocked user is given a path forward', how: 'Every gate names its reason and who to contact; no block is silent.', state: 'Enforced' },
+  { label: 'REQUIRED TEST', name: 'Cost is absent from every external and impersonated view', how: 'Cost and margin is structurally absent from external navigation and from a view-as session.', state: 'Enforced' },
+  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'One store cannot see another store\u2019s users', how: 'Users are scoped to the acting organisation; role changes are refused cross-org and from read-only sessions.', state: 'Enforced after a defect' },
+  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'A partial compliance tag never resolves to one lot', how: 'Kiosk lookup returns a candidate list or a refusal; typed entry requires the full tag.', state: 'Enforced' },
+  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'No aggregate blends incompatible units', how: 'Grams, millilitres and each are reported separately; no combined inventory total is offered.', state: 'Enforced' },
+  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'Every list-backed screen is scoped by acting organisation', how: 'Orders, users, notifications, drafts, price requests and audit rows all filter on the actor, not the screen.', state: 'To verify per screen' }
+];
+
+const CAT_HUE = {
+  'Vape cartridge': 'var(--ux-cat-vape)',
+  'Infused edible': 'var(--ux-cat-edible)',
+  'Infused pre-roll': 'var(--ux-cat-preroll)',
+  'Packaged flower': 'var(--ux-cat-flower)',
+  'Concentrate': 'var(--ux-cat-concentrate)',
+  'Infused flower': 'var(--ux-cat-infused)'
+};
+const catDot = (cat, size) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + (CAT_HUE[cat] || 'var(--ux-faint)');
+const CATS = ['All', 'Vape cartridge', 'Infused edible', 'Infused pre-roll', 'Packaged flower', 'Concentrate', 'Infused flower'];
+
+const LOCATIONS = [
+  { id: 'l1', name: 'Downtown', license: 'OCM-RETL-24-000412', expired: false },
+  { id: 'l2', name: 'Riverside', license: 'OCM-RETL-24-000518', expired: false, pastDue: true },
+  { id: 'l3', name: 'Northgate', license: 'OCM-RETL-24-000633', expired: true }
+];
+
+const FLOW = ['Awaiting approval', 'Placed', 'Approved', 'Shipped', 'Received'];
+const INTERNAL_STATE = { 'Awaiting approval': 'draft', 'Placed': 'created', 'Approved': 'approved · filled', 'Shipped': 'shipped', 'Received': 'accepted', 'Flagged': 'canceled / returned' };
+
+const SEED_ORDERS = [
+  { id: 'SO-24187', loc: 'l1', placed: '18 Aug 2026', state: 'Placed', history: { 'Placed': '18 Aug 2026' },
+    lines: [{ id: 'p1', lot: 0, qty: 12, price: 1850 }, { id: 'p4', lot: 0, qty: 24, price: 1420 }, { id: 'p6', lot: 0, qty: 50, price: 640 }] },
+  { id: 'SO-24151', loc: 'l2', placed: '11 Aug 2026', state: 'Approved', history: { 'Placed': '11 Aug 2026', 'Approved': '12 Aug 2026' },
+    lines: [{ id: 'p8', lot: 1, qty: 12, price: 1920 }, { id: 'p10', lot: 0, qty: 20, price: 3600 }] },
+  { id: 'SO-24098', loc: 'l1', placed: '2 Aug 2026', state: 'Shipped', history: { 'Placed': '2 Aug 2026', 'Approved': '3 Aug 2026', 'Shipped': '6 Aug 2026' },
+    lines: [{ id: 'p2', lot: 0, qty: 30, price: 1850 }, { id: 'p5', lot: 0, qty: 24, price: 1380 }] },
+  { id: 'SO-24020', loc: 'l2', placed: '21 Jul 2026', state: 'Received', history: { 'Placed': '21 Jul 2026', 'Approved': '22 Jul 2026', 'Shipped': '24 Jul 2026', 'Received': '26 Jul 2026' },
+    lines: [{ id: 'p1', lot: 1, qty: 12, price: 1790 }, { id: 'p3', lot: 0, qty: 30, price: 1290 }, { id: 'p7', lot: 0, qty: 20, price: 2450 }] },
+  { id: 'SO-23964', loc: 'l3', placed: '9 Jul 2026', state: 'Flagged', history: { 'Placed': '9 Jul 2026', 'Flagged': '12 Jul 2026' },
+    lines: [{ id: 'p11', lot: 0, qty: 20, price: 2900 }] }
+];
+
+const VALIDATION = [
+  { cls: 'INFORMATION REQUIRED', closedBy: 'Closed by whoever holds the fact', items: [
+    { severity: 'BLOCKING', screen: 'Product detail', question: 'Where do parsed potency, cannabinoid and terpene values live?', detail: 'No structured field for potency or terpenes exists in either reporting domain, and labs are manual. The product detail page therefore shows an explicit pending panel where the largest section of the hero screen should be.', blocks: 'Potency and profile layer; budtender education', owner: 'Quality', evidence: 'A named field or record per lot, and who maintains it' },
+    { severity: 'BLOCKING', screen: 'Performance panels', question: 'Is there any store sell-through feed, now or planned?', detail: 'Order history exists; sell-through does not. Every performance panel is an empty state, and reorder timing is based on order interval alone with that basis stated on screen.', blocks: 'Product performance, location comparison, velocity claims', owner: 'Sales leadership', evidence: 'A data source, or a decision to ship without one' },
+    { severity: 'Record and continue', screen: 'Lot panel', question: 'Which lot and batch identifiers will exist going forward?', detail: 'Most active packages carry no lot identifier and a large share carry no batch number either. The prototype treats the compliance tag as sufficient identity so it works either way.', blocks: 'Nothing today; affects lineage depth', owner: 'Operations', evidence: 'A go-forward identifier rule' }
+  ] },
+  { cls: 'CANIX VALIDATION REQUIRED', closedBy: 'Closed by a Canix test or a vendor answer', items: [
+    { severity: 'BLOCKING', screen: 'Order builder', question: 'Are case quantity, minimum order and lead time readable per item?', detail: 'Case and individual unit identifiers appear in the schema but their values were not confirmed. Case figures on product cards are synthetic, and the order builder accepts quantities as entered rather than enforcing increments.', blocks: 'Minimum and case-increment validation at order entry', owner: 'Operations', evidence: 'A read of the case and individual unit values for a sample of items' },
+    { severity: 'Record and continue', screen: 'Catalog', question: 'Is there a per-item price list in Canix?', detail: 'Only realised order-line prices were found. If an item price list exists, it is a better source than deriving from history.', blocks: 'Nothing today; would replace the derived price', owner: 'Sales operations', evidence: 'Confirmation the object exists and is populated' }
+  ] },
+  { cls: 'TECHNICAL VALIDATION REQUIRED', closedBy: 'Closed by a hands-on test in the target system', items: [
+    { severity: 'BLOCKING', screen: 'Catalog · Order builder', question: 'The per-account rate card does not exist as a record. What replaces it?', detail: 'No rate-card board was found. Each price here is derived from the most recent qualifying order line for the account, excluding samples, cancellations, returns and lines where discount exceeded price, with the derivation date shown. Where no qualifying line exists the product shows price on request and cannot be added to an order.', blocks: 'Showing any price; the whole ordering flow depends on it', owner: 'Sales operations', evidence: 'A rate-card record with per-account scoping and approval, or a decision to ship the derived price' },
+    { severity: 'BLOCKING', screen: 'Order builder', question: 'What defines past due for the receivables gate?', detail: 'The gate fires at order entry rather than at shipping, which is settled. The threshold is not. The prototype fires it on the Riverside account so the blocked state can be reviewed.', blocks: 'The AR gate', owner: 'Finance', evidence: 'A threshold, and the ledger field it reads' },
+    { severity: 'Record and continue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
+    { severity: 'Record and continue', screen: 'Internal lot view', question: 'Does the co-manufacturing record carry the ownership code?', detail: 'A co-manufacturing board exists. Ownership code is a property of the inbound lot and must never reach a counterparty view, so its source needs to be definite first.', blocks: 'Ownership display on the internal lot view', owner: 'Data contracts', evidence: 'A read of the co-man record structure' },
+    { severity: 'Record and continue', screen: 'Account · Orders', question: 'Is the ledger reachable for balances and terms?', detail: 'The ledger connector was not attached for this work. Balance and terms are pending rather than estimated, and a buyer sees only that a gate fired, never a balance.', blocks: 'AR display; invoice access', owner: 'Finance', evidence: 'A connector read of balances for a sample account' },
+    { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' }
+  ] },
+  { cls: 'FINANCE DECISION', closedBy: 'Closed by the finance owner', items: [
+    { severity: 'BLOCKING', screen: 'Cost and margin', question: 'May a margin figure be shown when its cost components are incomplete, and at what coverage?', detail: 'Three quarters of active packages carry no total standard cost and labor cost is effectively unpopulated. Every figure on the cost and margin screen is synthetic and labelled, with a coverage column beside it.', blocks: 'The internal economics view', owner: 'Finance', evidence: 'A coverage threshold, and what displays below it' },
+    { severity: 'Record and continue', screen: 'Cost and margin', question: 'Which cost components belong in a unit cost?', detail: 'Cannabis, non-cannabis ingredient and labor components exist as separate fields. Which of them constitute the figure a margin is computed against is an accounting treatment, not a display choice.', blocks: 'Nothing today; defines the figure', owner: 'Finance', evidence: 'A stated treatment per component' }
+  ] },
+  { cls: 'BUSINESS DECISION', closedBy: 'Closed by the business owner', items: [
+    { severity: 'BLOCKING', screen: 'Order builder', question: 'What order value triggers owner approval?', detail: 'Approval also fires when a buyer submits, when an order exceeds available quantity, and when receivables are past due — all settled. The value threshold is not, so the prototype applies the buyer rule only.', blocks: 'The order-submission gate', owner: 'Sales leadership', evidence: 'A number, and whether it varies by account' },
+    { severity: 'Record and continue', screen: 'Exceptions', question: 'Who owns each exception type, and against what clock?', detail: 'A store sees status only, never the owner or the clock, so this is an internal decision that does not change any external screen.', blocks: 'Exception queue routing', owner: 'Operations', evidence: 'An owner and a target per exception type' },
+    { severity: 'Record and continue', screen: 'Sign-in', question: 'Multi-factor authentication was left open.', detail: 'This prototype assumes none in phase one, and no personal login at all on shared floor devices.', blocks: 'Nothing today', owner: 'Administration', evidence: 'A policy per role' }
+  ] },
+  { cls: 'CCO SIGN-OFF REQUIRED', closedBy: 'Closed by the Chief Compliance Officer', items: [
+    { severity: 'BLOCKING', screen: 'Public COA page', question: 'What does the public page display, how long does a printed code keep resolving, and is retest history shown?', detail: 'The resolver mechanism is designed for either answer and nothing publishes while this is open. The payload is constrained to lab result, batch and dates, and the portal never interprets a result.', blocks: 'Publication of the public resolver', owner: 'CCO', evidence: 'A written display, retention and retest decision' },
+    { severity: 'BLOCKING', screen: 'Public COA page', question: 'What triggers a recall notice, what does it say, and how fast must it appear?', detail: 'Product safety escalates immediately and is itself a recall trigger, so it does not queue behind the normal exception path. The notice wording is not ours to write.', blocks: 'Recall behaviour on published pages', owner: 'CCO', evidence: 'Approved trigger and wording' }
+  ] }
+];
+
+const INTEGRITY = [
+  { name: 'Available with no lab result', count: '1', effect: 'Excluded from catalog by the release rule; flagged for correction' },
+  { name: 'Test failed but package still active', count: '4', effect: 'No external presence at all; appears here with its quarantine reason' },
+  { name: 'Package with no lot identifier', count: '1,161', effect: 'Tag is used as lot identity; batch and lot shown as not recorded' },
+  { name: 'Not submitted to the state system', count: '2', effect: 'Blocked from release until submitted' },
+  { name: 'Available but never marked available', count: '425', effect: 'The marked-available flag is unused, so the release rule ignores it' },
+  { name: 'Past use-by or expiry, still available', count: '0 of 195 dated', effect: '1,173 packages carry no expiry date, so this check covers a minority' },
+  { name: 'Allocated to an order already shipped', count: '2', effect: 'Held for reconciliation before the next allocation run' }
+];
+
+class Component extends DCLogic {
+  state = {
+    role: 'buyer', screen: 'dash', loc: 'l1', cat: 'All', query: '',
+    product: 'p1', lot: 0, qty: 1, cart: [], delivery: 'Next available',
+    orders: SEED_ORDERS.map(o => ({ ...o })), requests: [], seq: 24188,
+    order: null, toast: null, toastKind: 'DONE', kioskInput: '', kioskMsg: null, kioskMsgKind: 'NOT FOUND',
+    audit: SEED_AUDIT.slice(), impersonating: null, notifRead: false, compare: [],
+    vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
+    drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
+    account: null, loading: false, stale: false, confirmed: null
+  };
+
+  set(patch) { this.setState(patch); }
+
+  componentDidMount() {
+    this._onResize = () => this.setState({ vw: window.innerWidth });
+    window.addEventListener('resize', this._onResize);
+    this._onResize();
+  }
+
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+
+  toggleFav(id) {
+    this.setState(st => ({ favs: st.favs.indexOf(id) === -1 ? st.favs.concat([id]) : st.favs.filter(x => x !== id) }));
+  }
+
+  activeLines() {
+    const d = this.state.drafts.find(x => x.id === this.state.activeDraft);
+    return d ? d.lines : [];
+  }
+
+  patchActive(fn) {
+    this.setState(st => ({ drafts: st.drafts.map(d => d.id === st.activeDraft ? { ...d, lines: fn(d.lines) } : d) }));
+  }
+
+  newDraft() {
+    const id = 'D' + (this.state.drafts.length + 1);
+    const name = this.locName(this.state.loc) + ' draft ' + (this.state.drafts.length + 1);
+    this.setState(st => ({ drafts: st.drafts.concat([{ id, name, loc: st.loc, lines: [] }]), activeDraft: id, screen: 'cart', toast: 'New draft started for ' + this.locName(st.loc) + '.', toastKind: 'DRAFT ADDED' }));
+  }
+
+  deleteDraft(id) {
+    this.setState(st => {
+      const left = st.drafts.filter(d => d.id !== id);
+      const drafts = left.length ? left : [{ id: 'D1', name: 'New draft', loc: st.loc, lines: [] }];
+      return { drafts, activeDraft: drafts[0].id, toast: 'Draft discarded.', toastKind: 'DISCARDED' };
+    });
+  }
+
+  swapLine(i, toId) {
+    const p = P(toId);
+    this.patchActive(lines => lines.map((l, j) => j === i ? { ...l, id: toId, lot: 0, price: p.price } : l));
+    this.setState({ toast: 'Line swapped to ' + p.name + ' at its current derived price.', toastKind: 'LINE SWAPPED' });
+  }
+
+  refresh() {
+    this.setState({ loading: true, stale: false });
+    setTimeout(() => this.setState({ loading: false, toast: 'Reloaded against the subledger.', toastKind: 'REFRESHED' }), 750);
+  }
+
+  logAudit(action, subject, detail, actor) {
+    this.setState(st => ({
+      audit: [{ ts: '24 Aug 2026 ' + String(9 + (st.audit.length % 9)).padStart(2, '0') + ':' + String(10 + (st.audit.length * 7) % 49).padStart(2, '0'),
+        actor: actor || (st.impersonating ? 'Administrator (as ' + st.impersonating.name + ')' : 'You'), action, subject, detail }].concat(st.audit)
+    }));
+  }
+
+  impersonate(u) {
+    this.setState({ impersonating: u, role: u.role === 'Buyer' ? 'buyer' : 'owner', screen: 'dash', toast: 'Viewing as ' + u.name + '. Read-only, cost withheld, and recorded in ' + u.org + '\u2019s audit history.', toastKind: 'VIEWING AS USER' });
+    this.logAudit('Administrator viewed a user\u2019s screen', u.name + ' · ' + u.org, 'Read-only session, cost withheld, visible to the organisation', 'Administrator');
+  }
+
+  stopImpersonating() {
+    const u = this.state.impersonating;
+    this.setState({ impersonating: null, role: 'internal', screen: 'admin', toast: 'Returned to your own view.', toastKind: 'SESSION ENDED' });
+    if (u) this.logAudit('Administrator session ended', u.name + ' · ' + u.org, 'Duration recorded against the audit entry', 'Administrator');
+  }
+  priced(p) { return p.price !== null; }
+  loc() { return LOCATIONS.find(l => l.id === this.state.loc) || LOCATIONS[0]; }
+  locName(id) { const l = LOCATIONS.find(x => x.id === id); return l ? l.name : '—'; }
+  orderValue(o) { return o.lines.reduce((a, l) => a + l.price * l.qty, 0); }
+  orderUnits(o) { return o.lines.reduce((a, l) => a + l.qty, 0); }
+
+  addLine(p, qty, lotIdx) {
+    const lot = Math.min(lotIdx || 0, p.lots.length - 1);
+    this.patchActive(lines => lines.concat([{ id: p.id, lot, qty, price: p.price }]));
+    this.setState({ screen: 'cart', toast: qty + ' × ' + p.name + ' added to your draft.', toastKind: 'ADDED' });
+  }
+
+  requestPrice(p) {
+    this.setState(st => ({
+      requests: st.requests.concat([{ name: p.name, loc: this.locName(st.loc), raised: TODAY, state: 'WITH REP' }]),
+      screen: 'orders', toast: 'Price requested for ' + p.name + '. Your account manager has been notified and the request is visible to your owner.', toastKind: 'REQUESTED'
+    }));
+  }
+
+  submit() {
+    const st = this.state;
+    const lines = this.activeLines();
+    if (!lines.length) return;
+    if (st.impersonating) { this.set({ toast: 'This is a read-only administrator session — an order cannot be submitted from it.', toastKind: 'BLOCKED — READ ONLY' }); return; }
+    const l = this.loc();
+    if (l.expired) { this.set({ toast: 'Cannot submit: the license record for ' + l.name + ' has expired. Other locations are unaffected.', toastKind: 'BLOCKED — LICENSE' }); return; }
+    if (l.pastDue) { this.set({ toast: 'Cannot submit: ' + l.name + ' has a past-due balance. The receivables check runs at order entry, not at shipping — the draft is kept as it is.', toastKind: 'BLOCKED — RECEIVABLES' }); return; }
+    const isBuyer = st.role === 'buyer';
+    const state = isBuyer ? 'Awaiting approval' : 'Placed';
+    const id = 'SO-' + st.seq;
+    const order = {
+      id, loc: st.loc, placed: TODAY, state,
+      history: isBuyer ? { 'Awaiting approval': TODAY } : { 'Placed': TODAY },
+      lines: lines.map(l => ({ ...l })), delivery: st.delivery, submittedBy: isBuyer ? 'Buyer' : 'Owner'
+    };
+    this.setState({
+      orders: [order].concat(st.orders),
+      drafts: st.drafts.map(d => d.id === st.activeDraft ? { ...d, lines: [] } : d),
+      seq: st.seq + 1, order: id, screen: 'confirm', confirmed: id,
+      toast: isBuyer ? id + ' sent to the store owner for approval.' : id + ' submitted.',
+      toastKind: isBuyer ? 'SENT FOR APPROVAL' : 'SUBMITTED'
+    });
+  }
+
+  advance(id, to, kind) {
+    this.logAudit(to === 'Flagged' ? 'Order declined' : 'Order state changed', id, 'Now ' + to.toLowerCase());
+    this.setState(st => ({
+      orders: st.orders.map(o => o.id === id ? { ...o, state: to, history: { ...o.history, [to]: TODAY } } : o),
+      toast: id + ' is now ' + to.toLowerCase() + '.', toastKind: kind || 'UPDATED'
+    }));
+  }
+
+  reorder(o) {
+    this.patchActive(() => o.lines.map(l => ({ ...l, price: P(l.id).price === null ? l.price : P(l.id).price })));
+    const gone = o.lines.filter(l => P(l.id).oos).length;
+    this.setState({
+      screen: 'cart', toast: gone ? 'Draft rebuilt from ' + o.id + '. ' + gone + ' line is no longer stocked — swap it below rather than losing it.' : 'Draft rebuilt from ' + o.id + '. Prices refreshed to your current derived price — check the lines flagged as changed.', toastKind: gone ? 'LINE UNAVAILABLE' : 'REORDER'
+    });
+  }
+
+  kioskFind() {
+    const raw = this.state.kioskInput.trim();
+    if (!raw) { this.set({ kioskMsg: 'Enter or scan a tag first.', kioskMsgKind: 'NOTHING ENTERED' }); return; }
+    const all = [];
+    PRODUCTS.forEach(p => p.lots.forEach((l, i) => all.push({ p, i, tag: l.tag })));
+    const exact = all.find(x => x.tag.toLowerCase() === raw.toLowerCase());
+    if (exact) { this.set({ product: exact.p.id, lot: exact.i, screen: 'product', kioskMsg: null }); return; }
+    const partial = all.filter(x => x.tag.toLowerCase().includes(raw.toLowerCase()));
+    if (partial.length === 1) {
+      this.set({ kioskMsg: 'That looks like part of a tag. One package matches — ' + partial[0].p.name + ' — but a partial tag is never resolved automatically. Enter the full tag to open it.', kioskMsgKind: 'PARTIAL TAG' });
+    } else if (partial.length > 1) {
+      this.set({ kioskMsg: partial.length + ' packages contain that sequence, so it cannot resolve to one lot. Scan the package or enter the full tag.', kioskMsgKind: 'AMBIGUOUS' });
+    } else {
+      this.set({ kioskMsg: 'No package matches that tag. Check the digits, or scan the barcode. This never tells you whether a nearby tag exists.', kioskMsgKind: 'NOT FOUND' });
+    }
+  }
+
+  navFor(role) {
+    if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'internal') return [['dash', 'Internal dashboard', 'dash'], ['accounts', 'Retailer accounts', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['economics', 'Cost and margin', 'economics'], ['orders', 'Orders', 'orders'], ['admin', 'Users and roles', 'admin'], ['tests', 'Required tests', 'validation'], ['auditlog', 'Audit history', 'audit'], ['coalookup', 'Public COA page', 'coa'], ['access', 'Access states', 'access'], ['validation', 'Validation queue', 'validation']];
+    if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Compare locations', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['notifications', 'Notifications', 'bell'], ['users', 'Your users', 'admin'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+    return [['dash', 'Dashboard', 'dash'], ['catalog', 'Catalog', 'catalog'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['training', 'Training', 'training'], ['validation', 'Validation queue', 'validation']];
+  }
+
+  renderVals() {
+    const s = this.state;
+    const role = s.role;
+    /* Brand geometry: the mark is built from arches, so category markers, image
+       frames and empty states repeat that arch rather than inventing a shape. */
+    const arch = (size, fill) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + fill;
+    const activeDraftObj = s.drafts.find(d => d.id === s.activeDraft) || s.drafts[0];
+    const cart = activeDraftObj ? activeDraftObj.lines : [];
+    const narrow = s.vw < 820;
+    const mid = s.vw < 1120;
+    const isInternal = role === 'internal';
+    const isKioskRole = role === 'budtender';
+    const canOrder = role === 'owner' || role === 'buyer';
+    const loc = this.loc();
+    const licenseBlocked = canOrder && loc.expired;
+    const arBlocked = canOrder && !!loc.pastDue;
+    const submitBlocked = licenseBlocked || arBlocked;
+
+    const visibleOrders = isInternal ? s.orders : s.orders.filter(o => o.loc === s.loc);
+    const pendingApproval = s.orders.filter(o => o.state === 'Awaiting approval' && (isInternal || o.loc === s.loc));
+
+    const navBtn = (active) => 'display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:' + (active ? 'var(--ux-surface)' : 'transparent') +
+      ';border:0;border-left:' + (active ? '3px solid var(--ux-accent)' : '3px solid transparent') +
+      ';padding:11px 20px;font:' + (active ? '700' : '500') + ' 13.5px Archivo,sans-serif;color:var(--ux-ink);cursor:pointer';
+
+    const badges = { cart: cart.length, orders: pendingApproval.length, notifications: s.notifRead ? 0 : 3 };
+    const nav = this.navFor(role).map(([id, label, icon]) => {
+      const n = badges[id] || 0;
+      return {
+        label, icon: ICON[icon] || ICON.dash, style: navBtn(s.screen === id || (id === 'orders' && s.screen === 'order')),
+        badge: n > 0 ? String(n) : '',
+        badgeStyle: n > 0 ? 'background:var(--ux-ink);color:var(--ux-ground);font:700 10px ui-monospace,monospace;padding:1px 6px' : 'display:none',
+        onPick: () => this.set({ screen: id })
+      };
+    });
+
+    const roleTabs = [['owner', 'Owner'], ['buyer', 'Buyer'], ['budtender', 'Budtender'], ['internal', 'Internal']].map(([id, label]) => ({
+      label,
+      style: 'border:0;padding:8px 12px;font:' + (role === id ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer;background:' +
+        (role === id ? 'var(--ux-ink)' : 'transparent') + ';color:' + (role === id ? 'var(--ux-ground)' : 'var(--ux-ink)'),
+      onPick: () => this.set({ role: id, screen: id === 'budtender' ? 'kiosk' : 'dash', order: null, toast: null })
+    }));
+
+    const locations = LOCATIONS.map(l => ({
+      name: l.name, license: l.license,
+      style: 'display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;background:' + (s.loc === l.id ? '#fff' : 'transparent') +
+        ';border:1px solid ' + (s.loc === l.id ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') +
+        ';padding:7px 11px;font:' + (s.loc === l.id ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+      onPick: () => this.set({ loc: l.id, order: null })
+    }));
+
+    const product = P(s.product) || PRODUCTS[0];
+    const lot = product.lots[Math.min(s.lot, product.lots.length - 1)];
+    const orderedIds = new Set(s.orders.filter(o => isInternal || o.loc === s.loc).flatMap(o => o.lines.map(l => l.id)));
+
+    const priceText = (p) => {
+      if (isKioskRole) return 'Price not shown on this device';
+      if (!this.priced(p)) return 'Price on request';
+      return MONEY(p.price) + ' per unit';
+    };
+
+    const catalogItems = PRODUCTS.filter(p => {
+      const q = s.query.trim().toLowerCase();
+      if (s.cat !== 'All' && p.cat !== s.cat) return false;
+      if (s.onlyFavs && s.favs.indexOf(p.id) === -1) return false;
+      if (!q) return true;
+      return (p.name + ' ' + p.brand + ' ' + p.sku + ' ' + p.strain + ' ' + p.lots.map(l => l.tag).join(' ')).toLowerCase().includes(q);
+    }).map(p => ({
+      name: p.name, brand: p.brand, cat: p.cat, format: p.format, sku: p.sku, band: p.band, catDot: catDot(p.cat, 9),
+      isFav: s.favs.indexOf(p.id) !== -1,
+      favStyle: 'background:transparent;border:1px solid rgba(23,14,11,.25);padding:8px 10px;font:700 12px Archivo,sans-serif;cursor:pointer;color:' + (s.favs.indexOf(p.id) !== -1 ? 'var(--ux-accent-text)' : 'var(--ux-muted)'),
+      favLabel: s.favs.indexOf(p.id) !== -1 ? 'Saved' : 'Save',
+      onFav: () => this.toggleFav(p.id),
+      priceText: priceText(p), priceStyle: this.priced(p) ? 'font-weight:600' : 'font-weight:600;color:var(--ux-signal-text)',
+      orderedTag: orderedIds.has(p.id) ? 'ORDERED BEFORE' : '',
+      orderedStyle: orderedIds.has(p.id) ? 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:var(--ux-surface);color:var(--ux-muted-strong)' : 'display:none',
+      canAdd: canOrder && this.priced(p) && !licenseBlocked && !p.oos,
+      canRequest: canOrder && !this.priced(p),
+      onOpen: () => this.set({ product: p.id, lot: 0, qty: 1, screen: 'product' }),
+      onAdd: () => this.addLine(p, 1, 0),
+      onRequest: () => this.requestPrice(p)
+    }));
+
+    const cartLines = cart.map((line, i) => {
+      const p = P(line.id);
+      return {
+        name: p.name, brand: p.brand, sku: p.sku, tag: '…' + p.lots[line.lot].tag.slice(-8),
+        packaged: p.lots[line.lot].packaged, qty: line.qty, lineTotal: MONEY(line.price * line.qty),
+        onInc: () => this.setState(st => ({ cart: st.cart.map((l, j) => j === i ? { ...l, qty: l.qty + 1 } : l) })),
+        onDec: () => this.setState(st => ({ cart: st.cart.map((l, j) => j === i ? { ...l, qty: Math.max(1, l.qty - 1) } : l) })),
+        onRemove: () => this.setState(st => ({ cart: st.cart.filter((_, j) => j !== i) }))
+      };
+    });
+    const cartTotalCents = cart.reduce((a, l) => a + l.price * l.qty, 0);
+    const changed = cart.filter(l => P(l.id).price !== null && P(l.id).price !== l.price);
+    const oosLines = cart.map((l, i) => ({ i, p: P(l.id) })).filter(x => x.p.oos).map(x => ({
+      name: x.p.name,
+      alternatives: PRODUCTS.filter(alt => alt.cat === x.p.cat && !alt.oos && alt.price !== null && alt.id !== x.p.id).slice(0, 2).map(alt => ({
+        label: alt.name + ' · ' + MONEY(alt.price),
+        onSwap: () => this.swapLine(x.i, alt.id)
+      }))
+    }));
+
+    const warnings = [];
+    if (cart.length) {
+      warnings.push({ kind: 'PRICING BASIS', text: 'Each price is derived from the most recent qualifying order line for this account, not from a rate card. Samples, cancellations, returns and lines where discount exceeded price are excluded, and the derivation date is shown on the product.' });
+      warnings.push({ kind: 'CASE INCREMENTS NOT ENFORCED', text: 'Case and minimum-order values are not confirmed readable per item, so quantities are accepted as entered.' });
+    }
+    if (changed.length) warnings.push({ kind: 'PRICE CHANGED SINCE THIS LINE WAS ADDED', text: changed.length + ' line(s) were priced at an earlier derived figure. Submitting confirms the newer price.' });
+    if (licenseBlocked) warnings.push({ kind: 'ORDERING PAUSED', text: 'The license record for ' + loc.name + ' has expired, so this location cannot submit an order. Other locations are unaffected.' });
+    if (arBlocked && cart.length) warnings.push({ kind: 'RECEIVABLES GATE — SUBMISSION BLOCKED', text: 'This account has a past-due balance, so the check runs here at order entry rather than at shipping. Lines can still be built and saved; the balance itself is shown to the owner, not the buyer. The past-due threshold is still undefined.' });
+    if (role === 'buyer' && cart.length) warnings.push({ kind: 'APPROVAL REQUIRED', text: 'Buyer-submitted orders go to the store owner for approval. The value threshold that would also trigger approval has not been set.' });
+
+    const tiles = isInternal
+      ? [{ label: 'Live orders', value: String(s.orders.length), note: 'Across all accounts' },
+         { label: 'Awaiting approval', value: String(pendingApproval.length), note: 'At the store, not with us' },
+         { label: 'Released SKUs', value: '32', note: 'Available and lab-passed' },
+         { label: 'Integrity exceptions', value: '7', note: 'Checks failing today' }]
+      : role === 'owner'
+        ? [{ label: 'Orders, this location', value: String(visibleOrders.length), note: 'Placed through the portal' },
+           { label: 'Awaiting your approval', value: String(pendingApproval.length), note: 'Buyer-submitted' },
+           { label: 'Price requests', value: String(s.requests.length), note: 'With your rep' },
+           { label: 'Draft lines', value: String(cart.length), note: 'Unsubmitted' }]
+        : [{ label: 'Draft lines', value: String(cart.length), note: 'Yours, unsubmitted' },
+           { label: 'Your orders', value: String(visibleOrders.length), note: 'This location' },
+           { label: 'Awaiting approval', value: String(pendingApproval.length), note: 'Sent to the owner' },
+           { label: 'Released SKUs', value: '32', note: 'Available to this location' }];
+
+    const tileStyle = (i, n) => 'padding:18px 20px 18px 0;' + (i < n - 1 ? 'border-right:1px solid rgba(23,14,11,.14)' : '');
+    const tilesStyled = tiles.map((t, i) => ({ ...t, style: tileStyle(i, tiles.length) }));
+
+    const stateTag = (st) => {
+      if (st === 'Received') return 'background:var(--ux-ink);color:var(--ux-ground)';
+      if (st === 'Flagged') return 'background:var(--ux-signal);color:#fff';
+      if (st === 'Awaiting approval') return 'background:var(--ux-surface);color:var(--ux-ink)';
+      return 'background:var(--ux-surface);color:var(--ux-muted-strong)';
+    };
+
+    const orders = visibleOrders.map(o => ({
+      id: o.id, loc: this.locName(o.loc), placed: o.placed, lines: String(o.lines.length),
+      value: MONEY(this.orderValue(o)), state: o.state, tagStyle: stateTag(o.state),
+      onOpen: () => this.set({ order: o.id, screen: 'order' })
+    }));
+
+    const dashRows = isInternal
+      ? [{ a: 'Riverside Collective', b: 'No order in 62 days', c: 'OCM-RETL-24-000518', tag: 'FOLLOW UP', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ screen: 'accounts' }) },
+         { a: 'Orders needing movement', b: pendingApproval.length + ' awaiting store approval', c: 'Order queue', tag: 'ORDERS', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
+         { a: 'Packages with no lot identifier', b: 'Tag used as lot identity', c: '1,161 packages', tag: 'INTEGRITY', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'qa' }) },
+         { a: 'Cost coverage below threshold', b: 'Labor cost effectively unpopulated', c: '75% of packages', tag: 'BLOCKED', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ screen: 'economics' }) }]
+      : [{ a: 'Apple Motorbreath 1g Cart', b: 'Last ordered 34 days ago', c: 'HLNV-000001', tag: 'REORDER', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ product: 'p1', lot: 0, screen: 'product' }) },
+         { a: 'New York Sunrise Gummies 10ct', b: 'Last ordered 41 days ago', c: 'WRAE-000007', tag: 'REORDER', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ product: 'p4', lot: 0, screen: 'product' }) },
+         { a: pendingApproval.length ? pendingApproval[0].id : 'No orders awaiting approval', b: pendingApproval.length ? 'Buyer-submitted, needs the owner' : 'Nothing pending', c: 'Approvals', tag: pendingApproval.length ? 'ACTION' : 'CLEAR', tagStyle: pendingApproval.length ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
+         { a: 'Northgate license expired', b: 'Ordering paused at that location only', c: '12 Aug 2026', tag: 'ACTION', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ loc: 'l3', screen: 'cart' }) }];
+
+    const od = s.order ? s.orders.find(o => o.id === s.order) : null;
+    let odVals = { isOrder: false };
+    if (od && s.screen === 'order') {
+      const idx = FLOW.indexOf(od.state);
+      const visible = FLOW.filter(f => f !== 'Awaiting approval' || idx === 0);
+      const steps = visible.map((f, vi) => {
+        const isLast = vi === visible.length - 1;
+        const fi = FLOW.indexOf(f);
+        const done = idx >= fi;
+        const current = idx === fi;
+        const good = current && (f === 'Approved' || f === 'Received');
+        return {
+          label: f, when: od.history[f] || (done ? od.placed : 'Pending'),
+          style: 'padding:16px 18px 16px 0;' + (isLast ? '' : 'border-right:1px solid rgba(23,14,11,.14);') +
+            (good ? 'background:var(--ux-accent-wash);color:var(--ux-accent-text);font-weight:700;'
+                  : current ? 'background:var(--ux-surface);color:var(--ux-ink);font-weight:700;'
+                  : done ? 'color:var(--ux-ink);' : 'color:var(--ux-faint);')
+        };
+      });
+      const actions = [];
+      const primary = 'background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer';
+      const secondary = 'background:transparent;border:1px solid rgba(23,14,11,.35);padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer';
+      if (od.state === 'Awaiting approval' && role === 'owner') {
+        actions.push({ label: 'Approve and place', style: primary, onDo: () => this.advance(od.id, 'Placed', 'APPROVED') });
+        actions.push({ label: 'Decline', style: secondary, onDo: () => this.advance(od.id, 'Flagged', 'DECLINED') });
+      }
+      if (isInternal && od.state === 'Placed') actions.push({ label: 'Confirm order', style: primary, onDo: () => this.advance(od.id, 'Approved', 'CONFIRMED') });
+      if (isInternal && od.state === 'Approved') actions.push({ label: 'Mark shipped', style: primary, onDo: () => this.advance(od.id, 'Shipped', 'SHIPPED') });
+      if (od.state === 'Shipped') actions.push({ label: 'Confirm received', style: primary, onDo: () => this.advance(od.id, 'Received', 'RECEIVED') });
+      if (canOrder) actions.push({ label: 'Reorder these lines', style: secondary, onDo: () => this.reorder(od) });
+      actions.push({ label: 'Download confirmation', style: secondary, onDo: () => this.set({ toast: 'A PDF confirmation for ' + od.id + ' would download here. Document generation is out of scope for the prototype.', toastKind: 'NOT WIRED' }) });
+
+      const notes = [];
+      if (od.state === 'Awaiting approval') notes.push({ kind: 'AWAITING OWNER APPROVAL', text: 'Submitted by the buyer. Approval is a store-side action — switch to the Owner role to approve or decline it.' });
+      if (od.state === 'Flagged') notes.push({ kind: 'EXCEPTION', text: 'This order carries an exception. The store sees status only: never the internal owner, the clock, or internal notes.' });
+      const drift = od.lines.filter(l => P(l.id).price !== null && P(l.id).price !== l.price);
+      if (drift.length) notes.push({ kind: 'PRICE ON THIS ORDER DIFFERS FROM TODAY', text: drift.length + ' line(s) were priced at the figure derived when the order was placed. Reordering refreshes them to today\u2019s derived price.' });
+
+      odVals = {
+        isOrder: true,
+        odStepsStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : visible.length) + ',minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:26px', odId: od.id, odState: od.state, odTagStyle: stateTag(od.state),
+        odMeta: this.locName(od.loc) + ' · placed ' + od.placed + ' · ' + (od.delivery || 'Next available') + (isInternal ? ' · subledger state: ' + INTERNAL_STATE[od.state] : ''),
+        odSteps: steps, odActions: actions, odHasActions: actions.length > 0,
+        odLines: od.lines.map(l => {
+          const p = P(l.id);
+          return {
+            name: p.name, brand: p.brand, sku: p.sku, tag: '…' + p.lots[l.lot].tag.slice(-8),
+            packaged: p.lots[l.lot].packaged, qty: String(l.qty), unit: MONEY(l.price), total: MONEY(l.price * l.qty)
+          };
+        }),
+        odUnits: String(this.orderUnits(od)), odValue: MONEY(this.orderValue(od)),
+        odNotes: notes, odHasNotes: notes.length > 0,
+        odFooter: isInternal
+          ? 'Internally this order sits at subledger state ' + INTERNAL_STATE[od.state] + '. The store sees one of four collapsed states, so the portal and the subledger can never contradict each other in front of a customer.'
+          : 'You see status only. Exception ownership, internal notes and cost never appear on this screen by any route, including export.'
+      };
+    }
+
+    /* Acting organisation. An internal user viewing their own screens sees every
+       organisation; anyone else — including an administrator in a view-as session —
+       is scoped to one. Rows are filtered server-side in a real build; this mirrors it. */
+    const actingOrg = s.impersonating ? s.impersonating.org : (isInternal ? null : ACTING_ORG);
+    const users = USERS.filter(u => actingOrg === null || u.org === actingOrg).map(u => {
+      const ownOrg = actingOrg === null || u.org === actingOrg;
+      return {
+        ...u,
+        canImpersonate: isInternal && !s.impersonating && u.role !== 'Kiosk device',
+        canChangeRole: ownOrg && !s.impersonating,
+        roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (u.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (u.role === 'Kiosk device' ? 'var(--ux-muted-strong)' : 'var(--ux-ground)'),
+        onImpersonate: () => this.impersonate(u),
+        onRoleChange: () => {
+          if (!ownOrg || s.impersonating) {
+            this.set({ toast: 'Refused: a role can only be changed inside your own organisation, and never from a read-only session.', toastKind: 'BLOCKED — SCOPE' });
+            return;
+          }
+          this.logAudit('Permission changed', u.name, 'Role change recorded and visible to ' + u.org);
+        }
+      };
+    });
+
+    const notifications = [
+      { kind: 'ORDER STATE', title: 'SO-24098 is on its way', body: 'Shipped 6 Aug to Downtown. Four lines, two lots.', when: '6 Aug 2026', onOpen: () => this.set({ order: 'SO-24098', screen: 'order' }) },
+      { kind: 'LICENSE', title: 'Northgate license expires in 14 days', body: 'Ordering pauses at that location when it lapses. Other locations are unaffected.', when: '12 Aug 2026', onOpen: () => this.set({ loc: 'l3', screen: 'cart' }) },
+      { kind: 'RECEIVABLES', title: 'Riverside balance is past due', body: 'Submission is blocked at order entry until it clears. The balance is shown to the owner only.', when: '18 Aug 2026', onOpen: () => this.set({ loc: 'l2', screen: 'cart' }) }
+    ];
+
+    const compareRows = [
+      { label: 'Category', a: PRODUCTS[0].cat, b: PRODUCTS[3].cat },
+      { label: 'Format', a: PRODUCTS[0].format, b: PRODUCTS[3].format },
+      { label: 'SKU', a: PRODUCTS[0].sku, b: PRODUCTS[3].sku },
+      { label: 'Release state', a: 'Released', b: 'Released' },
+      { label: 'Current lot', a: '…' + PRODUCTS[0].lots[0].tag.slice(-8), b: '…' + PRODUCTS[3].lots[0].tag.slice(-8) },
+      { label: 'Packaged', a: PRODUCTS[0].lots[0].packaged, b: PRODUCTS[3].lots[0].packaged },
+      { label: 'Cannabinoids', a: 'Awaiting source', b: 'Awaiting source' },
+      { label: 'Terpenes', a: 'Awaiting source', b: 'Awaiting source' },
+      { label: 'Your price', a: isKioskRole ? 'Not shown here' : MONEY(PRODUCTS[0].price), b: isKioskRole ? 'Not shown here' : MONEY(PRODUCTS[3].price) }
+    ];
+
+    const trainingCards = [
+      { kind: 'HOW TO TALK ABOUT IT', title: 'Reading a lot, not a product', body: 'Potency belongs to the lot in the customer\u2019s hand, not to the SKU. Scan the tag rather than quoting the shelf label — two jars of the same product can differ.' },
+      { kind: 'HOW TO TALK ABOUT IT', title: 'What a COA does and does not say', body: 'A certificate reports what the lab measured on that batch. It is not a claim about how a product will feel, and staff should never extend it into one.' },
+      { kind: 'PROCESS', title: 'When a customer asks for something unreleased', body: 'If it is not in the portal, it is not released. There is no back-room list — an unreleased lot has no presence here at all.' },
+      { kind: 'PENDING YOUR COPY', title: 'Product-specific talking points', body: 'Written education per SKU needs your words. Nothing is generated here: no effects, benefits or medical language belongs in a portal your staff read from.' }
+    ];
+
+    const coaStates = [
+      { kind: 'VALID', title: 'Released, current version', body: 'Shows lab result, batch and dates only. Nothing about cost, ownership, which brand tolls, or internal batch history reaches this page.' },
+      { kind: 'TESTING', title: 'Testing in progress', body: 'The state a consumer hits most often on new product. It says results are not published yet and promises no date.' },
+      { kind: 'NOT FOUND', title: 'Code not found', body: 'Fails without revealing whether a nearby code exists, and without hinting at an unreleased batch.' },
+      { kind: 'MALFORMED', title: 'Code malformed', body: 'Rejects the input shape without guessing at a correction.' },
+      { kind: 'AMENDED', title: 'Result amended', body: 'Resolves to the current version and marks it as amended. History is retained internally and is not public.' },
+      { kind: 'RECALLED', title: 'Batch recalled', body: 'Carries the recall notice. Trigger and wording are not ours to write — they need compliance sign-off before anything publishes.' }
+    ];
+
+    const lineageSteps = [
+      { step: 'Inbound lot', id: 'IL-0442', detail: 'Ownership code recorded here, never counterparty-facing', when: '12 Mar 2026' },
+      { step: 'Production batch', id: 'PB-1187', detail: 'Present on 59% of packages; absent on the rest', when: '2 Jul 2026' },
+      { step: 'Package', id: '…22000002210', detail: 'Compliance tag — the lot identity used externally', when: '8 Jul 2026' },
+      { step: 'Release', id: 'available + passed', detail: 'Both conditions met, so the SKU is orderable', when: '9 Jul 2026' },
+      { step: 'Allocation', id: 'SO-24151', detail: 'Reserved against an order line', when: '11 Aug 2026' }
+    ];
+
+    const econRows = [
+      { name: 'Vape cartridge 1g', unit: 'per unit', rev: '$18.50', cost: '$7.20', margin: '61%', coverage: '31% of packages', covStyle: 'color:var(--ux-signal-text);font-weight:600' },
+      { name: 'Infused edible 10ct', unit: 'per unit', rev: '$14.20', cost: '$5.90', margin: '58%', coverage: '28% of packages', covStyle: 'color:var(--ux-signal-text);font-weight:600' },
+      { name: 'Live rosin', unit: 'per gram', rev: '$36.00', cost: '—', margin: 'Not shown', coverage: '11% of packages', covStyle: 'color:var(--ux-signal-text);font-weight:600' },
+      { name: 'Packaged flower 3.5g', unit: 'per unit', rev: '$19.80', cost: '$8.40', margin: '58%', coverage: '34% of packages', covStyle: 'color:var(--ux-signal-text);font-weight:600' },
+      { name: 'Labor component, all objects', unit: 'per unit', rev: '—', cost: '—', margin: 'Not shown', coverage: '0.4% of packages', covStyle: 'color:#fff;background:var(--ux-signal);font-weight:600;padding:2px 6px' }
+    ];
+
+    const accounts = [
+      { name: 'Downtown Provisions', license: 'OCM-RETL-24-000412', orders: '22', interval: '19 days', status: 'ACTIVE', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', open: true },
+      { name: 'Riverside Collective', license: 'OCM-RETL-24-000518', orders: '14', interval: '62 days', status: 'PAST DUE', tagStyle: 'background:var(--ux-signal);color:#fff' },
+      { name: 'Northgate Cannabis', license: 'OCM-RETL-24-000633', orders: '9', interval: '31 days', status: 'LICENSE', tagStyle: 'background:var(--ux-signal);color:#fff' },
+      { name: 'Harbor & Vine', license: 'OCM-RETL-24-000701', orders: '31', interval: '14 days', status: 'ACTIVE', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)' },
+      { name: 'Eastside Green', license: 'OCM-RETL-24-000844', orders: '6', interval: '48 days', status: 'NEW', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)' }
+    ];
+
+    const accountsRows = accounts.map(a => ({ ...a, onOpen: () => this.set({ screen: 'account', account: a.license }) }));
+
+    const validationGroups = VALIDATION.map(g => ({
+      cls: g.cls, closedBy: g.closedBy,
+      countLabel: g.items.length + ' item' + (g.items.length === 1 ? '' : 's') + ' · ' + g.items.filter(i => i.severity === 'BLOCKING').length + ' blocking',
+      items: g.items.map(i => ({ ...i, sevStyle: i.severity === 'BLOCKING' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)' }))
+    }));
+    const totalItems = VALIDATION.reduce((a, g) => a + g.items.length, 0);
+    const totalBlocking = VALIDATION.reduce((a, g) => a + g.items.filter(i => i.severity === 'BLOCKING').length, 0);
+
+    const perfEmptyText = 'Performance will appear here once store sell-through data is connected. Nothing is estimated in the meantime, and reorder timing is based on your own order interval alone.';
+
+    return {
+      roleBadge: role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : 'INTERNAL',
+      roleTabs, nav, locations, licenseBlocked, showLocationBar: canOrder,
+      navNote: isInternal
+        ? 'Internal routes are not rendered for any external role — not disabled, not empty. Server-side authorization is the control.'
+        : isKioskRole
+          ? 'This device is authorised to a location. Ordering, pricing and account routes do not exist on it.'
+          : 'You see only your own organisation. Cost, margin, ownership and other retailers are not rendered here by any route.',
+      canOrder, cartCount: cart.length, goCart: () => this.set({ screen: 'cart' }),
+      goCatalogBtn: () => this.set({ screen: 'catalog' }),
+      goOrdersBtn: () => this.set({ screen: 'orders', order: null }),
+      goValidation: () => this.set({ screen: 'validation' }),
+
+      shellStyle: 'flex:1;display:flex;align-items:stretch;flex-wrap:wrap;flex-direction:' + (narrow ? 'column' : 'row'),
+      sidebarStyle: narrow
+        ? 'width:100%;border-bottom:2px solid rgba(23,14,11,.4);padding:8px 0;background:var(--ux-ground);display:flex;gap:0;overflow-x:auto'
+        : 'width:212px;min-width:180px;border-right:2px solid rgba(23,14,11,.4);padding:22px 0 40px;background:var(--ux-ground)',
+      navNoteStyle: narrow ? 'display:none' : 'margin:22px 20px 0;padding-top:16px;border-top:1px solid rgba(23,14,11,.2);font:12px/1.5 Archivo,sans-serif;color:var(--ux-muted)',
+      contentStyle: 'flex:1;min-width:0;padding:' + (narrow ? '22px 18px 64px' : '30px 34px 80px') + ';max-width:1180px',
+      tileGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:0;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
+      cardGridStyle: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(' + (narrow ? 200 : 258) + 'px,1fr));gap:' + (narrow ? 12 : 18) + 'px',
+      isNarrow: narrow, isWide: !narrow,
+      viewToggle: [['grid', 'Grid'], ['list', 'List']].map(([v, label]) => ({
+        label,
+        style: 'background:' + (s.view === v ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.view === v ? 'var(--ux-ground)' : 'var(--ux-ink)') +
+          ';border:1px solid ' + (s.view === v ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.view === v ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.set({ view: v })
+      })),
+      isGrid: s.view === 'grid', isList: s.view === 'list',
+      favFilterStyle: 'background:' + (s.onlyFavs ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.onlyFavs ? 'var(--ux-ground)' : 'var(--ux-ink)') +
+        ';border:1px solid ' + (s.onlyFavs ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.onlyFavs ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+      favFilterLabel: s.onlyFavs ? 'Saved only' : 'Saved',
+      toggleFavFilter: () => this.set({ onlyFavs: !s.onlyFavs }),
+      archMark: arch(30, 'var(--ux-ink)'),
+      hasToast: !!s.toast, toast: s.toast || '', toastKind: s.toastKind, clearToast: () => this.set({ toast: null }),
+      toastChipStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:3px 7px;color:#fff;background:' + (String(s.toastKind).indexOf('BLOCKED') === 0 || s.toastKind === 'DECLINED' || s.toastKind === 'NOT WIRED' ? 'var(--ux-signal)' : 'var(--ux-accent)'),
+
+      isDash: s.screen === 'dash', isCatalog: s.screen === 'catalog', isProduct: s.screen === 'product',
+      isCoa: s.screen === 'coa', isCart: s.screen === 'cart', isOrders: s.screen === 'orders',
+      isKiosk: s.screen === 'kiosk', isEconomics: s.screen === 'economics', isQa: s.screen === 'qa',
+      isAccounts: s.screen === 'accounts', isValidation: s.screen === 'validation',
+
+      dashTitle: isInternal ? 'Internal dashboard' : role === 'owner' ? 'Store overview' : 'Your ordering',
+      dashSub: isInternal
+        ? 'Orders, release state and integrity across all accounts. Cost and margin sit behind their own route.'
+        : 'Counts are live in this prototype — place an order and they move. Structure and release state are measured from live reads.',
+      tiles: tilesStyled, listTitle: isInternal ? 'Needs attention' : 'Your next actions', dashRows,
+      showPerfEmpty: !isInternal, perfEmptyText,
+
+      catalogSub: canOrder
+        ? 'Released finished goods available to this location, with your account price.'
+        : isInternal ? 'All items including bulk material.' : 'Product information only. No price appears on this device.',
+      query: s.query, onQuery: e => this.set({ query: e.target.value }),
+      catFilters: CATS.map(c => ({
+        label: c,
+        style: 'background:' + (s.cat === c ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.cat === c ? 'var(--ux-ground)' : 'var(--ux-ink)') +
+          ';border:1px solid ' + (s.cat === c ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.cat === c ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.set({ cat: c })
+      })),
+      catalogItems, resultCount: catalogItems.length + ' products', noResults: catalogItems.length === 0,
+
+      pdName: product.name, pdBrand: product.brand, pdCat: product.cat, pdCatDot: catDot(product.cat, 9), pdFormat: product.format,
+      pdSku: product.sku, pdStrain: product.strain, pdBand: product.band,
+      pdDesc: 'Category, format, brand, SKU, unit type and release state are read from the operations subledger. The written description is a placeholder — no effects, benefit or medical language belongs in it.',
+      pdPriceText: isKioskRole ? 'Not shown on this device' : this.priced(product) ? MONEY(product.price) : 'Price on request',
+      pdPriceStyle: this.priced(product) ? '' : 'color:var(--ux-signal-text);font-size:19px',
+      pdPriceNote: this.priced(product)
+        ? 'Derived from your most recent qualifying order line, ' + product.priceFrom + '. Not a rate card.'
+        : 'No qualifying order line for this account yet. Requesting a price notifies your account manager.',
+      pdPerfText: perfEmptyText,
+      qty: s.qty,
+      incQty: () => this.setState(st => ({ qty: st.qty + 1 })),
+      decQty: () => this.setState(st => ({ qty: Math.max(1, st.qty - 1) })),
+      addSelected: () => licenseBlocked ? this.set({ screen: 'cart' }) : this.priced(product) ? this.addLine(product, s.qty, s.lot) : this.requestPrice(product),
+      addBtnLabel: licenseBlocked ? 'Ordering paused' : this.priced(product) ? 'Add to draft' : 'Request a price',
+      addBtnStyle: 'background:' + (licenseBlocked ? 'var(--ux-faint)' : this.priced(product) ? 'var(--ux-accent)' : 'var(--ux-ink)') +
+        ';color:#fff;border:0;padding:11px 16px;font:700 13px Archivo,sans-serif;cursor:pointer',
+      caseNote: 'Case configuration shown here is synthetic — case and minimum-order values are not confirmed readable per item, so increments are not enforced.',
+
+      pdLots: product.lots.map((l, i) => ({
+        tag: '…' + l.tag.slice(-10), packaged: l.packaged,
+        style: 'text-align:left;background:' + (s.lot === i ? '#fff' : 'transparent') + ';border:1px solid ' + (s.lot === i ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') +
+          ';border-left:3px solid ' + (s.lot === i ? 'var(--ux-accent)' : 'transparent') + ';padding:11px 14px;cursor:pointer',
+        onPick: () => this.set({ lot: i })
+      })),
+      lotTag: lot.tag, lotPackaged: lot.packaged,
+      lotBatch: 'Not recorded for this package — the compliance tag is the lot identity',
+      lotTest: 'Passed', lotRelease: 'Released — available and lab-passed',
+      coaNote: 'Current published version. Amendments notify accounts that bought this lot.',
+      coaVersionText: 'Version resolution comes from the operating record — pending connector confirmation',
+      openCoa: () => this.set({ screen: 'coa' }),
+      backToCatalog: () => this.set({ screen: 'catalog' }),
+      backToProduct: () => this.set({ screen: 'product' }),
+
+      cartSub: licenseBlocked ? 'This location cannot submit while its license record is expired.' : arBlocked ? 'This location cannot submit while its balance is past due — the check runs here, not at shipping.' : 'Prices are derived, not rate-carded. Review before submitting.',
+      cartEmpty: cart.length === 0, cartHasLines: cart.length > 0,
+      cartLines, cartTotal: MONEY(cartTotalCents), cartWarnings: warnings,
+      oosLines, hasOos: oosLines.length > 0,
+      cartUnits: String(cart.reduce((a, l) => a + l.qty, 0)),
+      cartTotalNote: 'Excludes tax and any line shown as price on request. A derived price can move between drafting and submitting; submitting confirms the newer figure.',
+      deliveryOptions: ['Next available', 'Within 7 days', 'Specific date'].map(d => ({
+        label: d,
+        style: 'background:' + (s.delivery === d ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.delivery === d ? 'var(--ux-ground)' : 'var(--ux-ink)') +
+          ';border:1px solid ' + (s.delivery === d ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.delivery === d ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.set({ delivery: d })
+      })),
+      submitLabel: licenseBlocked ? 'Blocked — license expired' : arBlocked ? 'Blocked — balance past due' : role === 'buyer' ? 'Send for owner approval' : 'Submit order',
+      submitStyle: 'width:100%;background:' + (submitBlocked ? 'var(--ux-faint)' : 'var(--ux-accent)') + ';color:#fff;border:0;padding:12px 14px;font:700 13px Archivo,sans-serif;text-align:left;cursor:' + (submitBlocked ? 'not-allowed' : 'pointer'),
+      submitNote: licenseBlocked
+        ? 'Upload the renewal for this location, or contact your account manager. Ordering at your other locations is unaffected.'
+        : arBlocked
+          ? 'Clearing the balance releases submission. Your draft is kept exactly as it is in the meantime — nothing is discarded.'
+          : 'Receivables are checked at submission, not at shipping. The past-due definition is still open.',
+      submitOrder: () => this.submit(),
+
+      ordersTitle: isInternal ? 'Orders' : role === 'owner' ? 'Orders and approvals' : 'Your orders',
+      ordersSub: isInternal
+        ? 'All accounts. Advance an order through confirm and ship to see both state sets move together.'
+        : 'Placed, Approved, Shipped, Received. Open any order to track it, approve it, or rebuild it as a draft.',
+      orders, noOrders: orders.length === 0,
+      hasRequests: s.requests.length > 0,
+      requests: s.requests.map(r => ({ ...r, tagStyle: 'background:var(--ux-signal-tint);color:var(--ux-signal-text)' })),
+      ordersNote: isInternal
+        ? 'Internally the ten subledger states are kept as-is — created, draft, approved, filled, shipped, accepted, canceled, returned, partially returned, archived — so the portal and the subledger can never contradict each other in front of a customer.'
+        : 'You see status only. Exception ownership and internal notes are not rendered here.',
+      ...odVals,
+
+      kioskScan: () => this.set({ product: 'p1', lot: 0, screen: 'product', kioskMsg: null }),
+      kioskInput: s.kioskInput, onKioskInput: e => this.set({ kioskInput: e.target.value }),
+      kioskLookup: () => this.kioskFind(),
+      kioskHasMsg: !!s.kioskMsg, kioskMsg: s.kioskMsg || '', kioskMsgKind: s.kioskMsgKind,
+      kioskItems: PRODUCTS.slice(0, 4).map(p => ({
+        name: p.name, brand: p.brand, cat: p.cat,
+        onOpen: () => this.set({ product: p.id, lot: 0, screen: 'product' })
+      })),
+
+      isAdmin: s.screen === 'admin' || s.screen === 'users', isAuditLog: s.screen === 'auditlog',
+      isNotifications: s.screen === 'notifications', isCompare: s.screen === 'compare',
+      isTraining: s.screen === 'training', isCoaLookup: s.screen === 'coalookup',
+      isAccess: s.screen === 'access', isLineage: s.screen === 'lineage',
+      users, adminTitle: isInternal ? 'Users and roles' : 'Your users',
+      adminSub: isInternal
+        ? 'Every organisation\u2019s users. Viewing as a user is read-only, withholds cost, and is recorded in that organisation\u2019s own audit history.'
+        : 'Users in your organisation. You assign buyer and budtender access; kiosk devices are paired by urbanXtracts.',
+      auditRows: s.audit, notifications,
+      notifSub: 'Three events push to a store user: an order state change, an approaching license expiry, and a past-due balance. Everything else waits to be found.',
+      markNotifRead: () => this.set({ notifRead: true, toast: 'Notifications marked as read.', toastKind: 'DONE' }),
+      compareA: PRODUCTS[0].name, compareB: PRODUCTS[3].name, compareRows,
+      trainingCards, coaStates, lineageSteps,
+      sessionStates: SESSION_STATES.map(x => ({ ...x, chipStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:3px 7px;background:' + (x.kind === 'ENTRY' ? 'var(--ux-ink)' : 'var(--ux-signal)') + ';color:#fff' })),
+      impersonating: !!s.impersonating,
+      impersonatingLabel: s.impersonating ? s.impersonating.name + ' · ' + s.impersonating.org : '',
+      stopImpersonating: () => this.stopImpersonating(),
+      goAccountsBtn: () => this.set({ screen: 'accounts' }),
+      acctName: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].name,
+      acctMeta: 'License OCM-RETL-24-000412 · 3 locations · ' + ACCOUNTS_DETAIL['OCM-RETL-24-000412'].since + ' · assigned to Toni Alvarez',
+      isAccount: s.screen === 'account', isLocations: s.screen === 'locations',
+      isTests: s.screen === 'tests', isConfirm: s.screen === 'confirm',
+      loading: s.loading, notLoading: !s.loading, stale: s.stale,
+      onRefresh: () => this.refresh(),
+      onStale: () => this.set({ stale: true, toast: 'Showing data as of 10:14 — the subledger has moved since.', toastKind: 'STALE DATA' }),
+      dataStamp: s.stale ? 'Showing data as of 24 Aug 2026 10:14 — newer figures exist' : 'Live as of 24 Aug 2026, read from the subledger',
+      skeletonRows: [1, 2, 3, 4],
+
+      draftTabs: s.drafts.map(d => ({
+        label: d.name + ' · ' + d.lines.length,
+        style: 'display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:' + (d.id === s.activeDraft ? 'var(--ux-ink)' : 'transparent') +
+          ';color:' + (d.id === s.activeDraft ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:1px solid ' + (d.id === s.activeDraft ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') +
+          ';padding:8px 12px;font:' + (d.id === s.activeDraft ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.set({ activeDraft: d.id, loc: d.loc }),
+        onDelete: () => this.deleteDraft(d.id)
+      })),
+      onNewDraft: () => this.newDraft(),
+      activeDraftName: activeDraftObj ? activeDraftObj.name : '',
+
+      accountDetail: ACCOUNTS_DETAIL['OCM-RETL-24-000412'],
+      acctLocations: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].locations.map(l => ({
+        ...l,
+        style: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;display:inline-block;white-space:nowrap;background:' +
+          (l.status === 'Active' ? 'var(--ux-surface)' : 'var(--ux-signal)') + ';color:' + (l.status === 'Active' ? 'var(--ux-muted-strong)' : '#fff')
+      })),
+      acctContacts: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].contacts,
+      acctMix: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].mix.map(m => ({
+        cat: m.cat, share: m.share + '%',
+        barStyle: 'height:9px;width:' + m.share + '%;background:' + (CAT_HUE[m.cat] || 'var(--ux-faint)')
+      })),
+      acctNotes: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].notes,
+      acctNotOrdered: ACCOUNTS_DETAIL['OCM-RETL-24-000412'].notOrdered,
+      openAccount: () => this.set({ screen: 'account' }),
+
+      locationRows: LOCATION_ROWS,
+      tests: TESTS.map(t => ({
+        ...t,
+        labelStyle: 'display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' +
+          (t.label === 'REQUIRED TEST' ? 'var(--ux-ink)' : 'var(--ux-surface)') + ';color:' + (t.label === 'REQUIRED TEST' ? 'var(--ux-ground)' : 'var(--ux-muted-strong)'),
+        stateStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:' + (t.state === 'To verify per screen' ? 'var(--ux-signal-text)' : 'var(--ux-accent-text)')
+      })),
+
+      confirmId: s.confirmed || '',
+      confirmState: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return o ? (o.state === 'Awaiting approval' ? 'SENT FOR APPROVAL' : 'ORDER ' + o.state.toUpperCase()) : 'ORDER SUBMITTED';
+      })(),
+      confirmChipStyle: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        const done = o && (o.state === 'Received' || o.state === 'Approved');
+        return 'font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:4px 8px;background:' + (done ? 'var(--ux-accent)' : 'var(--ux-ink)') + ';color:' + (done ? '#fff' : 'var(--ux-ground)');
+      })(),
+      confirmLines: (s.orders.find(o => o.id === s.confirmed) || { lines: [] }).lines.map(l => {
+        const p = P(l.id);
+        return { name: p.name, brand: p.brand, sku: p.sku, tag: p.lots[l.lot].tag, packaged: p.lots[l.lot].packaged, qty: String(l.qty), unit: MONEY(l.price), total: MONEY(l.price * l.qty) };
+      }),
+      confirmMeta: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return o ? this.locName(o.loc) + ' · placed ' + o.placed + ' · ' + (o.delivery || 'Next available') + ' · ' + o.state : '';
+      })(),
+      confirmValue: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return o ? MONEY(this.orderValue(o)) : '$0.00';
+      })(),
+      onPrint: () => window.print(),
+      econRows, accounts: accountsRows,
+      qaTiles: [
+        { label: 'Released SKUs', value: '32', note: 'Available and lab-passed' },
+        { label: 'Awaiting result', value: '11', note: 'Submitted for testing' },
+        { label: 'Failed, active', value: '4', note: 'No external presence' },
+        { label: 'Available, no result', value: '1', note: 'Excluded by the release rule' }
+      ].map((q, i, arr) => ({ ...q, style: tileStyle(i, arr.length) })),
+      integrityRows: INTEGRITY.map(i => ({ ...i, countStyle: i.count === '0 of 195 dated' ? 'color:var(--ux-muted)' : 'font-weight:700' })),
+
+      validationGroups,
+      validationSummary: totalItems + ' open items across six validation types · ' + totalBlocking + ' of them blocking · measured against live connector reads on 2026-08-24'
+    };
+  }
+}
+</script>
+</body>
+</html>

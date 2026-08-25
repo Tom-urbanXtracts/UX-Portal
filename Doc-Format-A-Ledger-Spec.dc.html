@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f3f2f2}a{color:#ae1800}a:hover{color:#7c1405}</style>
+</helmet>
+<div style="max-width:1040px;margin:0 auto;padding:56px 48px 80px;font-family:Archivo,system-ui,sans-serif;color:#201e1d">
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;border-bottom:2px solid rgba(32,30,29,.4);padding-bottom:16px">
+<div>
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#ae1800;margin-bottom:10px">Format A — Ledger spec</div>
+<h1 style="font:800 40px/1.06 Archivo,sans-serif;letter-spacing:-.02em;margin:0">UrbanXtracts Portal<br>Phase 1 — Architecture</h1>
+</div>
+<div style="font:500 11px/1.7 ui-monospace,Menlo,monospace;color:#605d5d;text-align:left;flex:none">
+<div>DRAFT · INTERNAL REVIEW</div>
+<div>2026-08-24</div>
+<div>Sample data only</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:64px 1fr;gap:0 20px;margin-top:40px">
+<div style="font:800 13px/1.6 ui-monospace,Menlo,monospace;color:#ae1800;padding-top:3px">1.0</div>
+<div>
+<h2 style="font:800 20px/1.2 Archivo,sans-serif;margin:0 0 10px">Permission matrix — objects × roles</h2>
+<p style="margin:0 0 18px;font-size:14px;line-height:1.6;max-width:62ch;color:#444141">Every cell derives from a stated rule, never a screen decision. <strong>Not rendered</strong> means the navigation, field and route do not exist for that role — not disabled, not empty.</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead>
+<tr style="border-bottom:2px solid rgba(32,30,29,.4)">
+<th style="text-align:left;padding:8px 10px 8px 0;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Object</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Store owner</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Buyer</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Budtender</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Internal</th>
+<th style="text-align:left;padding:8px 0 8px 10px;font:600 11px/1.3 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Derivation rule</th>
+</tr>
+</thead>
+<tbody>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)">
+<td style="padding:10px 10px 10px 0;font-weight:600">Cost object / SKU</td>
+<td style="padding:10px">Read</td><td style="padding:10px">Read</td><td style="padding:10px">Read</td><td style="padding:10px">Read/write</td>
+<td style="padding:10px 0 10px 10px;color:#605d5d">Released SKUs only for external roles</td>
+</tr>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)">
+<td style="padding:10px 10px 10px 0;font-weight:600">Price / rate card</td>
+<td style="padding:10px">Own org</td><td style="padding:10px">Own org</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td><td style="padding:10px">All</td>
+<td style="padding:10px 0 10px 10px;color:#605d5d">Price scoped to the requesting org's rate card</td>
+</tr>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)">
+<td style="padding:10px 10px 10px 0;font-weight:600">COGS &amp; margin</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td><td style="padding:10px">Read</td>
+<td style="padding:10px 0 10px 10px;color:#605d5d">Internal wall; hidden in impersonated views</td>
+</tr>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)">
+<td style="padding:10px 10px 10px 0;font-weight:600">Ownership code</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td>
+<td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td><td style="padding:10px">Read</td>
+<td style="padding:10px 0 10px 10px;color:#605d5d">Property of the inbound lot; never counterparty-facing</td>
+</tr>
+<tr>
+<td style="padding:10px 10px 10px 0;font-weight:600">COA + version</td>
+<td style="padding:10px">Purchased lots</td><td style="padding:10px">Purchased lots</td><td style="padding:10px">Current lot</td><td style="padding:10px">All versions</td>
+<td style="padding:10px 0 10px 10px;color:#605d5d">External sees current published version only</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:64px 1fr;gap:0 20px;margin-top:44px">
+<div style="font:800 13px/1.6 ui-monospace,Menlo,monospace;color:#ae1800;padding-top:3px">2.0</div>
+<div>
+<h2 style="font:800 20px/1.2 Archivo,sans-serif;margin:0 0 10px">Flow — lot to orderable</h2>
+<div style="display:grid;grid-template-columns:1fr;gap:0;border-top:2px solid rgba(32,30,29,.4)">
+<div style="display:grid;grid-template-columns:28px 1.1fr 1fr .9fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(32,30,29,.16);font-size:12.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;color:#9b9797">01</div>
+<div style="font-weight:600">Lot created from inbound package</div>
+<div style="color:#605d5d">Canix · <span style="font-family:ui-monospace,monospace;font-size:11px">package_inventory_facts_current</span></div>
+<div style="font:600 10.5px ui-monospace,monospace;color:#ae1800">VERIFIED</div>
+</div>
+<div style="display:grid;grid-template-columns:28px 1.1fr 1fr .9fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(32,30,29,.16);font-size:12.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;color:#9b9797">02</div>
+<div style="font-weight:600">Sample custody → lab</div>
+<div style="color:#605d5d">Monday · workflow record</div>
+<div style="font:600 10.5px ui-monospace,monospace;color:#605d5d">TECHNICAL VALIDATION</div>
+</div>
+<div style="display:grid;grid-template-columns:28px 1.1fr 1fr .9fr;gap:16px;padding:12px 0;border-bottom:1px solid rgba(32,30,29,.16);font-size:12.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;color:#9b9797">03</div>
+<div style="font-weight:600">COA received, version pinned</div>
+<div style="color:#605d5d">Drive file · Monday pointer</div>
+<div style="font:600 10.5px ui-monospace,monospace;color:#605d5d">TECHNICAL VALIDATION</div>
+</div>
+<div style="display:grid;grid-template-columns:28px 1.1fr 1fr .9fr;gap:16px;padding:12px 0;border-bottom:2px solid rgba(32,30,29,.4);font-size:12.5px;align-items:baseline;background:#fff2ef">
+<div style="font:600 11px ui-monospace,monospace;color:#9b9797">04</div>
+<div style="font-weight:600">Release event → SKU becomes orderable</div>
+<div style="color:#605d5d">Gate: unreleased product is not rendered</div>
+<div style="font:600 10.5px ui-monospace,monospace;color:#ae1800">GATE</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:64px 1fr;gap:0 20px;margin-top:44px">
+<div style="font:800 13px/1.6 ui-monospace,Menlo,monospace;color:#ae1800;padding-top:3px">3.0</div>
+<div>
+<h2 style="font:800 20px/1.2 Archivo,sans-serif;margin:0 0 10px">Open items</h2>
+<div style="border-left:2px solid #ec3013;padding:2px 0 2px 16px;display:flex;flex-direction:column;gap:14px">
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:#201e1d;color:#f3f2f2;padding:3px 6px">BUSINESS DECISION</span>
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:#ec3013;color:#fff;padding:3px 6px">BLOCKING</span>
+</div>
+<div style="font-size:13.5px;line-height:1.55">Order-value threshold above which owner approval fires. <span style="color:#605d5d">Owner: Sales leadership · Blocks: order-submission gate.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:#201e1d;color:#f3f2f2;padding:3px 6px">CCO SIGN-OFF REQUIRED</span>
+</div>
+<div style="font-size:13.5px;line-height:1.55">How long a printed code keeps resolving after shelf life, and what it shows after. <span style="color:#605d5d">Owner: CCO · Blocks: public COA publication.</span></div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

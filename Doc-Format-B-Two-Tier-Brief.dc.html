@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f3f2f2}a{color:#ae1800}a:hover{color:#7c1405}</style>
+</helmet>
+<div style="max-width:1040px;margin:0 auto;padding:56px 48px 80px;font-family:Archivo,system-ui,sans-serif;color:#201e1d">
+
+<div style="border-bottom:2px solid rgba(32,30,29,.4);padding-bottom:16px">
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#ae1800;margin-bottom:10px">Format B — Two-tier brief</div>
+<h1 style="font:800 40px/1.06 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 8px">UrbanXtracts Portal<br>Phase 1 — Architecture</h1>
+<div style="font:500 12px/1.6 ui-monospace,Menlo,monospace;color:#605d5d">Draft · internal review · 2026-08-24 · sample data only</div>
+</div>
+
+<div style="margin-top:36px;background:#eae9e9;border-top:2px solid #201e1d;padding:26px 28px">
+<h2 style="font:800 13px/1.2 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;margin:0 0 18px">The decisions, in one page</h2>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid rgba(32,30,29,.2)">
+<div style="padding:16px 20px 16px 0;border-right:1px solid rgba(32,30,29,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#ae1800;margin-bottom:6px">One wall</div>
+<div style="font-size:13.5px;line-height:1.55">Any internal user sees cost. No external view renders it, ever — including margin %, discount depth, floor-price warnings and toll rate cards.</div>
+</div>
+<div style="padding:16px 20px;border-right:1px solid rgba(32,30,29,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#ae1800;margin-bottom:6px">Not rendered</div>
+<div style="font-size:13.5px;line-height:1.55">Restricted nav and fields don't exist for the role. Nothing appears greyed out, and the interface is never the enforcement mechanism.</div>
+</div>
+<div style="padding:16px 0 16px 20px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#ae1800;margin-bottom:6px">Gates first</div>
+<div style="font-size:13.5px;line-height:1.55">License, release and AR gates decide availability before any screen does. Each blocked state names a reason and a path forward.</div>
+</div>
+</div>
+</div>
+
+<h2 style="font:800 22px/1.2 Archivo,sans-serif;margin:44px 0 6px">Cost visibility</h2>
+<p style="font-size:15px;line-height:1.6;max-width:64ch;color:#201e1d;margin:0 0 20px">You named cost visibility as the leak that worries you most, so it gets the sharpest rule in the document. The wall runs between internal and external, not between internal domains — which trades internal least-privilege for a rule people can actually hold in their heads.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(32,30,29,.2)">
+<div style="padding:20px 22px;border-right:1px solid rgba(32,30,29,.2)">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#605d5d;margin-bottom:10px">Rendered internally</div>
+<div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px">
+<div>Unit cost by cost object</div><div>Gross and contribution margin</div><div>Discount depth vs. list</div><div>Toll partner rate cards</div><div>Below-floor warning at order entry</div>
+</div>
+</div>
+<div style="padding:20px 22px;background:#fff2ef">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#ae1800;margin-bottom:10px">Never rendered externally</div>
+<div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px">
+<div>All of the left column</div><div>Margin % in any form</div><div>Economic owner / ownership code</div><div>Which brands toll through UX</div><div>Another org's price, order or AR</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:16px;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.55;color:#605d5d">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:#201e1d;color:#f3f2f2;padding:3px 6px;flex:none">NOTE</span>
+<div>Server-side authorization is required. Field-level filtering happens before the response leaves the server, including in search, export and error messages.</div>
+</div>
+
+<h2 style="font:800 22px/1.2 Archivo,sans-serif;margin:44px 0 6px">Detail — permission matrix</h2>
+<p style="font-size:14px;line-height:1.6;max-width:64ch;color:#444141;margin:0 0 18px">Twelve objects × eight roles in the full document; four rows shown here for format.</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="border-bottom:2px solid rgba(32,30,29,.4)">
+<th style="text-align:left;padding:8px 10px 8px 0;font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Object</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">External</th>
+<th style="text-align:left;padding:8px 10px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Internal</th>
+<th style="text-align:left;padding:8px 0 8px 10px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Rule</th>
+</tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)"><td style="padding:10px 10px 10px 0;font-weight:600">COGS &amp; margin</td><td style="padding:10px;color:#ae1800;font-weight:600">Not rendered</td><td style="padding:10px">Read</td><td style="padding:10px 0 10px 10px;color:#605d5d">The internal wall</td></tr>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)"><td style="padding:10px 10px 10px 0;font-weight:600">Price / rate card</td><td style="padding:10px">Own org only</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:#605d5d">Scoped to requesting org</td></tr>
+<tr style="border-bottom:1px solid rgba(32,30,29,.16)"><td style="padding:10px 10px 10px 0;font-weight:600">Inventory quantity</td><td style="padding:10px">Availability band</td><td style="padding:10px">Exact + reserved</td><td style="padding:10px 0 10px 10px;color:#605d5d">Bands prevent cost inference</td></tr>
+<tr><td style="padding:10px 10px 10px 0;font-weight:600">Audit history</td><td style="padding:10px">Own actions</td><td style="padding:10px">Scoped by domain</td><td style="padding:10px 0 10px 10px;color:#605d5d">Impersonation always logged</td></tr>
+</tbody>
+</table>
+
+<div style="margin-top:40px;background:#201e1d;color:#f3f2f2;padding:24px 26px">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#ff9783;margin-bottom:10px">Open items — 2 of 14 shown</div>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:13.5px;line-height:1.55">
+<div><strong>Order-value approval threshold.</strong> <span style="color:#bab6b6">BUSINESS DECISION · BLOCKING · Sales leadership · blocks order-submission gate.</span></div>
+<div><strong>Public COA retention after shelf life.</strong> <span style="color:#bab6b6">CCO SIGN-OFF REQUIRED · CCO · blocks public publication.</span></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>

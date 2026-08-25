@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Brand tokens. Ink is sampled from the supplied logo; the rest is derived
+   from it. These intentionally supersede the bound design system's palette,
+   whose structural rules (0 radius, 2px rules, flush left, Archivo) are kept. */
+:root{
+  /* Ink sampled from uX Logo 2025-Black.png (#170e0b, a warm near-black).
+     Ground and neutrals are warmed to match it. Monochrome throughout, with
+     exactly two signals: green for released/passed and primary action, clay
+     for blocked/exception. Cannabis-adjacent hues appear only as catalog
+     category markers — never on an operational status. */
+  --ux-ink:#170e0b;
+  --ux-ground:#faf7f3;
+  --ux-surface:#efeae4;
+  --ux-accent:#1b5c37;
+  --ux-accent-press:#134427;
+  --ux-accent-text:#134a2b;
+  --ux-accent-deep:#0d3520;
+  --ux-accent-tint:#dde9e1;
+  --ux-accent-wash:#eef4ef;
+  --ux-accent-light:#8ccfa5;
+  --ux-signal:#a33116;
+  --ux-signal-text:#8a2a12;
+  --ux-signal-tint:#f7e2da;
+  --ux-muted:#6f6862;
+  --ux-muted-strong:#4b4640;
+  --ux-faint:#a09890;
+  --ux-faint-2:#c2bab2;
+  --ux-cat-vape:#8a6a2b;
+  --ux-cat-edible:#7d3f5c;
+  --ux-cat-preroll:#5f7a3a;
+  --ux-cat-flower:#3f6b57;
+  --ux-cat-concentrate:#a35a1f;
+  --ux-cat-infused:#5a4f7a;
+}
+body{margin:0;background:var(--ux-ground)}a{color:var(--ux-accent-text)}a:hover{color:var(--ux-accent-deep)}</style>
+</helmet>
+
+<div style="position:sticky;top:0;z-index:50;background:var(--ux-ink);color:var(--ux-ground);padding:9px 44px;display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;font:600 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.06em">
+<span style="background:var(--ux-accent);color:#fff;padding:3px 7px">SAMPLE DATA</span>
+<span>All product, price, cost, order and COA values in this document are synthetic. Structural facts are measured from live Canix and Monday reads on 2026-08-24.</span>
+</div>
+
+<div style="max-width:1100px;margin:0 auto;padding:52px 44px 96px;font-family:Archivo,system-ui,sans-serif;color:var(--ux-ink)">
+
+<div style="border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:18px">
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:12px">Phase 1 — Architecture</div>
+<h1 style="font:800 44px/1.04 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 12px">urban<span style="color:var(--ux-accent)">X</span>tracts Portal</h1>
+<div style="font:500 12px/1.7 ui-monospace,Menlo,monospace;color:var(--ux-muted)">Draft for internal review · 2026-08-24 · one portal, two modes, role badge<br>Sitemap · role and permission matrix · gates · flows · status vocabulary · source map · audit · open items · acceptance</div>
+</div>
+
+<div style="margin-top:40px;background:var(--ux-surface);border-top:2px solid var(--ux-ink);padding:28px 30px">
+<h2 style="font:800 13px/1.2 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;margin:0 0 20px">The decisions, in one page</h2>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(23,14,11,.2)">
+<div style="padding:18px 22px 18px 0;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">One wall</div>
+<div style="font-size:13.5px;line-height:1.55">Any internal user sees cost. No external view renders it — nor margin percent, discount depth, floor-price warnings, rate cards or ownership code. There is no internal tiering.</div>
+</div>
+<div style="padding:18px 22px;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">Not rendered</div>
+<div style="font-size:13.5px;line-height:1.55">A restricted route, nav entry or field does not exist for that role. Nothing appears greyed out, and the interface is never the enforcement mechanism.</div>
+</div>
+<div style="padding:18px 0 18px 22px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">Gates decide first</div>
+<div style="font-size:13.5px;line-height:1.55">License, release and AR gates determine availability before any screen renders. Every block states a reason and a path forward.</div>
+</div>
+<div style="padding:18px 22px 18px 0;border-right:1px solid rgba(23,14,11,.2);border-top:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">Released means two things</div>
+<div style="font-size:13.5px;line-height:1.55">Orderable requires package status <em>available</em> and lab result <em>TestPassed</em>. Both. Nothing else makes a product appear in a catalog.</div>
+</div>
+<div style="padding:18px 22px;border-right:1px solid rgba(23,14,11,.2);border-top:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">Tag is the lot key</div>
+<div style="font-size:13.5px;line-height:1.55">The compliance tag identifies the lot externally. Batch number and lot ID are enrichment shown when present — they are absent on most inventory today.</div>
+</div>
+<div style="padding:18px 0 18px 22px;border-top:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:7px">Four states out, ten in</div>
+<div style="font-size:13.5px;line-height:1.55">Stores see Placed, Approved, Shipped, Received. Operations keeps the full Canix set so the portal and Canix never disagree.</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">01</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Primary user goals</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Each goal below is one sentence a user would say out loud, paired with the shortest path the portal must offer. The hero path is the first one: catalog to product detail to lot and COA to order. Everything else is arranged so it does not obstruct that path.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Buyer</div>
+<div style="font-weight:600">&ldquo;I need to restock the vape carts that sell, without calling anyone.&rdquo;</div>
+<div style="color:var(--ux-muted)">Catalog &rarr; quick-add &rarr; draft &rarr; submit. Two screens, no rep.</div>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Store owner</div>
+<div style="font-weight:600">&ldquo;What did we spend, across all four shops, and what needs my approval?&rdquo;</div>
+<div style="color:var(--ux-muted)">Dashboard with spend, per-location split, approval queue.</div>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Budtender</div>
+<div style="font-weight:600">&ldquo;A customer is holding this jar and asking what&rsquo;s in it.&rdquo;</div>
+<div style="color:var(--ux-muted)">Scan the tag &rarr; potency, terpenes, COA. No login, no price.</div>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Account rep</div>
+<div style="font-weight:600">&ldquo;Which of my accounts has stopped ordering, and what did they drop?&rdquo;</div>
+<div style="color:var(--ux-muted)">Account view with order interval, product mix, visit notes.</div>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Quality</div>
+<div style="font-weight:600">&ldquo;Nothing unreleased or failed can be sitting in a store&rsquo;s catalog.&rdquo;</div>
+<div style="color:var(--ux-muted)">Release queue, quarantine reasons, COA versions.</div>
+</div>
+<div style="display:grid;grid-template-columns:150px 1fr 1fr;gap:20px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13.5px;align-items:baseline">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--ux-muted)">Finance</div>
+<div style="font-weight:600">&ldquo;What does this product actually make us, by account?&rdquo;</div>
+<div style="color:var(--ux-muted)">Cost and margin by cost object, order and account.</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">02</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Sitemap</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 26px">Two views of the same structure. The tree is authoritative on routes and hierarchy; the grid below it is authoritative on who each route exists for. Where they disagree, the grid wins — permission is the harder constraint.</p>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:14px">External — store users</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:2.05">
+<div><span style="color:var(--ux-faint)">/</span> <strong>sign-in</strong> <span style="color:var(--ux-faint)">· forgot password · kiosk pairing</span> <span style="color:var(--ux-accent-text)">[all]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>dashboard</strong> <span style="color:var(--ux-accent-text)">[owner · buyer · kiosk variants]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> spend over time · location comparison <span style="color:var(--ux-accent-text)">[owner]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> drafts · approvals · due for reorder <span style="color:var(--ux-accent-text)">[owner · buyer]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">└</span> scan a tag · recently viewed <span style="color:var(--ux-accent-text)">[kiosk]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>catalog</strong> <span style="color:var(--ux-faint)">— released finished goods only; bulk material never appears</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> /product/:sku <span style="color:var(--ux-faint)">· overview → potency → lot &amp; COA → commercial → performance → education</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> /product/:sku/lot/:tag <span style="color:var(--ux-faint)">— changes potency, dates, release state, COA</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">└</span> /compare <span style="color:var(--ux-accent-text)">[all incl. kiosk]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>order</strong> <span style="color:var(--ux-accent-text)">[owner · buyer]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> /order/draft/:id <span style="color:var(--ux-faint)">· minimums, case increments, AR gate at entry</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">├</span> /order/:id/approve <span style="color:var(--ux-accent-text)">[owner]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(23,14,11,.2);margin-left:6px"><span style="color:var(--ux-faint)">└</span> /order/:id <span style="color:var(--ux-faint)">· Placed → Approved → Shipped → Received</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>lot/:tag</strong> <span style="color:var(--ux-faint)">· scan or full tag entry → COA</span> <span style="color:var(--ux-accent-text)">[all]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>training</strong> <span style="color:var(--ux-faint)">· cards · FAQs</span> <span style="color:var(--ux-accent-text)">[all incl. kiosk]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>account</strong> <span style="color:var(--ux-faint)">· locations · users · delivery settings</span> <span style="color:var(--ux-accent-text)">[owner]</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>coa/:code</strong> <span style="color:var(--ux-accent-text)">[public, unauthenticated]</span> <span style="color:var(--ux-faint)">— lab result, batch, dates only</span></div>
+</div>
+
+<div style="height:2px;background:rgba(23,14,11,.4);margin:30px 0 22px"></div>
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:14px">Internal — no route below is rendered for any external role</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:2.05">
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/dashboard</strong> <span style="color:var(--ux-faint)">· orders, fulfilment, exceptions, accounts needing attention</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/accounts/:license</strong> <span style="color:var(--ux-faint)">· locations, contacts, orders, interval, mix, visit notes, AR</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/catalog</strong> <span style="color:var(--ux-faint)">· all items incl. bulk rosin, hash, distillate, biomass</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/inventory</strong> <span style="color:var(--ux-faint)">· available, reserved, allocated, by facility</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/lots/:tag</strong> <span style="color:var(--ux-faint)">· lineage, ownership code, COA version history</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/qa</strong> <span style="color:var(--ux-faint)">· release queue, quarantine reasons, COA publication, CAPA</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/economics</strong> <span style="color:var(--ux-faint)">· cost and margin by cost object, lot, order, account; pricing exceptions</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/integrity</strong> <span style="color:var(--ux-faint)">· seven exception tiles</span></div>
+<div><span style="color:var(--ux-faint)">/</span> <strong>ops/admin</strong> <span style="color:var(--ux-faint)">· users, roles, feature access, device authorisation, audit history</span></div>
+</div>
+
+<div style="height:2px;background:rgba(23,14,11,.4);margin:36px 0 0"></div>
+<div style="display:grid;grid-template-columns:132px repeat(5,1fr);font-size:12px">
+<div style="padding:12px 10px 12px 0;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2)">Area</div>
+<div style="padding:12px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2);border-left:1px solid rgba(23,14,11,.14)">Owner</div>
+<div style="padding:12px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2);border-left:1px solid rgba(23,14,11,.14)">Buyer</div>
+<div style="padding:12px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2);border-left:1px solid rgba(23,14,11,.14)">Budtender</div>
+<div style="padding:12px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2);border-left:1px solid rgba(23,14,11,.14)">Kiosk</div>
+<div style="padding:12px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(23,14,11,.2);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-ink);color:var(--ux-ground)">Internal</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:1px solid rgba(23,14,11,.14)">Dashboard</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Spend, locations, actions</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Drafts, reorder, approvals</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Search, recent</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Scan, search</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-surface)">Orders, fulfilment, exceptions</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:1px solid rgba(23,14,11,.14)">Catalog</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Released goods + price</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Released goods + price</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Released goods, no price</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Released goods, no price</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-surface)">All items incl. bulk</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:1px solid rgba(23,14,11,.14)">Lot &amp; COA</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Purchased lots</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Purchased lots</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Any released lot</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Any released lot</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-surface)">Lineage, all versions</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:1px solid rgba(23,14,11,.14)">Ordering</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Build, approve, track</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14)">Build, submit, track</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-surface)">Order on behalf; price read-only</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:1px solid rgba(23,14,11,.14)">Economics</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:1px solid rgba(23,14,11,.14);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-accent-wash);color:var(--ux-accent-text);font-weight:600">Cost, margin, exceptions</div>
+
+<div style="padding:11px 10px 11px 0;font-weight:600;border-bottom:2px solid rgba(23,14,11,.4)">Admin</div>
+<div style="padding:11px 10px;border-bottom:2px solid rgba(23,14,11,.4);border-left:1px solid rgba(23,14,11,.14)">Own org users</div>
+<div style="padding:11px 10px;border-bottom:2px solid rgba(23,14,11,.4);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:2px solid rgba(23,14,11,.4);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:2px solid rgba(23,14,11,.4);border-left:1px solid rgba(23,14,11,.14);color:var(--ux-faint)">&mdash;</div>
+<div style="padding:11px 10px;border-bottom:2px solid rgba(23,14,11,.4);border-left:1px solid rgba(23,14,11,.14);background:var(--ux-surface)">Roles, devices, impersonation, audit</div>
+</div>
+<div style="margin-top:16px;display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.55;color:var(--ux-muted)">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px;flex:none">&mdash;</span>
+<div>An em dash means the route, its navigation entry and its fields are not rendered for that role.</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">03</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Role and permission matrix</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Twelve objects. Every cell derives from the rule in the final column, not from a screen decision — which is what makes the matrix reviewable by someone who never sees the interface. <strong>Internal</strong> is a single column because you chose one wall: within urbanXtracts there is no cost tiering, so splitting the column would imply a control that does not exist.</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="border-bottom:2px solid rgba(23,14,11,.4)">
+<th style="text-align:left;padding:9px 10px 9px 0;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Object</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Owner</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Buyer</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Budtender</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Internal</th>
+<th style="text-align:left;padding:9px 0 9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Derivation rule</th>
+</tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Cost object / SKU</td><td style="padding:10px">Read</td><td style="padding:10px">Read</td><td style="padding:10px">Read</td><td style="padding:10px">Read / write</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">External sees released finished goods only</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Lot / package</td><td style="padding:10px">Purchased</td><td style="padding:10px">Purchased</td><td style="padding:10px">Released</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Tag is the key; scoped to what the org received</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">COA + version</td><td style="padding:10px">Current</td><td style="padding:10px">Current</td><td style="padding:10px">Current</td><td style="padding:10px">All versions</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">External resolves to the current published version only</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Order</td><td style="padding:10px">Own org, approve</td><td style="padding:10px">Own org, submit</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Scoped by license; approval by role</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Price / rate card</td><td style="padding:10px">Own org</td><td style="padding:10px">Own org</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">All, read-only</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Price is per account; reps request, never set</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Inventory quantity</td><td style="padding:10px">Availability band</td><td style="padding:10px">Availability band</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">Exact + reserved</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Bands prevent inference of production volume</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">COGS &amp; margin</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">Read</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">The one wall; also hidden in impersonated views</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Ownership code</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">Read</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Property of the inbound lot; never counterparty-facing</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Retailer account</td><td style="padding:10px">Own org</td><td style="padding:10px">Own location</td><td style="padding:10px">Own location</td><td style="padding:10px">Assigned</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">License number is the account key; reps see assigned only</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">AR balance &amp; terms</td><td style="padding:10px">Own org</td><td style="padding:10px">Gate result only</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">A buyer learns the gate fired, not the balance</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:600">Users &amp; roles</td><td style="padding:10px">Own org</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Owners assign buyer and budtender access</td></tr>
+<tr><td style="padding:10px 10px 10px 0;font-weight:600">Audit history</td><td style="padding:10px">Own org actions</td><td style="padding:10px">Own actions</td><td style="padding:10px;color:var(--ux-accent-text);font-weight:600">Not rendered</td><td style="padding:10px">All</td><td style="padding:10px 0 10px 10px;color:var(--ux-muted)">Impersonation is always visible to the impersonated org</td></tr>
+</tbody>
+</table>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">04</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Internal roles</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Internal roles follow the eight operating domains rather than job titles, so a person moving teams changes assignment without redefining a permission set. All eight sit inside the single internal wall: they differ in what they <em>work on</em>, not in whether they may see cost.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid rgba(23,14,11,.4)">
+<div style="padding:14px 20px 14px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Sales &amp; account management</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Assigned accounts, order interval, mix, visit notes. Orders on behalf; price read-only.</div></div>
+<div style="padding:14px 0 14px 20px;border-bottom:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Operations</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Available, reserved and allocated inventory across facilities; fulfilment and delivery state.</div></div>
+<div style="padding:14px 20px 14px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Quality &amp; compliance</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Release queue, quarantine reasons, COA versions and publication, CAPA.</div></div>
+<div style="padding:14px 0 14px 20px;border-bottom:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Finance &amp; unit economics</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Cost and margin by cost object, lot, order and account; pricing exceptions; settlement.</div></div>
+<div style="padding:14px 20px 14px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Data contracts</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Cost object registry, unit dictionary, ownership and inbound lots, labor records.</div></div>
+<div style="padding:14px 0 14px 20px;border-bottom:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Data integrity &amp; testing</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">The seven exception tiles, acceptance tests, readiness.</div></div>
+<div style="padding:14px 20px 14px 0;border-bottom:2px solid rgba(23,14,11,.4);border-right:1px solid rgba(23,14,11,.14)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Workflow &amp; subledger owners</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Board, form and automation design; package lineage and state reconciliation.</div></div>
+<div style="padding:14px 0 14px 20px;border-bottom:2px solid rgba(23,14,11,.4)"><div style="font-weight:700;font-size:13.5px;margin-bottom:3px">Administrator</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">Users, roles, feature access, kiosk device authorisation, audit history, impersonation.</div></div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">05</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Cost visibility &mdash; the boundary that matters most</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 20px">You named cost visibility as the leak that worries you in practice, so it gets the sharpest rule in this document. The wall runs between internal and external, not between internal domains. That trades internal least-privilege for a rule people can hold in their heads &mdash; and a rule nobody can recite is a rule nobody follows.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(23,14,11,.2)">
+<div style="padding:22px 24px;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:12px">Rendered internally</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+<div>Unit cost by cost object &mdash; cannabis, non-cannabis, labor</div><div>Gross and contribution margin</div><div>Discount depth against list</div><div>Toll partner rate cards and settlement</div><div>Floor-price warning at order entry</div><div>Ownership code and which brands toll</div>
+</div>
+</div>
+<div style="padding:22px 24px;background:var(--ux-accent-wash)">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:12px">Never rendered externally</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+<div>Everything in the left column</div><div>Margin percent in any form, including bands</div><div>Any figure from which cost can be derived</div><div>Another organisation&rsquo;s price, order, AR or contacts</div><div>Internal notes and exception ownership</div><div>Exact inventory quantities</div>
+</div>
+</div>
+</div>
+<div style="margin-top:18px;display:flex;gap:12px;align-items:flex-start;font-size:12.5px;line-height:1.6;color:var(--ux-muted)">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px;flex:none">NOTE</span>
+<div>Server-side authorization is required and is the actual control. Field-level filtering happens before a response leaves the server &mdash; including in search results, exports, notification payloads and error messages. Interface hiding is a usability measure, never the security mechanism. When an administrator views another user&rsquo;s screen, cost is withheld even though that administrator could see it in their own view, so an impersonated screenshot can never carry cost out of the building.</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">06</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Gates</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Six gates. Each states where it applies and what the blocked user sees, because a block without an explanation is the single largest generator of workarounds &mdash; the user calls a rep, and the portal has lost.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;align-items:baseline">
+<div style="font-weight:700">License expired at a location</div><div style="color:var(--ux-muted)">Blocks ordering for that location only; other locations continue</div><div>&ldquo;Ordering for this shop is paused &mdash; its license record expired on 12 Aug. Upload the renewal, or contact your account manager.&rdquo; Catalog stays browsable.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;align-items:baseline">
+<div style="font-weight:700">Not released</div><div style="color:var(--ux-muted)">Availability &mdash; the SKU is not rendered at all</div><div>Nothing. An unreleased or failed lot has no external presence, so there is no state to explain. Internally it appears in the release queue with its quarantine reason.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;align-items:baseline">
+<div style="font-weight:700">AR past due</div><div style="color:var(--ux-muted)">Fires at order entry, not at shipping</div><div>&ldquo;This order can&rsquo;t be submitted while the account has a past-due balance.&rdquo; The buyer sees that the gate fired and who to contact; the balance itself is shown only to the owner.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;align-items:baseline">
+<div style="font-weight:700">Requires owner approval</div><div style="color:var(--ux-muted)">On submit: buyer-submitted, over threshold, over available quantity, or AR past due</div><div>&ldquo;Sent to [owner] for approval.&rdquo; The draft stays visible and editable, the trigger is named, and the owner is notified.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;align-items:baseline">
+<div style="font-weight:700">COA pending or amended</div><div style="color:var(--ux-muted)">On the lot panel and the public resolver</div><div>Pending: &ldquo;Testing in progress for this lot &mdash; results aren&rsquo;t published yet.&rdquo; No promise of a date, no interpretation. Amended: the current version is shown with an amendment marker, and accounts that bought the lot are notified.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:20px;padding:14px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px;align-items:baseline">
+<div style="font-weight:700">Inventory changed after adding</div><div style="color:var(--ux-muted)">On draft review and again on submit</div><div>&ldquo;Available quantity for this line dropped to 18 since you added it.&rdquo; The line is flagged, not silently reduced, and the buyer chooses.</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">07</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Flows</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 26px">Six flows, each step naming the role, the gate it passes, and the system that owns the fact. <span style="font:600 10.5px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</span> means the field was read from a live connector on 2026-08-24; other steps carry the validation class they need.</p>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">A · Catalog to submitted order &mdash; the hero path</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Buyer opens catalog &mdash; released finished goods only</div><div style="color:var(--ux-muted)">Canix · status_category + lab_test_status</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">Filters by category, format, brand, flavour, availability</div><div style="color:var(--ux-muted)">Canix · item_category_name, brand_name, sku</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Opens product detail; potency and terpenes from the current lot&rsquo;s COA</div><div style="color:var(--ux-muted)">COA document · parsed result</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">INFORMATION REQUIRED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">Switches lot &mdash; potency, dates, release state and COA all change together</div><div style="color:var(--ux-muted)">Canix · tag, packaged_date</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">05</div><div style="font-weight:600">Sees this account&rsquo;s price, or &ldquo;price on request&rdquo;</div><div style="color:var(--ux-muted)">Derived from last qualifying order line</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">06</div><div style="font-weight:600">Adds quantity; minimums and case increments validated</div><div style="color:var(--ux-muted)">Canix · case_unit / individual_unit</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">CANIX VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline;background:var(--ux-accent-wash)"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">07</div><div style="font-weight:600">Submit &mdash; license, AR and approval gates evaluate</div><div style="color:var(--ux-muted)">Workflow record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">GATE</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">08</div><div style="font-weight:600">Confirmation with order number; tracks Placed &rarr; Received</div><div style="color:var(--ux-muted)">Canix · sales_order_status</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+</div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">B · Lot to orderable</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Package created; compliance tag assigned</div><div style="color:var(--ux-muted)">Canix · tag, packaged_date</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">Sample taken and sent; custody recorded</div><div style="color:var(--ux-muted)">Workflow record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Result returns; lab status set</div><div style="color:var(--ux-muted)">Canix · lab_test_status</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">COA filed; version pinned and pointed to from the operating record</div><div style="color:var(--ux-muted)">File store + workflow pointer</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline;background:var(--ux-accent-wash)"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">05</div><div style="font-weight:600">Status available <em>and</em> result passed &rarr; SKU becomes orderable</div><div style="color:var(--ux-muted)">Availability gate</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">GATE</div></div>
+</div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">C · Onboarding and the license gate</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Organisation created; license per location captured</div><div style="color:var(--ux-muted)">Onboarding record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">License number becomes the account key</div><div style="color:var(--ux-muted)">Canix · customer_license_number</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Owner invites buyers and budtenders; internal admin pairs kiosk devices</div><div style="color:var(--ux-muted)">Identity + device registry</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline;background:var(--ux-accent-wash)"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">Expiry approaching &rarr; notice; expired &rarr; that location cannot order</div><div style="color:var(--ux-muted)">License gate</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">GATE</div></div>
+</div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">D · Internal margin review</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Revenue by cost object, account and period</div><div style="color:var(--ux-muted)">Canix · net_revenue_cents</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">Cost components &mdash; cannabis, non-cannabis, labor &mdash; per package</div><div style="color:var(--ux-muted)">Canix · cost fields, sparsely populated</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">FINANCE DECISION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Margin computed per unit type &mdash; never blended across units</div><div style="color:var(--ux-muted)">Unit dictionary</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">FINANCE DECISION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">Pricing exceptions listed; each links to the order and the approval</div><div style="color:var(--ux-muted)">Order + approval record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+</div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">E · Impersonation and audit</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:30px">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Administrator requests a user&rsquo;s view, stating a reason</div><div style="color:var(--ux-muted)">Audit record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">Session opens read-only, with a persistent banner naming the administrator</div><div style="color:var(--ux-muted)">Session</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline;background:var(--ux-accent-wash)"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Cost is withheld for the duration, even though the administrator may see it elsewhere</div><div style="color:var(--ux-muted)">Authorization layer</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">GATE</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">Event visible to the impersonated organisation in its own audit view</div><div style="color:var(--ux-muted)">Audit record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+</div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">F · Exception handling &mdash; order and quality</div>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">01</div><div style="font-weight:600">Exception raised &mdash; short shipment, allocation conflict, failed result, amended COA</div><div style="color:var(--ux-muted)">Exception queue</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">02</div><div style="font-weight:600">Internal owner and clock assigned</div><div style="color:var(--ux-muted)">Workflow record</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">BUSINESS DECISION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:baseline"><div style="font:600 11px ui-monospace,monospace;color:var(--ux-faint)">03</div><div style="font-weight:600">Store sees status only &mdash; never the owner, the clock or internal notes</div><div style="color:var(--ux-muted)">Order view</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">SEGREGATION</div></div>
+<div style="display:grid;grid-template-columns:26px 1.1fr 1fr .8fr;gap:14px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px;align-items:baseline"><div style="font-weight:600;font:600 11px ui-monospace,monospace;color:var(--ux-faint)">04</div><div style="font-weight:600">Safety issues escalate immediately and are themselves a recall trigger &mdash; they do not queue</div><div style="color:var(--ux-muted)">Escalation path</div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">CCO</div></div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">08</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Status vocabulary</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Stores see four states; operations keeps the ten the subledger actually holds. A collapsed external state never invents a transition &mdash; it groups the real ones, so the portal and the subledger can never contradict each other in front of a customer.</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="border-bottom:2px solid rgba(23,14,11,.4)">
+<th style="text-align:left;padding:9px 10px 9px 0;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">External state</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Internal states it covers</th>
+<th style="text-align:left;padding:9px 0 9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">What the store can do</th>
+</tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:700">Placed</td><td style="padding:10px;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">draft · created</td><td style="padding:10px 0 10px 10px">Edit, duplicate, cancel</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:700">Approved</td><td style="padding:10px;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">approved · filled</td><td style="padding:10px 0 10px 10px">View, download confirmation</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:700">Shipped</td><td style="padding:10px;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">shipped</td><td style="padding:10px 0 10px 10px">Track, see requested date</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:10px 10px 10px 0;font-weight:700">Received</td><td style="padding:10px;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">accepted</td><td style="padding:10px 0 10px 10px">Reorder, view lots and COAs received</td></tr>
+<tr><td style="padding:10px 10px 10px 0;font-weight:700;color:var(--ux-accent-text)">Flagged</td><td style="padding:10px;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--ux-muted)">canceled · returned · partially_returned · archived</td><td style="padding:10px 0 10px 10px">See status only; an exception flag can sit on any state above</td></tr>
+</tbody>
+</table>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">09</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Source of record, per element</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Key screen elements and the field behind each. Where a source does not exist yet, that is stated rather than assumed &mdash; the completion gate for this document is that no element on a screen lacks a named source.</p>
+<table style="width:100%;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="border-bottom:2px solid rgba(23,14,11,.4)">
+<th style="text-align:left;padding:9px 10px 9px 0;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Element</th>
+<th style="text-align:left;padding:9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Source</th>
+<th style="text-align:left;padding:9px 0 9px 10px;font:600 10.5px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase">Status</th>
+</tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Availability &amp; release state</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">status_category + lab_test_status</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Lot identity on the lot panel</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">tag · batch and lot_id when present</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Packaged date</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">packaged_date</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Category, format, brand, SKU</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">item_category_name · brand_name · sku</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Quantity &amp; unit shown on screen</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">quantity_type &rarr; weight / c_weight_g / c_volume_ml</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Order state &amp; history</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">sales_order_status · ordered_date</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Account key &amp; contacts</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">customer_license_number · customer_name</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-accent-text)">VERIFIED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Rep activity &amp; account notes</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Store visit reports board</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Ownership code &amp; toll relationship</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Co-manufacturing record</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Potency, cannabinoids, terpenes</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">COA document, parsed &mdash; no field exists today</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">INFORMATION REQUIRED</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Wholesale price per account</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Derived from last qualifying order line; rate card not built</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">Cost &amp; margin</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Cost fields present but sparsely populated</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">FINANCE DECISION</td></tr>
+<tr style="border-bottom:1px solid rgba(23,14,11,.14)"><td style="padding:9px 10px 9px 0">AR balance &amp; terms</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Ledger &mdash; connector not attached this session</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">TECHNICAL VALIDATION</td></tr>
+<tr><td style="padding:9px 10px 9px 0">Store sell-through performance</td><td style="padding:9px 10px;font-family:ui-monospace,monospace;font-size:11.5px">Not connected &mdash; empty state, no substitute metric</td><td style="padding:9px 0 9px 10px;font:600 10px ui-monospace,monospace;color:var(--ux-muted)">INFORMATION REQUIRED</td></tr>
+</tbody>
+</table>
+<div style="margin-top:16px;display:flex;gap:12px;align-items:flex-start;font-size:12.5px;line-height:1.6;color:var(--ux-muted)">
+<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px;flex:none">UNITS</span>
+<div>Grams, millilitres and each are never blended into one figure. A screen shows only the unit relevant to that SKU, and a dashboard reports each unit type as its own column &mdash; a combined &ldquo;total inventory&rdquo; number is refused rather than approximated.</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">10</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Audit events</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Eight actions generate a visible audit event. Visible means a person affected by the action can see that it happened &mdash; a log only an administrator can read is not an audit trail from the retailer&rsquo;s point of view.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;border-top:2px solid rgba(23,14,11,.4)">
+<div style="padding:13px 20px 13px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Administrator views another user&rsquo;s screen</strong><div style="color:var(--ux-muted);margin-top:3px">Reason, duration, banner during; visible to that organisation</div></div>
+<div style="padding:13px 0 13px 20px;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Price override requested or approved</strong><div style="color:var(--ux-muted);margin-top:3px">Requester, approver, old and new value; internal only</div></div>
+<div style="padding:13px 20px 13px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14);font-size:13px"><strong>COA published or amended</strong><div style="color:var(--ux-muted);margin-top:3px">Version, actor; accounts that bought the lot are notified</div></div>
+<div style="padding:13px 0 13px 20px;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Release state changed</strong><div style="color:var(--ux-muted);margin-top:3px">From, to, reason; drives catalog presence</div></div>
+<div style="padding:13px 20px 13px 0;border-bottom:1px solid rgba(23,14,11,.14);border-right:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Order edited after submission</strong><div style="color:var(--ux-muted);margin-top:3px">Line-level diff; visible to the ordering organisation</div></div>
+<div style="padding:13px 0 13px 20px;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Permission or role changed</strong><div style="color:var(--ux-muted);margin-top:3px">Actor, subject, old and new role</div></div>
+<div style="padding:13px 20px 13px 0;border-bottom:2px solid rgba(23,14,11,.4);border-right:1px solid rgba(23,14,11,.14);font-size:13px"><strong>Data export</strong><div style="color:var(--ux-muted);margin-top:3px">Scope, row count, fields; export obeys the same field filtering as the screen</div></div>
+<div style="padding:13px 0 13px 20px;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px"><strong>Ownership code changed</strong><div style="color:var(--ux-muted);margin-top:3px">Lot, old and new code, actor; internal only, never counterparty-facing</div></div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">11</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">System states</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 22px">Empty states differ by side of the wall: externally plain, internally naming the missing source. A store user should never have to read an internal integration name to understand their own screen.</p>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">No performance data</div><div>&ldquo;We&rsquo;ll show performance here once sales data is connected.&rdquo;</div><div style="color:var(--ux-muted)">Internal: names the missing source</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">No search results</div><div>Suggests removing the narrowest filter; never an empty grid alone</div><div style="color:var(--ux-muted)">Both sides</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">Product not released</div><div>Not rendered &mdash; no state to show</div><div style="color:var(--ux-muted)">Internal: release queue with reason</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">COA pending</div><div>&ldquo;Testing in progress&rdquo; &mdash; no date promised, no interpretation</div><div style="color:var(--ux-muted)">Both sides</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">Partial tag matches many</div><div>Disambiguation list; never auto-resolves to one lot</div><div style="color:var(--ux-muted)">Typed entry requires the full tag</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">Access denied</div><div>States that the account lacks access and who can grant it</div><div style="color:var(--ux-muted)">Never reveals that the resource exists</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">Permission changed mid-session</div><div>Re-evaluated on next request; the view reloads rather than degrading</div><div style="color:var(--ux-muted)">Both sides</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div style="font-weight:700">Stale or offline</div><div>Shows the timestamp of what is displayed and that it may have moved</div><div style="color:var(--ux-muted)">Both sides</div></div>
+<div style="display:grid;grid-template-columns:180px 1fr 1fr;gap:18px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:12.5px"><div style="font-weight:700">Expired link</div><div>Offers a fresh request; never discloses what the link pointed at</div><div style="color:var(--ux-muted)">Public resolver included</div></div>
+</div>
+<div style="margin-top:20px;font-size:13.5px;line-height:1.6;max-width:70ch"><strong>Notifications.</strong> Three events push to a store user: an order state change, an approaching license expiry, and a past-due balance. Everything else waits to be found in the portal, so a notification always means something a person must act on.</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">12</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Kiosk mode</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 20px">A shared floor tablet has no individual user, which means it cannot carry attribution. Rather than pretend otherwise, kiosk mode is education-only: nothing it can do requires an audit trail. The device is authorised to a location by an urbanXtracts administrator, and revoking it is a single internal action rather than a request to the store.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid rgba(23,14,11,.2)">
+<div style="padding:20px 22px;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Available</div>
+<div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px"><div>Product search and detail</div><div>Potency and terpene profile</div><div>COA for any released lot</div><div>Scan the package QR or tag barcode</div><div>Product comparison</div><div>Training cards and FAQs</div></div>
+</div>
+<div style="padding:20px 22px;background:var(--ux-accent-wash)">
+<div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:10px">Not rendered</div>
+<div style="display:flex;flex-direction:column;gap:7px;font-size:13.5px"><div>Any price</div><div>Ordering, drafts, approvals</div><div>Store spend or performance</div><div>Account, users, settings</div><div>Anything requiring attribution</div><div>Cost, margin, ownership</div></div>
+</div>
+</div>
+<div style="margin-top:16px;font-size:13px;line-height:1.6;color:var(--ux-muted);max-width:70ch">If a location&rsquo;s license lapses, its kiosk keeps education and COA access &mdash; it never had ordering to lose, and cutting off product information would push staff back to unverified sources. Typed tag entry requires the full tag: 80 of your active tags share their last six digits, so a partial match resolves to a list, never to a guess.</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">13</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Open items</h2>
+<p style="font-size:15px;line-height:1.62;max-width:66ch;margin:0 0 24px">Each item names the question, its class, whether it stops a gate, and which gate. Owners are proposed. Nothing here is treated as decided.</p>
+
+<div style="border-left:2px solid var(--ux-accent);padding:2px 0 2px 18px;display:flex;flex-direction:column;gap:20px">
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">BUSINESS DECISION</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">Order-value threshold above which owner approval fires. <span style="color:var(--ux-muted)">Proposed owner: sales leadership. Blocks: the order-submission gate &mdash; without a number, every order either needs approval or none does.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">BUSINESS DECISION</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">Definition of past-due for the AR gate &mdash; days, amount, or both. <span style="color:var(--ux-muted)">Proposed owner: finance. Blocks: the AR gate at order entry.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">INFORMATION REQUIRED</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">Where parsed potency and terpene values will live, and who maintains them. <span style="color:var(--ux-muted)">Proposed owner: quality. Blocks: the potency and profile layer of the product detail page &mdash; the largest section of the hero screen currently has no source.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">TECHNICAL VALIDATION REQUIRED</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">The per-account rate card does not exist as a record today, so catalog price is derived from the most recent qualifying order line &mdash; excluding samples, cancellations, returns and lines where discount exceeds price &mdash; with the derivation date shown. <span style="color:var(--ux-muted)">Proposed owner: sales operations. Blocks: showing a price at all; a derived price is a stopgap, not a pricing policy.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">FINANCE DECISION</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">Whether a margin figure may be shown when its cost components are incomplete, and at what coverage. <span style="color:var(--ux-muted)">Proposed owner: finance. Blocks: the internal economics view. Labor cost is effectively unpopulated, so a margin computed today would be wrong rather than partial &mdash; the Phase 3 view carries clearly-labelled synthetic figures until this is answered.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">CCO SIGN-OFF REQUIRED</span><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-accent);color:#fff;padding:3px 6px">BLOCKING</span></div>
+<div style="font-size:13.5px;line-height:1.6">What the public COA page displays, how long a printed code keeps resolving, and whether retest history is shown. <span style="color:var(--ux-muted)">Owner: CCO. Blocks: publication of the public resolver. The mechanism is designed for either answer; nothing publishes while this is open.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">CANIX VALIDATION REQUIRED</span></div>
+<div style="font-size:13.5px;line-height:1.6">Whether case quantity, minimum order and lead time are readable per item, and where. <span style="color:var(--ux-muted)">Proposed owner: operations. Affects: order validation &mdash; without it the portal cannot enforce case increments.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">BUSINESS DECISION</span></div>
+<div style="font-size:13.5px;line-height:1.6">Reorder interval basis: the account&rsquo;s own average against days since last order, with the basis stated on screen. No sell-through data exists, so no velocity claim is made. <span style="color:var(--ux-muted)">Proposed owner: sales leadership.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">TECHNICAL VALIDATION REQUIRED</span></div>
+<div style="font-size:13.5px;line-height:1.6">Whether a store organisation can be resolved from license numbers alone when a chain holds several licenses. <span style="color:var(--ux-muted)">Proposed owner: administration. Affects: location switching and org-level AR.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">BUSINESS DECISION</span></div>
+<div style="font-size:13.5px;line-height:1.6">Multi-factor authentication was left open; this document assumes none in Phase 1 and no personal login at all on kiosk devices. <span style="color:var(--ux-muted)">Proposed owner: administration. Recorded as an assumption, not a decision.</span></div>
+</div>
+<div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:5px;flex-wrap:wrap"><span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:3px 6px">INFORMATION REQUIRED</span></div>
+<div style="font-size:13.5px;line-height:1.6">Which lot and batch identifiers will exist going forward, given that most active packages carry neither today. The design treats the tag as sufficient identity so the portal works either way. <span style="color:var(--ux-muted)">Proposed owner: operations.</span></div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:56px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">14</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 14px">Acceptance</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:2px solid rgba(23,14,11,.4)">
+<div style="padding:18px 22px 18px 0;border-right:1px solid rgba(23,14,11,.14);border-bottom:1px solid rgba(23,14,11,.14)"><div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Criteria</div><div style="font-size:13px;line-height:1.6">Every visibility derives from a stated rule. Every gate has a user-visible reason and a path forward. Every screen element names its source. No view can render another organisation&rsquo;s data by any route, including search, export, notification payloads and error messages.</div></div>
+<div style="padding:18px 0 18px 22px;border-bottom:1px solid rgba(23,14,11,.14)"><div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Definition of done</div><div style="font-size:13px;line-height:1.6">Phase 1 closes when the matrix, gates and flows are approved and every blocking open item is either answered or explicitly accepted as open into Phase 2. Approval of this document is not approval to build the economics view.</div></div>
+<div style="padding:18px 22px 18px 0;border-right:1px solid rgba(23,14,11,.14);border-bottom:2px solid rgba(23,14,11,.4)"><div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Required tests</div><div style="font-size:13px;line-height:1.6">An expired license blocks ordering at that location only. Unreleased product is not visible. The AR gate fires at order entry, not at shipping. One store cannot see another&rsquo;s orders. A blocked user is given a path forward. Cost is absent from every external view and from every impersonated view.</div></div>
+<div style="padding:18px 0 18px 22px;border-bottom:2px solid rgba(23,14,11,.4)"><div style="font:600 10.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Evidence &amp; owner</div><div style="font-size:13px;line-height:1.6">Evidence: this document, plus the connector reads dated 2026-08-24 behind each verified field. Owner: whoever holds portal delivery. Approver: to be named &mdash; recorded as proposed.</div></div>
+</div>
+<div style="margin-top:22px;font-size:13px;line-height:1.6;color:var(--ux-muted);max-width:72ch">Every control described here is <strong>designed</strong>. None is live, and none should be described as compliant or sufficient. Structural facts were read from live connectors; all product, price, cost, order and COA values are synthetic. Phase 2 &mdash; three visual directions with a retailer dashboard and product detail each &mdash; has not been started and awaits your go-ahead.</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
