@@ -179,3 +179,56 @@ all four cases:
 | Correct and compliant | signed in, no banner (`weak_password` is `null`) |
 | Wrong password | refused, message does not say which half was wrong |
 | Deactivated / no profile | unchanged |
+
+## Why submissions were not reaching Monday
+
+The published portal had no intake endpoint. `MAKE_WEBHOOK` came from
+`window.UX_PORTAL_CONFIG.intakeUrl`, nothing on GitHub Pages ever set it, and
+`post()` therefore recorded the submission locally and returned without sending.
+Confirmed from both ends: the live build carried no webhook URL, and the Make
+scenario's execution count had not moved since 06:31 UTC.
+
+Worse, the order screen still said "SO-24191 submitted." The send path was
+honest — it wrote "Held, no endpoint in this build" to the outbox — but the
+toast was not, and the toast is what anybody actually reads.
+
+### The fix, and why it is not a config file
+
+A static page cannot hold a secret. Committing the Make URL and the shared
+secret to make the live site post would publish both to a public repository,
+which turns the secret into decoration.
+
+Submissions now go to a Supabase Edge Function, `portal-intake`, which holds the
+URL and secret server-side, checks the caller, stamps the submitter from the
+verified token rather than trusting the payload, and forwards to Make.
+
+| Caller | Result |
+|---|---|
+| No `Authorization` header | 401 at the platform gate |
+| Publishable key as bearer | **401** — it passes `verify_jwt` but is not a person, so the function asks Auth and rejects it |
+| Signed-in session | forwarded |
+| No session, `kind: onboarding` | forwarded, flagged `unauthenticated: true` |
+
+That second row is the reason the function asks `/auth/v1/user` rather than
+trusting `verify_jwt`: the publishable key is a valid project JWT and is public.
+
+"Request access" stays open by design — a store with no account has to be able
+to ask for one. Those arrive flagged as unauthenticated, and are spammable
+without a captcha; that is an open item, not a solved one.
+
+### Two secrets have to be set on the function
+
+Edge Functions → `portal-intake` → Secrets. Not settable from here:
+
+| Secret | Value |
+|---|---|
+| `MAKE_WEBHOOK_URL` | the scenario's webhook URL |
+| `MAKE_INTAKE_SECRET` | the shared secret the scenario's route filters already expect |
+
+Until both are set the function answers `503 intake not configured`, and the
+portal now says so in the toast rather than claiming the order was submitted.
+
+### Failures are now visible where they happen
+
+A rejection or an unreachable intake sets a `NOT SENT` toast carrying the
+reason, as well as the outbox state. Previously only the outbox changed.

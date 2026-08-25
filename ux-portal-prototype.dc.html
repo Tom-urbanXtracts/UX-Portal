@@ -2817,19 +2817,42 @@ class Component extends DCLogic {
   }
 
   post(kind, payload) {
-    const body = { kind, secret: INTAKE_KEY, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload };
-    if (!MAKE_WEBHOOK || !INTAKE_KEY) {
-      this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Held \u2014 no endpoint in this build', detail: payload.summary || kind }].concat(st.outbox) }));
-      return;
-    }
+    const s = this.state;
+    // Everything a static page carries is public, so the published portal cannot
+    // hold the Make URL or the shared secret. It posts to the portal's own
+    // intake function instead, which holds both server-side and checks who is
+    // calling before forwarding. A directly configured Make URL still works for
+    // local development.
+    const direct = !!MAKE_WEBHOOK && !!INTAKE_KEY;
+    const url = direct ? MAKE_WEBHOOK : SUPABASE_URL + '/functions/v1/portal-intake';
+    const headers = direct
+      ? { 'Content-Type': 'application/json' }
+      : { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + (s.token || SUPABASE_KEY) };
+    const body = direct
+      ? { kind, secret: INTAKE_KEY, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload }
+      : { kind, payload };
     this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Sending', detail: payload.summary || kind }].concat(st.outbox) }));
-    fetch(MAKE_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(r => this.setState(st => ({
-        outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: r.ok ? 'Accepted by Make' : 'Rejected: HTTP ' + r.status } : o)
-      })))
-      .catch(() => this.setState(st => ({
-        outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Could not reach Make' } : o)
-      })));
+    const failed = (state, why) => this.setState(st => ({
+      outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: state } : o),
+      // A failure used to appear only in the outbox, which is not the pane
+      // anybody has open at the moment they submit. Say it where they are.
+      toast: 'That did not reach Monday \u2014 ' + why + '. It is recorded here and on this device only.',
+      toastKind: 'NOT SENT'
+    }));
+    fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) })
+      .then(r => r.text().then(t => ({ ok: r.ok, status: r.status, t: t })))
+      .then(({ ok, status, t }) => {
+        if (!ok) {
+          let why = 'the intake answered HTTP ' + status;
+          try { const j = JSON.parse(t); if (j && j.error) why = j.error; } catch (e) {}
+          failed('Rejected: HTTP ' + status, why);
+          return;
+        }
+        this.setState(st => ({ outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Accepted by Make' } : o) }));
+      })
+      .catch(() => failed('Could not reach the intake', 'the intake could not be reached'));
+    return 'sending';
   }
 
   cleanQty(v, fallback) {
