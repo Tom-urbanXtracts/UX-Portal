@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f3f2f2}a{color:#ae1800}a:hover{color:#7c1405}</style>
+</helmet>
+<div style="max-width:900px;margin:0 auto;padding:48px 44px 72px;font-family:Archivo,system-ui,sans-serif;color:#201e1d">
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#ae1800;margin-bottom:10px">Sitemap treatment A — indented tree</div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">UrbanXtracts Portal — sitemap</h1>
+<p style="font-size:13.5px;color:#605d5d;margin:0 0 8px">Role badge in brackets marks who the route exists for. Absent means not rendered.</p>
+<div style="height:2px;background:rgba(32,30,29,.4);margin:20px 0 26px"></div>
+
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#605d5d;margin-bottom:14px">External — store users</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:2.05">
+<div><span style="color:#9b9797">/</span> <strong>sign-in</strong> <span style="color:#9b9797">· forgot password · kiosk mode</span> <span style="color:#ae1800">[all]</span></div>
+<div><span style="color:#9b9797">/</span> <strong>dashboard</strong> <span style="color:#ae1800">[owner · buyer · budtender variants]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> spend over time <span style="color:#ae1800">[owner]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> drafts &amp; approvals <span style="color:#ae1800">[owner · buyer]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">└</span> lot lookup <span style="color:#ae1800">[budtender]</span></div>
+<div><span style="color:#9b9797">/</span> <strong>catalog</strong> <span style="color:#9b9797">— finished goods only</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> /product/:sku <span style="color:#9b9797">· overview → potency → lot &amp; COA → commercial → performance → education</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> /product/:sku/lot/:lot <span style="color:#9b9797">— changes potency, dates, COA</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">└</span> /compare <span style="color:#ae1800">[all]</span></div>
+<div><span style="color:#9b9797">/</span> <strong>order</strong> <span style="color:#ae1800">[owner · buyer]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> /order/draft/:id <span style="color:#9b9797">· minimums, case increments, AR gate at entry</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">├</span> /order/:id/approve <span style="color:#ae1800">[owner]</span></div>
+<div style="padding-left:22px;border-left:1px solid rgba(32,30,29,.2);margin-left:6px"><span style="color:#9b9797">└</span> /order/:id <span style="color:#9b9797">· Placed → Approved → Shipped → Received</span></div>
+<div><span style="color:#9b9797">/</span> <strong>coa/:code</strong> <span style="color:#ae1800">[public]</span> <span style="color:#9b9797">— lab result, batch, dates only</span></div>
+<div><span style="color:#9b9797">/</span> <strong>account</strong> <span style="color:#9b9797">· locations · users · delivery</span> <span style="color:#ae1800">[owner]</span></div>
+</div>
+
+<div style="height:2px;background:rgba(32,30,29,.4);margin:30px 0 22px"></div>
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#605d5d;margin-bottom:14px">Internal — not rendered for any external role</div>
+<div style="font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:2.05">
+<div><span style="color:#9b9797">/</span> <strong>ops/dashboard</strong> <span style="color:#9b9797">· fulfilment, allocation, exceptions</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/accounts/:license</strong> <span style="color:#9b9797">· contacts, orders, AR, rep activity</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/inventory</strong> <span style="color:#9b9797">· incl. bulk rosin, hash, distillate</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/lots/:id</strong> <span style="color:#9b9797">· lineage, ownership code, COA versions</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/qa</strong> <span style="color:#9b9797">· release queue, quarantine, CAPA</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/economics</strong> <span style="color:#9b9797">· COGS, margin, pricing exceptions</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/integrity</strong> <span style="color:#9b9797">· 7 exception tiles</span></div>
+<div><span style="color:#9b9797">/</span> <strong>ops/admin</strong> <span style="color:#9b9797">· users, roles, impersonation, audit</span></div>
+</div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>urbanXtracts Wholesale Portal — design prototype</title>
+<meta name="description" content="Design prototype for the urbanXtracts wholesale portal. Not a product build. All commercial values are synthetic.">
+<link rel="icon" href="brand/ux-mark.png">
+<style>
+  :root {
+    --paper: #faf7f3;
+    --ink: #170e0b;
+    --rule: #c2bab2;
+    --muted: #6f6862;
+    --green: #134a2b;
+    --clay: #a33116;
+    --font: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+  header { display: flex; align-items: flex-start; gap: 1rem; padding-bottom: 1.5rem; }
+  header img { width: 40px; height: 40px; display: block; }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .kicker { font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .lede { max-width: 44rem; margin-top: 1rem; }
+  .notice {
+    border-left: 3px solid var(--clay);
+    padding: 0.75rem 0 0.75rem 1rem;
+    margin: 2rem 0;
+    max-width: 44rem;
+    font-size: 0.94rem;
+  }
+  .notice strong { color: var(--clay); }
+  h2 {
+    font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); font-weight: 800;
+    border-top: 1px solid var(--rule); padding-top: 0.75rem; margin-top: 3rem;
+  }
+  .cta { display: inline-block; margin-top: 1.5rem; background: var(--green); color: var(--paper);
+         text-decoration: none; padding: 0.85rem 1.4rem; font-weight: 700; font-size: 0.95rem; }
+  .cta:hover { background: var(--ink); }
+  .cta-note { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.94rem; }
+  th, td { text-align: left; padding: 0.7rem 0.9rem 0.7rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  td:first-child { width: 34%; white-space: nowrap; }
+  a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { color: var(--clay); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
+  ul { margin: 1rem 0 0 1.1rem; max-width: 44rem; }
+  li { margin-bottom: 0.4rem; font-size: 0.94rem; }
+  footer { margin-top: 3.5rem; border-top: 1px solid var(--rule); padding-top: 1rem;
+           font-size: 0.82rem; color: var(--muted); }
+  @media (max-width: 600px) {
+    td:first-child { white-space: normal; width: 40%; }
+    .wrap { padding-top: 2rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img src="brand/ux-mark.png" alt="urbanXtracts mark">
+    <div>
+      <p class="kicker">urbanXtracts</p>
+      <h1>Wholesale Portal — design prototype</h1>
+    </div>
+  </header>
+
+  <p class="lede">
+    Role-based ordering, lot verification and COA access for licensed retail partners,
+    with an internal operations layer behind the same sign-in.
+  </p>
+
+  <div class="notice">
+    <strong>This is a design prototype, not a product build.</strong>
+    All product, price, cost, order and COA values are synthetic. Catalog structure,
+    release states, order states, unit types and date ranges were read from live Canix
+    reporting on 2026-08-24 and are real; everything else is either labelled sample data
+    or shown as an explicit pending state. Nothing here is a compliance statement, and no
+    COA result shown should be read as an interpretation.
+  </div>
+
+  <a class="cta" href="dist/portal.html">Open the prototype</a>
+  <p class="cta-note">Self-contained page. Sign in with an assigned account; the role and organisation come from that account.</p>
+
+  <h2>Documents</h2>
+  <table>
+    <thead>
+      <tr><th>Document</th><th>What it covers</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="ux-portal-phase-1-architecture.dc.html">Phase 1 architecture</a></td>
+        <td>Rev 2.1. Sitemap, matrix, gates, flows, source map, audit events, open items, acceptance — plus recall and lot impact, life after submission, approval delegation, store account and records, store data access, measurement, document exchange, and internal store onboarding.</td>
+      </tr>
+      <tr>
+        <td><a href="ux-portal-build-plan.dc.html">Build plan</a></td>
+        <td>Rev 2.1. What remains, sequenced by dependency: 10 blockers, 48 items still open, 4 waves.</td>
+      </tr>
+      <tr>
+        <td><a href="ux-portal-prototype.dc.html">Prototype source</a></td>
+        <td>The design source behind <code>dist/portal.html</code>.</td>
+      </tr>
+      <tr>
+        <td><a href="Sitemap-A-Indented-Tree.dc.html">Sitemap A</a> · <a href="Sitemap-B-Layered-Columns.dc.html">Sitemap B</a></td>
+        <td>Two sitemap treatments — indented tree, layered columns.</td>
+      </tr>
+      <tr>
+        <td><a href="Doc-Format-A-Ledger-Spec.dc.html">Doc format A</a> · <a href="Doc-Format-B-Two-Tier-Brief.dc.html">Doc format B</a></td>
+        <td>Two document treatments — ledger spec, two-tier brief.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Paths worth walking</h2>
+  <ul>
+    <li><strong>Inventory (internal)</strong> — compare the two live definitions, inspect source-unit totals, and reveal sandbox context without combining it with production.</li>
+    <li><strong>Northgate</strong> — expired license blocks submission at that location only.</li>
+    <li><strong>Riverside</strong> — past-due balance blocks submission at order entry, not at shipping.</li>
+    <li><strong>Reorder SO-24020</strong> — a line is no longer stocked; the draft offers swaps.</li>
+    <li><strong>A partial compliance tag</strong> in kiosk lookup — never resolves to one lot.</li>
+    <li><strong>View as</strong> a store user from Users and roles — read-only, cost withheld, audited.</li>
+  </ul>
+
+  <h2>Rules the design enforces</h2>
+  <ul>
+    <li>Canix remains the inventory system of record; the portal is read-only and never queues a stock change.</li>
+    <li>One internal wall: any internal user sees cost; no external view renders it.</li>
+    <li>Restricted routes are not rendered — never disabled, never empty.</li>
+    <li>Orderable means package status <em>available</em> <strong>and</strong> lab result <em>passed</em>. Both.</li>
+    <li>The compliance tag is the lot identity.</li>
+    <li>Grams, millilitres and each are never blended into one figure.</li>
+  </ul>
+
+  <footer>
+    Design prototype · synthetic commercial data · see
+    <a href="https://github.com/Tom-urbanXtracts/UX-Portal">the repository</a> for the full README and build plan.
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/styles.css">
+<script src="_ds/modernist-930ef474-7b8e-4485-8931-7b45ca5f5ca2/_ds_bundle.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ux-ink:#170e0b;
+  --ux-ground:#faf7f3;
+  --ux-surface:#efeae4;
+  --ux-accent:#1b5c37;
+  --ux-accent-text:#134a2b;
+  --ux-accent-deep:#0d3520;
+  --ux-signal:#a33116;
+  --ux-signal-text:#8a2a12;
+  --ux-muted:#6f6862;
+  --ux-muted-strong:#4b4640;
+  --ux-faint:#a09890;
+}
+body{margin:0;background:var(--ux-ground);font-family:Archivo,system-ui,sans-serif;color:var(--ux-ink);font-variant-numeric:tabular-nums}
+a{color:var(--ux-accent-text)}a:hover{color:var(--ux-accent-deep)}
+</style>
+</helmet>
+
+<div style="max-width:1000px;margin:0 auto;padding:52px 44px 96px">
+
+<div style="display:flex;gap:16px;align-items:flex-start;border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:20px">
+<img src="brand/ux-mark.png" alt="urbanXtracts" style="height:44px;width:auto;display:block;align-self:flex-start;object-fit:contain">
+<div style="flex:1">
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:10px">Build plan</div>
+<h1 style="font:800 40px/1.05 Archivo,sans-serif;letter-spacing:-.025em;margin:0 0 10px">What it takes to finish<br>the wholesale portal</h1>
+<div style="font:500 12px/1.7 ui-monospace,Menlo,monospace;color:var(--ux-muted)">24 Aug 2026 · rev 2.1 · sequenced by dependency, not by screen count<br>Ten blockers, forty-eight items still open, four waves</div>
+</div>
+</div>
+
+<div style="margin-top:38px;background:var(--ux-surface);border-top:2px solid var(--ux-ink);padding:26px 28px">
+<h2 style="font:800 13px/1.2 Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;margin:0 0 18px">Read this first</h2>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(23,14,11,.2)">
+<div style="padding:16px 20px 16px 0;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-signal-text);margin-bottom:6px">The real constraint</div>
+<div style="font-size:13.5px;line-height:1.55">Almost nothing left is design work. Three data sources and twelve decisions gate everything that would make this production-grade.</div>
+</div>
+<div style="padding:16px 20px;border-right:1px solid rgba(23,14,11,.2)">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:6px">What is already true</div>
+<div style="font-size:13.5px;line-height:1.55">Release rules, order lifecycle, segregation, gates, audit and the validation queue all work against measured structure.</div>
+</div>
+<div style="padding:16px 0 16px 20px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Definition of amazing</div>
+<div style="font-size:13.5px;line-height:1.55">A buyer reorders in under thirty seconds without calling a rep, and a budtender answers a customer from the jar in their hand.</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:48px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Wave 1</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 8px">Unblock the hero flow</h2>
+<p style="font-size:15px;line-height:1.6;max-width:64ch;margin:0 0 24px">Nothing else matters as much as this: catalog to product to lot to order, with a price a buyer can trust. Three items, none of them mine. <strong>Blocking</strong> means the same thing here and in the architecture: it stops a screen, a gate or a publication from being correct. Ten items are blocking. A connection that has not been attached is tracked separately and is not counted as one. The open-item register itself lives in the architecture &mdash; twenty-nine items, ten of them blocking &mdash; and the prototype’s validation queue renders the same twenty-nine. The counts on this page are build items, which is a coarser granularity: one line here can close several register items.</p>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+
+<div style="display:grid;grid-template-columns:26px 1fr 190px 130px;gap:16px;padding:16px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:baseline">
+<div style="width:15px;height:15px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div>
+<div style="font:700 15px/1.3 Archivo,sans-serif;margin-bottom:5px">Build the per-account rate card</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:62ch">A record of SKU by account with price, effective date and an approver. Today price is derived from the last qualifying order line, which is a stopgap that quotes nothing for a new account or a new SKU. This single record also retires the price-on-request path, the price-changed warning and half the pricing caveats in the interface.</div>
+</div>
+<div style="font-size:12px;color:var(--ux-muted)">Sales operations<br>Monday board</div>
+<div><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div>
+</div>
+
+<div style="display:grid;grid-template-columns:26px 1fr 190px 130px;gap:16px;padding:16px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:baseline">
+<div style="width:15px;height:15px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div>
+<div style="font:700 15px/1.3 Archivo,sans-serif;margin-bottom:5px">Confirm case quantity, minimum order and lead time are readable per item</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:62ch">One Canix test closes it. Until then the order builder accepts any quantity, so its validation is decoration — and case configuration on every product card is synthetic.</div>
+</div>
+<div style="font-size:12px;color:var(--ux-muted)">Operations<br>Canix test</div>
+<div><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div>
+</div>
+
+<div style="display:grid;grid-template-columns:26px 1fr 190px 130px;gap:16px;padding:16px 0;border-bottom:2px solid rgba(23,14,11,.4);align-items:baseline">
+<div style="width:15px;height:15px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div>
+<div style="font:700 15px/1.3 Archivo,sans-serif;margin-bottom:5px">Give potency and terpenes a home</div>
+<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:62ch">Lot, cannabinoid values, terpene list, COA link — a record per lot is enough to start. This fills the largest panel on the product page, makes comparison meaningful, and gives budtender education something factual to stand on. It is the difference between a catalog and a product intelligence tool.</div>
+</div>
+<div style="font-size:12px;color:var(--ux-muted)">Quality<br>Monday + COA parse</div>
+<div><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div>
+</div>
+
+</div>
+</div>
+
+<div style="margin-top:48px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Wave 2</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 8px">Decisions and connections</h2>
+<p style="font-size:15px;line-height:1.6;max-width:64ch;margin:0 0 24px">Fifteen decisions, three connections, and one question now answered. The compliance items have the longest lead, so they should start now even though nothing publishes for months. Rep-held approval is the one that is new, and it is the one that needs Legal as well as the CCO.</p>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Define past due for the receivables gate</strong> — days, amount, or both. The gate fires at order entry today with no real threshold behind it.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Finance</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Set the order value that triggers owner approval</strong> — the other three triggers are settled; without a number every order needs approval or none does.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Sales leadership</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Decide the cost-coverage rule and which components make a unit cost</strong> — labor cost is effectively unpopulated, so a margin computed today is wrong rather than partial.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Finance</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Sign off what the public COA page shows, how long a printed code resolves, and whether retest history appears</strong> — longest lead item in the plan.</div>
+<div style="font-size:12px;color:var(--ux-muted)">CCO</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">SIGN-OFF</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Approve the recall trigger and its wording</strong> — the mechanism is designed; the words are not ours to write.</div>
+<div style="font-size:12px;color:var(--ux-muted)">CCO</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">SIGN-OFF</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Name an owner and a clock per exception type</strong> — internal only; a store sees status and never the owner.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Operations</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-muted)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Connect the ledger</strong> for balances, terms and invoices. Every receivables figure is pending until then, including the gate's own basis.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Finance · QuickBooks</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-accent-text)">CONNECT</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Connect the COA file store</strong> so the viewer shows real documents and version resolution runs through the operating record rather than newest-file guessing.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Quality · Drive</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-accent-text)">CONNECT</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong style="color:var(--ux-accent-deep)">Store sell-through &mdash; decided, not connecting</strong> &mdash; the portal stays semi-internal and does not reach into a retailer&rsquo;s point-of-sale. This answers the standing blocking question with the second of its two answers: ship without one. Performance means the account&rsquo;s own ordering with us, permanently, and no velocity claim is made anywhere.</div>
+<div style="font-size:12px;color:var(--ux-muted)">The business</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-accent-deep)">DECIDED<br>24 AUG</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Decide whether a rep may hold a store&rsquo;s approval</strong> &mdash; and on whose written authority. You have asked for this; it puts the seller inside the buyer&rsquo;s approval chain, so it is a segregation-of-duties and contracting question before it is a build. Longest new lead item.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Sales leadership · CCO · Legal</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">SIGN-OFF</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Sign off the public COA code space</strong> &mdash; code format, rate limit, and whether a third party may enumerate it. Same decision surface as what the page displays, which is already with you.</div>
+<div style="font-size:12px;color:var(--ux-muted)">CCO</div>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">SIGN-OFF</div><div style="margin-top:5px"><span style="display:inline-block;white-space:nowrap;font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">BLOCKING</span></div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>State whether a draft holds inventory</strong> &mdash; and for how long, and who wins when two accounts draft the last of a lot. The inventory-changed gate handles the symptom of a policy nobody has written.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Operations · Sales ops</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Set the approval clock and its escalation</strong> &mdash; how long an approval may sit and where it goes next. One named human with no clock stalls every order over the threshold.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Sales leadership</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Set the receiving claim window and its evidence</strong> &mdash; how long after delivery a store may raise short, damaged or refused, and what it must attach.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Operations</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Fix the notification channel and consent wording</strong> &mdash; and which notices a user may never switch off. An amended COA and a recall are not mutable.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Sales leadership · CCO</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Confirm the store API scope and credential model</strong> &mdash; rate limits, rotation, and whether a chain&rsquo;s several licenses resolve to one credential.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Administration</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-accent-text)">CONNECT</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Fix the document type list and retention</strong> &mdash; which types a store may send, how long each is kept, and what happens to them when an account winds down.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Operations · CCO</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div><strong>Name who qualifies a license at onboarding</strong> &mdash; who checks it against the state record, what evidence is kept, and how often it is rechecked. We record what the record says; we never assert validity ourselves.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Quality · Compliance</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 170px 150px;gap:16px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13.5px;align-items:baseline">
+<div><strong>Decide whether terms gate account creation</strong> &mdash; may an account exist before payment terms and a credit limit, or is that a hard stop? Already waiting on the rate card.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Finance</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-signal-text)">DECISION</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:48px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Wave 3</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 8px">Design and build, no inputs needed</h2>
+<p style="font-size:15px;line-height:1.6;max-width:64ch;margin:0 0 24px">Everything here I can do now. Ordered by how much it changes the experience, not by effort.</p>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Internal account detail</strong> — the list exists, the drill-down does not: contacts, locations, order history, product mix, visit notes, receivables, exceptions on one page.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Internal depth</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Location comparison</strong> for multi-site owners — spend, mix and reorder cadence side by side, which is the whole reason an owner logs in rather than a buyer.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Owner value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Order confirmation as a real document</strong> — printable, with lots, tags and dates, so a receiving clerk can check a delivery against it.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Multiple named drafts</strong> — one per location or per delivery date. A single draft breaks the moment a buyer orders for two shops in one sitting.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Real tablet and phone passes</strong> — the breakpoints work, but the budtender lookup deserves a device-framed design at true size, with thumb-reachable targets and a scan-first layout.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Responsive</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Loading and stale-data states</strong> — skeletons per surface, plus a visible timestamp and a stale marker when a figure may have moved.</div>
+<div style="font-size:12px;color:var(--ux-muted)">System states</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Out-of-stock alternatives</strong> — when a lot runs out mid-draft, offer the nearest released lot or a comparable SKU instead of a dead line.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Keyboard and screen-reader pass</strong> — tab order, landmarks, labelled controls, and a contrast audit of clay and green against every surface they sit on.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Accessibility</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Segregation test suite</strong> — the users leak proved list-backed screens need explicit tests. One case per screen: can this view render another organisation&rsquo;s row by search, filter, export or error.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Hardening</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Brand kit for the portal</strong> — the mark in its reversed and stacked forms, the arch device at set sizes, the two-signal status rules and the category hues, written down so a developer cannot drift from them.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Brand</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:48px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Wave 4</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 8px">What the review found</h2>
+<p style="font-size:15px;line-height:1.6;max-width:64ch;margin:0 0 24px">Seventeen items from the 24 Aug review of the built prototype against its own architecture, plus the capabilities you asked for &mdash; a records surface, an API for the store, document exchange, and internal onboarding. Nothing here replaces waves 1 to 3. Three of these close contradictions inside rev 1 rather than adding anything new. <strong>All seventeen now have a prototype pass</strong> &mdash; hero-path instrumentation, the screen-reader pass, the recall and lot impact view, the rep field view, account and delivery settings, the amended-COA notification path, the public resolver controls, the store records surface, the store API, the owner receivables surface, approval delegation, the receiving claim, document exchange, internal onboarding, the store user lifecycle, order actions matched to the vocabulary, and the retired sell-through promises &mdash; with rep-held approval present but deliberately non-functional until it is decided &mdash; which demonstrates the design, not the build. The checkboxes track the production build and stay open.</p>
+
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Recall and lot impact view</strong> &mdash; the reverse of lineage: given a tag, every account and location that received it, plus what sits in open drafts, unshipped orders and our own custody. Notice, acknowledgement and its record. The CCO owns the trigger and the words; this is the machinery underneath.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Quality · Ops</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Amended-COA notification path</strong> &mdash; section 10 always promised that accounts holding the lot are notified, and section 11 never carried it. The most safety-relevant event was the one that did not push.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Quality</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Store user lifecycle</strong> &mdash; invite, activate, deactivate and last active. Today an owner can only change a role, so a departing buyer keeps catalog and COA access. Deactivation ends live sessions.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Access</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Receiving claim on the order</strong> &mdash; short, damaged or refused, per line, with quantity, reason and a photo, feeding the exception queue that already exists. The store keeps seeing status only.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Approval delegation, clock and rep-held approval</strong> &mdash; delegation inside the store and to the assigned rep: time-bounded, revocable, named on the order, and unable to lift any gate. Gated on the wave 2 sign-off.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Store records surface</strong> &mdash; everything we hold about an account in one place: orders, lots received with the COA version current at receipt, licenses, claims, documents, notices, and their own audit history. Exportable under the same filtering as the screen.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Store value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Store API &mdash; read only</strong> &mdash; the records surface as an endpoint for chains running their own tooling. One authorization, not two: a field the screen withholds cannot be reached. No writes, so no path around the gates.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Store value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Owner receivables surface</strong> &mdash; balance, terms, invoices and what the gate is reading. Riverside&rsquo;s gate fires today and the owner has nowhere in the portal to go and clear it. Needs the ledger connection.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Store value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Account and delivery settings</strong> &mdash; locations, license record and expiry, delivery windows, per-location receiving instructions. In the sitemap since rev 1, never built.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Store value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Hero-path instrumentation</strong> &mdash; time to reorder, blocks per gate and what followed them, search-to-add, kiosk lookups, and portal orders against rep-placed orders. Cheap now, impossible to backfill, and it is what decides the next wave.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Measurement</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Public COA resolver hardening</strong> &mdash; non-sequential codes, per-source rate limit, no listing, and an unknown code answering identically to an unpublished one. Gated on the wave 2 sign-off.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Public</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Rep view on a phone</strong> &mdash; the account rep is a named primary user and every internal screen is a desktop ops layout. A rep works from a car.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Responsive</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">MEDIUM</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Order actions matched to the vocabulary</strong> &mdash; edit and cancel until approved, request after. Rev 1 promised edit, duplicate and cancel on a placed order and no screen offered any of it.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Ordering</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Screen-reader pass before contrast</strong> &mdash; the claim that every control reached the tree unnamed was wrong, and came from a tool reading a hidden pane. An audit found the real gaps: no document language, no landmarks to jump to, selected state carried by colour alone on the role and filter controls, and quantity steppers announcing as &ldquo;minus&rdquo; with no object. Fixed. Contrast is still the untested half.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Accessibility</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Retire the sell-through promises in the prototype</strong> &mdash; four empty states still say performance will appear once a feed is connected, and the open-item card still asks whether one is planned. The statements of fact stay true; the promises are now wrong. Copy only.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Scope</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">SMALL</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Document exchange</strong> &mdash; owner and buyer upload against a typed list, with expiry, review state and versions; outbound paper lands in the same place. The license gate has said &ldquo;upload the renewal&rdquo; since rev 1 with nowhere to upload it. An upload never lifts a gate, and banking details are refused rather than stored.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Store value</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+<div style="display:grid;grid-template-columns:26px 1fr 150px 110px;gap:14px;padding:13px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13.5px;align-items:baseline">
+<div style="width:14px;height:14px;border:1.5px solid rgba(23,14,11,.45)"></div>
+<div><strong>Internal store onboarding</strong> &mdash; six stages from intake to ready-to-order: licenses per location, compliance qualification, terms, account creation, owner invite, first gate evaluation. Flow C has described this as records with no screen since rev 1. Stage 03 waits on the rate card.</div>
+<div style="font-size:12px;color:var(--ux-muted)">Internal depth</div>
+<div style="font:600 9.5px ui-monospace,monospace;color:var(--ux-muted)">LARGE</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:48px">
+<div style="font:600 11px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">From you</div>
+<h2 style="font:800 26px/1.15 Archivo,sans-serif;margin:0 0 8px">Three things only you can supply</h2>
+<div style="border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px">
+<div style="font-weight:700">Product photography</div>
+<div style="color:var(--ux-muted-strong)">Every card and product page is an arch-framed placeholder. Photography is what makes a wholesale catalog feel like a premium one.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13.5px">
+<div style="font-weight:700">Training and FAQ copy</div>
+<div style="color:var(--ux-muted-strong)">Process education is written. Product-specific talking points need your words — nothing about effects or benefits should be generated.</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;padding:14px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13.5px">
+<div style="font-weight:700">Brand type and any secondary palette</div>
+<div style="color:var(--ux-muted-strong)">Archivo is the design system&rsquo;s face, not confirmed as yours. If the brand has its own typeface or an approved secondary color, it belongs here before the developer handoff.</div>
+</div>
+</div>
+</div>
+
+<div style="margin-top:44px;background:var(--ux-ink);color:var(--ux-ground);padding:26px 28px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-faint);margin-bottom:12px">The honest summary</div>
+<div style="font-size:14px;line-height:1.7;max-width:78ch">The portal already proves its architecture: role separation holds, gates block with reasons, orders move through their whole lifecycle, and the interface refuses to invent a number it does not have. What stands between this and amazing is not more screens — it is a rate card, a potency record, and the decisions in wave 2. Wave 3 makes it feel finished; waves 1 and 2 make it true. Wave 4 is what a review of the build against its own architecture turned up: a lineage that could not answer who has this lot, a safety notification that was promised in one section and absent from another, an owner who could not remove a departing buyer, and a store with no way to report a short delivery except the telephone. Rep-held approval is the only item that is genuinely new rather than a gap, and it is the only one that needs Legal.</div>
+</div>
+
+</div>
+</x-dc>
+</body>
+</html>
