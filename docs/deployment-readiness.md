@@ -79,7 +79,7 @@ The current Sites callback to allow during pre-deployment testing is:
 - Follow `docs/make-order-automation-remediation.md` for the exact repair sequence and acceptance matrix; do not modify the unrelated finance sandbox scenario.
 - `MONDAY_STATUS_SECRET`, `ORDER_SYNC_CRON_SECRET`, and `MONDAY_PRODUCT_SECRET` are not configured, so Monday callbacks, outbox flushing, and product-content ingestion remain fail-closed.
 - QuickBooks OAuth values are not configured; retailer financial views remain on the safe last-snapshot/blank path and do not write to QuickBooks.
-- Google Workspace SSO is enabled in Google and Supabase and passed a Tom-account round trip to the local portal. The hosting release still needs the Google provider/domain flags, and the final-domain callback must be added and retested during cutover.
+- Google Workspace SSO is enabled in Google and Supabase and passed a Tom-account round trip to the local portal. The current owner-only Sites release supplies and exposes the Google provider/domain flags. The final-domain callback must still be added and retested during cutover.
 
 ## Executive-demo baseline
 
