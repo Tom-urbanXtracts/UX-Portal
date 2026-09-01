@@ -19,3 +19,8 @@ verify_jwt = false
 
 [functions.quickbooks-retailers]
 verify_jwt = false
+
+# The Intuit callback has no Supabase session token. The function validates a
+# one-time hashed OAuth state, while start/status remain administrator-only.
+[functions.quickbooks-oauth]
+verify_jwt = false

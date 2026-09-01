@@ -1398,6 +1398,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <p style="font-size:15px;line-height:1.6;max-width:66ch;margin:0 0 8px">Open decisions and resolved controls, grouped by the evidence that closes them. An item closes when the named answer exists &mdash; not when someone builds a screen around it.</p>
 <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 22px"><p style="font-size:13px;color:var(--ux-muted);margin:0">{{ validationSummary }}</p><button type="button" onClick="{{ onReadinessRefresh }}" aria-disabled="{{ readinessLoading }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ readinessRefreshLabel }}</button></div>
 
+<sc-if value="{{ canConnectQuickBooks }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">QUICKBOOKS · {{ quickBooksConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only connection for customer, invoice, and payment snapshots. The portal uses accounting read operations only; it never creates or changes a QuickBooks record.</div><sc-if value="{{ quickBooksConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ quickBooksConnectionError }}</div></sc-if></div>
+<button type="button" onClick="{{ onQuickBooksConnect }}" aria-disabled="{{ quickBooksConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ quickBooksConnectLabel }}</button>
+</div>
+</sc-if>
+
 <sc-if value="{{ readinessHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:22px;font-size:13px;line-height:1.55"><strong>Live diagnostics unavailable.</strong> {{ readinessError }} The decision register below remains available.</div></sc-if>
 <sc-if value="{{ readinessHasData }}" hint-placeholder-val="{{ false }}">
 <div style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:20px 22px;margin-bottom:32px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">LIVE SERVER DIAGNOSTICS</div><div style="font:800 20px/1.2 Archivo,sans-serif">{{ readinessStatus }}</div></div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ readinessGenerated }}</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px"><sc-for list="{{ readinessSections }}" as="section" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.17);padding:15px"><div style="font:800 13px Archivo,sans-serif;margin-bottom:9px">{{ section.label }}</div><sc-for list="{{ section.items }}" as="check" hint-placeholder-count="3"><div style="padding:8px 0;border-top:1px solid rgba(23,14,11,.1)"><div style="display:flex;gap:7px;align-items:center;margin-bottom:3px"><span style="font:700 8.5px ui-monospace,monospace;letter-spacing:.06em;padding:3px 5px;{{ check.style }}">{{ check.state }}</span><span style="font:700 11.5px Archivo,sans-serif">{{ check.label }}</span></div><div style="font-size:11px;color:var(--ux-muted);line-height:1.45">{{ check.detail }}</div></div></sc-for></div></sc-for></div></div>
@@ -3064,6 +3071,8 @@ const ECONOMIC_OWNERSHIP_API = PORTAL_CONFIG.economicOwnershipUrl
   || SUPABASE_URL + '/functions/v1/portal-economic-ownership';
 const PORTAL_READINESS_API = PORTAL_CONFIG.portalReadinessUrl
   || SUPABASE_URL + '/functions/v1/portal-readiness';
+const QUICKBOOKS_OAUTH_API = PORTAL_CONFIG.quickbooksOAuthUrl
+  || SUPABASE_URL + '/functions/v1/quickbooks-oauth';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3326,6 +3335,7 @@ class Component extends DCLogic {
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+    quickBooksConnecting: false, quickBooksConnectionError: null,
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -4336,6 +4346,22 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ readinessLoading: false, readinessLoaded: true,
         readinessError: (error && error.message) || 'Live release diagnostics could not be loaded.' }));
+  }
+
+  connectQuickBooks() {
+    const s = this.state;
+    if (s.quickBooksConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ quickBooksConnecting: true, quickBooksConnectionError: null });
+    return fetch(QUICKBOOKS_OAUTH_API, { method: 'POST', headers, body: '{}' })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('QuickBooks connection service returned ' + status + '.'));
+        window.location.assign(body.authorizationUrl);
+      })
+      .catch(error => this.set({ quickBooksConnecting: false,
+        quickBooksConnectionError: (error && error.message) || 'QuickBooks authorization could not start.' }));
   }
 
   orderCall(method, payload) {
@@ -7639,6 +7665,14 @@ class Component extends DCLogic {
       readinessHasError: !!s.readinessError, readinessError: s.readinessError || '', readinessLoading: s.readinessLoading,
       readinessRefreshLabel: s.readinessLoading ? 'Refreshing…' : 'Refresh diagnostics',
       onReadinessRefresh: () => this.loadReadiness(true),
+      canConnectQuickBooks: isInternal && s.authUser && s.authUser.staffRole === 'administrator' && !s.impersonating,
+      quickBooksConnecting: s.quickBooksConnecting,
+      quickBooksConnectionHasError: !!s.quickBooksConnectionError,
+      quickBooksConnectionError: s.quickBooksConnectionError || '',
+      quickBooksConnectionLabel: String((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus || 'disconnected').replace(/_/g, ' ').toUpperCase(),
+      quickBooksConnectLabel: s.quickBooksConnecting ? 'Opening Intuit…'
+        : ((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus === 'connected' ? 'Reconnect QuickBooks' : 'Connect QuickBooks'),
+      onQuickBooksConnect: () => this.connectQuickBooks(),
       readinessStatus: s.readinessData
         ? String(s.readinessData.status || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
           + ' · ' + Number(s.readinessData.blocking || 0) + ' blocking · ' + Number(s.readinessData.warnings || 0) + ' warnings'

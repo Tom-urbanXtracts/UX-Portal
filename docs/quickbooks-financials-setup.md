@@ -4,19 +4,35 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 
 ## Deploy
 
-1. Apply 20260901210000_quickbooks_financials.sql.
-2. Deploy the updated quickbooks-retailers Edge Function.
-3. Deploy quickbooks-financials.
+1. Apply `20260901210000_quickbooks_financials.sql` and `20260901290000_quickbooks_oauth_broker.sql`.
+2. Deploy `quickbooks-oauth`, the updated `quickbooks-retailers`, `quickbooks-financials`, and `portal-readiness` Edge Functions.
+3. Register this exact Intuit redirect URI:
+   - `https://cbhsavfbtcpdyxcvguay.supabase.co/functions/v1/quickbooks-oauth/callback`
 4. Keep these values server-side:
    - QBO_CLIENT_ID
    - QBO_CLIENT_SECRET
-   - QBO_REALM_ID
-   - QBO_REFRESH_TOKEN
+   - QBO_TOKEN_ENCRYPTION_KEY (at least 32 random characters; keep it stable)
    - QBO_CRON_SECRET
-5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Both portal functions still require a valid Supabase user token; the sync POST additionally accepts the scheduler-only secret.
-6. Schedule a POST to quickbooks-retailers at the accounting-approved cadence. A successful sync refreshes Customers, Invoices, and Payments together.
+   - QBO_REDIRECT_URI (optional when using the exact default above)
+   - QBO_PORTAL_RETURN_URL (optional until the production domain is approved)
+5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Portal start/status routes require a valid Administrator token, the callback consumes a one-time OAuth state, and the sync POST additionally accepts the scheduler-only secret.
+6. Sign in as a portal Administrator, open Release readiness, and choose **Connect QuickBooks**. The callback stores the realm and encrypted refresh token server-side. Do not copy a refresh token manually.
+7. Schedule a POST to quickbooks-retailers at the accounting-approved cadence. A successful sync refreshes Customers, Invoices, and Payments together.
 
-The sync persists a rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
+The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atomically. The refresh token is encrypted with the Edge-Function-only encryption key. The sync persists every rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
+
+The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
+
+## Intuit production-key handoff
+
+The dedicated Intuit app is registered on the no-charge Builder tier. Its development credentials and redirect URI are configured. Payments permission is not enabled, accepted connections are limited to the United States, and the current owner-only preview URL is recorded as the temporary launch/connect/disconnect URL until the production domain is approved.
+
+Production credentials remain intentionally locked until two owner decisions are complete:
+
+- Choose hosting with a truthful, stable US IP address or range for Intuit's geolocation declaration. The current distributed preview/Supabase path does not provide a verified static address, so no guessed IP was submitted.
+- Have an authorized urbanXtracts representative complete the Intuit app-assessment answers concerning complaints or investigations, legal counsel, sanctions, and acceptance of Intuit security requirements. Technical answers may be prepared by Engineering, but those organizational attestations must come from the company.
+
+After those items, add the production callback URI, replace the development client credentials in Supabase with the production pair, and use **Connect QuickBooks** from Release readiness to authorize `URBANXTRACTS INC`. Do not authorize the live company with development credentials; those are sandbox-only.
 
 ## Data retained
 

@@ -122,7 +122,7 @@ Deno.serve(async (request) => {
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
       service.from("quickbooks_sync_state").select(
-        "status,last_successful_at,last_error,customer_count",
+        "status,connection_status,connected_at,realm_id,last_successful_at,last_error,customer_count",
       ).eq("id", 1).maybeSingle(),
       exactCount(
         "portal_order_sync_outbox",
@@ -324,15 +324,17 @@ Deno.serve(async (request) => {
           {
             state:
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
-                configured("QBO_REALM_ID") && configured("QBO_REFRESH_TOKEN")
+                configured("QBO_TOKEN_ENCRYPTION_KEY") &&
+                qbo?.connection_status === "connected" && Boolean(qbo?.realm_id)
                 ? "pass"
                 : "warn",
             label: "Accounting connection",
             detail:
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
-                configured("QBO_REALM_ID") && configured("QBO_REFRESH_TOKEN")
-                ? "Server-side customer, invoice, and payment sync is configured."
-                : "QuickBooks credentials are incomplete; financials remain read-only with last-snapshot fallback.",
+                configured("QBO_TOKEN_ENCRYPTION_KEY") &&
+                qbo?.connection_status === "connected" && Boolean(qbo?.realm_id)
+                ? "The encrypted server-side customer, invoice, and payment connection is active."
+                : "An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.",
           },
           {
             state: qbo?.last_successful_at ? "pass" : "warn",
@@ -405,6 +407,13 @@ Deno.serve(async (request) => {
         catalogGrouping: "canix_item_id_v1",
         quantityTypes: ["WeightBased", "CountBased"],
         volumeExcluded: true,
+      },
+      integrations: {
+        quickbooks: {
+          connectionStatus: qbo?.connection_status ?? "disconnected",
+          connectedAt: qbo?.connected_at ?? null,
+          lastSuccessfulAt: qbo?.last_successful_at ?? null,
+        },
       },
     });
   } catch (error) {
