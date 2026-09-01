@@ -1,0 +1,52 @@
+{
+  "source": {
+    "system": "Canix",
+    "domain": "inventory",
+    "table": "package_inventory_facts_current",
+    "grain": "one row per package",
+    "refresh": "near-real-time CDC",
+    "latest_updated_at": "2026-08-31 23:26:40",
+    "latest_updated_at_timezone": null,
+    "connection_mode": "canix_reporting_api_snapshot"
+  },
+  "scope": {
+    "excluded_facility_ids": [4546],
+    "excluded_samples": true,
+    "active_only": true,
+    "status_categories": ["available", "in_progress", "allocated"],
+    "quantity_types": ["WeightBased", "CountBased"]
+  },
+  "summary": {
+    "packages": 978,
+    "weight_g": 1663379.9319804,
+    "units": 174449
+  },
+  "quantity_types": [
+    { "quantity_type": "WeightBased", "packages": 715, "weight_g": 1663379.931980402 },
+    { "quantity_type": "CountBased", "packages": 263, "units": 174449 }
+  ],
+  "statuses": [
+    { "status_category": "available", "packages": 220, "weight_g": 32593.549999999992, "units": 167313 },
+    { "status_category": "allocated", "packages": 47, "weight_g": 26725.790000000005, "units": 90 },
+    { "status_category": "in_progress", "packages": 711, "weight_g": 1604060.5919804012, "units": 7046 }
+  ],
+  "facilities": [
+    { "facility_id": 4467, "facility_name": "OCM-DIST-24-000069", "facility_license": "OCM-DIST-24-000069-DX2", "packages": 152, "weight_g": null, "units": 121209, "latest_updated_at": "2026-08-31 19:16:57" },
+    { "facility_id": 4468, "facility_name": "OCM-CULT-24-000171", "facility_license": "OCM-CULT-24-000171-C1", "packages": 72, "weight_g": 10380, "units": 4417, "latest_updated_at": "2026-08-03 18:35:07" },
+    { "facility_id": 4469, "facility_name": "OCM-PROC-24-000083", "facility_license": "OCM-PROC-24-000083-P1", "packages": 754, "weight_g": 1652999.931980402, "units": 48823, "latest_updated_at": "2026-08-31 21:57:37" }
+  ],
+  "sandbox": {
+    "facility_id": 4546,
+    "packages": 65,
+    "weight_g": 53477.85,
+    "units": 7117,
+    "latest_updated_at": "2026-04-27 17:49:29"
+  },
+  "checks": {
+    "active_inactive_conflicts": 240,
+    "zero_quantity_packages": 34,
+    "failed_lab_packages": 4,
+    "not_submitted_packages": 0,
+    "expired_packages": 0
+  }
+}

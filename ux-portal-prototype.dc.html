@@ -877,28 +877,39 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Inventory</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0;max-width:76ch;line-height:1.6">Internal only. A read-only explanation of Canix inventory &mdash; never a second stock ledger. Quantities cannot be edited, reserved or corrected here.</p>
+<p style="font-size:14px;color:var(--ux-muted);margin:0;max-width:76ch;line-height:1.6">Internal only. Package inventory comes from the Canix reporting API. The portal reads and explains it; Canix remains the only place inventory can change.</p>
 </div>
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px;white-space:nowrap">CANIX · READ ONLY</span>
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px;white-space:nowrap">CANIX API · READ ONLY</span>
 </div>
 
 <div style="background:var(--ux-ink);color:var(--ux-ground);padding:20px 22px;margin:22px 0 26px;display:flex;gap:24px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
 <div style="max-width:72ch">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ux-accent-light);margin-bottom:8px">Current evidence</div>
-<div style="font:700 16px/1.35 Archivo,sans-serif;margin-bottom:6px">Manual Canix aggregate export · company 2292</div>
-<div style="font-size:12.5px;line-height:1.6;opacity:.78">28,425 package records across four facilities. Production and sandbox remain separate throughout this view. The export is aggregated at facility × category × quantity type × status, so it cannot power package search or package detail.</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+<span style="{{ invConnectionStyle }}">{{ invConnectionLabel }}</span>
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light)">PACKAGE GRAIN</span>
 </div>
-<div style="border-left:2px solid var(--ux-signal);padding-left:14px;min-width:190px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:#ffc9bb;margin-bottom:5px">EXPORT DATE</div>
-<div style="font:800 17px/1.2 Archivo,sans-serif">Not captured</div>
-<div style="font-size:11.5px;line-height:1.45;opacity:.72;margin-top:5px">No date from another read is borrowed for this file.</div>
+<div style="font:700 16px/1.35 Archivo,sans-serif;margin-bottom:6px">Canix inventory · package_inventory_facts_current</div>
+<div style="font-size:12.5px;line-height:1.6;opacity:.78">One deduplicated row per package, maintained by near-real-time change capture. This screen uses the source&rsquo;s documented on-hand rule and reports only weight and count.</div>
+</div>
+<div style="border-left:2px solid var(--ux-accent-light);padding-left:14px;min-width:220px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light);margin-bottom:5px">LATEST SOURCE UPDATED_AT</div>
+<div style="font:800 17px/1.2 Archivo,sans-serif">{{ invSourceUpdated }}</div>
+<div style="font-size:11.5px;line-height:1.45;opacity:.72;margin-top:5px">Canix did not supply a timezone, so the portal does not add one.</div>
 </div>
 </div>
+<sc-if value="{{ invHasConnectionNote }}" hint-placeholder-val="{{ false }}">
+<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin:-10px 0 24px;max-width:80ch">
+<div style="font-size:12.5px;line-height:1.6">{{ invConnectionNote }}</div>
+</div>
+</sc-if>
 
 <section aria-labelledby="inventory-quantity-heading" style="margin-bottom:32px">
-<h2 id="inventory-quantity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 12px">Production inventory, kept in its source units</h2>
+<div style="display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">
+<h2 id="inventory-quantity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0">Usable production inventory</h2>
+<button type="button" onClick="{{ onInvRefresh }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:600 11px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">{{ invRefreshLabel }}</button>
+</div>
 <div style="{{ invKpiGridStyle }}">
-<sc-for list="{{ invKpis }}" as="k" hint-placeholder-count="4">
+<sc-for list="{{ invKpis }}" as="k" hint-placeholder-count="3">
 <div style="{{ k.style }}">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:9px">{{ k.label }}</div>
 <div style="font:800 25px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:7px;{{ k.valueStyle }}">{{ k.value }}</div>
@@ -906,49 +917,36 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
-<div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:10px;max-width:80ch">Grams and units are deliberately not added together. These source quantity types do not supply the canonical UOM dimension: G_WET, G_DRY, G_IN, G_OUT, UNIT_PROD and DELIV remain unassigned until their producing process is known.</div>
+<div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:10px;max-width:80ch">Grams and units remain separate. WeightBased uses Canix <code>c_weight_g</code>; CountBased uses the package&rsquo;s raw unit count. Only those two quantity types are in scope.</div>
 </section>
 
 <section aria-labelledby="inventory-live-heading" style="margin-bottom:34px">
-<div style="display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:10px;margin-bottom:16px">
-<div>
-<h2 id="inventory-live-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">What counts as live is not decided</h2>
-<div style="font-size:12.5px;color:var(--ux-muted);line-height:1.55">The file supplies two defensible answers. The portal preserves both until operations names the winning field.</div>
+<h2 id="inventory-live-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Canix on-hand rule</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 14px;max-width:76ch">The API contract resolves the earlier ambiguity by requiring every clause together. The portal does not choose one field over another.</p>
+<div style="{{ invRuleGridStyle }}">
+<sc-for list="{{ invRuleRows }}" as="r" hint-placeholder-count="4">
+<div style="border-left:3px solid var(--ux-ink);padding:4px 14px 4px 14px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">{{ r.label }}</div>
+<div style="font-size:12.5px;line-height:1.55">{{ r.value }}</div>
 </div>
-<button type="button" onClick="{{ onInvGoValidation }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap" style-hover="background:var(--ux-surface)">Review blocking decision</button>
-</div>
-<div style="{{ invLiveGridStyle }}">
-<div style="border-left:3px solid var(--ux-ink);padding:4px 18px 4px 16px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">By status_category</div>
-<div style="font:800 30px/1 Archivo,sans-serif;letter-spacing:-.025em;margin-bottom:7px">978</div>
-<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Available + allocated + in progress in the three production facilities.</div>
-</div>
-<div style="border-left:3px solid var(--ux-ink);padding:4px 18px 4px 16px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">By is_active flag</div>
-<div style="font:800 30px/1 Archivo,sans-serif;letter-spacing:-.025em;margin-bottom:7px">1,238</div>
-<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Production records whose active flag is set, regardless of status category.</div>
-</div>
-<div style="border-left:3px solid var(--ux-signal);padding:4px 0 4px 16px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-signal-text);margin-bottom:7px">Conflict</div>
-<div style="font:800 30px/1 Archivo,sans-serif;letter-spacing:-.025em;margin-bottom:7px;color:var(--ux-signal-text)">260</div>
-<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Rows are active by flag and inactive by status. This is a disagreement, not a third quantity.</div>
-</div>
+</sc-for>
 </div>
 </section>
 
 <section aria-labelledby="inventory-status-heading" style="margin-bottom:34px">
-<h2 id="inventory-status-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Production records by status category</h2>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 12px;max-width:76ch">These rows use the status field only. They do not resolve the active-flag conflict.</p>
+<h2 id="inventory-status-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Usable inventory by status</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 12px;max-width:76ch">All rows below already meet the full Canix on-hand rule.</p>
 <div style="overflow-x:auto">
-<div style="min-width:560px;border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:1.2fr .55fr 1.7fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
-<div>Status category</div><div>Records</div><div>How this screen reads it</div>
+<div style="min-width:620px;border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:1.2fr .7fr 1fr 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Status category</div><div>Packages</div><div>Weight</div><div>Count</div>
 </div>
-<sc-for list="{{ invStatusRows }}" as="r" hint-placeholder-count="4">
-<div style="display:grid;grid-template-columns:1.2fr .55fr 1.7fr;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<sc-for list="{{ invStatusRows }}" as="r" hint-placeholder-count="3">
+<div style="display:grid;grid-template-columns:1.2fr .7fr 1fr 1fr;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
 <div><span style="{{ r.style }}">{{ r.status }}</span></div>
-<div style="font:700 13px ui-monospace,monospace">{{ r.count }}</div>
-<div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">{{ r.note }}</div>
+<div style="font:700 13px ui-monospace,monospace">{{ r.packages }}</div>
+<div style="font:12px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ r.weight }}</div>
+<div style="font:12px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ r.units }}</div>
 </div>
 </sc-for>
 </div>
@@ -959,21 +957,23 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">
 <div>
 <h2 id="inventory-facility-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Facility scope</h2>
-<div style="font-size:12.5px;color:var(--ux-muted);line-height:1.55">Canonical facility identities stay namespaced. Sandbox is excluded by default.</div>
+<div style="font-size:12.5px;color:var(--ux-muted);line-height:1.55">Canonical facility identities stay namespaced. Sandbox remains outside production totals.</div>
 </div>
 <button type="button" onClick="{{ onInvSandbox }}" aria-pressed="{{ invSandboxPressed }}" style="{{ invSandboxButtonStyle }}" style-hover="border-color:var(--ux-ink)">{{ invSandboxButtonLabel }}</button>
 </div>
 <div style="overflow-x:auto">
-<div style="min-width:720px;border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:1fr 1.2fr 1.3fr 1.4fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
-<div>Facility</div><div>Canonical identity</div><div>Licence</div><div>Evidence in this handoff</div>
+<div style="min-width:850px;border-top:2px solid rgba(23,14,11,.4)">
+<div style="display:grid;grid-template-columns:.9fr 1.1fr 1.25fr .55fr .9fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Facility</div><div>Canonical identity</div><div>Licence</div><div>Packages</div><div>Weight</div><div>Count</div>
 </div>
 <sc-for list="{{ invFacilities }}" as="f" hint-placeholder-count="4">
-<div style="display:grid;grid-template-columns:1fr 1.2fr 1.3fr 1.4fr;gap:16px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline;{{ f.rowStyle }}">
+<div style="display:grid;grid-template-columns:.9fr 1.1fr 1.25fr .55fr .9fr .8fr;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline;{{ f.rowStyle }}">
 <div style="font-weight:700">{{ f.name }}</div>
 <div style="font:11.5px ui-monospace,monospace">{{ f.identity }}</div>
 <div style="font:11.5px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ f.licence }}</div>
-<div style="font-size:12.5px;color:var(--ux-muted);line-height:1.5">{{ f.evidence }}</div>
+<div style="font:700 12px ui-monospace,monospace">{{ f.packages }}</div>
+<div style="font:11.5px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ f.weight }}</div>
+<div style="font:11.5px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ f.units }}</div>
 </div>
 </sc-for>
 </div>
@@ -981,16 +981,16 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ invSandboxShown }}" hint-placeholder-val="{{ false }}">
 <div style="border-left:3px solid var(--ux-signal);padding:13px 0 13px 16px;margin-top:16px;max-width:82ch">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-signal-text);margin-bottom:6px">SANDBOX IS VISIBLE, NEVER COMBINED</div>
-<div style="font-size:13px;line-height:1.62">Facility 4546 has 79 package records. Sixty-five are available, allocated or in progress by status, and the sample flag is zero on all of them. One allocated concentrate carries 20 kg. Those facts explain why facility identity &mdash; not <code>is_sample</code> &mdash; is the exclusion rule.</div>
+<div style="font-size:13px;line-height:1.62">The same API rule finds {{ invSandboxPackages }} usable sandbox packages: {{ invSandboxWeight }} and {{ invSandboxUnits }}. They remain context only and never roll into a production figure.</div>
 </div>
 </sc-if>
 </section>
 
 <section aria-labelledby="inventory-exceptions-heading" style="margin-bottom:34px">
-<h2 id="inventory-exceptions-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Exceptions carried with the snapshot</h2>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 12px;max-width:76ch">These are properties of the source file. The portal explains them; it does not repair Canix.</p>
+<h2 id="inventory-exceptions-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">API checks carried with the response</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 12px;max-width:76ch">These checks are query results, not repairs. Any correction still happens in Canix.</p>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
-<sc-for list="{{ invIssues }}" as="i" hint-placeholder-count="5">
+<sc-for list="{{ invIssues }}" as="i" hint-placeholder-count="3">
 <div style="display:grid;grid-template-columns:minmax(160px,.9fr) minmax(220px,1.5fr);gap:18px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start">
 <div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:5px">{{ i.kind }}</div>
@@ -1003,10 +1003,10 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </section>
 
 <section aria-labelledby="inventory-package-heading" style="background:var(--ux-surface);padding:22px 24px;margin-bottom:24px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-signal-text);margin-bottom:7px">PACKAGE SEARCH · NOT MEASURABLE</div>
-<h2 id="inventory-package-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 8px">The connected file has no package rows</h2>
-<p style="font-size:13px;color:var(--ux-muted-strong);line-height:1.65;margin:0 0 14px;max-width:80ch">Search, package detail, parent-package traceability and a reliable deep-link to Canix require a package-level read. Until that exists, the portal refuses to manufacture rows from aggregates or to invent a Canix URL pattern.</p>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Required Canix fields</div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:7px">PACKAGE SEARCH · SOURCE SUPPORTED</div>
+<h2 id="inventory-package-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 8px">The Canix API is already at package grain</h2>
+<p style="font-size:13px;color:var(--ux-muted-strong);line-height:1.65;margin:0 0 14px;max-width:80ch">The connector can return package identity, tag, item, facility, room, allocation, lab state and dates without another export. This deployed prototype currently reloads a verified API snapshot; continuous live refresh still needs a server-side Canix credential or private connector binding.</p>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Verified package fields</div>
 <div style="display:flex;flex-wrap:wrap;gap:6px">
 <sc-for list="{{ invPackageFields }}" as="p" hint-placeholder-count="10">
 <span style="border:1px solid rgba(23,14,11,.22);background:var(--ux-ground);padding:5px 7px;font:500 10.5px ui-monospace,monospace">{{ p.label }}</span>
@@ -1016,7 +1016,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <div style="border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:82ch">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:6px">PLANNING BOUNDARY</div>
-<div style="font-size:13px;line-height:1.62">Production planning will follow Canix package-to-parent traceability when package rows are connected. No BOM, yield model or replacement inventory ledger is implied by this screen.</div>
+<div style="font-size:13px;line-height:1.62">This inventory view exposes lot and production batch, but not a parent-package field. Production planning still needs a separate Canix Traceability read. No BOM, yield model or replacement inventory ledger is implied here.</div>
 </div>
 </div>
 </sc-if>
@@ -2215,7 +2215,7 @@ const TESTS = [
   { label: 'REQUIRED TEST', name: 'Cost is absent from every external and impersonated view', how: 'Cost and margin is structurally absent from external navigation and from a view-as session.', state: 'Enforced' },
   { label: 'RECOMMENDED ADDITIONAL TEST', name: 'One store cannot see another store\u2019s users', how: 'Users are scoped to the acting organisation; role changes are refused cross-org and from read-only sessions.', state: 'Enforced after a defect' },
   { label: 'RECOMMENDED ADDITIONAL TEST', name: 'A partial compliance tag never resolves to one lot', how: 'Kiosk lookup returns a candidate list or a refusal; typed entry requires the full tag.', state: 'Enforced' },
-  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'No aggregate blends incompatible units', how: 'Grams, millilitres and each are reported separately; no combined inventory total is offered.', state: 'Enforced' },
+  { label: 'RECOMMENDED ADDITIONAL TEST', name: 'No aggregate blends incompatible units', how: 'Grams and units are reported separately; no combined inventory total is offered.', state: 'Enforced' },
   { label: 'RECOMMENDED ADDITIONAL TEST', name: 'Every list-backed screen is scoped by acting organisation', how: 'Orders, users, notifications, drafts, price requests and audit rows all filter on the actor, not the screen.', state: 'To verify per screen' }
 ];
 
@@ -2255,7 +2255,6 @@ const SEED_ORDERS = [
 const VALIDATION = [
   { cls: 'INFORMATION REQUIRED', closedBy: 'Closed by whoever holds the fact', items: [
     { severity: 'BLOCKING', screen: 'Product detail', question: 'Where do parsed potency, cannabinoid and terpene values live?', detail: 'No structured field for potency or terpenes exists in either reporting domain, and labs are manual. The product detail page therefore shows an explicit pending panel where the largest section of the hero screen should be.', blocks: 'Potency and profile layer; budtender education', owner: 'Quality', evidence: 'A named field or record per lot, and who maintains it' },
-    { severity: 'Record and continue', screen: 'Inventory', question: 'Where is the package-level Canix read?', detail: 'The connected inventory file is aggregated at facility, category, quantity type and status. Package search, detail, parent-package traceability and reliable Canix deep-links therefore remain NOT MEASURABLE rather than being reconstructed from totals.', blocks: 'Package search and detail; production traceability in the portal', owner: 'Operations with data engineering', evidence: 'A package-level read containing the fields named on the Inventory screen' },
     { severity: 'DECIDED', screen: 'Performance panels', question: 'Is there any store sell-through feed, now or planned?', detail: 'Answered on 24 Aug 2026 with the second of its two answers: ship without one. The portal stays semi-internal and does not connect to a retailer point-of-sale. Performance panels report the account\u2019s own ordering with urbanXtracts, permanently rather than pending, and no velocity claim is made anywhere.', blocks: 'Nothing \u2014 closed', owner: 'The business', evidence: 'Decision recorded 24 Aug 2026' },
     { severity: 'Record and continue', screen: 'Lot panel', question: 'Which lot and batch identifiers will exist going forward?', detail: 'Most active packages carry no lot identifier and a large share carry no batch number either. The prototype treats the compliance tag as sufficient identity so it works either way.', blocks: 'Nothing today; affects lineage depth', owner: 'Operations', evidence: 'A go-forward identifier rule' }
   ] },
@@ -2265,6 +2264,7 @@ const VALIDATION = [
   ] },
   { cls: 'TECHNICAL VALIDATION REQUIRED', closedBy: 'Closed by a hands-on test in the target system', items: [
     { severity: 'BLOCKING', screen: 'Catalog · Order builder', question: 'The per-account rate card does not exist as a record. What replaces it?', detail: 'No rate-card board was found. Each price here is derived from the most recent qualifying order line for the account, excluding samples, cancellations, returns and lines where discount exceeded price, with the derivation date shown. Where no qualifying line exists the product shows price on request and cannot be added to an order.', blocks: 'Showing any price; the whole ordering flow depends on it', owner: 'Sales operations', evidence: 'A rate-card record with per-account scoping and approval, or a decision to ship the derived price' },
+    { severity: 'BLOCKING', screen: 'Inventory', question: 'How will the deployed portal authenticate to the Canix reporting API?', detail: 'The Canix connector is working and package-level queries are verified. This prototype can reload the latest API snapshot packaged with the deployment, but continuous refresh requires a server-side Canix credential or a private connector binding. A browser credential would expose the source and is not acceptable.', blocks: 'Continuous inventory refresh and live package search in the deployed portal', owner: 'Data engineering', evidence: 'A server-side credential or private connector binding, tested from the deployed inventory endpoint' },
     { severity: 'Record and continue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
     { severity: 'Record and continue', screen: 'Internal lot view', question: 'Does the co-manufacturing record carry the ownership code?', detail: 'A co-manufacturing board exists. Ownership code is a property of the inbound lot and must never reach a counterparty view, so its source needs to be definite first.', blocks: 'Ownership display on the internal lot view', owner: 'Data contracts', evidence: 'A read of the co-man record structure' },
     { severity: 'Record and continue', screen: 'Account · Orders', question: 'Is the ledger reachable for balances and terms?', detail: 'The ledger connector was not attached for this work. Balance and terms are pending rather than estimated, and a buyer sees only that a gate fired, never a balance.', blocks: 'AR display; invoice access', owner: 'Finance', evidence: 'A connector read of balances for a sample account' },
@@ -2277,7 +2277,6 @@ const VALIDATION = [
     { severity: 'Record and continue', screen: 'Onboarding', question: 'May an account be created before payment terms and a credit limit exist?', detail: 'Stage 03 of onboarding is already waiting on the per-account rate card. Whether it is a hard stop or a soft one decides whether an account can exist without terms.', blocks: 'Stage 03 of onboarding', owner: 'Finance', evidence: 'A hard stop, or a stated soft path' }
   ] },
   { cls: 'BUSINESS DECISION', closedBy: 'Closed by the business owner', items: [
-    { severity: 'BLOCKING', screen: 'Inventory', question: 'Which Canix field defines live inventory?', detail: 'The same production export yields 1,238 live rows by is_active and 978 by status_category. Exactly 260 records are active by flag and inactive by status. The portal shows both and selects neither.', blocks: 'One canonical live-inventory count and every downstream filter that depends on it', owner: 'Operations with finance', evidence: 'A recorded choice of is_active or status_category, plus the reason' },
     { severity: 'BLOCKING', screen: 'Order builder', question: 'What defines past due for the receivables gate?', detail: 'The gate fires at order entry rather than at shipping, which is settled. The threshold is not. The prototype fires it on the Riverside account so the blocked state can be reviewed.', blocks: 'The AR gate', owner: 'Finance', evidence: 'A threshold, and the ledger field it reads' },
     { severity: 'BLOCKING', screen: 'Order builder', question: 'What order value triggers owner approval?', detail: 'Approval also fires when a buyer submits, when an order exceeds available quantity, and when receivables are past due — all settled. The value threshold is not, so the prototype applies the buyer rule only.', blocks: 'The order-submission gate', owner: 'Sales leadership', evidence: 'A number, and whether it varies by account' },
     { severity: 'Record and continue', screen: 'Exceptions', question: 'Who owns each exception type, and against what clock?', detail: 'A store sees status only, never the owner or the clock, so this is an internal decision that does not change any external screen.', blocks: 'Exception queue routing', owner: 'Operations', evidence: 'An owner and a target per exception type' },
@@ -2459,33 +2458,44 @@ const INTEGRITY = [
   { name: 'Allocated to an order already shipped', count: '2', effect: 'Held for reconciliation before the next allocation run' }
 ];
 
-const INVENTORY_STATUS = [
-  { status: 'Available', count: '218', note: 'A status category only; it does not also prove lab release or economic ownership.' },
-  { status: 'Allocated', count: '47', note: 'Allocated in Canix. The portal does not create, release or change the allocation.' },
-  { status: 'In progress', count: '713', note: 'Operational work in progress. A canonical process UOM is not observable in this export.' },
-  { status: 'Inactive', count: '27,368', note: 'Ninety-six percent of production records. Includes the 260 rows whose active flag disagrees.' }
-];
-
-const INVENTORY_FACILITIES = [
-  { name: 'Processing', identity: 'canix:facility:4469', licence: 'OCM-PROC-24-000083-P1', evidence: 'Present in the export; its record count is not stated in the handoff.' },
-  { name: 'Cultivation', identity: 'canix:facility:4468', licence: 'OCM-CULT-24-000171-C1', evidence: 'Present in the export; its record count is not stated in the handoff.' },
-  { name: 'Distribution', identity: 'canix:facility:4467', licence: 'OCM-DIST-24-000069-DX2', evidence: '20,716 records, mostly finished. No category subtotal is asserted here.' },
-  { name: 'Sandbox', identity: 'canix:facility:4546', licence: 'None · not licensed', evidence: '79 records; excluded from every production figure by default.', sandbox: true }
-];
-
-const INVENTORY_ISSUES = [
-  { kind: 'BLOCKING DEFINITION', title: 'Two answers for live inventory', detail: '1,238 production rows are active by flag; 978 are available, allocated or in progress by status. Exactly 260 rows sit in both is_active = 1 and status_category = inactive.' },
-  { kind: 'EXCLUSION CONTROL', title: 'The sample flag cannot identify sandbox', detail: 'is_sample is zero on every row, including every sandbox row. Facility canix:facility:4546 is therefore the only observed production exclusion.' },
-  { kind: 'QUANTITY COVERAGE', title: 'Package records with no quantity', detail: '135 rows count as packages while every quantity column is zero. They remain records but contribute no weight, count or volume.' },
-  { kind: 'SOURCE COVERAGE', title: 'Volume is absent', detail: 'The volume column is empty on every row. Volume is NOT MEASURABLE, not zero.' },
-  { kind: 'SNAPSHOT IDENTITY', title: 'The export has no date stamp', detail: 'Freshness cannot be asserted. The 24 Aug validation date belongs to other Canix consistency checks and is not reused for this export.' }
-];
-
 const INVENTORY_PACKAGE_FIELDS = [
-  'Package tag', 'Item ID + type', 'SKU', 'Brand', 'Strain', 'Category', 'Quantity', 'Quantity type',
-  'Facility', 'Room', 'Status', 'Lab result', 'Lab test date', 'Packaged date', 'Expiry', 'Lot ID',
-  'Production batch', 'Parent package tag', 'Order allocation', 'Marked-available flag'
+  'Package ID', 'Compliance tag', 'Item ID', 'SKU', 'Product ID', 'Brand ID', 'Strain ID',
+  'Quantity type', 'Weight', 'Weight unit', 'Weight in grams', 'Facility ID', 'Room ID', 'Status',
+  'Order item ID', 'Sales order ID', 'Lab state', 'Packaged date', 'Expiry', 'Lot ID', 'Production batch'
 ];
+
+const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl || '/api/inventory';
+const CANIX_INVENTORY_SNAPSHOT = {
+  source: { system: 'Canix', domain: 'inventory', table: 'package_inventory_facts_current',
+    grain: 'one row per package', refresh: 'near-real-time CDC',
+    latest_updated_at: '2026-08-31 23:26:40', latest_updated_at_timezone: null,
+    connection_mode: 'canix_reporting_api_snapshot' },
+  scope: { excluded_facility_ids: [4546], excluded_samples: true, active_only: true,
+    status_categories: ['available', 'in_progress', 'allocated'],
+    quantity_types: ['WeightBased', 'CountBased'] },
+  summary: { packages: 978, weight_g: 1663379.9319804, units: 174449 },
+  quantity_types: [
+    { quantity_type: 'WeightBased', packages: 715, weight_g: 1663379.931980402 },
+    { quantity_type: 'CountBased', packages: 263, units: 174449 }
+  ],
+  statuses: [
+    { status_category: 'available', packages: 220, weight_g: 32593.549999999992, units: 167313 },
+    { status_category: 'allocated', packages: 47, weight_g: 26725.790000000005, units: 90 },
+    { status_category: 'in_progress', packages: 711, weight_g: 1604060.5919804012, units: 7046 }
+  ],
+  facilities: [
+    { facility_id: 4467, facility_name: 'OCM-DIST-24-000069', facility_license: 'OCM-DIST-24-000069-DX2',
+      packages: 152, weight_g: null, units: 121209, latest_updated_at: '2026-08-31 19:16:57' },
+    { facility_id: 4468, facility_name: 'OCM-CULT-24-000171', facility_license: 'OCM-CULT-24-000171-C1',
+      packages: 72, weight_g: 10380, units: 4417, latest_updated_at: '2026-08-03 18:35:07' },
+    { facility_id: 4469, facility_name: 'OCM-PROC-24-000083', facility_license: 'OCM-PROC-24-000083-P1',
+      packages: 754, weight_g: 1652999.931980402, units: 48823, latest_updated_at: '2026-08-31 21:57:37' }
+  ],
+  sandbox: { facility_id: 4546, packages: 65, weight_g: 53477.85, units: 7117,
+    latest_updated_at: '2026-04-27 17:49:29' },
+  checks: { active_inactive_conflicts: 240, zero_quantity_packages: 34,
+    failed_lab_packages: 4, not_submitted_packages: 0, expired_packages: 0 }
+};
 
 // Supabase puts the recovery token in the URL fragment, never the query string,
 // so it never reaches whatever server hosts this file. Read it once, at load.
@@ -2566,6 +2576,7 @@ class Component extends DCLogic {
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
+    inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
     metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
       searches: 0, filters: 0, adds: 0, kioskScan: 0, kioskTyped: 0, kioskAmbiguous: 0, byStore: 0, byRep: 0, calls: 0 },
@@ -2840,12 +2851,42 @@ class Component extends DCLogic {
     this.logAudit('Recall notice acknowledged', org, 'Acknowledged by the account, not by a named person');
   }
 
+  loadInventory() {
+    if (this.state.inventoryLoading) return;
+    this.set({ inventoryLoading: true, inventoryError: null });
+    const headers = { 'Accept': 'application/json' };
+    if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
+    fetch(CANIX_INVENTORY_API, { method: 'GET', headers, credentials: 'same-origin' })
+      .then(r => {
+        if (!r.ok) throw new Error('Inventory endpoint returned ' + r.status + '.');
+        return r.json();
+      })
+      .then(data => {
+        const types = data && data.scope && data.scope.quantity_types;
+        if (!data || !data.summary || !Array.isArray(data.facilities) || !Array.isArray(data.statuses)) {
+          throw new Error('Inventory endpoint returned an incomplete Canix response.');
+        }
+        if (!Array.isArray(types) || types.length !== 2 || !types.includes('WeightBased') || !types.includes('CountBased')) {
+          throw new Error('Inventory endpoint returned a quantity scope this portal does not accept.');
+        }
+        this.set({ inventoryData: data, inventoryLoading: false, inventoryLoaded: true, inventoryError: null });
+      })
+      .catch(e => this.set({ inventoryLoading: false, inventoryLoaded: false,
+        inventoryError: (e && e.message) || 'The inventory endpoint could not be reached.' }));
+  }
+
 
   componentDidMount() {
     this.bump({ sessionStart: Date.now() });
     this._onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this._onResize);
     this._onResize();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.role === 'internal' && this.state.screen === 'inventory' && prevState.screen !== 'inventory') {
+      this.loadInventory();
+    }
   }
 
   componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
@@ -3241,6 +3282,12 @@ class Component extends DCLogic {
   renderVals() {
     const s = this.state;
     const role = s.role;
+    const invData = s.inventoryData || CANIX_INVENTORY_SNAPSHOT;
+    const invNumber = (value, digits) => value === null || value === undefined
+      ? '\u2014'
+      : Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: digits === undefined ? 0 : digits });
+    const invWeight = value => value === null || value === undefined ? '\u2014' : invNumber(value, 3) + ' g';
+    const invUnits = value => value === null || value === undefined ? '\u2014' : invNumber(value, 0) + ' units';
     /* Brand geometry: the mark is built from arches, so category markers, image
        frames and empty states repeat that arch rather than inventing a shape. */
     const arch = (size, fill) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + fill;
@@ -3723,26 +3770,51 @@ class Component extends DCLogic {
 
       isDash: s.screen === 'dash', isCatalog: s.screen === 'catalog', isProduct: s.screen === 'product',
       isInventory: s.screen === 'inventory' && isInternal,
-      invKpiGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
-      invLiveGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 3) + ',minmax(0,1fr));gap:' + (narrow ? 18 : 24) + 'px',
+      invConnectionLabel: s.inventoryLoading ? 'REFRESHING API SNAPSHOT' : s.inventoryLoaded ? 'API SNAPSHOT LOADED' : 'VERIFIED API SNAPSHOT',
+      invConnectionStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:4px 7px;background:'
+        + (s.inventoryLoaded ? 'var(--ux-accent)' : 'rgba(250,247,243,.16)') + ';color:#fff',
+      invHasConnectionNote: !!s.inventoryError || !s.inventoryLoaded,
+      invConnectionNote: s.inventoryError
+        ? 'The portal endpoint could not refresh this response (' + s.inventoryError + '). The last verified Canix API snapshot remains visible; no value was replaced with zero.'
+        : 'This is the Canix API response verified on 31 Aug 2026. Continuous refresh in the deployed portal still requires a server-side Canix credential or private connector binding.',
+      invSourceUpdated: (invData.source && invData.source.latest_updated_at) || '\u2014',
+      invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Reload API snapshot',
+      onInvRefresh: () => this.loadInventory(),
+      invKpiGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 3) + ',minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
       invKpis: [
-        { label: 'Production records', value: '28,346', note: 'Three licensed facilities; 79 sandbox records excluded.' },
-        { label: 'WeightBased', value: '4,850,667 g', note: 'Reported as grams. No process UOM is inferred from weight.' },
-        { label: 'CountBased', value: '1,800,741 units', note: 'Reported as units. Never added to grams.' },
-        { label: 'Volume', value: 'NOT MEASURABLE', note: 'The source column is empty on every row.', valueStyle: 'font-size:16px;color:var(--ux-signal-text)' }
+        { label: 'Usable packages', value: invNumber(invData.summary.packages), note: 'Active, non-sample, production packages in the three usable status categories.' },
+        { label: 'WeightBased', value: invWeight(invData.summary.weight_g), note: invNumber((invData.quantity_types.find(x => x.quantity_type === 'WeightBased') || {}).packages) + ' packages.' },
+        { label: 'CountBased', value: invUnits(invData.summary.units), note: invNumber((invData.quantity_types.find(x => x.quantity_type === 'CountBased') || {}).packages) + ' packages.' }
       ].map((k, i, arr) => ({ ...k, valueStyle: k.valueStyle || '', style: 'padding:16px;border-right:' + (i < arr.length - 1 ? '1px solid rgba(23,14,11,.18)' : '0') })),
-      invStatusRows: INVENTORY_STATUS.map(r => ({ ...r,
-        style: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
-          + (r.status === 'Inactive' ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-ink);color:var(--ux-ground)') })),
+      invRuleGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 4) + ',minmax(0,1fr));gap:' + (narrow ? 16 : 20) + 'px',
+      invRuleRows: [
+        { label: 'ACTIVE', value: 'is_active = 1' },
+        { label: 'STATUS', value: "available, in_progress or allocated" },
+        { label: 'SAMPLES', value: 'is_sample = 0' },
+        { label: 'FACILITY', value: 'canix:facility:4546 excluded' }
+      ],
+      invStatusRows: invData.statuses.map(r => ({
+        status: r.status_category === 'in_progress' ? 'In progress' : r.status_category.charAt(0).toUpperCase() + r.status_category.slice(1),
+        packages: invNumber(r.packages), weight: invWeight(r.weight_g), units: invUnits(r.units),
+        style: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-ink);color:var(--ux-ground)' })),
       invSandboxShown: s.invSandbox,
       invSandboxPressed: s.invSandbox ? 'true' : 'false',
       invSandboxButtonLabel: s.invSandbox ? 'Hide sandbox' : 'Include sandbox context',
       invSandboxButtonStyle: 'background:' + (s.invSandbox ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.invSandbox ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer',
       onInvSandbox: () => this.set({ invSandbox: !s.invSandbox }),
-      invFacilities: INVENTORY_FACILITIES.filter(f => !f.sandbox || s.invSandbox).map(f => ({ ...f, rowStyle: f.sandbox ? 'background:var(--ux-signal-tint)' : '' })),
-      invIssues: INVENTORY_ISSUES,
+      invFacilities: invData.facilities.map(f => ({
+        name: f.facility_id === 4467 ? 'Distribution' : f.facility_id === 4468 ? 'Cultivation' : f.facility_id === 4469 ? 'Processing' : f.facility_name,
+        identity: 'canix:facility:' + f.facility_id, licence: f.facility_license,
+        packages: invNumber(f.packages), weight: invWeight(f.weight_g), units: invUnits(f.units), rowStyle: '' })),
+      invSandboxPackages: invNumber(invData.sandbox.packages),
+      invSandboxWeight: invWeight(invData.sandbox.weight_g),
+      invSandboxUnits: invUnits(invData.sandbox.units),
+      invIssues: [
+        { kind: 'SOURCE CONSISTENCY', title: invNumber(invData.checks.active_inactive_conflicts) + ' active / inactive conflicts', detail: 'These rows have is_active = 1 and status_category = inactive. The documented Canix rule excludes them because both clauses must pass.' },
+        { kind: 'QUANTITY COVERAGE', title: invNumber(invData.checks.zero_quantity_packages) + ' usable packages carry zero quantity', detail: 'They remain package records and contribute nothing to the weight or count totals. The portal does not delete or impute them.' },
+        { kind: 'RELEASE SEPARATION', title: invNumber(invData.checks.failed_lab_packages) + ' usable packages have a failed lab state', detail: 'Usable inventory is not the same as retailer release. The catalog still requires both an available package status and a passed lab result.' }
+      ],
       invPackageFields: INVENTORY_PACKAGE_FIELDS.map(label => ({ label })),
-      onInvGoValidation: () => this.set({ screen: 'validation', toast: 'The live-inventory definition stays blocking until operations names is_active or status_category as authoritative.', toastKind: 'BLOCKED — DEFINITION' }),
       isCoa: s.screen === 'coa', isCart: s.screen === 'cart', isOrders: s.screen === 'orders',
       isKiosk: s.screen === 'kiosk', isEconomics: s.screen === 'economics', isQa: s.screen === 'qa',
       ...(() => {
@@ -4306,7 +4378,7 @@ class Component extends DCLogic {
       integrityRows: INTEGRITY.map(i => ({ ...i, countStyle: i.count === '0 of 195 dated' ? 'color:var(--ux-muted)' : 'font-weight:700' })),
 
       validationGroups,
-      validationSummary: totalItems + ' open items across six validation types · ' + totalBlocking + ' of them blocking · connector reads dated 2026-08-24; the inventory export has no captured date'
+      validationSummary: totalItems + ' open items across six validation types · ' + totalBlocking + ' of them blocking · Canix inventory API verified 2026-08-31'
     };
   }
 }

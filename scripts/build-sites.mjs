@@ -3,11 +3,15 @@ import { resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const portalPath = resolve(projectRoot, "dist/portal.html");
+const inventoryPath = resolve(projectRoot, "data/canix-inventory-snapshot.json");
 const outputDir = resolve(projectRoot, "dist/server");
 const outputPath = resolve(outputDir, "index.js");
 const portalHtml = await readFile(portalPath, "utf8");
+const inventoryJson = await readFile(inventoryPath, "utf8");
+JSON.parse(inventoryJson);
 
 const worker = `const PORTAL_HTML = ${JSON.stringify(portalHtml)};
+const INVENTORY_JSON = ${JSON.stringify(inventoryJson)};
 
 const HTML_HEADERS = {
   "content-type": "text/html; charset=utf-8",
@@ -20,6 +24,19 @@ const HTML_HEADERS = {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/inventory") {
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return new Response("Method not allowed", { status: 405, headers: { allow: "GET, HEAD" } });
+      }
+      return new Response(request.method === "HEAD" ? null : INVENTORY_JSON, {
+        status: 200,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "private, no-store",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
     const allowedPath = url.pathname === "/" || url.pathname === "/portal" || url.pathname === "/dist/portal.html";
 
     if (!allowedPath) {
