@@ -95,6 +95,9 @@ const STORED_PACKAGE_COLUMNS = [
 
 const PACKAGE_COLUMNS = [
   ...STORED_PACKAGE_COLUMNS,
+  "economic_partner_id",
+  "economic_partner_name",
+  "economic_partner_source",
   "economic_owner_id",
   "economic_owner_name",
   "commercial_model",
@@ -733,12 +736,18 @@ async function syncInventory(force = false): Promise<Json> {
     if (asObject(published).published !== true) {
       throw new Error("Canix snapshot publication did not complete.");
     }
+    const { data: partnerSync, error: partnerSyncError } = await service.rpc(
+      "portal_sync_brand_economic_partners",
+    );
     return {
       run_id: runId,
       packages: packages.length,
       package_pages: packageResult.pages,
       sales_order_pages: salesOrderResult.pages,
       latest_source_updated_at: latest,
+      economic_partner_sync: partnerSyncError
+        ? { synced: false, reason: "economic_partner_sync_failed" }
+        : asObject(partnerSync),
     };
   } catch (error) {
     const message = errorMessage(error);
@@ -806,16 +815,22 @@ async function allCurrentPackages(runId: string): Promise<Json[]> {
 }
 
 async function withEconomicOwnership(rows: Json[]): Promise<Json[]> {
-  const [ownershipResult, partyResult] = await Promise.all([
+  const [ownershipResult, partyResult, partnerResult] = await Promise.all([
     service.from("portal_inventory_ownership")
       .select(
         "scope_type,canix_item_id,canix_package_id,economic_owner_party_id,commercial_model,settlement_counterparty_party_id,source_system,source_field",
       )
       .is("effective_to", null),
     service.from("portal_economic_party").select("id,display_name,active"),
+    service.from("portal_brand_economic_partner")
+      .select(
+        "brand_key,economic_partner_party_id,source_system,is_current",
+      )
+      .eq("is_current", true),
   ]);
   if (ownershipResult.error) throw ownershipResult.error;
   if (partyResult.error) throw partyResult.error;
+  if (partnerResult.error) throw partnerResult.error;
 
   const partyNames = new Map<string, string>();
   for (const party of partyResult.data ?? []) {
@@ -825,6 +840,11 @@ async function withEconomicOwnership(rows: Json[]): Promise<Json[]> {
   }
   const itemDefaults = new Map<number, Json>();
   const packageOverrides = new Map<number, Json>();
+  const brandPartners = new Map<string, Json>();
+  for (const partner of (partnerResult.data ?? []) as unknown as Json[]) {
+    const brandKey = stringOrNull(partner.brand_key);
+    if (brandKey) brandPartners.set(brandKey, partner);
+  }
   for (const ownership of (ownershipResult.data ?? []) as unknown as Json[]) {
     if (ownership.scope_type === "package") {
       const packageId = numberOrNull(ownership.canix_package_id);
@@ -848,8 +868,22 @@ async function withEconomicOwnership(rows: Json[]): Promise<Json[]> {
     const settlementId = ownership
       ? stringOrNull(ownership.settlement_counterparty_party_id)
       : null;
+    const brandKey = stringOrNull(row.brand_name)?.trim().toLowerCase() ?? null;
+    const economicPartner = brandKey
+      ? brandPartners.get(brandKey) ?? null
+      : null;
+    const economicPartnerId = economicPartner
+      ? stringOrNull(economicPartner.economic_partner_party_id)
+      : null;
     return {
       ...row,
+      economic_partner_id: economicPartnerId,
+      economic_partner_name: economicPartnerId
+        ? partyNames.get(economicPartnerId) ?? null
+        : null,
+      economic_partner_source: economicPartner
+        ? stringOrNull(economicPartner.source_system)
+        : null,
       economic_owner_id: economicOwnerId,
       economic_owner_name: economicOwnerId
         ? partyNames.get(economicOwnerId) ?? null

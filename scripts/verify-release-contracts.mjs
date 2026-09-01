@@ -11,6 +11,7 @@ const admin = await readFile(resolve(root, "supabase/functions/portal-admin/inde
 const pricing = await readFile(resolve(root, "supabase/functions/portal-pricing/index.ts"), "utf8");
 const financials = await readFile(resolve(root, "supabase/functions/quickbooks-financials/index.ts"), "utf8");
 const orders = await readFile(resolve(root, "supabase/functions/portal-orders/index.ts"), "utf8");
+const economicOwnership = await readFile(resolve(root, "supabase/functions/portal-economic-ownership/index.ts"), "utf8");
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
@@ -23,6 +24,7 @@ const assetMigration = await readFile(resolve(root, "supabase/migrations/2026090
 const quickbooksOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901290000_quickbooks_oauth_broker.sql"), "utf8");
 const orderCronMigration = await readFile(resolve(root, "supabase/migrations/20260901300000_order_outbox_cron.sql"), "utf8");
 const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
+const economicPartnerMigration = await readFile(resolve(root, "supabase/migrations/20260901320000_canix_brand_economic_partners.sql"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_")).map((entry) => entry.name).sort();
@@ -33,6 +35,11 @@ function assertContract(condition, name) {
 }
 
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
+assertContract(inventory.includes('"economic_partner_name"') && inventory.includes('service.from("portal_brand_economic_partner")'), "inventory exposes Economic Partner independently from Economic Owner");
+assertContract(economicPartnerMigration.includes("portal_sync_brand_economic_partners") && economicPartnerMigration.includes("Never used as an Economic Owner fallback"), "every current Canix Brand has a separate Economic Partner sync contract");
+assertContract(economicPartnerMigration.includes("where party_code = 'WANA'") && economicPartnerMigration.includes("display_name = 'Wana'"), "Wana uses the requested Economic Partner display name");
+assertContract(economicOwnership.includes('action === "sync-brand-partners"') && economicOwnership.includes("brandPartners"), "authorized staff can inspect and refresh Canix Brand partner mappings");
+assertContract(source.includes("ECONOMIC PARTNER") && source.includes("invPartnerOptions") && source.includes("economic_partner_name"), "inventory UI filters, displays, and exports Economic Partner");
 assertContract(inventory.includes("availability_rule:") && inventory.includes("active Canix package + status_category available; explicit reservations subtracted"), "inventory publishes the availability rule");
 assertContract(inventory.includes('reservation_state: reservation.field ? "known" : "unknown"'), "unknown reservation coverage is explicit");
 assertContract(catalog.includes('groupingPolicy: "canix_item_id_v1"'), "catalog grouping is the approved Canix item contract");

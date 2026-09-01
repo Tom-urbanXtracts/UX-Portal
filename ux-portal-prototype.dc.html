@@ -1054,8 +1054,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ invCanManageOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="economic-party-heading" style="margin-bottom:32px;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
-<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">FINANCE OPERATIONS · INTERNAL</div><h2 id="economic-party-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic parties</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Organizations that may carry production risk or participate in settlement. This registry is independent of Canix Brand and Canix Package Owner.</p></div>
-<button type="button" onClick="{{ onEconomicPartyAdd }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Add economic party</button>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">FINANCE OPERATIONS · INTERNAL</div><h2 id="economic-party-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic parties</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Every current Canix Brand is automatically associated with an Economic Partner. Economic Owner remains the entity carrying production risk, and Settlement Counterparty remains a separate contractual relationship.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onClick="{{ onEconomicPartnerSync }}" aria-disabled="{{ economicPartnerSyncPending }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ economicPartnerSyncOpacity }}">{{ economicPartnerSyncLabel }}</button><button type="button" onClick="{{ onEconomicPartyAdd }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Add economic party</button></div>
 </div>
 <sc-if value="{{ economicOwnershipHasError }}" hint-placeholder-val="{{ false }}"><div style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-top:14px;font-size:12px;line-height:1.5">{{ economicOwnershipError }}</div></sc-if>
 <sc-if value="{{ economicOwnershipLoading }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 0 0;font-size:11.5px;color:var(--ux-muted)">Loading the protected economic-party registry…</div></sc-if>
@@ -1076,7 +1076,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="{{ economicPartyHeaderStyle }}"><div>Party</div><div>Type</div><div>Current mappings</div><div>Status</div><div>Actions</div></div>
 <sc-for list="{{ economicPartyRows }}" as="p" hint-placeholder-count="4"><div style="{{ economicPartyRowStyle }}"><div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted)">{{ p.code }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.legal }}</div></div><div>{{ p.type }}</div><div><div style="font:700 12px ui-monospace,monospace">{{ p.mappingCount }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ p.mappingNote }}</div></div><div><span style="{{ p.statusStyle }}">{{ p.status }}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" onClick="{{ p.onEdit }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 8px;font:600 10px Archivo,sans-serif;cursor:pointer">Edit</button><sc-if value="{{ p.canToggle }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ p.onToggle }}" style="{{ p.toggleStyle }}">{{ p.toggleLabel }}</button></sc-if></div></div></sc-for>
 </div>
-<div style="font-size:11px;line-height:1.5;color:var(--ux-muted);margin-top:11px">Inactive parties remain visible on existing historical classifications but cannot be selected for new assignments. The urbanXtracts internal party cannot be deactivated.</div>
+<div style="font-size:11px;line-height:1.5;color:var(--ux-muted);margin-top:11px">Canix Brand mappings are refreshed automatically after each successful inventory sync. Inactive parties remain visible on historical classifications but cannot be selected for new Owner or Settlement assignments. The urbanXtracts internal party cannot be deactivated.</div>
 </section>
 </sc-if>
 
@@ -1184,6 +1184,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </select>
 </label>
 <label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">ECONOMIC PARTNER</span>
+<select value="{{ invPartner }}" onChange="{{ onInvPartner }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
+<option value="all">All economic partners</option>
+<sc-for list="{{ invPartnerOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">ECONOMIC OWNER</span>
 <select value="{{ invOwner }}" onChange="{{ onInvOwner }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
 <option value="all">Assigned and blank</option>
@@ -1234,17 +1241,18 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 
 <div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:650px">
-<div role="table" aria-label="Canix package inventory" style="min-width:1580px">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
-<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="12">
+<div role="table" aria-label="Canix package inventory" style="min-width:1720px">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
+<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="13">
 <button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ invHasRows }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ invTableRows }}" as="r" hint-placeholder-count="8">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
 <div style="min-width:0"><div style="font:700 12.5px/1.35 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.skuTag }}</div></div>
 <div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div>
+<div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.partner }}</div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.owner }}</div>
 <div style="font:700 10.5px ui-monospace,monospace">{{ r.uom }}</div>
 <div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div>
@@ -3051,6 +3059,7 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'is_finished_good', 'packaged_date', 'expiration_date', 'use_by_date', 'age_days',
   'order_item_id', 'cost_object_id', 'sales_order_id', 'sales_order_name', 'sales_order_status',
   'sales_order_delivery_date', 'source_updated_at',
+  'economic_partner_id', 'economic_partner_name', 'economic_partner_source',
   'economic_owner_id', 'economic_owner_name', 'commercial_model',
   'settlement_counterparty_id', 'settlement_counterparty_name',
   'economic_owner_source', 'economic_owner_source_field', 'ownership_scope'
@@ -3325,14 +3334,14 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-    invBrand: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
+    invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
-    economicParties: [], economicOwnershipMappings: [], economicOwnershipLoading: false,
+    economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
     economicOwnershipLoaded: false, economicOwnershipError: null,
     economicPartyOpen: false, economicPartyEditId: null, economicPartyCode: '', economicPartyName: '',
     economicPartyLegalName: '', economicPartyType: 'brand_partner', economicPartyActive: true,
-    economicPartyPending: false, economicPartyError: null,
+    economicPartyPending: false, economicPartyError: null, economicPartnerSyncPending: false,
     invOwnershipScope: 'item', invEconomicOwnerDraft: '', invCommercialModelDraft: '',
     invSettlementPartyDraft: '', invOwnershipNote: '', invOwnershipPending: false,
     invQueueItemId: null, invQueueOwnerDraft: '', invQueueModelDraft: '',
@@ -3811,7 +3820,7 @@ class Component extends DCLogic {
 
   inventoryReset() {
     this.set({ invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-      invBrand: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
       invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
       invPage: 1, invSelectedPackage: null, invQueueItemId: null,
       invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
@@ -3825,7 +3834,7 @@ class Component extends DCLogic {
     if (!rows || !rows.length) return;
     const fields = [
       ['Package ID', 'package_id'], ['Compliance tag', 'tag'], ['Item', 'item_name'], ['SKU', 'sku'],
-      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Economic Owner', 'economic_owner_name'],
+      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Economic Partner', 'economic_partner_name'], ['Economic Owner', 'economic_owner_name'],
       ['Commercial model', 'commercial_model'], ['Settlement counterparty', 'settlement_counterparty_name'],
       ['Canix package owner (operational)', 'canix_package_owner_name'], ['Strain', 'strain_name'],
       ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
@@ -3935,6 +3944,7 @@ class Component extends DCLogic {
     return this.economicOwnershipCall('GET')
       .then(payload => this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : [],
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : [],
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : [],
         economicOwnershipLoading: false, economicOwnershipLoaded: true, economicOwnershipError: null }))
       .catch(error => this.set({ economicOwnershipLoading: false, economicOwnershipLoaded: false,
         economicOwnershipError: (error && error.message) || 'Economic ownership options could not be loaded.' }));
@@ -3955,6 +3965,27 @@ class Component extends DCLogic {
       economicPartyActive: true, economicPartyError: null });
   }
 
+  syncEconomicPartners() {
+    if (this.state.economicPartnerSyncPending
+      || !this.requirePermission('economics.manage', 'sync economic partners from Canix')) return;
+    this.set({ economicPartnerSyncPending: true, economicOwnershipError: null });
+    this.economicOwnershipCall('POST', { action: 'sync-brand-partners' })
+      .then(payload => {
+        const sync = payload && payload.sync || {};
+        this.set({
+          economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
+          economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
+          economicOwnershipLoaded: true, economicPartnerSyncPending: false,
+          toast: (sync.mappedBrands === undefined ? 'Economic partners' : sync.mappedBrands + ' economic partners') + ' synchronized from the current Canix Brand values.',
+          toastKind: 'PARTNERS SYNCED'
+        });
+        if (this.state.inventoryLoaded) this.loadInventory();
+      })
+      .catch(error => this.set({ economicPartnerSyncPending: false,
+        economicOwnershipError: (error && error.message) || 'Economic partners could not be synchronized from Canix.' }));
+  }
+
   saveEconomicParty() {
     if (this.state.economicPartyPending || !this.requirePermission('economics.manage', 'manage economic parties')) return;
     const code = String(this.state.economicPartyCode || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '_');
@@ -3972,6 +4003,7 @@ class Component extends DCLogic {
           displayName, code + ' · ' + this.state.economicPartyType);
         this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
           economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
           economicOwnershipLoaded: true, economicPartyOpen: false, economicPartyEditId: null,
           economicPartyCode: '', economicPartyName: '', economicPartyLegalName: '', economicPartyType: 'brand_partner',
           economicPartyActive: true, economicPartyPending: false, economicPartyError: null,
@@ -3992,6 +4024,7 @@ class Component extends DCLogic {
       active: party.active === false })
       .then(payload => this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
         economicOwnershipLoaded: true, economicPartyPending: false,
         toast: party.display_name + (party.active === false ? ' was reactivated.' : ' was made inactive for new assignments.'),
         toastKind: party.active === false ? 'PARTY ACTIVE' : 'PARTY INACTIVE' }))
@@ -4039,6 +4072,7 @@ class Component extends DCLogic {
         (this.state.invEconomicOwnerDraft || 'Blank') + ' · ' + (this.state.invCommercialModelDraft || 'No commercial model') + ' · ' + scopeType);
       this.set({ invOwnershipPending: false, economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
         economicOwnershipLoaded: true, toast: 'Economic ownership was saved. Inventory is refreshing with the audited classification.',
         toastKind: 'OWNERSHIP SAVED' });
       this.loadInventory();
@@ -4087,6 +4121,7 @@ class Component extends DCLogic {
           invQueueSettlementDraft: '', invQueueNote: '',
           economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
           economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
           toast: (sample.item_name || 'The Canix item') + ' now has an audited Economic Owner default. Inventory is refreshing.',
           toastKind: 'ITEM CLASSIFIED' });
         this.loadInventory();
@@ -5546,7 +5581,7 @@ class Component extends DCLogic {
       : view === 'failed' ? String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1
       : view === 'aged' ? Number(row.age_days) > 90
       : view === 'ownership' ? !row.economic_owner_name
-      : view === 'mapping' ? !row.economic_owner_name || !row.uom_code || !row.cost_object_id
+      : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
       : view === 'zero' ? Number(row._display_quantity) === 0
       : true;
     const invViewCounts = view => invPackages.filter(row => invViewMatch(row, view)).length;
@@ -5563,6 +5598,7 @@ class Component extends DCLogic {
       if (s.invQuantity !== 'all' && row.quantity_type !== s.invQuantity) return false;
       if (s.invCategory !== 'all' && row.item_category_name !== s.invCategory) return false;
       if (s.invBrand !== 'all' && (row.brand_name || 'Not recorded') !== s.invBrand) return false;
+      if (s.invPartner !== 'all' && (row.economic_partner_name || 'Not mapped') !== s.invPartner) return false;
       if (s.invOwner !== 'all' && (row.economic_owner_name || 'Not classified') !== s.invOwner) return false;
       if (s.invCommercial !== 'all' && (row.commercial_model || 'Not classified') !== s.invCommercial) return false;
       if (s.invUom !== 'all' && (row.uom_code || 'Not assigned') !== s.invUom) return false;
@@ -5572,7 +5608,7 @@ class Component extends DCLogic {
       if (!invMatchesAge(row)) return false;
       if (!invNeedle) return true;
       return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name,
-        row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
+        row.economic_partner_name, row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
         row.uom_code, row.cost_object_id, row.strain_name, row.room_name]
         .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
     });
@@ -6222,6 +6258,8 @@ class Component extends DCLogic {
     const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
     const demoTourStep = DEMO_TOUR_STEPS[Math.max(0, Math.min(s.demoTourStep, DEMO_TOUR_STEPS.length - 1))];
     const economicPartyRows = (s.economicParties || []).map(party => {
+      const brandMappings = (s.economicBrandMappings || []).filter(mapping => mapping.is_current !== false
+        && String(mapping.economic_partner_party_id || '') === String(party.id));
       const mappings = (s.economicOwnershipMappings || []).filter(mapping =>
         String(mapping.economic_owner_party_id || '') === String(party.id)
         || String(mapping.settlement_counterparty_party_id || '') === String(party.id));
@@ -6230,8 +6268,8 @@ class Component extends DCLogic {
       const active = party.active !== false;
       return {
         name: party.display_name, code: party.party_code, legal: party.legal_name || 'Legal name not recorded',
-        type: invTitle(party.party_type), mappingCount: invNumber(mappings.length),
-        mappingNote: ownerMappings + ' owner · ' + settlementMappings + ' settlement',
+        type: invTitle(party.party_type), mappingCount: invNumber(brandMappings.length + mappings.length),
+        mappingNote: brandMappings.length + ' brand · ' + ownerMappings + ' owner · ' + settlementMappings + ' settlement',
         status: active ? 'ACTIVE' : 'INACTIVE',
         statusStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;letter-spacing:.06em;padding:3px 6px;background:'
           + (active ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (active ? '#fff' : 'var(--ux-muted-strong)'),
@@ -6415,6 +6453,10 @@ class Component extends DCLogic {
       isPricing: s.screen === 'pricing' && (canReviewPricing || ['owner', 'buyer'].includes(role)),
       isInventory: s.screen === 'inventory' && canStaff('inventory.read'),
       onEconomicPartyAdd: () => this.openEconomicParty(null),
+      onEconomicPartnerSync: () => this.syncEconomicPartners(),
+      economicPartnerSyncPending: s.economicPartnerSyncPending,
+      economicPartnerSyncOpacity: s.economicPartnerSyncPending ? '.55' : '1',
+      economicPartnerSyncLabel: s.economicPartnerSyncPending ? 'Syncing Canix brands\u2026' : 'Sync partners from Canix',
       economicOwnershipHasError: !!s.economicOwnershipError,
       economicOwnershipError: s.economicOwnershipError || '',
       economicOwnershipLoading: s.economicOwnershipLoading,
@@ -6491,6 +6533,9 @@ class Component extends DCLogic {
       invBrand: s.invBrand,
       onInvBrand: e => this.inventoryFilter({ invBrand: e.target.value }),
       invBrandOptions: invFacet('brand_name', 'Not recorded'),
+      invPartner: s.invPartner,
+      onInvPartner: e => this.inventoryFilter({ invPartner: e.target.value }),
+      invPartnerOptions: invFacet('economic_partner_name', 'Not mapped'),
       invOwner: s.invOwner,
       onInvOwner: e => this.inventoryFilter({ invOwner: e.target.value }),
       invOwnerOptions: invFacet('economic_owner_name', 'Not classified'),
@@ -6565,7 +6610,7 @@ class Component extends DCLogic {
         onClassify: () => this.openOwnershipQueueItem(item) })),
       invQueueEmpty: invOwnershipQueue.length === 0,
       invColumns: [
-        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'], ['status_category', 'Status'],
+        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'], ['status_category', 'Status'],
         ['quantity', 'On hand'], ['lab_test_status', 'Lab'], ['age_days', 'Age'], ['allocation', 'Allocation'],
         ['cost_object_id', 'Cost object'], ['source_updated_at', 'Updated'], ['package_id', 'Detail']
       ].map(([key, label]) => ({ label, arrow: s.invSortKey === key ? (s.invSortDir === 'asc' ? '\u2191' : '\u2193') : '',
@@ -6584,6 +6629,7 @@ class Component extends DCLogic {
           item: row.item_name || 'Unnamed item',
           skuTag: (row.sku ? row.sku + ' \u00b7 ' : '') + (row.tag || 'No compliance tag'),
           facility: row.facility_name || '\u2014', room: row.room_name || 'No room assigned',
+          partner: row.economic_partner_name || 'Not mapped',
           owner: row.economic_owner_name || 'Not classified',
           uom: row.uom_code || '\u2014',
           status: invTitle(row.status_category),
@@ -6637,6 +6683,7 @@ class Component extends DCLogic {
       invDetailRows: invSelected ? [
         ['Package ID', invSelected.package_id], ['SKU', invSelected.sku || 'Not recorded'],
         ['Category', invSelected.item_category_name || 'Not recorded'], ['Brand / strain', [invSelected.brand_name, invSelected.strain_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Economic Partner', invSelected.economic_partner_name || 'Not mapped'],
         ['Economic Owner', invSelected.economic_owner_name || 'Not classified'],
         ['Commercial model', invSelected.commercial_model ? invTitle(invSelected.commercial_model) : 'Not classified'],
         ['Settlement counterparty', invSelected.settlement_counterparty_name || 'None recorded'],
