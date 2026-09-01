@@ -12,8 +12,11 @@ const pricing = await readFile(resolve(root, "supabase/functions/portal-pricing/
 const financials = await readFile(resolve(root, "supabase/functions/quickbooks-financials/index.ts"), "utf8");
 const orders = await readFile(resolve(root, "supabase/functions/portal-orders/index.ts"), "utf8");
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
+const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
+const readiness = await readFile(resolve(root, "supabase/functions/portal-readiness/index.ts"), "utf8");
 const migration = await readFile(resolve(root, "supabase/migrations/20260901240000_canix_availability_contract.sql"), "utf8");
 const securityMigration = await readFile(resolve(root, "supabase/migrations/20260901250000_security_and_inventory_commitments.sql"), "utf8");
+const assetMigration = await readFile(resolve(root, "supabase/migrations/20260901280000_private_portal_assets.sql"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_")).map((entry) => entry.name).sort();
@@ -46,6 +49,12 @@ assertContract(admin.includes("selected store must have a qualified license") &&
 assertContract(pricing.includes("canonicalProduct(productId)") && pricing.includes("currentStorePrice") && pricing.includes("canonicalCanixProductId(productId)"), "pricing proposals use authoritative normalized Canix identity and current price");
 assertContract(financials.includes("const allStores = storeMappings") && financials.includes("for (const store of collisionStores") && financials.includes("parentCustomerOutsideOrganization"), "QuickBooks shared-customer checks include historical stores and organization parent mappings");
 assertContract(catalog.includes("PORTAL_EXTERNAL_ASSET_HOSTS") && productContent.includes("PORTAL_EXTERNAL_ASSET_HOSTS"), "external catalog assets use an exact-host allowlist");
+assertContract(assetMigration.includes("'portal-assets'") && assetMigration.includes("public = false") && assetMigration.includes("revoke all on table public.portal_asset from public, anon, authenticated"), "portal product and COA storage is private and browser tables are denied");
+assertContract(assets.includes('state: "pending_review"') && assets.includes('"portal_review_asset"') && assetMigration.includes("target.state <> 'pending_review'") && assetMigration.includes("p_decision = 'approve'"), "portal assets fail closed until an authorized review activates them");
+assertContract(catalog.includes('createSignedUrls(paths, 300)') && catalog.includes('.eq("state", "active")'), "catalog assets use short-lived URLs for active records only");
+assertContract(intake.includes("TURNSTILE_REQUIRED") && intake.includes("siteverify") && !intake.includes('form.set("remoteip"'), "public onboarding supports Turnstile without sending visitor IP addresses");
+assertContract(intake.includes("PUBLIC_INTAKE_RATE_SECRET") && intake.includes("portal_claim_public_intake_rate") && intake.includes("delete verifiedPayload.antiAbuseToken"), "public onboarding rate scope is HMAC-protected and the anti-bot token is not forwarded");
+assertContract(readiness.includes("pendingAssetReviews") && readiness.includes('Deno.env.get("TURNSTILE_REQUIRED")'), "live readiness reports private assets and public-onboarding protection state");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");

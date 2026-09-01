@@ -38,6 +38,7 @@ SSO configuration and cutover requirements:
 - Apply `20260901250000_security_and_inventory_commitments.sql` after the availability contract. It atomically commits accepted portal quantities, releases commitments on terminal/rejected/legacy-exception outcomes, reconciles a commitment only to its explicitly linked Canix sales order, enforces the order transition graph in PostgreSQL, serializes Canix sync claims, and publishes a fully staged Canix snapshot in one database transaction.
 - Apply `20260901260000_deterministic_sso_provisioning.sql` next. It consolidates new-user provisioning into one trigger: `@urbanxtracts.com` users receive active internal Viewer access, while external users receive a pending retailer profile. It preserves existing administrator assignments and inactive-user state.
 - Apply `20260901270000_safe_canix_stage_cleanup.sql` after the inventory-commitment migration. It makes staging cleanup compatible with the database safe-update guard without weakening the guard.
+- Apply `20260901280000_private_portal_assets.sql` next. It creates the private product/COA bucket, fail-closed asset lifecycle, atomic activation links, and privacy-preserving public-intake rate claims.
 - The migrations initialize existing internal profiles as `viewer`; explicitly assign and verify the first `administrator` before releasing the fail-closed portal.
 - Workforce users receive an active internal Viewer profile on first SSO sign-in. Administrator, Operations, Sales, and Quality elevation remains an explicit administrator action.
 - Test sign-in, sign-out, deactivated users, missing profiles, and an account outside the approved domain.
@@ -54,6 +55,7 @@ The current Sites callback to allow during pre-deployment testing is:
 - Canix inventory uses the private Supabase Edge Function and an active five-minute schedule. The 1 September 2026 production verification published 1,324 current package rows, zero volume rows, zero missing package IDs, and left no staged rows or sync error.
 - Deploy `canix-catalog` alongside `canix-inventory`. It gives active portal users a quantity-withheld catalog projection: products with a passing lab result can be ordered normally, packages awaiting a passing result are labelled pre-order, and failed lab packages remain excluded.
 - Set `PORTAL_EXTERNAL_ASSET_HOSTS` to the comma-separated exact hostnames approved for Canix COAs and Monday product images. Unlisted hosts fail closed; include the real storage/CDN hosts only after IT validates their redirect and content policies. Do not include Monday's current `protected_static` host: anonymous requests redirect to Monday sign-in and cannot serve as retailer-facing catalog assets.
+- Apply `20260901280000_private_portal_assets.sql` and deploy `portal-assets` before allowing controlled image or COA uploads. The bucket is private, uploads fail closed pending review, and only active assets receive five-minute catalog URLs. Follow `docs/asset-storage-and-onboarding-protection.md` before enabling production uploads or public onboarding.
 - Deploy `portal-product-content` with JWT gateway verification disabled and the server-only `MONDAY_PRODUCT_SECRET`, then configure the Monday product board to send factual content keyed by the current Canix item ID. The function self-authenticates either that secret or a Supabase user token. Only explicitly published Monday records join the catalog; every accepted update is audited.
 - Deploy the updated `portal-admin` before enabling Add user, Change role, or Deactivate. Those actions are server-authorized, no longer write profile tables from the browser, and enforce exactly one normalized store assignment for every Budtender.
 - Deploy `portal-pricing` before enabling Store pricing. Retailer Owners and Buyers may create proposals only for their server-assigned stores; `pricing.manage` is limited to Administrator, Operations, and Sales, and approval is the only action that publishes a store price.
@@ -73,13 +75,14 @@ The current Sites callback to allow during pre-deployment testing is:
 
 ### Live connector status — 1 September 2026
 
-- Supabase migrations are reconciled through `20260901270000`; all 13 Edge Functions are active and the remote anonymous-denial suite passes.
+- Supabase migrations are reconciled through `20260901280000`; all 14 Edge Functions are active and the 61-contract remote suite, including anonymous-denial checks, passes.
 - Canix is healthy and serving the last atomically published snapshot on the active five-minute schedule.
 - Make scenario `6043707` (`UX Portal intake to monday`) exists, but the Make organization is paused and its webhook reports that it is not attached to a scenario. Its current order route neither performs durable `clientRequestId` deduplication nor returns the complete identifier contract above. Live orders remain a release gate until the scenario is repaired, tested, and deliberately activated.
 - Follow `docs/make-order-automation-remediation.md` for the exact repair sequence and acceptance matrix; do not modify the unrelated finance sandbox scenario.
 - `MONDAY_STATUS_SECRET`, `ORDER_SYNC_CRON_SECRET`, and `MONDAY_PRODUCT_SECRET` are not configured, so Monday callbacks, outbox flushing, and product-content ingestion remain fail-closed.
 - QuickBooks OAuth values are not configured; retailer financial views remain on the safe last-snapshot/blank path and do not write to QuickBooks.
 - Google Workspace SSO is enabled in Google and Supabase and passed a Tom-account round trip to the local portal. The current owner-only Sites release supplies and exposes the Google provider/domain flags. The final-domain callback must still be added and retested during cutover.
+- Private portal asset infrastructure and Turnstile-ready onboarding protection are implemented. Asset activation remains empty pending Quality/IT review policy; the public challenge remains disabled until a public host, widget site key, server secret, and exact hostname list are approved.
 
 ## Executive-demo baseline
 
