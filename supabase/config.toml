@@ -1,0 +1,18 @@
+project_id = "ux-portal"
+
+# These endpoints authenticate inside the function because they also accept
+# trusted server-to-server calls that do not carry a Supabase user JWT.
+[functions.canix-inventory]
+verify_jwt = false
+
+[functions.portal-intake]
+verify_jwt = false
+
+[functions.portal-orders]
+verify_jwt = false
+
+[functions.portal-product-content]
+verify_jwt = false
+
+[functions.quickbooks-retailers]
+verify_jwt = false

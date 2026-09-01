@@ -1,0 +1,10 @@
+flowchart LR
+  workforce["Workforce user"] --> browser["Portal browser UI"]
+  browser --> gateway["Dedicated admin API"]
+  gateway --> policy["Central policy engine"]
+  policy --> profile["Identity + staff grants"]
+  policy -->|"allow"| queue["Audited command queue"]
+  queue --> workers["Domain workers"]
+  workers --> data["Operational systems"]
+  queue --> audit["Immutable security audit stream"]
+  policy -->|"deny"| denied["Uniform forbidden response"]

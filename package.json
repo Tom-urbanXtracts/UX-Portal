@@ -1,0 +1,10 @@
+{
+  "name": "urbanxtracts-ux-os-portal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-sites.mjs",
+    "verify": "node scripts/verify-release-contracts.mjs && deno test supabase/tests/security_contract_test.ts",
+    "verify:remote": "node scripts/verify-release-contracts.mjs --remote"
+  }
+}

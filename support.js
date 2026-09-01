@@ -998,7 +998,7 @@
           console.error(e);
         }
       }
-      componentDidUpdate(prevProps) {
+      componentDidUpdate(prevProps, prevState, snapshot) {
         this.logic.props = this.__userProps();
         if (this.__needsDidMount) {
           if (this.state.__err || !registry.get(this.__name).tpl) return;
@@ -1010,7 +1010,7 @@
           }
         } else {
           try {
-            this.logic.componentDidUpdate(prevProps);
+            this.logic.componentDidUpdate(prevProps, prevState, snapshot);
           } catch (e) {
             console.error(e);
           }

@@ -1,0 +1,10 @@
+flowchart LR
+  workforce["Workforce user"] --> browser["Portal browser UI"]
+  browser --> rpc["Owned administration RPC boundary"]
+  edge["Feature Edge Functions"] --> decision["portal_authorize(user, capability, resource)"]
+  rpc --> decision
+  decision --> profile["portal_profile + role-permission map"]
+  decision -->|"allow"| tx["Transactional mutation"]
+  tx --> audit["Append-only portal security audit"]
+  tx --> data["Operational data"]
+  decision -->|"deny"| denied["Uniform forbidden response"]

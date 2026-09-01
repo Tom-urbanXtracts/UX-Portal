@@ -1,0 +1,52 @@
+# UX OS deferred-items decision brief
+
+Updated 1 September 2026 after the connected Canix reporting audit.
+
+These items do not block the current inventory, retailer onboarding, catalog, pricing, ordering, access, kiosk, COA/lineage, financial-display, or executive-demo scope. Each related capability stays off or blank until the named owner records a decision.
+
+## Decisions now closed
+
+| Topic | V1 decision | Evidence |
+| --- | --- | --- |
+| Sellable package | Active Canix package with `status_category = 'available'`; never use the free-form status label as the decision field | Connected Canix inventory schema explicitly documents this rule |
+| Reserved quantity | Subtract an explicit reservation from count-based orderable units; preserve unknown coverage as unknown | Live production data outside facility `4546` had 180 available count packages, 167,172 units, and no reservations; the one fully reserved available package was confined to the sandbox |
+| Catalog grouping | One catalog product per Canix `item_id` (`canix_item_id_v1`) | 958 of 1,359 active non-sample packages had no `product_id`; only two product IDs spanned multiple item IDs |
+| Quantity domains | Keep WeightBased and CountBased separate; exclude VolumeBased | Canix reporting contract and urbanXtracts policy |
+| Case quantities | Normalize positive Canix `case_quantity` when supplied. Per-store enforcement defaults off and fails closed when enabled without one unambiguous value | Implemented in the protected order policy and intake contract |
+| Economic owner | Portal item default with package override; may be blank; never inherit Brand | Implemented effective-dated ownership model |
+| Accepted-order inventory commitment | Commit submitted orders immediately; hold through approval/processing; release on decline, cancellation, delivery, legacy exception, or definitive downstream rejection; count only the portion not covered by the explicitly linked Canix sales order | Implemented transaction-scoped per-item commitments and one-to-one Canix sales-order reconciliation; drafts still hold nothing |
+| Canix snapshot publication | Stage each full fetch privately and publish packages, COAs, and the successful-run pointer in one PostgreSQL transaction | A failed or partial run cannot mutate the last successful inventory snapshot |
+| Lab release quantity | Only exact `TestPassed` package units count as released; a mixed line exceeding passing units is entirely pre-order | Connected Canix snapshot status domain and fail-closed order workflow |
+| Workforce SSO provider | Google Workspace through a dedicated Google Web OAuth client brokered by Supabase; first-time `@urbanxtracts.com` users receive Viewer | Google and email providers are enabled, the current callback/redirect flow was completed with Tom's Workspace account, and the deterministic provisioning trigger is deployed |
+
+## Controlled deferrals
+
+| Priority | Item | Current safe behavior | Decision owner | Decision needed |
+| --- | --- | --- | --- | --- |
+| P0 before production deployment | Final hostname and Auth redirect list | Current Sites URL remains unchanged | Administration / IT | Approve hostname and cutover window |
+| P0 before production deployment | Public onboarding anti-abuse | Per-request bounds and durable idempotency remain; production ingress is not yet exposed | Administration / IT / Security | Select CAPTCHA/WAF provider, rate thresholds, alerting, and privacy treatment for IP/device signals |
+| P0 before production deployment | Approved image and COA hosts | Unlisted external URLs fail closed and stay blank. Monday's current `protected_static` files redirect unauthenticated users to sign-in and are explicitly not approved as retailer-facing assets | IT / Quality | Choose a public CDN or portal-controlled signed/proxy path; approve exact CDN/lab hosts, redirect behavior, MIME/content scanning, and retention |
+| P0 before live orders | Monday/Make execution capacity and scenarios | Portal order persistence is deployed and the Monday board now has stable request/order ID columns. Make scenario `6043707` exists, but the free organization has consumed 1,004/1,000 operations, is paused, its webhook is detached, and the scenario lacks the complete response/callback contract | Operations / IT | Upgrade Make or wait for its 14 September allowance reset, then repair and test deduplication, callbacks, and retry before deliberate activation |
+| P0 before live QuickBooks views | QuickBooks portal OAuth and customer identity mapping | The correct QuickBooks company is connected in the operator tool, but the portal has no server OAuth values. All 628 Monday retailers currently lack immutable QuickBooks Customer IDs and match status; two license values are duplicated | Finance / IT / Sales Operations | Create the portal OAuth app, resolve duplicate licenses, populate verified customer IDs, approve refresh cadence, and mark reviewed rows Ready to Sync |
+| P0 during production-domain cutover | Final-host Google Workspace redirect test | Google SSO is enabled and verified against the current/local callback paths; the future hostname is intentionally absent | Administration / IT | Add the approved final hostname, deploy the Google hosting flags, then retest domain restriction, sign-out, and deactivation before invitations |
+| P1 | Minimum order and lead time | Fields remain blank; no fabricated enforcement | Sales operations | Identify authoritative source and policy |
+| P1 | Margin formula and component-coverage threshold | Cost/margin stays out of navigation | Finance | Define included cost components and minimum coverage |
+| P1 | Exception ownership and service levels | Status is visible; no unsupported clock is promised | Operations | Name owner and response target by exception type |
+| P1 | Approval aging and escalation | Store Owner remains the sole approval holder with no automatic delegation | Sales leadership | Define escalation time and backup path |
+| P1 | License review evidence and cadence | Portal records explicit qualification; it does not claim independent validity | Quality / Compliance | Name reviewer, retained evidence, and recheck cycle |
+| P2 | Monday store-visit notes | Account notes remain source-labelled and unverified | Sales operations | Map board columns and retention |
+| P2 | Reorder interval definition | Uses only urbanXtracts order history; no retailer sell-through is inferred | Sales leadership | Choose average interval or days-since-last-order |
+| P2 | MFA policy | No portal-specific MFA promise; shared kiosk mode carries no personal account data | Administration | Set workforce and retailer MFA requirements |
+| P2 | Rep-held order approval | Disabled | Legal / CCO / Sales leadership | Approve written authority model or reject feature |
+| P2 | Draft inventory holds | Drafts hold nothing; submit rechecks availability | Operations / Sales operations | Decide whether reservations ever occur before acceptance |
+| P2 | Receiving claims | Retailer self-service claim workflow is not a production connector | Operations | Set time window, evidence, and disposition process |
+| P2 | Notification channels and mandatory notices | No unapproved external notice is sent | Sales leadership / CCO | Choose channels, consent, and non-optional events |
+| P2 | Document types and retention | Upload surfaces are not treated as a final records system | Operations / CCO | Define types, retention, and wind-down handling |
+| P2 | Store API | No customer API credential is issued | Administration / Security | Define scope, credential lifecycle, and rate limits |
+| P2 | Public COA resolver | Disabled; COAs remain authenticated | CCO / Security | Approve fields, retention, retest history, opaque codes, rate limit, and non-enumeration behavior |
+| P2 | Public recall notice | Disabled; internal lot-impact analysis remains read-only | CCO | Approve trigger, wording, publication deadline, and acknowledgement model |
+| Later | Payment collection | Balances, invoices, and payments are display-only | Finance / Legal / Security | Select processor and approve payment, refund, PCI, and dispute model |
+
+## Release rule
+
+A controlled deferral does not become a release blocker while its capability is absent from production navigation, cannot be triggered by an external user, and has a documented fail-closed or blank state. Enabling one requires its named decision, server-side implementation, authorization tests, audit coverage, and an update to the live readiness diagnostics.
