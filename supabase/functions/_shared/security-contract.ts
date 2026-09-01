@@ -84,3 +84,71 @@ export function approvedHttpsUrl(
     return null;
   }
 }
+
+function decodeBase64Url(value: string): Uint8Array | null {
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) return null;
+  try {
+    const padded = value.replaceAll("-", "+").replaceAll("_", "/") +
+      "=".repeat((4 - value.length % 4) % 4);
+    const decoded = atob(padded);
+    return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+  } catch {
+    return null;
+  }
+}
+
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left[index] ^ right[index];
+  }
+  return difference === 0;
+}
+
+export async function verifyHs256Jwt(
+  token: string,
+  secret: string,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): Promise<ContractRow | null> {
+  const parts = token.trim().split(".");
+  if (parts.length !== 3 || secret.length < 16) return null;
+  const headerBytes = decodeBase64Url(parts[0]);
+  const payloadBytes = decodeBase64Url(parts[1]);
+  const suppliedSignature = decodeBase64Url(parts[2]);
+  if (!headerBytes || !payloadBytes || !suppliedSignature) return null;
+  try {
+    const decoder = new TextDecoder("utf-8", { fatal: true });
+    const header = JSON.parse(decoder.decode(headerBytes)) as ContractRow;
+    const payload = JSON.parse(decoder.decode(payloadBytes)) as ContractRow;
+    if (header.alg !== "HS256" || typeof payload !== "object" || !payload) {
+      return null;
+    }
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const expectedSignature = new Uint8Array(
+      await crypto.subtle.sign(
+        "HMAC",
+        key,
+        new TextEncoder().encode(`${parts[0]}.${parts[1]}`),
+      ),
+    );
+    if (!sameBytes(expectedSignature, suppliedSignature)) return null;
+    const expiresAt = Number(payload.exp);
+    if (!Number.isFinite(expiresAt) || expiresAt <= nowSeconds - 30) {
+      return null;
+    }
+    const notBefore = Number(payload.nbf);
+    if (Number.isFinite(notBefore) && notBefore > nowSeconds + 30) return null;
+    const issuedAt = Number(payload.iat);
+    if (Number.isFinite(issuedAt) && issuedAt > nowSeconds + 300) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}

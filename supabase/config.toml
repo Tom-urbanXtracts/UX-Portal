@@ -24,3 +24,12 @@ verify_jwt = false
 # one-time hashed OAuth state, while start/status remain administrator-only.
 [functions.quickbooks-oauth]
 verify_jwt = false
+
+# monday.com performs the OAuth callback and webhook URL challenge without a
+# Supabase session. The OAuth endpoint validates one-time PKCE state; all
+# mutating board events require monday's app Signing Secret JWT.
+[functions.monday-oauth]
+verify_jwt = false
+
+[functions.monday-webhook]
+verify_jwt = false

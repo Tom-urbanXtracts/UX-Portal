@@ -5,6 +5,7 @@ import {
   labPassed,
   mondayOrderState,
   orderTransitionAllowed,
+  verifyHs256Jwt,
 } from "../functions/_shared/security-contract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
@@ -131,5 +132,74 @@ Deno.test("external assets require an exact approved HTTPS host", () => {
   assert(
     approvedHttpsUrl("http://assets.example.com/coa.pdf", hosts) === null,
     "HTTP should fail",
+  );
+});
+
+function testBase64Url(value: Uint8Array): string {
+  let binary = "";
+  for (const byte of value) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(
+    /=+$/,
+    "",
+  );
+}
+
+async function testJwt(
+  payload: Record<string, unknown>,
+  secret: string,
+): Promise<string> {
+  const encoder = new TextEncoder();
+  const header = testBase64Url(encoder.encode(JSON.stringify({
+    alg: "HS256",
+    typ: "JWT",
+  })));
+  const body = testBase64Url(encoder.encode(JSON.stringify(payload)));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(`${header}.${body}`),
+    ),
+  );
+  return `${header}.${body}.${testBase64Url(signature)}`;
+}
+
+Deno.test("Monday webhook JWTs require a valid HS256 signature and expiry", async () => {
+  const now = 2_000_000_000;
+  const secret = "test-signing-secret-value";
+  const valid = await testJwt(
+    { accountId: 915991, iat: now - 10, exp: now + 300 },
+    secret,
+  );
+  const claims = await verifyHs256Jwt(valid, secret, now);
+  assert(claims?.accountId === 915991, "valid signature should return claims");
+  assert(
+    await verifyHs256Jwt(valid, "different-signing-secret", now) === null,
+    "wrong secret should fail",
+  );
+  const expired = await testJwt(
+    { accountId: 915991, iat: now - 600, exp: now - 60 },
+    secret,
+  );
+  assert(
+    await verifyHs256Jwt(expired, secret, now) === null,
+    "expired token should fail",
+  );
+  const unsupported = valid.replace(
+    /^[-_A-Za-z0-9]+/,
+    testBase64Url(
+      new TextEncoder().encode(JSON.stringify({ alg: "none", typ: "JWT" })),
+    ),
+  );
+  assert(
+    await verifyHs256Jwt(unsupported, secret, now) === null,
+    "unsupported algorithm should fail",
   );
 });

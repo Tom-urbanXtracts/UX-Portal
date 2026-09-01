@@ -105,6 +105,7 @@ Deno.serve(async (request) => {
     const [
       canixResult,
       qboResult,
+      mondayResult,
       pendingOutbox,
       failedOutbox,
       activeCommitments,
@@ -123,6 +124,9 @@ Deno.serve(async (request) => {
       ).eq("id", 1).maybeSingle(),
       service.from("quickbooks_sync_state").select(
         "status,connection_status,connected_at,realm_id,last_successful_at,last_error,customer_count",
+      ).eq("id", 1).maybeSingle(),
+      service.from("monday_connection_state").select(
+        "connection_status,connected_at,account_id,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
       ).eq("id", 1).maybeSingle(),
       exactCount(
         "portal_order_sync_outbox",
@@ -170,9 +174,11 @@ Deno.serve(async (request) => {
     ]);
     if (canixResult.error) throw canixResult.error;
     if (qboResult.error) throw qboResult.error;
+    if (mondayResult.error) throw mondayResult.error;
 
     const canix = canixResult.data as Row | null;
     const qbo = qboResult.data as Row | null;
+    const monday = mondayResult.data as Row | null;
     const canixAge = ageMinutes(canix?.last_successful_at);
     const qboAge = ageMinutes(qbo?.last_successful_at);
     const checks: Array<{ key: string; label: string; checks: Check[] }> = [
@@ -231,14 +237,33 @@ Deno.serve(async (request) => {
           },
           {
             state: configured("MONDAY_STATUS_SECRET") &&
-                configured("ORDER_SYNC_CRON_SECRET")
+                configured("MONDAY_CLIENT_ID") &&
+                configured("MONDAY_CLIENT_SECRET") &&
+                configured("MONDAY_SIGNING_SECRET") &&
+                configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
+                monday?.connection_status === "connected" &&
+                monday?.webhook_status === "active" &&
+                Boolean(monday?.webhook_id)
               ? "pass"
               : "block",
-            label: "Status return and retry",
+            label: "Signed status return",
             detail: configured("MONDAY_STATUS_SECRET") &&
-                configured("ORDER_SYNC_CRON_SECRET")
-              ? "Authenticated status callback and retry scheduler are configured."
-              : "Monday status or retry credentials are incomplete.",
+                configured("MONDAY_CLIENT_ID") &&
+                configured("MONDAY_CLIENT_SECRET") &&
+                configured("MONDAY_SIGNING_SECRET") &&
+                configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
+                monday?.connection_status === "connected" &&
+                monday?.webhook_status === "active" &&
+                Boolean(monday?.webhook_id)
+              ? `App OAuth is connected; signed webhook ${monday.webhook_id} is active for the order board.`
+              : "An administrator must install the dedicated Monday app and create its signed order-status webhook.",
+          },
+          {
+            state: configured("ORDER_SYNC_CRON_SECRET") ? "pass" : "block",
+            label: "Status retry scheduler",
+            detail: configured("ORDER_SYNC_CRON_SECRET")
+              ? "The durable status outbox retries every five minutes."
+              : "ORDER_SYNC_CRON_SECRET is not configured.",
           },
           {
             state: failedOutbox > 0
@@ -409,6 +434,16 @@ Deno.serve(async (request) => {
         volumeExcluded: true,
       },
       integrations: {
+        monday: {
+          connectionStatus: monday?.connection_status ?? "disconnected",
+          connectedAt: monday?.connected_at ?? null,
+          accountId: monday?.account_id ?? null,
+          webhookStatus: monday?.webhook_status ?? "not_configured",
+          webhookId: monday?.webhook_id ?? null,
+          webhookBoardId: monday?.webhook_board_id ?? null,
+          webhookColumnId: monday?.webhook_column_id ?? null,
+          webhookCreatedAt: monday?.webhook_created_at ?? null,
+        },
         quickbooks: {
           connectionStatus: qbo?.connection_status ?? "disconnected",
           connectedAt: qbo?.connected_at ?? null,

@@ -14,12 +14,15 @@ const orders = await readFile(resolve(root, "supabase/functions/portal-orders/in
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
+const mondayOAuth = await readFile(resolve(root, "supabase/functions/monday-oauth/index.ts"), "utf8");
+const mondayWebhook = await readFile(resolve(root, "supabase/functions/monday-webhook/index.ts"), "utf8");
 const readiness = await readFile(resolve(root, "supabase/functions/portal-readiness/index.ts"), "utf8");
 const migration = await readFile(resolve(root, "supabase/migrations/20260901240000_canix_availability_contract.sql"), "utf8");
 const securityMigration = await readFile(resolve(root, "supabase/migrations/20260901250000_security_and_inventory_commitments.sql"), "utf8");
 const assetMigration = await readFile(resolve(root, "supabase/migrations/20260901280000_private_portal_assets.sql"), "utf8");
 const quickbooksOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901290000_quickbooks_oauth_broker.sql"), "utf8");
 const orderCronMigration = await readFile(resolve(root, "supabase/migrations/20260901300000_order_outbox_cron.sql"), "utf8");
+const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_")).map((entry) => entry.name).sort();
@@ -62,7 +65,14 @@ assertContract(quickbooksOAuth.includes('scope: "com.intuit.quickbooks.accountin
 assertContract(quickbooksOAuthMigration.includes("pgp_sym_encrypt") && quickbooksOAuthMigration.includes("oauth_state_expires_at > now()") && quickbooksOAuthMigration.includes("refresh_token = null"), "QuickBooks refresh tokens are encrypted and OAuth state is expiring and one-time");
 assertContract(orderCronMigration.includes("portal-order-outbox-flush-5m") && orderCronMigration.includes("*/5 * * * *") && orderCronMigration.includes("vault.decrypted_secrets"), "order outbox retries every five minutes with a Vault-backed credential");
 assertContract(!/[A-Fa-f0-9]{64}/.test(orderCronMigration), "the order retry migration contains no embedded high-entropy secret");
+assertContract(mondayOAuth.includes("code_challenge_method: \"S256\"") && mondayOAuth.includes("portal_consume_monday_oauth_state") && mondayOAuth.includes("oauth_ms/oauth/token"), "Monday authorization is administrator-started, one-time, and PKCE-bound");
+assertContract(mondayOAuth.includes("webhooks(board_id: $boardId, app_webhooks_only: true)") && mondayOAuth.includes("change_status_column_value") && !mondayOAuth.includes("boards:write"), "Monday app access is read-only apart from its own webhook lifecycle");
+assertContract(mondayWebhook.includes("verifyHs256Jwt") && mondayWebhook.includes("MONDAY_SIGNING_SECRET") && mondayWebhook.includes("portal_claim_monday_webhook_event"), "Monday board callbacks require signed, deduplicated events");
+assertContract(mondayWebhook.includes("boardId !== ORDER_BOARD_ID") && mondayWebhook.includes("columnId !== ORDER_STATUS_COLUMN_ID") && mondayWebhook.includes("Unknown webhook subscription"), "Monday callbacks are pinned to one board, column, and subscription");
+assertContract(mondayOAuthMigration.includes("pgp_sym_encrypt") && mondayOAuthMigration.includes("oauth_state_expires_at > now()") && mondayOAuthMigration.includes("encrypted_pkce_verifier"), "Monday tokens and PKCE verifier are encrypted and OAuth state is expiring and one-time");
+assertContract(mondayOAuthMigration.includes("if existing_state = 'failed'") && mondayOAuthMigration.includes("attempt_count = attempt_count + 1"), "failed Monday callbacks can retry while processed events remain deduplicated");
 assertContract(source.includes("QUICKBOOKS_OAUTH_API") && source.includes("connectQuickBooks()"), "portal administrators can launch the protected QuickBooks connection flow");
+assertContract(source.includes("MONDAY_OAUTH_API") && source.includes("connectMonday()"), "portal administrators can launch the protected Monday connection flow");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");
@@ -82,7 +92,7 @@ if (process.argv.includes("--remote")) {
     "portal-economic-ownership": "GET", "portal-intake": "POST", "portal-order-policy": "GET",
     "portal-orders": "GET", "portal-pricing": "GET", "portal-product-content": "GET",
     "portal-readiness": "GET", "portal-retailers": "GET", "quickbooks-financials": "GET",
-    "quickbooks-retailers": "GET",
+    "quickbooks-retailers": "GET", "monday-webhook": "POST",
   };
   for (const name of functionNames) {
     const method = methods[name] || "GET";
