@@ -65,29 +65,33 @@ function json(request: Request, body: unknown, status = 200): Response {
   });
 }
 
-function safeHtml(message: string, success: boolean): Response {
-  const title = success ? "Monday connected" : "Monday connection failed";
-  const color = success ? "#257653" : "#b9361e";
-  const returnUrl = JSON.stringify(PORTAL_URL);
-  const body =
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>${title}</title></head><body style="margin:0;background:#f5f1ec;color:#170e0b;font:16px/1.55 system-ui,sans-serif"><main style="max-width:680px;margin:12vh auto;padding:32px;border:1px solid #cfc4ba;background:#fff"><div style="font:700 12px ui-monospace,monospace;letter-spacing:.08em;color:${color};margin-bottom:12px">${
-      success ? "CONNECTED" : "ACTION REQUIRED"
-    }</div><h1 style="margin:0 0 12px;font-size:30px">${title}</h1><p>${message}</p><button id="return" style="margin-top:12px;background:#170e0b;color:#fff;border:0;padding:11px 15px;font-weight:700;cursor:pointer">Return to UX OS</button></main><script>document.getElementById('return').addEventListener('click',function(){location.assign(${returnUrl})});${
-      success
-        ? `setTimeout(function(){location.assign(${returnUrl})},1800);`
-        : ""
-    }</script></body></html>`;
-  return new Response(body, {
-    status: success ? 200 : 400,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-      "content-security-policy":
-        "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-      "referrer-policy": "no-referrer",
-      "x-content-type-options": "nosniff",
+function oauthResult(message: string, success: boolean): Response {
+  if (success) {
+    const target = new URL(PORTAL_URL);
+    target.searchParams.set("monday", "connected");
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: target.toString(),
+        "cache-control": "no-store",
+        "referrer-policy": "no-referrer",
+        "x-content-type-options": "nosniff",
+      },
+    });
+  }
+  return new Response(
+    `Monday connection failed\n\n${message}\n\nReturn to UX OS: ${PORTAL_URL}\n`,
+    {
+      status: 400,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "cache-control": "no-store",
+        "content-security-policy": "default-src 'none'; sandbox",
+        "referrer-policy": "no-referrer",
+        "x-content-type-options": "nosniff",
+      },
     },
-  });
+  );
 }
 
 function base64Url(bytes: Uint8Array): string {
@@ -306,7 +310,7 @@ async function startAuthorization(
 
 async function callback(request: Request): Promise<Response> {
   if (!configured()) {
-    return safeHtml(
+    return oauthResult(
       "The server connection is incomplete. No Monday access was saved.",
       false,
     );
@@ -319,7 +323,7 @@ async function callback(request: Request): Promise<Response> {
       ? ""
       : url.searchParams.get("status") ?? "");
   if (!state || !code || providerError) {
-    return safeHtml(
+    return oauthResult(
       "Monday did not complete the authorization. Return to Release readiness and try again.",
       false,
     );
@@ -335,7 +339,7 @@ async function callback(request: Request): Promise<Response> {
   const actorId = String(claimed?.actor_id ?? "");
   const verifier = String(claimed?.pkce_verifier ?? "");
   if (claimError || !actorId || !verifier) {
-    return safeHtml(
+    return oauthResult(
       "This authorization link expired or was already used. Start a new connection from Release readiness.",
       false,
     );
@@ -367,7 +371,7 @@ async function callback(request: Request): Promise<Response> {
       p_error: "Monday authorization-code exchange failed.",
       p_webhook_error: false,
     });
-    return safeHtml(
+    return oauthResult(
       "Monday accepted the sign-in but the secure token exchange failed. Start a new connection from Release readiness.",
       false,
     );
@@ -424,7 +428,7 @@ async function callback(request: Request): Promise<Response> {
         : "Monday webhook setup failed.",
       p_webhook_error: true,
     });
-    return safeHtml(
+    return oauthResult(
       "The secure account connection succeeded, but Monday did not create the order-status webhook. Return to Release readiness and reconnect.",
       false,
     );
@@ -442,7 +446,7 @@ async function callback(request: Request): Promise<Response> {
       signedWebhook: true,
     },
   });
-  return safeHtml(
+  return oauthResult(
     "The UX OS app is installed with least-privilege access, and the order-status board now has a signed callback to the portal.",
     true,
   );
@@ -454,7 +458,7 @@ Deno.serve(async (request) => {
   }
   const url = new URL(request.url);
   if (url.pathname.endsWith("/callback")) {
-    if (request.method !== "GET") return safeHtml("Method not allowed.", false);
+    if (request.method !== "GET") return oauthResult("Method not allowed.", false);
     try {
       return await callback(request);
     } catch (error) {
@@ -462,7 +466,7 @@ Deno.serve(async (request) => {
         "monday-oauth callback",
         error instanceof Error ? error.message : "Unexpected error",
       );
-      return safeHtml(
+      return oauthResult(
         "The secure connection could not be completed. No portal order was changed.",
         false,
       );
