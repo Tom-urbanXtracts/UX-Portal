@@ -21,6 +21,8 @@ Active commitments remain through approval and processing. They are released onl
 - `MAKE_ORDER_STATUS_WEBHOOK_URL`: portal-to-Monday status scenario; falls back to `MAKE_WEBHOOK_URL` when not set.
 - `MAKE_INTAKE_SECRET`: shared secret included inside the server-to-Make payload.
 - `MONDAY_STATUS_SECRET`: high-entropy secret used in the `x-ux-monday-secret` callback header.
+- `MONDAY_TOKEN_ENCRYPTION_KEY`: also enables the server-side direct Monday fallback after the installed UX OS app is granted `boards:write`.
+- `MONDAY_ORDER_BOARD_ID`, `MONDAY_ORDER_STATUS_COLUMN_ID`, and the optional account/order column overrides pin direct writes to the intended boards and columns. The fallback checks the stable client request ID before creating an item, so a Make timeout or malformed response cannot create a second order.
 - `ORDER_SYNC_CRON_SECRET`: independent high-entropy secret used in the `x-ux-cron-secret` retry header.
 
 Do not expose any of these values in the browser configuration.

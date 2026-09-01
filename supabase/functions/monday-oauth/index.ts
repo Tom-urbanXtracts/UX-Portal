@@ -20,6 +20,7 @@ const WEBHOOK_URL = Deno.env.get("MONDAY_ORDER_WEBHOOK_URL") ??
 const REQUESTED_SCOPES = [
   "me:read",
   "boards:read",
+  "boards:write",
   "webhooks:read",
   "webhooks:write",
 ] as const;
@@ -458,7 +459,9 @@ Deno.serve(async (request) => {
   }
   const url = new URL(request.url);
   if (url.pathname.endsWith("/callback")) {
-    if (request.method !== "GET") return oauthResult("Method not allowed.", false);
+    if (request.method !== "GET") {
+      return oauthResult("Method not allowed.", false);
+    }
     try {
       return await callback(request);
     } catch (error) {
