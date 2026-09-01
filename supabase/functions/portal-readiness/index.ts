@@ -114,6 +114,9 @@ Deno.serve(async (request) => {
       readyStores,
       activeProfiles,
       pendingPrices,
+      pendingAssetReviews,
+      activeAssets,
+      quarantinedAssets,
     ] = await Promise.all([
       service.from("canix_sync_state").select(
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
@@ -154,6 +157,15 @@ Deno.serve(async (request) => {
       exactCount(
         "portal_price_proposal",
         (query) => query.eq("state", "pending"),
+      ),
+      exactCount(
+        "portal_asset",
+        (query) => query.eq("state", "pending_review"),
+      ),
+      exactCount("portal_asset", (query) => query.eq("state", "active")),
+      exactCount(
+        "portal_asset",
+        (query) => query.eq("state", "quarantined"),
       ),
     ]);
     if (canixResult.error) throw canixResult.error;
@@ -293,6 +305,16 @@ Deno.serve(async (request) => {
             detail:
               `${coaCount} current package COA records are stored with revision history enabled.`,
           },
+          {
+            state: quarantinedAssets > 0
+              ? "warn"
+              : pendingAssetReviews > 0
+              ? "warn"
+              : "pass",
+            label: "Private portal assets",
+            detail:
+              `${activeAssets} active; ${pendingAssetReviews} awaiting review; ${quarantinedAssets} quarantined. Only active assets receive five-minute signed URLs.`,
+          },
         ],
       },
       {
@@ -342,6 +364,23 @@ Deno.serve(async (request) => {
             label: "Public COA and recall notices",
             detail:
               "Publication remains disabled pending CCO-approved content, retention, trigger, and anti-enumeration policy.",
+          },
+          {
+            state: Deno.env.get("TURNSTILE_REQUIRED") === "true"
+              ? configured("TURNSTILE_SECRET_KEY") &&
+                  configured("TURNSTILE_ALLOWED_HOSTS") &&
+                  configured("PUBLIC_INTAKE_RATE_SECRET")
+                ? "pass"
+                : "block"
+              : "deferred",
+            label: "Public onboarding protection",
+            detail: Deno.env.get("TURNSTILE_REQUIRED") === "true"
+              ? configured("TURNSTILE_SECRET_KEY") &&
+                  configured("TURNSTILE_ALLOWED_HOSTS") &&
+                  configured("PUBLIC_INTAKE_RATE_SECRET")
+                ? "Turnstile and HMAC-scoped daily limits are configured without IP collection."
+                : "Public onboarding is enabled but its protection values are incomplete."
+              : "Public onboarding remains unexposed on the owner-only preview; Turnstile enforcement is dormant.",
           },
         ],
       },

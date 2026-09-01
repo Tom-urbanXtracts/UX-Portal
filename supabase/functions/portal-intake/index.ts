@@ -6,6 +6,22 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MAKE_WEBHOOK_URL = Deno.env.get("MAKE_WEBHOOK_URL") ?? "";
 const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
+const TURNSTILE_SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
+const TURNSTILE_REQUIRED = Deno.env.get("TURNSTILE_REQUIRED") === "true";
+const TURNSTILE_ALLOWED_HOSTS = new Set(
+  String(Deno.env.get("TURNSTILE_ALLOWED_HOSTS") ?? "")
+    .split(",").map((host) => host.trim().toLowerCase()).filter(Boolean),
+);
+const PUBLIC_INTAKE_RATE_SECRET = Deno.env.get(
+  "PUBLIC_INTAKE_RATE_SECRET",
+) ?? "";
+const PUBLIC_ONBOARDING_DAILY_LIMIT = Math.min(
+  20,
+  Math.max(
+    1,
+    Number(Deno.env.get("PUBLIC_ONBOARDING_DAILY_LIMIT") ?? "3") || 3,
+  ),
+);
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -100,6 +116,81 @@ async function canSubmit(kind: string, profile: Row): Promise<boolean> {
       await hasPermission(profile, "quality.manage");
   }
   return true;
+}
+
+async function verifyPublicOnboardingHuman(payload: Row): Promise<void> {
+  if (!TURNSTILE_REQUIRED) return;
+  if (!TURNSTILE_SECRET_KEY || !PUBLIC_INTAKE_RATE_SECRET) {
+    throw new IntakeError(
+      503,
+      "Public onboarding protection is not configured.",
+    );
+  }
+  const token = String(payload.antiAbuseToken || "").trim();
+  if (!token || token.length > 4096) {
+    throw new IntakeError(400, "Complete the verification challenge.");
+  }
+  const form = new FormData();
+  form.set("secret", TURNSTILE_SECRET_KEY);
+  form.set("response", token);
+  form.set("idempotency_key", crypto.randomUUID());
+  // Deliberately omit remoteip: the portal does not retain or forward a
+  // visitor IP address merely to submit an onboarding request.
+  const response = await fetch(
+    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+    { method: "POST", body: form },
+  );
+  if (!response.ok) {
+    throw new IntakeError(503, "Verification is temporarily unavailable.");
+  }
+  const result = await response.json() as Row;
+  const hostname = String(result.hostname || "").toLowerCase();
+  if (
+    result.success !== true ||
+    (TURNSTILE_ALLOWED_HOSTS.size > 0 &&
+      !TURNSTILE_ALLOWED_HOSTS.has(hostname))
+  ) {
+    throw new IntakeError(400, "The verification challenge was not accepted.");
+  }
+}
+
+async function protectedScope(value: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(PUBLIC_INTAKE_RATE_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value)),
+  );
+  return Array.from(signature).map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function claimPublicOnboardingRate(payload: Row): Promise<void> {
+  if (!TURNSTILE_REQUIRED) return;
+  const owner = payload.owner && typeof payload.owner === "object" &&
+      !Array.isArray(payload.owner)
+    ? payload.owner as Row
+    : {};
+  const email = String(owner.email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new IntakeError(400, "A valid owner email address is required.");
+  }
+  const scopeKey = await protectedScope(`onboarding:${email}`);
+  const { data, error } = await service.rpc("portal_claim_public_intake_rate", {
+    p_scope_key: scopeKey,
+    p_limit: PUBLIC_ONBOARDING_DAILY_LIMIT,
+  });
+  if (error) throw error;
+  if (data !== true) {
+    throw new IntakeError(
+      429,
+      "This onboarding contact has reached today's submission limit.",
+    );
+  }
 }
 
 async function verifyOrder(
@@ -711,6 +802,13 @@ Deno.serve(async (request) => {
     const verifiedPayload = kind === "order" && caller
       ? await verifyOrder(payload, caller)
       : { ...payload };
+    if (kind === "onboarding") {
+      if (!caller) {
+        await verifyPublicOnboardingHuman(verifiedPayload);
+        await claimPublicOnboardingRate(verifiedPayload);
+      }
+      delete verifiedPayload.antiAbuseToken;
+    }
     if (caller) {
       verifiedPayload.submittedBy = `${
         caller.profile.full_name || caller.user.email || caller.user.id

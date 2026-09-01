@@ -14,5 +14,8 @@ verify_jwt = false
 [functions.portal-product-content]
 verify_jwt = false
 
+[functions.portal-assets]
+verify_jwt = false
+
 [functions.quickbooks-retailers]
 verify_jwt = false

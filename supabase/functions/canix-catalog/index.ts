@@ -152,6 +152,38 @@ async function currentCoas(packageIds: number[]): Promise<Map<number, Row>> {
   return new Map(records.map((row) => [Number(row.package_id), row]));
 }
 
+async function activeAssetUrls(
+  assetIds: string[],
+): Promise<Map<string, string>> {
+  const uniqueIds = Array.from(
+    new Set(assetIds.filter((id) => /^[0-9a-f-]{36}$/i.test(id))),
+  );
+  if (!uniqueIds.length) return new Map();
+  const assets: Row[] = [];
+  for (let start = 0; start < uniqueIds.length; start += 500) {
+    const { data, error } = await service.from("portal_asset").select(
+      "id,storage_path",
+    ).eq("state", "active").in("id", uniqueIds.slice(start, start + 500));
+    if (error) throw error;
+    assets.push(...(data ?? []) as unknown as Row[]);
+  }
+  if (!assets.length) return new Map();
+  const paths = assets.map((asset) => String(asset.storage_path));
+  const { data: signed, error: signError } = await service.storage.from(
+    "portal-assets",
+  ).createSignedUrls(paths, 300);
+  if (signError) throw signError;
+  const byPath = new Map(
+    (signed ?? []).map((entry) => [entry.path, httpsUrl(entry.signedUrl)]),
+  );
+  return new Map(
+    assets.flatMap((asset) => {
+      const url = byPath.get(String(asset.storage_path));
+      return url ? [[String(asset.id), url] as [string, string]] : [];
+    }),
+  );
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(request) });
@@ -200,6 +232,14 @@ Deno.serve(async (request) => {
       publishedContent(itemIds),
       currentCoas(packageIds),
     ]);
+    const assetUrls = await activeAssetUrls([
+      ...Array.from(contentByItem.values()).map((row) =>
+        String(row.image_asset_id ?? "")
+      ),
+      ...Array.from(coaByPackage.values()).map((row) =>
+        String(row.portal_asset_id ?? "")
+      ),
+    ]);
     const products = Array.from(groups.entries()).map(([key, packages]) => {
       const first = packages[0];
       const availablePackages = packages.filter((row) =>
@@ -236,7 +276,8 @@ Deno.serve(async (request) => {
       );
       const lots = packages.slice(0, 24).map((row) => {
         const coa = coaByPackage.get(Number(row.package_id)) ?? {};
-        const documentUrl = httpsUrl(coa.document_url);
+        const documentUrl = assetUrls.get(String(coa.portal_asset_id ?? "")) ??
+          httpsUrl(coa.document_url);
         const lot: Row = {
           tag: row.tag || String(row.package_id || ""),
           packageId: row.package_id,
@@ -281,7 +322,8 @@ Deno.serve(async (request) => {
         ingredients: content.ingredients || null,
         usageInformation: content.usage_information || null,
         productProfile: content.product_profile || null,
-        imageUrl: httpsUrl(content.image_url),
+        imageUrl: assetUrls.get(String(content.image_asset_id ?? "")) ??
+          httpsUrl(content.image_url),
         keywords: Array.isArray(content.keywords) ? content.keywords : [],
         source: Object.keys(content).length ? "Monday" : null,
         sourceUpdatedAt: content.source_updated_at || null,
