@@ -2585,14 +2585,17 @@ const INTEGRITY = [
 
 const INVENTORY_PACKAGE_COLUMNS = [
   'package_id', 'tag', 'item_id', 'item_name', 'sku', 'item_category_name', 'item_sub_category_name',
-  'product_name', 'brand_name', 'strain_name', 'strain_type', 'quantity_type', 'weight', 'weight_unit_name',
-  'c_weight_g', 'c_reserved_weight', 'facility_id', 'facility_name', 'facility_license', 'room_id', 'room_name',
+  'product_name', 'brand_id', 'brand_name', 'owner_id', 'owner_name', 'strain_name', 'strain_type',
+  'quantity_type', 'weight', 'weight_unit_name', 'c_weight_g', 'c_reserved_weight', 'uom_code',
+  'facility_id', 'facility_name', 'facility_license', 'room_id', 'room_name',
   'status', 'status_category', 'compliance_submitted', 'lab_test_status', 'test_result_status', 'has_coa',
   'marked_available', 'is_finished_good', 'packaged_date', 'expiration_date', 'use_by_date', 'age_days',
-  'order_item_id', 'sales_order_id', 'sales_order_name', 'sales_order_status', 'sales_order_delivery_date', 'updated_at'
+  'order_item_id', 'cost_object_id', 'sales_order_id', 'sales_order_name', 'sales_order_status',
+  'sales_order_delivery_date', 'source_updated_at'
 ];
 
-const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl || '/api/inventory';
+const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl
+  || SUPABASE_URL + '/functions/v1/canix-inventory';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'inventory', table: 'package_inventory_facts_current',
     grain: 'one row per package', refresh: 'near-real-time CDC',
@@ -3002,11 +3005,12 @@ class Component extends DCLogic {
     if (!rows || !rows.length) return;
     const fields = [
       ['Package ID', 'package_id'], ['Compliance tag', 'tag'], ['Item', 'item_name'], ['SKU', 'sku'],
-      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Strain', 'strain_name'],
+      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Owner', 'owner_name'], ['Strain', 'strain_name'],
       ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
+      ['UX OS UOM', 'uom_code'], ['Cost Object', 'cost_object_id'],
       ['Facility', 'facility_name'], ['Room', 'room_name'], ['Status', 'status'], ['Status category', 'status_category'],
       ['Lab state', 'lab_test_status'], ['COA on file', 'has_coa'], ['Packaged date', 'packaged_date'],
-      ['Age days', 'age_days'], ['Sales order', 'sales_order_name'], ['Order status', 'sales_order_status'], ['Updated at', 'updated_at']
+      ['Age days', 'age_days'], ['Sales order', 'sales_order_name'], ['Order status', 'sales_order_status'], ['Updated at', 'source_updated_at']
     ];
     const cell = value => {
       let out = value === null || value === undefined ? '' : String(value);
@@ -3505,11 +3509,13 @@ class Component extends DCLogic {
       if (s.invLab !== 'all' && (row.lab_test_status || 'No status') !== s.invLab) return false;
       if (!invMatchesAge(row)) return false;
       if (!invNeedle) return true;
-      return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name, row.strain_name, row.room_name]
+      return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name, row.owner_name,
+        row.uom_code, row.cost_object_id, row.strain_name, row.room_name]
         .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
     });
     const invSortValue = (row, key) => key === 'quantity' ? row._display_quantity
       : key === 'allocation' ? (row.sales_order_name || row.sales_order_id || '')
+      : key === 'updated_at' ? row.source_updated_at
       : row[key];
     const invSorted = invFiltered.slice().sort((a, b) => {
       if (s.invSortKey === 'quantity' && a.quantity_type !== b.quantity_type) {
@@ -4084,7 +4090,7 @@ class Component extends DCLogic {
           item: row.item_name || 'Unnamed item',
           skuTag: (row.sku ? row.sku + ' \u00b7 ' : '') + (row.tag || 'No compliance tag'),
           facility: row.facility_name || '\u2014', room: row.room_name || 'No room assigned',
-          status: row.status || invTitle(row.status_category),
+          status: invTitle(row.status_category),
           statusStyle: 'display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 9.5px ui-monospace,monospace;letter-spacing:.04em;padding:3px 6px;background:'
             + (available ? 'var(--ux-accent)' : allocated ? 'var(--ux-ink)' : 'var(--ux-surface)') + ';color:' + (available || allocated ? '#fff' : 'var(--ux-muted-strong)'),
           quantity: row.quantity_type === 'WeightBased' ? invWeight(row.c_weight_g) : invUnits(row.weight),
@@ -4094,7 +4100,7 @@ class Component extends DCLogic {
             + (failed ? 'var(--ux-signal)' : row.lab_test_status === 'TestPassed' ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (failed || row.lab_test_status === 'TestPassed' ? '#fff' : 'var(--ux-muted-strong)'),
           age: invNumber(row.age_days) + ' d',
           allocation: row.sales_order_name || (row.sales_order_id ? 'Order ' + row.sales_order_id : 'Unallocated'),
-          updated: String(row.updated_at || '\u2014').replace(' ', ' · '),
+          updated: String(row.source_updated_at || '\u2014').replace('T', ' · ').replace('Z', ''),
           rowStyle: String(row.package_id) === String(s.invSelectedPackage) ? 'background:var(--ux-surface)' : '',
           onInspect: () => this.set({ invSelectedPackage: row.package_id })
         };
@@ -4116,17 +4122,19 @@ class Component extends DCLogic {
       invDetailRows: invSelected ? [
         ['Package ID', invSelected.package_id], ['SKU', invSelected.sku || 'Not recorded'],
         ['Category', invSelected.item_category_name || 'Not recorded'], ['Brand / strain', [invSelected.brand_name, invSelected.strain_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Owner', invSelected.owner_name || ''], ['UX OS UOM', invSelected.uom_code || ''],
+        ['Cost Object', invSelected.cost_object_id || ''], ['Raw Canix status', invSelected.status || ''],
         ['Facility / room', [invSelected.facility_name, invSelected.room_name].filter(Boolean).join(' · ') || 'Not recorded'],
-        ['Status', (invSelected.status || invTitle(invSelected.status_category)) + ' · ' + invTitle(invSelected.status_category)],
+        ['Workflow status', invTitle(invSelected.status_category)],
         ['On hand', invSelected.quantity_type === 'WeightBased' ? invWeight(invSelected.c_weight_g) : invUnits(invSelected.weight)],
         ['Reserved', invNumber(invSelected.c_reserved_weight, 3) + ' ' + (invSelected.weight_unit_name || '')],
         ['Lab / result', [invSelected.lab_test_status, invSelected.test_result_status].filter(Boolean).join(' · ') || 'No linked state'],
-        ['COA', invSelected.has_coa === 1 ? 'On file' : invSelected.has_coa === 0 ? 'Not on file' : 'No linked result'],
+        ['COA', invSelected.has_coa === true || invSelected.has_coa === 1 ? 'On file' : invSelected.has_coa === false || invSelected.has_coa === 0 ? 'Not on file' : 'No linked result'],
         ['Packaged / age', (invSelected.packaged_date || 'Not recorded') + ' · ' + invNumber(invSelected.age_days) + ' days'],
         ['Expiry / use by', [invSelected.expiration_date, invSelected.use_by_date].filter(Boolean).join(' · ') || 'Not recorded'],
         ['Allocation', invSelected.sales_order_name || (invSelected.sales_order_id ? 'Order ' + invSelected.sales_order_id : 'Unallocated')],
         ['Order status / delivery', [invSelected.sales_order_status, invSelected.sales_order_delivery_date].filter(Boolean).join(' · ') || 'Not applicable'],
-        ['Compliance submitted', invSelected.compliance_submitted === 1 ? 'Yes' : 'No'], ['Last updated', invSelected.updated_at || 'Not recorded']
+        ['Compliance submitted', invSelected.compliance_submitted === true || invSelected.compliance_submitted === 1 ? 'Yes' : 'No'], ['Last updated', invSelected.source_updated_at || 'Not recorded']
       ].map(([label, value]) => ({ label, value: String(value) })) : [],
       invKpiGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 3) + ',minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
       invKpis: [
