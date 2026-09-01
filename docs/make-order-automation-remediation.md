@@ -8,22 +8,23 @@ This is the production-readiness plan for Make scenario `6043707`, **UX Portal i
 
 - The Make organization is paused.
 - The free plan has consumed 1,004 of 1,000 operations and reports its next reset on 14 September 2026. It cannot execute another production validation unless the plan is upgraded or the allowance resets.
-- The scenario is marked active, but its custom webhook reports `attached: false`.
+- Scenario `6043707` was deactivated for the structural repair on 1 September 2026. Its custom webhook remains detached while the scenario and organization are inactive.
 - The existing router handles order, license, and onboarding payloads and writes to the existing Monday boards.
-- The order route creates a Monday item but does not deduplicate by `payload.clientRequestId`.
-- Its response supplies an order reference but not the full `orderNumber`, `mondayItemId`, and `mondayBoardId` contract.
-- There is no verified `order-status` route, Monday-to-portal status callback, or five-minute portal-outbox flush.
+- The saved order route now searches **Portal request ID** before creation, stores both portal identifiers on new items, and returns `orderNumber`, `mondayItemId`, `mondayBoardId`, and `status` for both found and created branches.
+- The saved scenario now includes an authenticated `order-status` route and returns a complete onboarding receipt.
+- Make's blueprint validator and the Monday module validators accepted the saved structure with no warnings. Runtime execution is not verified because the paused organization has no remaining operation allowance.
+- There is still no verified Monday-to-portal status callback or five-minute portal-outbox flush.
 - Portal order persistence is already durable and fail-closed. These Make gaps block live forwarding, not the Canix inventory reader or executive demo.
 
 ## Safe repair sequence
 
 1. Export and retain the complete current blueprint outside the source repository. Do not place shared secrets in Git.
-2. Deactivate scenario `6043707` before changing its blueprint. Keep the unrelated finance sandbox scenario unchanged.
+2. Deactivate scenario `6043707` before changing its blueprint. Keep the unrelated finance sandbox scenario unchanged. **Completed 1 September 2026.**
 3. Use the columns already added to Monday order board `18428025898`: **Portal request ID** (`text_mm6shj0q`) for `clientRequestId` and **Portal order ID** (`text_mm6sphg5`) for the authoritative portal UUID. The dedicated **Portal Integration** view is `278640935`.
 4. On the `kind = order` route, search that column before creation:
    - when found, return the existing order and Monday identifiers;
    - when absent, create exactly one item, store `payload.clientRequestId`, `payload.portalOrderId`, and `payload.portalReference`, then return its identifiers.
-5. Return JSON for both the found and created branches:
+5. Return JSON for both the found and created branches. **Saved and structurally validated 1 September 2026:**
 
    ```json
    {
@@ -34,9 +35,9 @@ This is the production-readiness plan for Make scenario `6043707`, **UX Portal i
    }
    ```
 
-6. Add a `kind = order-status` route to the same scenario so the current two-scenario plan limit is not exceeded. It must update the identified Monday item from the portal outbox payload and return HTTP 2xx only after the update succeeds.
+6. Add a `kind = order-status` route to the same scenario so the current two-scenario plan limit is not exceeded. It must update the identified Monday item from the portal outbox payload and return HTTP 2xx only after the update succeeds. **Saved and structurally validated 1 September 2026; runtime test pending.**
 7. Add a Monday status-change automation that calls the Supabase `portal-orders` endpoint with `action = monday-status`, one stable order identifier, the exact status label, and the numeric Canix sales-order ID once operations creates it. Authenticate using the server-only callback header.
-8. Configure an independent five-minute scheduler to call `portal-orders` with `action = flush-outbox`. Do not reuse the callback secret for this scheduler.
+8. Configure an independent five-minute scheduler to call `portal-orders` with `action = flush-outbox`. Do not reuse the callback secret for this scheduler. **Completed 1 September 2026:** the active Supabase cron reads its independent credential from Vault; a controlled empty-queue request returned HTTP 200 with zero failures.
 9. Validate the complete scenario blueprint, run the test matrix below while it remains inactive for general traffic, and activate it only as a separate deliberate release action.
 
 ## Required server-only configuration

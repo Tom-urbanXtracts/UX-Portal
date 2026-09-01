@@ -2,7 +2,7 @@
 
 The portal owns the durable customer-facing order and its append-only event history. Monday remains the operations work board. QuickBooks is not written automatically in this release; accounting staff create the record after the store data has been reviewed.
 
-> Live status, 1 September 2026: the portal and Supabase order layer are deployed, but Make scenario `6043707` is not production-ready. The Make organization is paused, the existing webhook is detached, and the scenario does not yet implement the deduplication, complete response, callback, and retry contracts below. Keep live ordering gated until those items pass an end-to-end test.
+> Live status, 1 September 2026: the portal and Supabase order layer are deployed. Make scenario `6043707` now has structurally validated request-ID deduplication, complete order/onboarding responses, and a portal-to-Monday status route. It remains inactive and untested because the Make organization is paused after exceeding its free operation allowance. The Monday-to-portal callback and five-minute retry schedule also remain unverified. Keep live ordering gated until the full matrix passes end to end.
 
 ## Data flow
 
@@ -69,6 +69,8 @@ Call `portal-orders` on a schedule with:
 ```
 
 Authenticate it with `x-ux-cron-secret`. The function processes up to 25 pending or failed messages per run. A signed-in internal user with `orders.manage` may also trigger the same action for support diagnostics.
+
+The deployed `portal-order-outbox-flush-5m` Supabase cron runs this request every five minutes. Its credential is read from Supabase Vault at execution time and is not embedded in the cron command. The 1 September 2026 controlled empty-queue test returned HTTP 200 with zero attempted, sent, failed, or pending events.
 
 ## Reconciliation rule
 
