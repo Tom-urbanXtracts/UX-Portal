@@ -17,6 +17,12 @@ const ORDER_STATUS_COLUMN_ID = Deno.env.get("MONDAY_ORDER_STATUS_COLUMN_ID") ??
   "color_mm6jxv8f";
 const WEBHOOK_URL = Deno.env.get("MONDAY_ORDER_WEBHOOK_URL") ??
   `${SUPABASE_URL}/functions/v1/monday-webhook`;
+const REQUESTED_SCOPES = [
+  "me:read",
+  "boards:read",
+  "webhooks:read",
+  "webhooks:write",
+] as const;
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -268,7 +274,7 @@ async function startAuthorization(
     actor_org: caller.org,
     action: "monday.oauth_started",
     detail: {
-      scopes: ["me:read", "boards:read", "webhooks:read", "webhooks:write"],
+      scopes: REQUESTED_SCOPES,
       boardId: ORDER_BOARD_ID,
       columnId: ORDER_STATUS_COLUMN_ID,
     },
@@ -280,9 +286,16 @@ async function startAuthorization(
     state,
     code_challenge: challenge,
     code_challenge_method: "S256",
-    force_install_if_needed: "true",
+    scope: REQUESTED_SCOPES.join(" "),
   };
-  if (/^\d+$/.test(APP_VERSION_ID)) params.app_version_id = APP_VERSION_ID;
+  if (/^\d+$/.test(APP_VERSION_ID)) {
+    // A version-specific URL lets app collaborators authorize an active draft.
+    // The account-install redirect loops for a draft because there is no live
+    // installation to resume; reserve that helper for the live-app path.
+    params.app_version_id = APP_VERSION_ID;
+  } else {
+    params.force_install_if_needed = "true";
+  }
   authorize.search = new URLSearchParams(params).toString();
   return json(request, {
     authorizationUrl: authorize.toString(),
