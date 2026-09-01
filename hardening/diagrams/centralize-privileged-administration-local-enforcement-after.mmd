@@ -1,0 +1,8 @@
+flowchart LR
+  workforce["Workforce user"] --> browser["Portal browser UI"]
+  browser --> profile["portal_profile + staff role"]
+  browser --> endpoints["Feature endpoints and RPCs"]
+  endpoints --> localchecks["Per-feature capability checks"]
+  localchecks --> audit["Durable portal audit table"]
+  localchecks --> data["Operational data"]
+  profile -. "shared mapping, separate enforcement" .-> localchecks

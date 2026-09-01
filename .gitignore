@@ -3,3 +3,13 @@
 Thumbs.db
 *.log
 node_modules/
+.env
+.env.*
+!.env.example
+/supabase/.temp/
+*.pem
+*.inspect.ndjson
+
+# Live connector exports are private operational data. Keep synthetic fixtures
+# under a separately named test-fixtures directory instead.
+/data/canix-inventory-snapshot.json

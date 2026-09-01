@@ -1,0 +1,191 @@
+{
+  "documentType": "codex-security.hardening-analysis",
+  "schemaVersion": "1.0",
+  "analysisId": "hardening_20260831_ux_portal",
+  "sourceEvidence": {
+    "kind": "source_review",
+    "label": "UX OS portal authentication, authorization, administration, and Canix access boundary",
+    "collectionSha256": "39c55e637ddfc12390a42ae08d01da5499a69a7494eec4f527bccbf72186522e",
+    "artifactCount": 7,
+    "sourceDrift": "present",
+    "targetRevision": "ccbfac5df3ed143f8cfa7a40b897f3d08fbaa343"
+  },
+  "assessment": {
+    "outcome": "opportunities_identified",
+    "summary": "The prepared capability model narrows inventory access, but privileged administration and its audit trail still need one server-owned transaction boundary."
+  },
+  "constraints": {
+    "profile": "balanced",
+    "changeHorizons": ["incremental", "medium_term", "foundational"],
+    "nonNegotiables": [
+      "Canix credentials and package rows must not enter the browser bundle.",
+      "Google authentication alone must never grant portal authorization.",
+      "External organization and location scope must remain enforced server-side."
+    ],
+    "assumptions": [
+      "Supabase remains the identity, policy-data, and serverless execution platform for the next deployment phase.",
+      "No measured latency, memory, administration-volume, or audit-retention budget was supplied.",
+      "Existing internal users must not be locked out or silently promoted during the capability migration."
+    ]
+  },
+  "opportunities": [
+    {
+      "opportunityId": "centralize-privileged-administration",
+      "title": "Centralize privileged administration and audit",
+      "summary": "Make one server-owned authorization decision control every privileged mutation and append its audit record in the same transaction.",
+      "diagnosis": "The portal now has staff-role capabilities and a permission-aware inventory endpoint, but administrative mutations and audit behavior remain split between browser state, per-feature checks, and remote components whose source is not present locally.",
+      "evidence": [
+        {
+          "claimType": "observed",
+          "sourceKind": "source",
+          "evidenceId": "E001",
+          "path": "ux-portal-prototype.dc.html",
+          "claim": "The client renders capability-filtered routes but models several user, role, impersonation, and audit operations in browser state."
+        },
+        {
+          "claimType": "observed",
+          "sourceKind": "source",
+          "evidenceId": "E003",
+          "path": "supabase/functions/canix-inventory/index.ts",
+          "claim": "The Canix endpoint independently checks inventory.read and inventory.sync before returning data or running a user-triggered sync."
+        },
+        {
+          "claimType": "observed",
+          "sourceKind": "source",
+          "evidenceId": "E005",
+          "path": "supabase/migrations/20260901090000_portal_staff_access.sql",
+          "claim": "A server-owned staff-role to permission mapping exists, but there is no common resource-aware authorization function or transactional admin RPC."
+        },
+        {
+          "claimType": "inferred",
+          "sourceKind": "source",
+          "evidenceId": "E004",
+          "path": "supabase/migrations/20260901062000_canix_inventory_sync.sql",
+          "claim": "The existing private-table and service-role pattern can support a central privileged boundary without exposing operational tables to browser roles."
+        }
+      ],
+      "desiredInvariants": [
+        "Every privileged portal mutation is authorized against the final user, capability, organization, location, and resource identity on the server.",
+        "The mutation and its security audit record either commit together or both fail.",
+        "A deactivated profile or removed grant takes effect at the next server request without relying on a refreshed browser menu.",
+        "External organization and location scope cannot be widened by request fields supplied by the browser.",
+        "The same capability names drive route discovery, endpoint enforcement, administration, and audit review."
+      ],
+      "proposalPath": "proposals/centralize-privileged-administration.md",
+      "options": [
+        {
+          "optionId": "local-enforcement",
+          "title": "Complete per-feature enforcement",
+          "kind": "baseline",
+          "summary": "Keep each endpoint or RPC responsible for its own capability, scope, mutation, and audit checks while sharing the role-permission table.",
+          "diagramPaths": {
+            "before": "diagrams/centralize-privileged-administration-before.mmd",
+            "after": "diagrams/centralize-privileged-administration-local-enforcement-after.mmd"
+          },
+          "evidenceCoverage": [
+            { "evidenceId": "E001", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "Server endpoints replace browser-only mutations, but callers can still drift in scope and audit behavior." },
+            { "evidenceId": "E003", "effect": "addresses", "tacticalFixRequired": false, "rationale": "The inventory function already demonstrates this per-endpoint pattern." },
+            { "evidenceId": "E004", "effect": "addresses", "tacticalFixRequired": false, "rationale": "Private tables remain behind service-owned operations." },
+            { "evidenceId": "E005", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "The shared mapping reduces naming drift, but every caller still owns enforcement details." }
+          ],
+          "tradeoffs": [
+            { "dimension": "security", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Browser-only privileged actions disappear, but future endpoints can still omit resource scope or audit writes.", "validationPlan": "Exercise every privileged endpoint with removed grants, cross-org identifiers, deactivated profiles, and missing audit writes." },
+            { "dimension": "performance", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "Checks remain inside the existing database or Edge Function request path and add no new network hop.", "validationPlan": "Compare p50 and p95 endpoint latency before and after capability and audit queries under representative admin traffic." },
+            { "dimension": "memory", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "The design adds only bounded permission and audit records to existing request processing.", "validationPlan": "Compare Edge Function peak memory for representative reads and writes." },
+            { "dimension": "reliability", "direction": "improves", "confidence": "medium", "basis": "source-derived", "assessment": "Server mutations become durable, but non-transactional feature implementations can still commit data without their audit event.", "validationPlan": "Inject audit-write and mutation failures into each endpoint and verify documented rollback behavior." },
+            { "dimension": "operability", "direction": "regresses", "confidence": "medium", "basis": "hypothetical", "assessment": "Every feature team must maintain equivalent denial telemetry, audit fields, and incident queries.", "validationPlan": "Review the first three implemented endpoints for duplicated policy and alert definitions." },
+            { "dimension": "migration", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Endpoints can move one at a time while the current UI remains available.", "validationPlan": "Migrate one low-risk admin action and confirm rollback requires only routing that action back to its prior disabled state." }
+          ],
+          "residualRisks": [
+            "Authorization, scope, and audit semantics can drift between endpoints."
+          ],
+          "implementationReadiness": {
+            "affectedComponents": ["ux-portal-prototype.dc.html", "supabase/functions", "supabase/migrations"],
+            "workPackages": ["Add durable admin endpoints", "Add an append-only audit table", "Add cross-org and grant-revocation tests", "Remove browser-only success claims"],
+            "acceptanceCriteria": ["No privileged state change succeeds without a server permission check and durable audit record."],
+            "migrationNotes": ["Migrate one action family at a time."],
+            "rollback": "Disable the new action route and retain read-only administration while the endpoint is corrected."
+          }
+        },
+        {
+          "optionId": "policy-rpc-boundary",
+          "title": "Central Supabase policy and RPC boundary",
+          "kind": "structural",
+          "summary": "Use one resource-aware authorization function and transactional RPC boundary for privileged mutations and security audit writes.",
+          "diagramPaths": {
+            "before": "diagrams/centralize-privileged-administration-before.mmd",
+            "after": "diagrams/centralize-privileged-administration-policy-rpc-after.mmd"
+          },
+          "evidenceCoverage": [
+            { "evidenceId": "E001", "effect": "addresses", "tacticalFixRequired": true, "rationale": "Browser actions become requests to server-owned RPCs; the client remains responsible only for presentation and denial recovery." },
+            { "evidenceId": "E003", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "The inventory function can call the common decision function while keeping its existing token validation and private cache." },
+            { "evidenceId": "E004", "effect": "addresses", "tacticalFixRequired": false, "rationale": "Security-definer RPCs extend the current private-table pattern without granting browser table access." },
+            { "evidenceId": "E005", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The existing capability vocabulary becomes the input to one owned, resource-aware decision point." }
+          ],
+          "tradeoffs": [
+            { "dimension": "security", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Policy, resource scope, mutation, and audit commit behind one boundary, substantially reducing omission and drift paths.", "validationPlan": "Run a deny matrix across role, capability, organization, location, resource alias, deactivation, and replay cases." },
+            { "dimension": "performance", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "Most decisions and writes stay within one Postgres transaction; Edge callers add a database RPC rather than another service hop.", "validationPlan": "Measure p50 and p95 RPC latency and set a release threshold no worse than the current endpoint plus one database round trip." },
+            { "dimension": "memory", "direction": "neutral", "confidence": "medium", "basis": "source-derived", "assessment": "Permission rows and bounded audit payloads add negligible request memory; audit storage growth is a disk-retention concern, not process memory.", "validationPlan": "Measure representative RPC response size and project audit-table growth from expected daily admin events." },
+            { "dimension": "reliability", "direction": "improves", "confidence": "high", "basis": "source-derived", "assessment": "Transactional audit prevents successful mutations without their corresponding security event, while one database outage affects both consistently.", "validationPlan": "Force policy, mutation, and audit failures and verify atomic rollback plus stable error codes." },
+            { "dimension": "operability", "direction": "improves", "confidence": "medium", "basis": "hypothetical", "assessment": "One denial taxonomy, audit schema, and query surface simplify reviews, although the RPC layer becomes security-critical and needs ownership and change control.", "validationPlan": "Pilot alerting and quarterly access review queries against one migrated action family." },
+            { "dimension": "migration", "direction": "regresses", "confidence": "medium", "basis": "source-derived", "assessment": "Existing privileged flows must adopt typed RPC contracts and stable resource identities, but dual-read and action-by-action rollout remain possible.", "validationPlan": "Prototype user deactivation and staff-role assignment first, then estimate the remaining action families from the actual contract work." }
+          ],
+          "residualRisks": [
+            "A flaw in the central security-definer function affects every caller.",
+            "Audit retention, export, and independent tamper monitoring still require an explicit operations policy."
+          ],
+          "implementationReadiness": {
+            "affectedComponents": ["supabase/migrations", "supabase/functions", "ux-portal-prototype.dc.html", "docs/deployment-readiness.md"],
+            "workPackages": ["Define final resource identities", "Create portal_authorize and append-only audit schema", "Implement user and staff-role RPCs", "Adopt the decision function in Edge Functions", "Add access-review and denial telemetry"],
+            "acceptanceCriteria": ["Every privileged mutation and audit record commit atomically after one resource-aware server decision."],
+            "migrationNotes": ["Seed existing internal users as viewers, explicitly bootstrap the first administrator, and verify every grant before release."],
+            "rollback": "Disable migrated mutations and retain read-only administration; revert callers without removing the permission data or audit history."
+          }
+        },
+        {
+          "optionId": "dedicated-admin-service",
+          "title": "Dedicated administration service",
+          "kind": "isolation",
+          "summary": "Move privileged commands, policy decisions, and audit streaming into a separately deployed service with a command queue.",
+          "diagramPaths": {
+            "before": "diagrams/centralize-privileged-administration-before.mmd",
+            "after": "diagrams/centralize-privileged-administration-admin-service-after.mmd"
+          },
+          "evidenceCoverage": [
+            { "evidenceId": "E001", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The browser becomes an unprivileged client of a dedicated command API." },
+            { "evidenceId": "E003", "effect": "mitigates", "tacticalFixRequired": true, "rationale": "Inventory can remain a separate read service while admin-triggered sync commands enter the new boundary." },
+            { "evidenceId": "E004", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The service can retain private data ownership, but service credentials and network policy become new trusted components." },
+            { "evidenceId": "E005", "effect": "addresses", "tacticalFixRequired": true, "rationale": "The capability mapping becomes policy input rather than caller-owned logic." }
+          ],
+          "tradeoffs": [
+            { "dimension": "security", "direction": "improves", "confidence": "medium", "basis": "hypothetical", "assessment": "Separate deployment and command isolation reduce browser and feature-service authority, but add service credentials, queue permissions, and network attack surface.", "validationPlan": "Threat-model service identity, queue tenancy, replay, confused-deputy, and break-glass paths before implementation." },
+            { "dimension": "performance", "direction": "regresses", "confidence": "high", "basis": "analogous", "assessment": "A network hop, serialization, and possible queue delay enter every privileged command.", "validationPlan": "Benchmark synchronous user and role changes plus queued long-running commands against product response targets." },
+            { "dimension": "memory", "direction": "regresses", "confidence": "high", "basis": "analogous", "assessment": "A separate runtime, queue buffers, worker concurrency, and audit stream retain more resources than an in-database transaction boundary.", "validationPlan": "Measure idle service memory, peak worker memory, and queue retention under burst scenarios." },
+            { "dimension": "reliability", "direction": "unknown", "confidence": "medium", "basis": "hypothetical", "assessment": "Failure isolation improves, but partial outages, retry semantics, poison commands, and queue backlogs create new recovery states.", "validationPlan": "Run outage, duplicate-delivery, backpressure, and dead-letter recovery exercises before production cutover." },
+            { "dimension": "operability", "direction": "regresses", "confidence": "high", "basis": "analogous", "assessment": "The team must own another deployment, secret boundary, queue, dashboards, alerts, and incident playbook.", "validationPlan": "Estimate on-call and maintenance load from a service skeleton before committing." },
+            { "dimension": "migration", "direction": "regresses", "confidence": "high", "basis": "source-derived", "assessment": "Every privileged action needs a command contract, idempotency key, worker, and dual-running plan.", "validationPlan": "Implement a non-production user-role command and use its measured engineering work to size the remaining migration." }
+          ],
+          "residualRisks": [
+            "Service credentials and queue permissions become high-value targets.",
+            "Eventual consistency can confuse administrators unless command status is explicit.",
+            "The operational burden may exceed current team capacity."
+          ],
+          "implementationReadiness": {
+            "affectedComponents": ["new admin service", "queue", "supabase", "portal client", "observability"],
+            "workPackages": ["Threat model", "Define command protocol", "Provision service identity and queue", "Implement policy and workers", "Add immutable audit export", "Migrate actions"],
+            "acceptanceCriteria": ["Privileged commands are authenticated, authorized, idempotent, auditable, and recoverable across service and queue failures."],
+            "migrationNotes": ["Run beside the Supabase path until command parity and recovery exercises pass."],
+            "rollback": "Stop command intake and route unmigrated actions back to read-only or the prior Supabase boundary."
+          }
+        }
+      ],
+      "recommendedOptionId": "policy-rpc-boundary",
+      "recommendation": "Use the central Supabase policy and RPC boundary while Supabase remains the portal platform; choose the dedicated service only if command volume, cross-system orchestration, or isolation requirements materially outgrow one database transaction boundary."
+    }
+  ],
+  "openQuestions": [
+    "What retention period and independent export destination should apply to privileged security-audit events?",
+    "Which administrators may assign the administrator preset, and is two-person approval required for that elevation?",
+    "Which remote portal-intake operations currently mutate profiles or operational data, and can their source be brought into this repository?"
+  ]
+}

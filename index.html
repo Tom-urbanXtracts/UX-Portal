@@ -92,7 +92,7 @@
   </div>
 
   <a class="cta" href="dist/portal.html">Open the prototype</a>
-  <p class="cta-note">Self-contained page. Switch role in the top bar — buyer, owner, internal, budtender.</p>
+  <p class="cta-note">Self-contained page. Sign in with an assigned account; the role and organisation come from that account.</p>
 
   <h2>Documents</h2>
   <table>
@@ -125,6 +125,7 @@
 
   <h2>Paths worth walking</h2>
   <ul>
+    <li><strong>Inventory (internal)</strong> — compare the two live definitions, inspect source-unit totals, and reveal sandbox context without combining it with production.</li>
     <li><strong>Northgate</strong> — expired license blocks submission at that location only.</li>
     <li><strong>Riverside</strong> — past-due balance blocks submission at order entry, not at shipping.</li>
     <li><strong>Reorder SO-24020</strong> — a line is no longer stocked; the draft offers swaps.</li>
@@ -134,11 +135,12 @@
 
   <h2>Rules the design enforces</h2>
   <ul>
+    <li>Canix remains the inventory system of record; the portal is read-only and never queues a stock change.</li>
     <li>One internal wall: any internal user sees cost; no external view renders it.</li>
     <li>Restricted routes are not rendered — never disabled, never empty.</li>
     <li>Orderable means package status <em>available</em> <strong>and</strong> lab result <em>passed</em>. Both.</li>
     <li>The compliance tag is the lot identity.</li>
-    <li>Grams, millilitres and each are never blended into one figure.</li>
+    <li>Grams and units are never blended into one figure.</li>
   </ul>
 
   <footer>
