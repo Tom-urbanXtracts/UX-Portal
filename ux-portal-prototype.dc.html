@@ -920,6 +920,143 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:10px;max-width:80ch">Grams and units remain separate. WeightBased uses Canix <code>c_weight_g</code>; CountBased uses the package&rsquo;s raw unit count. Only those two quantity types are in scope.</div>
 </section>
 
+<section aria-labelledby="inventory-workbench-heading" style="margin-bottom:38px">
+<div style="display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px">
+<div>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">PACKAGE WORKBENCH</div>
+<h2 id="inventory-workbench-heading" style="font:800 21px/1.2 Archivo,sans-serif;margin:0 0 5px">Read, filter and inspect every package</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">Search across package, item, SKU, brand, strain and room. Quick views and filters combine; every table heading sorts the current result.</p>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" onClick="{{ onInvExport }}" aria-disabled="{{ invExportDisabled }}" style="{{ invExportStyle }}" style-hover="background:var(--ux-accent);border-color:var(--ux-accent)">Export filtered CSV</button>
+<button type="button" onClick="{{ onInvReset }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Reset view</button>
+</div>
+</div>
+
+<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:14px" aria-label="Inventory quick views">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-right:3px">QUICK VIEWS</span>
+<sc-for list="{{ invViews }}" as="v" hint-placeholder-count="5">
+<button type="button" onClick="{{ v.onPick }}" aria-pressed="{{ v.pressed }}" style="{{ v.style }}" style-hover="border-color:var(--ux-ink)">{{ v.label }} <span style="opacity:.65">{{ v.count }}</span></button>
+</sc-for>
+</div>
+
+<div style="background:var(--ux-surface);padding:16px;margin-bottom:12px">
+<div style="{{ invFilterGridStyle }}">
+<label style="display:flex;flex-direction:column;gap:6px;{{ invSearchFieldStyle }}">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">SEARCH</span>
+<input type="search" value="{{ invSearch }}" onInput="{{ onInvSearch }}" placeholder="Package tag, item, SKU, brand, strain or room" aria-label="Search inventory packages" style="width:100%;min-width:0;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:10px 11px;font:12.5px Archivo,sans-serif;color:var(--ux-ink);outline:none">
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">FACILITY</span>
+<select value="{{ invFacility }}" onChange="{{ onInvFacility }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)">
+<option value="all">All facilities</option>
+<sc-for list="{{ invFacilityOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">STATUS</span>
+<select value="{{ invStatus }}" onChange="{{ onInvStatus }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)">
+<option value="all">All usable statuses</option>
+<sc-for list="{{ invStatusOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">QUANTITY TYPE</span>
+<select value="{{ invQuantity }}" onChange="{{ onInvQuantity }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)">
+<option value="all">Weight and count</option>
+<sc-for list="{{ invQuantityOptions }}" as="o" hint-placeholder-count="2"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">CATEGORY</span>
+<select value="{{ invCategory }}" onChange="{{ onInvCategory }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:230px">
+<option value="all">All categories</option>
+<sc-for list="{{ invCategoryOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">BRAND</span>
+<select value="{{ invBrand }}" onChange="{{ onInvBrand }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
+<option value="all">All brands</option>
+<sc-for list="{{ invBrandOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">LAB STATE</span>
+<select value="{{ invLab }}" onChange="{{ onInvLab }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
+<option value="all">All lab states</option>
+<sc-for list="{{ invLabOptions }}" as="o" hint-placeholder-count="5"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">AGE</span>
+<select value="{{ invAge }}" onChange="{{ onInvAge }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)">
+<option value="all">Any age</option><option value="0-30">0–30 days</option><option value="31-60">31–60 days</option><option value="61-90">61–90 days</option><option value="90+">More than 90 days</option>
+</select>
+</label>
+</div>
+</div>
+
+<div style="{{ invResultStripStyle }}">
+<div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">MATCHING PACKAGES</div><div style="font:800 18px Archivo,sans-serif">{{ invFilteredCount }}</div></div>
+<div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">MATCHING WEIGHT</div><div style="font:800 18px Archivo,sans-serif">{{ invFilteredWeight }}</div></div>
+<div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">MATCHING COUNT</div><div style="font:800 18px Archivo,sans-serif">{{ invFilteredUnits }}</div></div>
+<div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SHOWING</div><div style="font:700 13px Archivo,sans-serif">{{ invRangeLabel }}</div></div>
+</div>
+
+<div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:650px">
+<div style="min-width:1240px">
+<div style="display:grid;grid-template-columns:2.1fr 1.15fr .85fr .85fr .85fr .55fr .9fr .9fr .55fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
+<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="9">
+<button type="button" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button>
+</sc-for>
+</div>
+<sc-if value="{{ invHasRows }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ invTableRows }}" as="r" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:2.1fr 1.15fr .85fr .85fr .85fr .55fr .9fr .9fr .55fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
+<div style="min-width:0"><div style="font:700 12.5px/1.35 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.skuTag }}</div></div>
+<div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div>
+<div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div>
+<div><div style="font:700 11.5px ui-monospace,monospace">{{ r.quantity }}</div><div style="font-size:10px;color:var(--ux-muted)">{{ r.quantityType }}</div></div>
+<div><span style="{{ r.labStyle }}">{{ r.lab }}</span></div>
+<div style="font:700 11.5px ui-monospace,monospace">{{ r.age }}</div>
+<div style="font-size:11px;line-height:1.4">{{ r.allocation }}</div>
+<div style="font:10.5px/1.4 ui-monospace,monospace;color:var(--ux-muted-strong)">{{ r.updated }}</div>
+<button type="button" onClick="{{ r.onInspect }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 7px;font:600 10px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-ink);color:var(--ux-ground)">Inspect</button>
+</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{ invNoRows }}" hint-placeholder-val="{{ false }}">
+<div style="padding:38px 20px;text-align:center;background:var(--ux-surface)"><div style="font:800 17px Archivo,sans-serif;margin-bottom:6px">No packages match this view</div><div style="font-size:12.5px;color:var(--ux-muted);margin-bottom:14px">Clear a filter or reset the workbench to return to all usable packages.</div><button type="button" onClick="{{ onInvReset }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer">Reset view</button></div>
+</sc-if>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0 0">
+<label style="font-size:11px;color:var(--ux-muted)">Rows per page&nbsp;
+<select value="{{ invPageSize }}" onChange="{{ onInvPageSize }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:11px Archivo,sans-serif"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+</label>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font:600 10.5px ui-monospace,monospace;color:var(--ux-muted)">{{ invPageLabel }}</span>
+<button type="button" onClick="{{ onInvPrev }}" aria-disabled="{{ invPrevDisabled }}" style="{{ invPrevStyle }}">Previous</button>
+<button type="button" onClick="{{ onInvNext }}" aria-disabled="{{ invNextDisabled }}" style="{{ invNextStyle }}">Next</button>
+</div>
+</div>
+
+<sc-if value="{{ invHasSelection }}" hint-placeholder-val="{{ false }}">
+<aside aria-label="Selected package details" style="background:var(--ux-ink);color:var(--ux-ground);padding:20px 22px;margin-top:18px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px">
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light);margin-bottom:6px">PACKAGE DETAIL</div><div style="font:800 19px/1.3 Archivo,sans-serif">{{ invSelectedTitle }}</div><div style="font:11px/1.5 ui-monospace,monospace;opacity:.65">{{ invSelectedTag }}</div></div>
+<button type="button" onClick="{{ onInvCloseDetail }}" aria-label="Close package detail" style="background:transparent;border:1px solid rgba(250,247,243,.35);color:var(--ux-ground);padding:6px 9px;font:600 11px Archivo,sans-serif;cursor:pointer">Close</button>
+</div>
+<div style="{{ invDetailGridStyle }}">
+<sc-for list="{{ invDetailRows }}" as="d" hint-placeholder-count="12"><div style="border-top:1px solid rgba(250,247,243,.18);padding-top:9px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;opacity:.55;margin-bottom:5px">{{ d.label }}</div><div style="font-size:12px;line-height:1.5;word-break:break-word">{{ d.value }}</div></div></sc-for>
+</div>
+<div style="font-size:11px;line-height:1.55;opacity:.58;margin-top:16px">Read-only Canix package record. Changes, allocations and compliance corrections remain in Canix.</div>
+</aside>
+</sc-if>
+</section>
+
 <section aria-labelledby="inventory-live-heading" style="margin-bottom:34px">
 <h2 id="inventory-live-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Canix on-hand rule</h2>
 <p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 14px;max-width:76ch">The API contract resolves the earlier ambiguity by requiring every clause together. The portal does not choose one field over another.</p>
@@ -998,18 +1135,6 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="font-size:12.5px;color:var(--ux-muted);line-height:1.6">{{ i.detail }}</div>
 </div>
-</sc-for>
-</div>
-</section>
-
-<section aria-labelledby="inventory-package-heading" style="background:var(--ux-surface);padding:22px 24px;margin-bottom:24px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:7px">PACKAGE SEARCH · SOURCE SUPPORTED</div>
-<h2 id="inventory-package-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 8px">The Canix API is already at package grain</h2>
-<p style="font-size:13px;color:var(--ux-muted-strong);line-height:1.65;margin:0 0 14px;max-width:80ch">The connector can return package identity, tag, item, facility, room, allocation, lab state and dates without another export. This deployed prototype currently reloads a verified API snapshot; continuous live refresh still needs a server-side Canix credential or private connector binding.</p>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Verified package fields</div>
-<div style="display:flex;flex-wrap:wrap;gap:6px">
-<sc-for list="{{ invPackageFields }}" as="p" hint-placeholder-count="10">
-<span style="border:1px solid rgba(23,14,11,.22);background:var(--ux-ground);padding:5px 7px;font:500 10.5px ui-monospace,monospace">{{ p.label }}</span>
 </sc-for>
 </div>
 </section>
@@ -2458,10 +2583,13 @@ const INTEGRITY = [
   { name: 'Allocated to an order already shipped', count: '2', effect: 'Held for reconciliation before the next allocation run' }
 ];
 
-const INVENTORY_PACKAGE_FIELDS = [
-  'Package ID', 'Compliance tag', 'Item ID', 'SKU', 'Product ID', 'Brand ID', 'Strain ID',
-  'Quantity type', 'Weight', 'Weight unit', 'Weight in grams', 'Facility ID', 'Room ID', 'Status',
-  'Order item ID', 'Sales order ID', 'Lab state', 'Packaged date', 'Expiry', 'Lot ID', 'Production batch'
+const INVENTORY_PACKAGE_COLUMNS = [
+  'package_id', 'tag', 'item_id', 'item_name', 'sku', 'item_category_name', 'item_sub_category_name',
+  'product_name', 'brand_name', 'strain_name', 'strain_type', 'quantity_type', 'weight', 'weight_unit_name',
+  'c_weight_g', 'c_reserved_weight', 'facility_id', 'facility_name', 'facility_license', 'room_id', 'room_name',
+  'status', 'status_category', 'compliance_submitted', 'lab_test_status', 'test_result_status', 'has_coa',
+  'marked_available', 'is_finished_good', 'packaged_date', 'expiration_date', 'use_by_date', 'age_days',
+  'order_item_id', 'sales_order_id', 'sales_order_name', 'sales_order_status', 'sales_order_delivery_date', 'updated_at'
 ];
 
 const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl || '/api/inventory';
@@ -2494,7 +2622,9 @@ const CANIX_INVENTORY_SNAPSHOT = {
   sandbox: { facility_id: 4546, packages: 65, weight_g: 53477.85, units: 7117,
     latest_updated_at: '2026-04-27 17:49:29' },
   checks: { active_inactive_conflicts: 240, zero_quantity_packages: 34,
-    failed_lab_packages: 4, not_submitted_packages: 0, expired_packages: 0 }
+    failed_lab_packages: 4, not_submitted_packages: 0, expired_packages: 0 },
+  package_columns: INVENTORY_PACKAGE_COLUMNS,
+  packages: []
 };
 
 // Supabase puts the recovery token in the URL fragment, never the query string,
@@ -2576,6 +2706,9 @@ class Component extends DCLogic {
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
+    invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
+    invBrand: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'updated_at',
+    invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
     metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
@@ -2851,6 +2984,48 @@ class Component extends DCLogic {
     this.logAudit('Recall notice acknowledged', org, 'Acknowledged by the account, not by a named person');
   }
 
+  inventoryFilter(patch) {
+    this.set({ ...patch, invPage: 1, invSelectedPackage: null });
+  }
+
+  inventoryReset() {
+    this.set({ invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
+      invBrand: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'updated_at', invSortDir: 'desc',
+      invPage: 1, invSelectedPackage: null });
+  }
+
+  inventorySort(key) {
+    this.setState(st => ({ invSortKey: key, invSortDir: st.invSortKey === key && st.invSortDir === 'asc' ? 'desc' : 'asc', invPage: 1 }));
+  }
+
+  inventoryExport(rows) {
+    if (!rows || !rows.length) return;
+    const fields = [
+      ['Package ID', 'package_id'], ['Compliance tag', 'tag'], ['Item', 'item_name'], ['SKU', 'sku'],
+      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Strain', 'strain_name'],
+      ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
+      ['Facility', 'facility_name'], ['Room', 'room_name'], ['Status', 'status'], ['Status category', 'status_category'],
+      ['Lab state', 'lab_test_status'], ['COA on file', 'has_coa'], ['Packaged date', 'packaged_date'],
+      ['Age days', 'age_days'], ['Sales order', 'sales_order_name'], ['Order status', 'sales_order_status'], ['Updated at', 'updated_at']
+    ];
+    const cell = value => {
+      let out = value === null || value === undefined ? '' : String(value);
+      if (/^[=+\-@]/.test(out)) out = "'" + out;
+      return '"' + out.replace(/"/g, '""') + '"';
+    };
+    const body = [fields.map(f => cell(f[0])).join(',')].concat(rows.map(r => fields.map(f => cell(r[f[1]])).join(','))).join('\n');
+    const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'urbanxtracts-inventory-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    this.set({ toast: rows.length + ' filtered package rows exported.', toastKind: 'EXPORT READY' });
+  }
+
   loadInventory() {
     if (this.state.inventoryLoading) return;
     this.set({ inventoryLoading: true, inventoryError: null });
@@ -2863,13 +3038,19 @@ class Component extends DCLogic {
       })
       .then(data => {
         const types = data && data.scope && data.scope.quantity_types;
-        if (!data || !data.summary || !Array.isArray(data.facilities) || !Array.isArray(data.statuses)) {
+        if (!data || !data.summary || !Array.isArray(data.facilities) || !Array.isArray(data.statuses)
+          || !Array.isArray(data.package_columns) || !Array.isArray(data.packages)) {
           throw new Error('Inventory endpoint returned an incomplete Canix response.');
         }
         if (!Array.isArray(types) || types.length !== 2 || !types.includes('WeightBased') || !types.includes('CountBased')) {
           throw new Error('Inventory endpoint returned a quantity scope this portal does not accept.');
         }
-        this.set({ inventoryData: data, inventoryLoading: false, inventoryLoaded: true, inventoryError: null });
+        if (data.package_columns.join('|') !== INVENTORY_PACKAGE_COLUMNS.join('|')
+          || data.packages.some(row => !Array.isArray(row) || row.length !== data.package_columns.length)) {
+          throw new Error('Inventory endpoint returned an unsupported package schema.');
+        }
+        this.set({ inventoryData: data, inventoryLoading: false, inventoryLoaded: true, inventoryError: null,
+          invPage: 1, invSelectedPackage: null });
       })
       .catch(e => this.set({ inventoryLoading: false, inventoryLoaded: false,
         inventoryError: (e && e.message) || 'The inventory endpoint could not be reached.' }));
@@ -3288,6 +3469,68 @@ class Component extends DCLogic {
       : Number(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: digits === undefined ? 0 : digits });
     const invWeight = value => value === null || value === undefined ? '\u2014' : invNumber(value, 3) + ' g';
     const invUnits = value => value === null || value === undefined ? '\u2014' : invNumber(value, 0) + ' units';
+    const invPackageColumns = Array.isArray(invData.package_columns) ? invData.package_columns : INVENTORY_PACKAGE_COLUMNS;
+    const invPackages = (Array.isArray(invData.packages) ? invData.packages : []).map(row => {
+      const record = Array.isArray(row)
+        ? Object.fromEntries(invPackageColumns.map((name, index) => [name, row[index]]))
+        : row;
+      const isWeight = record.quantity_type === 'WeightBased';
+      return { ...record,
+        _display_quantity: isWeight ? Number(record.c_weight_g || 0) : Number(record.weight || 0),
+        _display_unit: isWeight ? 'g' : 'units' };
+    });
+    const invTitle = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const invFacet = (key, emptyLabel) => Array.from(new Set(invPackages.map(row => row[key] || emptyLabel).filter(Boolean)))
+      .sort((a, b) => String(a).localeCompare(String(b)))
+      .map(value => ({ value: String(value), label: invTitle(value) }));
+    const invViewMatch = (row, view) => view === 'available' ? row.status_category === 'available'
+      : view === 'allocated' ? row.status_category === 'allocated'
+      : view === 'failed' ? String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1
+      : view === 'aged' ? Number(row.age_days) > 90
+      : true;
+    const invViewCounts = view => invPackages.filter(row => invViewMatch(row, view)).length;
+    const invNeedle = String(s.invSearch || '').trim().toLowerCase();
+    const invMatchesAge = row => s.invAge === 'all'
+      || (s.invAge === '0-30' && Number(row.age_days) <= 30)
+      || (s.invAge === '31-60' && Number(row.age_days) >= 31 && Number(row.age_days) <= 60)
+      || (s.invAge === '61-90' && Number(row.age_days) >= 61 && Number(row.age_days) <= 90)
+      || (s.invAge === '90+' && Number(row.age_days) > 90);
+    const invFiltered = invPackages.filter(row => {
+      if (!invViewMatch(row, s.invView)) return false;
+      if (s.invFacility !== 'all' && String(row.facility_id) !== s.invFacility) return false;
+      if (s.invStatus !== 'all' && row.status_category !== s.invStatus) return false;
+      if (s.invQuantity !== 'all' && row.quantity_type !== s.invQuantity) return false;
+      if (s.invCategory !== 'all' && row.item_category_name !== s.invCategory) return false;
+      if (s.invBrand !== 'all' && (row.brand_name || 'Not recorded') !== s.invBrand) return false;
+      if (s.invLab !== 'all' && (row.lab_test_status || 'No status') !== s.invLab) return false;
+      if (!invMatchesAge(row)) return false;
+      if (!invNeedle) return true;
+      return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name, row.strain_name, row.room_name]
+        .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
+    });
+    const invSortValue = (row, key) => key === 'quantity' ? row._display_quantity
+      : key === 'allocation' ? (row.sales_order_name || row.sales_order_id || '')
+      : row[key];
+    const invSorted = invFiltered.slice().sort((a, b) => {
+      if (s.invSortKey === 'quantity' && a.quantity_type !== b.quantity_type) {
+        return String(a.quantity_type).localeCompare(String(b.quantity_type));
+      }
+      const av = invSortValue(a, s.invSortKey);
+      const bv = invSortValue(b, s.invSortKey);
+      let result = 0;
+      if (typeof av === 'number' || typeof bv === 'number') result = (Number(av) || 0) - (Number(bv) || 0);
+      else result = String(av || '').localeCompare(String(bv || ''), undefined, { numeric: true, sensitivity: 'base' });
+      if (result === 0) result = Number(a.package_id) - Number(b.package_id);
+      return s.invSortDir === 'asc' ? result : -result;
+    });
+    const invPageSize = Number(s.invPageSize) || 50;
+    const invPageCount = Math.max(1, Math.ceil(invSorted.length / invPageSize));
+    const invPage = Math.min(Math.max(1, Number(s.invPage) || 1), invPageCount);
+    const invPageStart = (invPage - 1) * invPageSize;
+    const invPageRows = invSorted.slice(invPageStart, invPageStart + invPageSize);
+    const invFilteredWeightValue = invFiltered.filter(row => row.quantity_type === 'WeightBased').reduce((sum, row) => sum + (Number(row.c_weight_g) || 0), 0);
+    const invFilteredUnitsValue = invFiltered.filter(row => row.quantity_type === 'CountBased').reduce((sum, row) => sum + (Number(row.weight) || 0), 0);
+    const invSelected = invPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
     /* Brand geometry: the mark is built from arches, so category markers, image
        frames and empty states repeat that arch rather than inventing a shape. */
     const arch = (size, fill) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + fill;
@@ -3780,6 +4023,111 @@ class Component extends DCLogic {
       invSourceUpdated: (invData.source && invData.source.latest_updated_at) || '\u2014',
       invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Reload API snapshot',
       onInvRefresh: () => this.loadInventory(),
+      invViews: [
+        ['all', 'All usable', invViewCounts('all')],
+        ['available', 'Available status', invViewCounts('available')],
+        ['allocated', 'Allocated', invViewCounts('allocated')],
+        ['failed', 'Lab failed', invViewCounts('failed')],
+        ['aged', 'Aged 90+ days', invViewCounts('aged')]
+      ].map(([id, label, count]) => ({ label, count: invNumber(count), pressed: s.invView === id ? 'true' : 'false',
+        style: 'background:' + (s.invView === id ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.invView === id ? 'var(--ux-ground)' : 'var(--ux-ink)')
+          + ';border:1px solid ' + (s.invView === id ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:7px 9px;font:600 10.5px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.inventoryFilter({ invView: id }) })),
+      invFilterGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 4) + ',minmax(0,1fr));gap:12px',
+      invSearchFieldStyle: narrow ? '' : 'grid-column:span 2',
+      invSearch: s.invSearch,
+      onInvSearch: e => this.inventoryFilter({ invSearch: e.target.value }),
+      invFacility: s.invFacility,
+      onInvFacility: e => this.inventoryFilter({ invFacility: e.target.value }),
+      invFacilityOptions: Array.from(new Map(invPackages.map(row => [String(row.facility_id), row.facility_name])).entries())
+        .sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label })),
+      invStatus: s.invStatus,
+      onInvStatus: e => this.inventoryFilter({ invStatus: e.target.value }),
+      invStatusOptions: invFacet('status_category'),
+      invQuantity: s.invQuantity,
+      onInvQuantity: e => this.inventoryFilter({ invQuantity: e.target.value }),
+      invQuantityOptions: invFacet('quantity_type').map(option => ({ ...option, label: option.value === 'WeightBased' ? 'Weight based' : 'Count based' })),
+      invCategory: s.invCategory,
+      onInvCategory: e => this.inventoryFilter({ invCategory: e.target.value }),
+      invCategoryOptions: invFacet('item_category_name'),
+      invBrand: s.invBrand,
+      onInvBrand: e => this.inventoryFilter({ invBrand: e.target.value }),
+      invBrandOptions: invFacet('brand_name', 'Not recorded'),
+      invLab: s.invLab,
+      onInvLab: e => this.inventoryFilter({ invLab: e.target.value }),
+      invLabOptions: invFacet('lab_test_status', 'No status'),
+      invAge: s.invAge,
+      onInvAge: e => this.inventoryFilter({ invAge: e.target.value }),
+      onInvReset: () => this.inventoryReset(),
+      onInvExport: () => this.inventoryExport(invSorted),
+      invExportDisabled: invSorted.length === 0,
+      invExportStyle: 'background:var(--ux-ink);color:var(--ux-ground);border:1px solid var(--ux-ink);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:'
+        + (invSorted.length ? 'pointer' : 'not-allowed') + ';opacity:' + (invSorted.length ? '1' : '.45'),
+      invResultStripStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);border-top:1px solid rgba(23,14,11,.16);border-bottom:1px solid rgba(23,14,11,.16);margin-bottom:12px',
+      invFilteredCount: invNumber(invSorted.length),
+      invFilteredWeight: invWeight(invFilteredWeightValue),
+      invFilteredUnits: invUnits(invFilteredUnitsValue),
+      invRangeLabel: invSorted.length ? invNumber(invPageStart + 1) + '\u2013' + invNumber(Math.min(invPageStart + invPageSize, invSorted.length)) + ' of ' + invNumber(invSorted.length) : '0 of 0',
+      invColumns: [
+        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['status_category', 'Status'],
+        ['quantity', 'On hand'], ['lab_test_status', 'Lab'], ['age_days', 'Age'], ['allocation', 'Allocation'],
+        ['updated_at', 'Updated'], ['package_id', 'Detail']
+      ].map(([key, label]) => ({ label, arrow: s.invSortKey === key ? (s.invSortDir === 'asc' ? '\u2191' : '\u2193') : '',
+        ariaSort: s.invSortKey === key ? (s.invSortDir === 'asc' ? 'ascending' : 'descending') : 'none', onSort: () => this.inventorySort(key) })),
+      invHasRows: invPageRows.length > 0,
+      invNoRows: invPageRows.length === 0,
+      invTableRows: invPageRows.map(row => {
+        const failed = String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1;
+        const available = row.status_category === 'available';
+        const allocated = row.status_category === 'allocated';
+        return {
+          item: row.item_name || 'Unnamed item',
+          skuTag: (row.sku ? row.sku + ' \u00b7 ' : '') + (row.tag || 'No compliance tag'),
+          facility: row.facility_name || '\u2014', room: row.room_name || 'No room assigned',
+          status: row.status || invTitle(row.status_category),
+          statusStyle: 'display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 9.5px ui-monospace,monospace;letter-spacing:.04em;padding:3px 6px;background:'
+            + (available ? 'var(--ux-accent)' : allocated ? 'var(--ux-ink)' : 'var(--ux-surface)') + ';color:' + (available || allocated ? '#fff' : 'var(--ux-muted-strong)'),
+          quantity: row.quantity_type === 'WeightBased' ? invWeight(row.c_weight_g) : invUnits(row.weight),
+          quantityType: row.quantity_type === 'WeightBased' ? 'Weight based' : 'Count based',
+          lab: row.lab_test_status || 'No status',
+          labStyle: 'display:inline-block;white-space:nowrap;font:600 9px ui-monospace,monospace;letter-spacing:.03em;padding:3px 6px;background:'
+            + (failed ? 'var(--ux-signal)' : row.lab_test_status === 'TestPassed' ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (failed || row.lab_test_status === 'TestPassed' ? '#fff' : 'var(--ux-muted-strong)'),
+          age: invNumber(row.age_days) + ' d',
+          allocation: row.sales_order_name || (row.sales_order_id ? 'Order ' + row.sales_order_id : 'Unallocated'),
+          updated: String(row.updated_at || '\u2014').replace(' ', ' · '),
+          rowStyle: String(row.package_id) === String(s.invSelectedPackage) ? 'background:var(--ux-surface)' : '',
+          onInspect: () => this.set({ invSelectedPackage: row.package_id })
+        };
+      }),
+      invPageSize: String(invPageSize),
+      onInvPageSize: e => this.set({ invPageSize: Number(e.target.value), invPage: 1 }),
+      invPageLabel: 'Page ' + invNumber(invPage) + ' of ' + invNumber(invPageCount),
+      invPrevDisabled: invPage <= 1,
+      invNextDisabled: invPage >= invPageCount,
+      invPrevStyle: 'background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11px Archivo,sans-serif;cursor:' + (invPage <= 1 ? 'not-allowed' : 'pointer') + ';opacity:' + (invPage <= 1 ? '.45' : '1'),
+      invNextStyle: 'background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11px Archivo,sans-serif;cursor:' + (invPage >= invPageCount ? 'not-allowed' : 'pointer') + ';opacity:' + (invPage >= invPageCount ? '.45' : '1'),
+      onInvPrev: () => this.set({ invPage: Math.max(1, invPage - 1), invSelectedPackage: null }),
+      onInvNext: () => this.set({ invPage: Math.min(invPageCount, invPage + 1), invSelectedPackage: null }),
+      invHasSelection: !!invSelected,
+      invSelectedTitle: invSelected ? (invSelected.item_name || 'Unnamed item') : '',
+      invSelectedTag: invSelected ? (invSelected.tag || 'No compliance tag') : '',
+      onInvCloseDetail: () => this.set({ invSelectedPackage: null }),
+      invDetailGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 4) + ',minmax(0,1fr));gap:15px 18px',
+      invDetailRows: invSelected ? [
+        ['Package ID', invSelected.package_id], ['SKU', invSelected.sku || 'Not recorded'],
+        ['Category', invSelected.item_category_name || 'Not recorded'], ['Brand / strain', [invSelected.brand_name, invSelected.strain_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Facility / room', [invSelected.facility_name, invSelected.room_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Status', (invSelected.status || invTitle(invSelected.status_category)) + ' · ' + invTitle(invSelected.status_category)],
+        ['On hand', invSelected.quantity_type === 'WeightBased' ? invWeight(invSelected.c_weight_g) : invUnits(invSelected.weight)],
+        ['Reserved', invNumber(invSelected.c_reserved_weight, 3) + ' ' + (invSelected.weight_unit_name || '')],
+        ['Lab / result', [invSelected.lab_test_status, invSelected.test_result_status].filter(Boolean).join(' · ') || 'No linked state'],
+        ['COA', invSelected.has_coa === 1 ? 'On file' : invSelected.has_coa === 0 ? 'Not on file' : 'No linked result'],
+        ['Packaged / age', (invSelected.packaged_date || 'Not recorded') + ' · ' + invNumber(invSelected.age_days) + ' days'],
+        ['Expiry / use by', [invSelected.expiration_date, invSelected.use_by_date].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Allocation', invSelected.sales_order_name || (invSelected.sales_order_id ? 'Order ' + invSelected.sales_order_id : 'Unallocated')],
+        ['Order status / delivery', [invSelected.sales_order_status, invSelected.sales_order_delivery_date].filter(Boolean).join(' · ') || 'Not applicable'],
+        ['Compliance submitted', invSelected.compliance_submitted === 1 ? 'Yes' : 'No'], ['Last updated', invSelected.updated_at || 'Not recorded']
+      ].map(([label, value]) => ({ label, value: String(value) })) : [],
       invKpiGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 3) + ',minmax(0,1fr));border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4)',
       invKpis: [
         { label: 'Usable packages', value: invNumber(invData.summary.packages), note: 'Active, non-sample, production packages in the three usable status categories.' },
@@ -3814,7 +4162,6 @@ class Component extends DCLogic {
         { kind: 'QUANTITY COVERAGE', title: invNumber(invData.checks.zero_quantity_packages) + ' usable packages carry zero quantity', detail: 'They remain package records and contribute nothing to the weight or count totals. The portal does not delete or impute them.' },
         { kind: 'RELEASE SEPARATION', title: invNumber(invData.checks.failed_lab_packages) + ' usable packages have a failed lab state', detail: 'Usable inventory is not the same as retailer release. The catalog still requires both an available package status and a passed lab result.' }
       ],
-      invPackageFields: INVENTORY_PACKAGE_FIELDS.map(label => ({ label })),
       isCoa: s.screen === 'coa', isCart: s.screen === 'cart', isOrders: s.screen === 'orders',
       isKiosk: s.screen === 'kiosk', isEconomics: s.screen === 'economics', isQa: s.screen === 'qa',
       ...(() => {

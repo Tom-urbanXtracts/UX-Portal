@@ -8,7 +8,14 @@ const outputDir = resolve(projectRoot, "dist/server");
 const outputPath = resolve(outputDir, "index.js");
 const portalHtml = await readFile(portalPath, "utf8");
 const inventoryJson = await readFile(inventoryPath, "utf8");
-JSON.parse(inventoryJson);
+const inventory = JSON.parse(inventoryJson);
+const quantityTypes = inventory?.scope?.quantity_types;
+if (!Array.isArray(quantityTypes) || quantityTypes.length !== 2 || !quantityTypes.includes("WeightBased") || !quantityTypes.includes("CountBased")) {
+  throw new Error("Inventory snapshot must contain only WeightBased and CountBased data.");
+}
+if (!Array.isArray(inventory.package_columns) || !Array.isArray(inventory.packages) || inventory.packages.some(row => !Array.isArray(row) || row.length !== inventory.package_columns.length)) {
+  throw new Error("Inventory snapshot package rows do not match the declared package schema.");
+}
 
 const worker = `const PORTAL_HTML = ${JSON.stringify(portalHtml)};
 const INVENTORY_JSON = ${JSON.stringify(inventoryJson)};
