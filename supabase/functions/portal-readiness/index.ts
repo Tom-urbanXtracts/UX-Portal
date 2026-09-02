@@ -127,6 +127,8 @@ Deno.serve(async (request) => {
     const [
       canixResult,
       canixSchedulerResult,
+      canixItemResult,
+      canixItemSchedulerResult,
       qboResult,
       qboSchedulerResult,
       mondayResult,
@@ -155,6 +157,10 @@ Deno.serve(async (request) => {
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
       service.rpc("portal_canix_scheduler_state"),
+      service.from("canix_item_sync_state").select(
+        "status,last_successful_at,last_error,item_count,item_pages,latest_source_updated_at",
+      ).eq("id", 1).maybeSingle(),
+      service.rpc("portal_canix_item_scheduler_state"),
       service.from("quickbooks_sync_state").select(
         "status,connection_status,connection_environment,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
       ).eq("id", 1).maybeSingle(),
@@ -232,6 +238,8 @@ Deno.serve(async (request) => {
     ]);
     if (canixResult.error) throw canixResult.error;
     if (canixSchedulerResult.error) throw canixSchedulerResult.error;
+    if (canixItemResult.error) throw canixItemResult.error;
+    if (canixItemSchedulerResult.error) throw canixItemSchedulerResult.error;
     if (qboResult.error) throw qboResult.error;
     if (qboSchedulerResult.error) throw qboSchedulerResult.error;
     if (mondayResult.error) throw mondayResult.error;
@@ -247,6 +255,11 @@ Deno.serve(async (request) => {
     const canixScheduler = Array.isArray(canixSchedulerResult.data) &&
         canixSchedulerResult.data.length
       ? canixSchedulerResult.data[0] as Row
+      : null;
+    const canixItem = canixItemResult.data as Row | null;
+    const canixItemScheduler = Array.isArray(canixItemSchedulerResult.data) &&
+        canixItemSchedulerResult.data.length
+      ? canixItemSchedulerResult.data[0] as Row
       : null;
     const qbo = qboResult.data as Row | null;
     const qboScheduler = Array.isArray(qboSchedulerResult.data) &&
@@ -291,6 +304,7 @@ Deno.serve(async (request) => {
       ? monday.granted_scopes.map(String)
       : [];
     const canixAge = ageMinutes(canix?.last_successful_at);
+    const canixItemAge = ageMinutes(canixItem?.last_successful_at);
     const qboAge = ageMinutes(qbo?.last_successful_at);
     const mondayCallbackAge = ageMinutes(latestMondayEvent?.received_at);
     const mondayOAuthReady = configured("MONDAY_CLIENT_ID") &&
@@ -364,6 +378,36 @@ Deno.serve(async (request) => {
                 String(canix.last_error ?? "Unknown error").slice(0, 240)
               }`
               : `State: ${canix?.status ?? "never"}.`,
+          },
+          {
+            state: canixItem?.last_successful_at
+              ? (canixItemAge !== null && canixItemAge <= 10 ? "pass" : "warn")
+              : "block",
+            label: "Complete Item Master snapshot",
+            detail: canixItem?.last_successful_at
+              ? `${
+                canixItem.item_count ?? 0
+              } active and inactive Item IDs; ${canixItemAge} minutes old.`
+              : "No complete GET /items snapshot is recorded.",
+          },
+          {
+            state: configured("CANIX_CRON_SECRET") &&
+                canixItemScheduler?.secret_configured &&
+                canixItemScheduler?.job_scheduled &&
+                canixItem?.status !== "error"
+              ? "pass"
+              : "block",
+            label: "Independent Item Master scheduler",
+            detail: configured("CANIX_CRON_SECRET") &&
+                canixItemScheduler?.secret_configured &&
+                canixItemScheduler?.job_scheduled &&
+                canixItem?.status !== "error"
+              ? "The complete Item Master refresh is active and fault-isolated from package inventory."
+              : canixItem?.status === "error"
+              ? `Item Master error: ${
+                String(canixItem.last_error ?? "Unknown error").slice(0, 240)
+              }`
+              : "The Vault-backed Item Master job is incomplete.",
           },
           {
             state: lotIntegrity?.enforcement_mode === "block"
@@ -733,6 +777,16 @@ Deno.serve(async (request) => {
         volumeExcluded: true,
       },
       integrations: {
+        canix: {
+          packageLastSuccessfulAt: canix?.last_successful_at ?? null,
+          packageCount: canix?.package_count ?? 0,
+          itemMasterLastSuccessfulAt: canixItem?.last_successful_at ?? null,
+          itemMasterLatestUpdatedAt: canixItem?.latest_source_updated_at ??
+            null,
+          itemMasterCount: canixItem?.item_count ?? 0,
+          itemMasterPages: canixItem?.item_pages ?? 0,
+          itemMasterStatus: canixItem?.status ?? "never_run",
+        },
         monday: {
           connectionStatus: monday?.connection_status ?? "disconnected",
           connectedAt: monday?.connected_at ?? null,

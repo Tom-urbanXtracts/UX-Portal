@@ -117,6 +117,79 @@ const PACKAGE_COLUMNS = [
   "lot_checked_at",
 ] as const;
 
+const STORED_ITEM_MASTER_COLUMNS = [
+  "item_id",
+  "name",
+  "is_active",
+  "item_type",
+  "item_type_id",
+  "item_type_name",
+  "item_category_name",
+  "item_sub_type_id",
+  "item_sub_type_name",
+  "brand_id",
+  "brand_name",
+  "product_id",
+  "product_brand_id",
+  "product_brand_name",
+  "quantity_type",
+  "sku",
+  "accounting_inventory_type",
+  "notes",
+  "facility_id",
+  "facility_name",
+  "facility_license",
+  "strain_id",
+  "strain_name",
+  "strain_type",
+  "weight_unit",
+  "unit_weight",
+  "unit_weight_unit",
+  "case_quantity",
+  "case_quantity_unit",
+  "unit_cbd_weight",
+  "unit_cbd_weight_unit",
+  "unit_thc_weight",
+  "unit_thc_weight_unit",
+  "unit_cbd_percent",
+  "unit_thc_percent",
+  "description",
+  "serving_size",
+  "number_of_doses",
+  "public_ingredients",
+  "supply_duration_days",
+  "administration_method",
+  "allergens",
+  "transfer_source_license",
+  "phenotype",
+  "bills_of_materials",
+  "sage_item_external_id",
+  "sage_item_name",
+  "leaflink_item_external_id",
+  "leaflink_item_name",
+  "dutchie_product_external_id",
+  "dutchie_product_name",
+  "total_for_sale",
+  "ordered",
+  "backordered",
+  "unordered",
+  "source_updated_at",
+] as const;
+
+const ITEM_MASTER_COST_COLUMNS = [
+  "current_standard_cost_amount",
+  "current_standard_cost_currency",
+  "current_standard_cost_start_date",
+  "current_standard_cost_end_date",
+] as const;
+
+const ITEM_MASTER_DERIVED_COLUMNS = [
+  "current_package_count",
+  "production_package_count",
+  "sandbox_package_count",
+  "has_current_packages",
+] as const;
+
 type Json = Record<string, unknown>;
 type Allocation = {
   order_item_id: number | null;
@@ -852,6 +925,43 @@ async function allCurrentPackages(runId: string): Promise<Json[]> {
   return rows;
 }
 
+async function allCurrentItems(
+  runId: string,
+  includeCosts: boolean,
+): Promise<Json[]> {
+  const rows: Json[] = [];
+  const columns = includeCosts
+    ? [...STORED_ITEM_MASTER_COLUMNS, ...ITEM_MASTER_COST_COLUMNS]
+    : [...STORED_ITEM_MASTER_COLUMNS];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from("canix_item_current")
+      .select(columns.join(","))
+      .eq("sync_run_id", runId)
+      .order("item_id", { ascending: true })
+      .range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as Json[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+async function hasCapability(
+  profile: Json,
+  permission: string,
+): Promise<boolean> {
+  const staffRole = stringOrNull(profile.staff_role);
+  if (!staffRole) return false;
+  const { data, error } = await service.from("portal_role_permission")
+    .select("permission")
+    .eq("staff_role", staffRole)
+    .eq("permission", permission)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
 async function allLotControls(runId: string): Promise<Json[]> {
   const rows: Json[] = [];
   for (let start = 0;; start += 1000) {
@@ -985,21 +1095,32 @@ function summarize(rows: Json[], key: string): Json[] {
     .sort((a, b) => Number(b.packages) - Number(a.packages));
 }
 
-async function cachedPayload(): Promise<Json | null> {
+async function cachedPayload(profile: Json): Promise<Json | null> {
   const { data: state, error } = await service.from("canix_sync_state").select(
     "*",
   ).eq("id", 1).single();
   if (error) throw error;
   const runId = stringOrNull(state.last_successful_run_id);
   if (!runId) return null;
-  const [ownedRows, lotControls, lotStateResult] = await Promise.all([
+  const [
+    ownedRows,
+    lotControls,
+    lotStateResult,
+    itemStateResult,
+    canReadCosts,
+  ] = await Promise.all([
     withEconomicOwnership(await allCurrentPackages(runId)),
     allLotControls(runId),
     service.from("portal_lot_integrity_state").select(
       "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
     ).eq("id", 1).maybeSingle(),
+    service.from("canix_item_sync_state").select(
+      "status,last_successful_run_id,last_successful_at,latest_source_updated_at,item_count,item_pages,last_error",
+    ).eq("id", 1).single(),
+    hasCapability(profile, "economics.manage"),
   ]);
   if (lotStateResult.error) throw lotStateResult.error;
+  if (itemStateResult.error) throw itemStateResult.error;
   const lotControlByPackage = new Map(
     lotControls.map((control) => [String(control.package_id), control]),
   );
@@ -1035,6 +1156,64 @@ async function cachedPayload(): Promise<Json | null> {
     row.quantity_type === "CountBased"
   );
   const lastSuccess = isoOrNull(state.last_successful_at);
+  const itemState = itemStateResult.data as Json;
+  const itemRunId = stringOrNull(itemState.last_successful_run_id);
+  const itemRows = itemRunId
+    ? await allCurrentItems(itemRunId, canReadCosts)
+    : [];
+  const packageCoverage = new Map<
+    string,
+    { current: number; production: number; sandbox: number }
+  >();
+  for (const row of rows) {
+    const itemId = numberOrNull(row.item_id);
+    if (itemId === null) continue;
+    const key = String(itemId);
+    const current = packageCoverage.get(key) ?? {
+      current: 0,
+      production: 0,
+      sandbox: 0,
+    };
+    current.current += 1;
+    if (numberOrNull(row.facility_id) === 4546) current.sandbox += 1;
+    else current.production += 1;
+    packageCoverage.set(key, current);
+  }
+  const publishedItemColumns = [
+    ...STORED_ITEM_MASTER_COLUMNS,
+    ...(canReadCosts ? ITEM_MASTER_COST_COLUMNS : []),
+    ...ITEM_MASTER_DERIVED_COLUMNS,
+  ];
+  const itemMasterRows: Json[] = itemRows.map((row): Json => {
+    const coverage = packageCoverage.get(String(row.item_id)) ?? {
+      current: 0,
+      production: 0,
+      sandbox: 0,
+    };
+    return {
+      ...row,
+      current_package_count: coverage.current,
+      production_package_count: coverage.production,
+      sandbox_package_count: coverage.sandbox,
+      has_current_packages: coverage.current > 0,
+    };
+  });
+  const itemLastSuccess = isoOrNull(itemState.last_successful_at);
+  const itemFacilityGroups = new Map<
+    string,
+    { facility_id: number | null; facility_name: string | null; items: number }
+  >();
+  for (const row of itemMasterRows) {
+    const facilityId = numberOrNull(row.facility_id);
+    const key = facilityId === null ? "unknown" : String(facilityId);
+    const group = itemFacilityGroups.get(key) ?? {
+      facility_id: facilityId,
+      facility_name: stringOrNull(row.facility_name),
+      items: 0,
+    };
+    group.items += 1;
+    itemFacilityGroups.set(key, group);
+  }
   return {
     source: {
       system: "Canix",
@@ -1174,6 +1353,54 @@ async function cachedPayload(): Promise<Json | null> {
         lotState?.duplicate_register_rows,
       ),
     },
+    item_master: {
+      source: {
+        system: "Canix",
+        table: "GET /items",
+        grain: "one row per Canix Item ID",
+        active_and_inactive: true,
+        last_successful_sync_at: itemLastSuccess,
+        latest_updated_at: itemState.latest_source_updated_at ?? null,
+        stale: itemLastSuccess
+          ? Date.now() - new Date(itemLastSuccess).getTime() > 10 * 60 * 1000
+          : true,
+        status: itemState.status ?? "never_run",
+        last_error: itemState.last_error ?? null,
+        cost_fields_included: canReadCosts,
+      },
+      summary: {
+        items: itemMasterRows.length,
+        active: itemMasterRows.filter((row) => row.is_active === true).length,
+        inactive: itemMasterRows.filter((row) => row.is_active === false)
+          .length,
+        active_unknown:
+          itemMasterRows.filter((row) =>
+            row.is_active !== true && row.is_active !== false
+          ).length,
+        with_current_packages:
+          itemMasterRows.filter((row) => row.has_current_packages === true)
+            .length,
+        without_current_packages:
+          itemMasterRows.filter((row) => row.has_current_packages !== true)
+            .length,
+        production_facility_items:
+          itemMasterRows.filter((row) => numberOrNull(row.facility_id) !== 4546)
+            .length,
+        sandbox_facility_items:
+          itemMasterRows.filter((row) => numberOrNull(row.facility_id) === 4546)
+            .length,
+      },
+      facilities: Array.from(itemFacilityGroups.values()).sort((left, right) =>
+        right.items - left.items ||
+        String(left.facility_name ?? "").localeCompare(
+          String(right.facility_name ?? ""),
+        )
+      ),
+      item_columns: publishedItemColumns,
+      items: itemMasterRows.map((row) =>
+        publishedItemColumns.map((column) => row[column] ?? null)
+      ),
+    },
     package_columns: PACKAGE_COLUMNS,
     packages: productionRows.map((row) =>
       PACKAGE_COLUMNS.map((column) => row[column] ?? null)
@@ -1214,7 +1441,7 @@ Deno.serve(async (request) => {
 
     const profile = await authenticateCapability(request, "inventory.read");
     if (!profile) return json(request, { error: "Forbidden" }, 403);
-    const payload = await cachedPayload();
+    const payload = await cachedPayload(profile);
     if (!payload) {
       return json(
         request,

@@ -1136,6 +1136,36 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-size:10.5px;color:var(--ux-muted);line-height:1.5;margin-top:10px">Last register sync: {{ invLotLastSync }} · Last integrity check: {{ invLotLastCheck }} · Board 18429359264</div>
 </section>
 
+<section aria-labelledby="item-master-heading" style="margin:0 0 32px;border-top:2px solid rgba(23,14,11,.42);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">CANIX GET /ITEMS · ITEM GRAIN</div><h2 id="item-master-heading" style="font:800 20px/1.2 Archivo,sans-serif;margin:0 0 5px">Canix Item Master</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:80ch">Every Canix Item ID is retained independently of package inventory, including inactive items and items with no current package. Package coverage is joined for context; it does not decide whether an item exists.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="{{ invMasterConnectionStyle }}">{{ invMasterConnectionLabel }}</span><sc-if value="{{ invMasterCanSync }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvMasterSync }}" aria-disabled="{{ invMasterSyncPending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invMasterSyncOpacity }}">{{ invMasterSyncLabel }}</button></sc-if><button type="button" onClick="{{ onInvMasterToggle }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ invMasterToggleLabel }}</button></div>
+</div>
+<div style="{{ invMasterKpiStyle }}"><sc-for list="{{ invMasterKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:13px 14px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 19px Archivo,sans-serif">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for></div>
+<div style="font-size:10.5px;color:var(--ux-muted);line-height:1.5;margin-top:10px">Last complete Item Master sync: {{ invMasterLastSync }} · Latest Canix item update: {{ invMasterLatestRecord }}</div>
+<sc-if value="{{ invMasterHasSyncError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-top:12px;font-size:12px;line-height:1.5">{{ invMasterSyncError }}</div></sc-if>
+
+<sc-if value="{{ invMasterOpen }}" hint-placeholder-val="{{ true }}">
+<div style="background:var(--ux-surface);padding:15px;margin-top:17px"><div style="{{ invMasterFilterGridStyle }}">
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SEARCH ITEM MASTER</span><input type="search" value="{{ invMasterSearch }}" onInput="{{ onInvMasterSearch }}" placeholder="ID, name, SKU, brand, type, strain or description" style="width:100%;min-width:0;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">STATUS</span><select value="{{ invMasterStatus }}" onChange="{{ onInvMasterStatus }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">Active and inactive</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="unknown">Not recorded</option></select></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">FACILITY</span><select value="{{ invMasterFacility }}" onChange="{{ onInvMasterFacility }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">All Canix facilities</option><sc-for list="{{ invMasterFacilityOptions }}" as="o" hint-placeholder-count="4"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">QUANTITY TYPE</span><select value="{{ invMasterQuantity }}" onChange="{{ onInvMasterQuantity }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">All quantity types</option><sc-for list="{{ invMasterQuantityOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:6px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">PACKAGE COVERAGE</span><select value="{{ invMasterPackageCoverage }}" onChange="{{ onInvMasterPackageCoverage }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">With and without packages</option><option value="with">Has current packages</option><option value="without">No current packages</option></select></label>
+</div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0"><div><span style="font:800 18px Archivo,sans-serif">{{ invMasterResultCount }}</span> <span style="font-size:11px;color:var(--ux-muted)">matching items · showing {{ invMasterRangeLabel }}</span></div><div style="display:flex;gap:8px"><button type="button" onClick="{{ onInvMasterExport }}" aria-disabled="{{ invMasterExportDisabled }}" style="{{ invMasterExportStyle }}">Export filtered CSV</button><button type="button" onClick="{{ onInvMasterReset }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:600 11px Archivo,sans-serif;cursor:pointer">Reset Item Master</button></div></div>
+
+<div role="region" aria-label="Canix Item Master" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:590px"><div role="table" aria-label="All Canix items" style="min-width:1580px">
+<div role="row" style="display:grid;grid-template-columns:1.7fr 1.05fr .6fr 1.05fr 1fr .8fr .75fr 1fr .85fr .45fr;gap:12px;padding:9px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2"><sc-for list="{{ invMasterColumns }}" as="c" hint-placeholder-count="10"><button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button></sc-for></div>
+<sc-if value="{{ invMasterHasRows }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ invMasterTableRows }}" as="r" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:1.7fr 1.05fr .6fr 1.05fr 1fr .8fr .75fr 1fr .85fr .45fr;gap:12px;padding:12px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:11.5px;align-items:center;{{ r.rowStyle }}"><div style="min-width:0"><div style="font:700 12.5px Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted)">{{ r.idSku }}</div></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.license }}</div></div><div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.type }}</div><div style="font-size:9.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.subtype }}</div></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.brand }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.strain }}</div></div><div><div style="font-weight:700">{{ r.quantity }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.unit }}</div></div><div><div style="font:700 12px ui-monospace,monospace">{{ r.packages }}</div><div style="font-size:9px;color:var(--ux-muted)">{{ r.packageSplit }}</div></div><div><div style="font-weight:600">{{ r.totals }}</div><div style="font-size:9px;color:var(--ux-muted)">{{ r.orderTotals }}</div></div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ r.updated }}</div><button type="button" onClick="{{ r.onInspect }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 7px;font:600 10px Archivo,sans-serif;cursor:pointer">Inspect</button></div></sc-for></sc-if>
+<sc-if value="{{ invMasterNoRows }}" hint-placeholder-val="{{ false }}"><div style="padding:30px 20px;text-align:center;background:var(--ux-surface);font-size:12px;color:var(--ux-muted)">No Canix Item Master records match these filters.</div></sc-if>
+</div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px"><label style="font-size:11px;color:var(--ux-muted)">Rows <select value="{{ invMasterPageSize }}" onChange="{{ onInvMasterPageSize }}" style="margin-left:5px;background:var(--ux-ground);border:1px solid rgba(23,14,11,.25);padding:5px 7px"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><div style="display:flex;align-items:center;gap:8px"><button type="button" onClick="{{ onInvMasterPrev }}" aria-disabled="{{ invMasterPrevDisabled }}" style="{{ invMasterPrevStyle }}">Previous</button><span style="font:600 10.5px ui-monospace,monospace">{{ invMasterPageLabel }}</span><button type="button" onClick="{{ onInvMasterNext }}" aria-disabled="{{ invMasterNextDisabled }}" style="{{ invMasterNextStyle }}">Next</button></div></div>
+
+<sc-if value="{{ invMasterHasSelection }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-ink);color:var(--ux-ground);padding:18px;margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px"><div><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-light);margin-bottom:4px">ITEM MASTER DETAIL</div><div style="font:800 17px Archivo,sans-serif">{{ invMasterSelectedTitle }}</div><div style="font:10.5px ui-monospace,monospace;opacity:.65;margin-top:4px">{{ invMasterSelectedId }}</div></div><button type="button" onClick="{{ onInvMasterCloseDetail }}" style="background:transparent;border:1px solid rgba(250,247,243,.35);color:var(--ux-ground);padding:6px 9px;font:600 10px Archivo,sans-serif;cursor:pointer">Close</button></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(250,247,243,.16)"><sc-for list="{{ invMasterDetailRows }}" as="d" hint-placeholder-count="20"><div style="background:var(--ux-ink);padding:10px 11px;min-width:0"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.06em;opacity:.52;margin-bottom:4px">{{ d.label }}</div><div style="font-size:11.5px;line-height:1.45;overflow-wrap:anywhere">{{ d.value }}</div></div></sc-for></div></div></sc-if>
+</sc-if>
+</section>
+
 <sc-if value="{{ invCanManageOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="economic-party-heading" style="margin-bottom:32px;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
@@ -3187,8 +3217,28 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'lot_control_status', 'lot_allocation_eligible', 'lot_control_detail', 'lot_checked_at'
 ];
 
+const ITEM_MASTER_STORED_COLUMNS = [
+  'item_id', 'name', 'is_active', 'item_type', 'item_type_id', 'item_type_name', 'item_category_name',
+  'item_sub_type_id', 'item_sub_type_name', 'brand_id', 'brand_name', 'product_id', 'product_brand_id',
+  'product_brand_name', 'quantity_type', 'sku', 'accounting_inventory_type', 'notes', 'facility_id',
+  'facility_name', 'facility_license', 'strain_id', 'strain_name', 'strain_type', 'weight_unit',
+  'unit_weight', 'unit_weight_unit', 'case_quantity', 'case_quantity_unit', 'unit_cbd_weight',
+  'unit_cbd_weight_unit', 'unit_thc_weight', 'unit_thc_weight_unit', 'unit_cbd_percent', 'unit_thc_percent',
+  'description', 'serving_size', 'number_of_doses', 'public_ingredients', 'supply_duration_days',
+  'administration_method', 'allergens', 'transfer_source_license', 'phenotype', 'bills_of_materials',
+  'sage_item_external_id', 'sage_item_name', 'leaflink_item_external_id', 'leaflink_item_name',
+  'dutchie_product_external_id', 'dutchie_product_name', 'total_for_sale', 'ordered', 'backordered',
+  'unordered', 'source_updated_at'
+];
+const ITEM_MASTER_COST_COLUMNS = ['current_standard_cost_amount', 'current_standard_cost_currency',
+  'current_standard_cost_start_date', 'current_standard_cost_end_date'];
+const ITEM_MASTER_DERIVED_COLUMNS = ['current_package_count', 'production_package_count',
+  'sandbox_package_count', 'has_current_packages'];
+
 const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl
   || SUPABASE_URL + '/functions/v1/canix-inventory';
+const CANIX_ITEM_MASTER_API = PORTAL_CONFIG.canixItemMasterUrl
+  || SUPABASE_URL + '/functions/v1/canix-item-master';
 const CANIX_CATALOG_API = PORTAL_CONFIG.canixCatalogUrl
   || SUPABASE_URL + '/functions/v1/canix-catalog';
 const QUICKBOOKS_ACCOUNTS_API = PORTAL_CONFIG.quickbooksAccountsUrl
@@ -3234,6 +3284,12 @@ const CANIX_INVENTORY_SNAPSHOT = {
     lot_allocation_exception_packages: null,
     lot_register_rows: null, lot_register_approved_rows: null, lot_register_invalid_rows: null,
     lot_register_duplicate_rows: null },
+  item_master: { source: { system: 'Canix', table: 'GET /items', grain: 'one row per Canix Item ID',
+      active_and_inactive: true, last_successful_sync_at: null, latest_updated_at: null, stale: true,
+      status: 'never_run', last_error: null, cost_fields_included: false },
+    summary: { items: null, active: null, inactive: null, active_unknown: null, with_current_packages: null,
+      without_current_packages: null, production_facility_items: null, sandbox_facility_items: null },
+    facilities: [], item_columns: ITEM_MASTER_STORED_COLUMNS.concat(ITEM_MASTER_DERIVED_COLUMNS), items: [] },
   package_columns: INVENTORY_PACKAGE_COLUMNS, packages: []
 };
 
@@ -3490,6 +3546,9 @@ class Component extends DCLogic {
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
     invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
+    invMasterOpen: true, invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all',
+    invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
+    invMasterPage: 1, invMasterPageSize: 50, invSelectedItem: null, itemMasterSyncPending: false,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
     lotSyncPending: false, lotStagePending: false,
     economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
@@ -4019,6 +4078,9 @@ class Component extends DCLogic {
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
+      invMasterOpen: true, invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all',
+      invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
+      invMasterPage: 1, invMasterPageSize: 50, invSelectedItem: null, itemMasterSyncPending: false,
       lotSyncPending: false, lotStagePending: false,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
@@ -4191,6 +4253,61 @@ class Component extends DCLogic {
     this.setState(st => ({ invSortKey: key, invSortDir: st.invSortKey === key && st.invSortDir === 'asc' ? 'desc' : 'asc', invPage: 1 }));
   }
 
+  itemMasterFilter(patch) {
+    this.set({ ...patch, invMasterPage: 1, invSelectedItem: null });
+  }
+
+  itemMasterReset() {
+    this.set({ invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all', invMasterQuantity: 'all',
+      invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
+      invMasterPage: 1, invSelectedItem: null });
+  }
+
+  itemMasterSort(key) {
+    this.setState(st => ({ invMasterSortKey: key,
+      invMasterSortDir: st.invMasterSortKey === key && st.invMasterSortDir === 'asc' ? 'desc' : 'asc',
+      invMasterPage: 1 }));
+  }
+
+  itemMasterExport(rows) {
+    if (!rows || !rows.length) return;
+    const fields = [
+      ['Canix Item ID', 'item_id'], ['Item name', 'name'], ['Active', 'is_active'], ['SKU', 'sku'],
+      ['Facility', 'facility_name'], ['Facility license', 'facility_license'], ['Item type', 'item_type_name'],
+      ['Category', 'item_category_name'], ['Sub-type', 'item_sub_type_name'], ['Brand', 'brand_name'],
+      ['Product Brand', 'product_brand_name'], ['Strain', 'strain_name'], ['Quantity type', 'quantity_type'],
+      ['Weight unit', 'weight_unit'], ['Unit weight', 'unit_weight'], ['Unit weight unit', 'unit_weight_unit'],
+      ['Case quantity', 'case_quantity'], ['Case unit', 'case_quantity_unit'], ['Accounting inventory type', 'accounting_inventory_type'],
+      ['Serving size', 'serving_size'], ['Number of doses', 'number_of_doses'], ['Ingredients', 'public_ingredients'],
+      ['Administration method', 'administration_method'], ['Allergens', 'allergens'], ['Description', 'description'],
+      ['Current package count', 'current_package_count'], ['Production package count', 'production_package_count'],
+      ['Sandbox package count', 'sandbox_package_count'], ['Available to sell', 'total_for_sale'], ['Ordered', 'ordered'],
+      ['Backordered', 'backordered'], ['Unordered', 'unordered'], ['Updated at', 'source_updated_at']
+    ];
+    if (rows.some(row => row.current_standard_cost_amount !== undefined)) {
+      fields.push(['Current standard cost', 'current_standard_cost_amount'],
+        ['Cost currency', 'current_standard_cost_currency'], ['Cost start', 'current_standard_cost_start_date'],
+        ['Cost end', 'current_standard_cost_end_date']);
+    }
+    const cell = value => {
+      let out = value === null || value === undefined ? '' : String(value);
+      if (/^[=+\-@]/.test(out)) out = "'" + out;
+      return '"' + out.replace(/"/g, '""') + '"';
+    };
+    const body = [fields.map(field => cell(field[0])).join(',')]
+      .concat(rows.map(row => fields.map(field => cell(row[field[1]])).join(','))).join('\n');
+    const blob = new Blob([body], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'canix-item-master-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    this.set({ toast: rows.length + ' filtered Canix Item Master rows exported.', toastKind: 'EXPORT READY' });
+  }
+
   inventoryExport(rows) {
     if (!rows || !rows.length) return;
     const fields = [
@@ -4267,7 +4384,9 @@ class Component extends DCLogic {
       .then(data => {
         const types = data && data.scope && data.scope.quantity_types;
         if (!data || !data.summary || !Array.isArray(data.facilities) || !Array.isArray(data.statuses)
-          || !Array.isArray(data.package_columns) || !Array.isArray(data.packages)) {
+          || !Array.isArray(data.package_columns) || !Array.isArray(data.packages) || !data.item_master
+          || !data.item_master.source || !data.item_master.summary || !Array.isArray(data.item_master.facilities)
+          || !Array.isArray(data.item_master.item_columns) || !Array.isArray(data.item_master.items)) {
           throw new Error('Inventory endpoint returned an incomplete Canix response.');
         }
         if (!Array.isArray(types) || types.length !== 2 || !types.includes('WeightBased') || !types.includes('CountBased')) {
@@ -4277,17 +4396,43 @@ class Component extends DCLogic {
           || data.packages.some(row => !Array.isArray(row) || row.length !== data.package_columns.length)) {
           throw new Error('Inventory endpoint returned an unsupported package schema.');
         }
+        const expectedItemColumns = ITEM_MASTER_STORED_COLUMNS
+          .concat(data.item_master.source.cost_fields_included ? ITEM_MASTER_COST_COLUMNS : [])
+          .concat(ITEM_MASTER_DERIVED_COLUMNS);
+        if (data.item_master.item_columns.join('|') !== expectedItemColumns.join('|')
+          || data.item_master.items.some(row => !Array.isArray(row) || row.length !== data.item_master.item_columns.length)) {
+          throw new Error('Inventory endpoint returned an unsupported Canix Item Master schema.');
+        }
         const liveCatalog = buildCanixCatalog(data);
         for (let index = PRODUCTS.length - 1; index >= 0; index -= 1) {
           if (PRODUCTS[index].source === 'Canix') PRODUCTS.splice(index, 1);
         }
         liveCatalog.forEach(product => PRODUCTS.push(product));
         this.set({ inventoryData: data, inventoryLoading: false, inventoryLoaded: true, inventoryError: null,
-          invPage: 1, invSelectedPackage: null });
+          invPage: 1, invSelectedPackage: null, invMasterPage: 1, invSelectedItem: null });
         if (this.hasPermission('economics.manage')) this.loadEconomicOwnership();
       })
       .catch(e => this.set({ inventoryLoading: false, inventoryLoaded: false,
         inventoryError: (e && e.message) || 'The inventory endpoint could not be reached.' }));
+  }
+
+  syncItemMaster() {
+    if (!this.requirePermission('inventory.sync', 'synchronize the Canix Item Master')) return;
+    if (this.state.itemMasterSyncPending) return;
+    this.set({ itemMasterSyncPending: true, inventoryError: null });
+    fetch(CANIX_ITEM_MASTER_API + '?force=true', { method: 'POST', credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + (this.state.token || '') }, body: JSON.stringify({ source: 'administrator' }) })
+      .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
+      .then(({ ok, status, payload }) => {
+        if (!ok) throw new Error((payload && payload.error) || ('Canix Item Master endpoint returned ' + status + '.'));
+        const sync = payload && payload.sync ? payload.sync : {};
+        this.set({ itemMasterSyncPending: false, toast: Number(sync.items || 0).toLocaleString('en-US')
+          + ' Canix Item Master record(s) synchronized.', toastKind: 'SYNCED' });
+        this.loadInventory();
+      })
+      .catch(e => this.set({ itemMasterSyncPending: false,
+        inventoryError: (e && e.message) || 'The Canix Item Master could not be synchronized.' }));
   }
 
   syncLotRegister() {
@@ -6413,6 +6558,43 @@ class Component extends DCLogic {
     const invFilteredWeightValue = invFiltered.filter(row => row.quantity_type === 'WeightBased').reduce((sum, row) => sum + (Number(row.c_weight_g) || 0), 0);
     const invFilteredUnitsValue = invFiltered.filter(row => row.quantity_type === 'CountBased').reduce((sum, row) => sum + (Number(row.weight) || 0), 0);
     const invSelected = invScopedPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
+    const invMasterData = invData.item_master || CANIX_INVENTORY_SNAPSHOT.item_master;
+    const invMasterColumns = Array.isArray(invMasterData.item_columns) ? invMasterData.item_columns : [];
+    const invMasterItems = (Array.isArray(invMasterData.items) ? invMasterData.items : []).map(row => Array.isArray(row)
+      ? Object.fromEntries(invMasterColumns.map((name, index) => [name, row[index]])) : (row || {}));
+    const invMasterNeedle = String(s.invMasterSearch || '').trim().toLowerCase();
+    const invMasterFiltered = invMasterItems.filter(row => {
+      if (s.invMasterStatus === 'active' && row.is_active !== true) return false;
+      if (s.invMasterStatus === 'inactive' && row.is_active !== false) return false;
+      if (s.invMasterStatus === 'unknown' && (row.is_active === true || row.is_active === false)) return false;
+      if (s.invMasterFacility !== 'all' && String(row.facility_id || '') !== s.invMasterFacility) return false;
+      if (s.invMasterQuantity !== 'all' && String(row.quantity_type || 'Not recorded') !== s.invMasterQuantity) return false;
+      if (s.invMasterPackageCoverage === 'with' && !row.has_current_packages) return false;
+      if (s.invMasterPackageCoverage === 'without' && row.has_current_packages) return false;
+      if (!invMasterNeedle) return true;
+      return [row.item_id, row.name, row.sku, row.brand_name, row.product_brand_name, row.item_type_name,
+        row.item_category_name, row.item_sub_type_name, row.strain_name, row.facility_name, row.description,
+        row.public_ingredients, row.accounting_inventory_type, row.sage_item_name, row.leaflink_item_name,
+        row.dutchie_product_name].some(value => String(value || '').toLowerCase().includes(invMasterNeedle));
+    });
+    const invMasterSorted = invMasterFiltered.slice().sort((a, b) => {
+      const av = a[s.invMasterSortKey];
+      const bv = b[s.invMasterSortKey];
+      let result = 0;
+      if (typeof av === 'number' || typeof bv === 'number') result = (Number(av) || 0) - (Number(bv) || 0);
+      else if (typeof av === 'boolean' || typeof bv === 'boolean') result = Number(Boolean(av)) - Number(Boolean(bv));
+      else result = String(av || '').localeCompare(String(bv || ''), undefined, { numeric: true, sensitivity: 'base' });
+      if (result === 0) result = Number(a.item_id) - Number(b.item_id);
+      return s.invMasterSortDir === 'asc' ? result : -result;
+    });
+    const invMasterPageSize = Number(s.invMasterPageSize) || 50;
+    const invMasterPageCount = Math.max(1, Math.ceil(invMasterSorted.length / invMasterPageSize));
+    const invMasterPage = Math.min(Math.max(1, Number(s.invMasterPage) || 1), invMasterPageCount);
+    const invMasterPageStart = (invMasterPage - 1) * invMasterPageSize;
+    const invMasterPageRows = invMasterSorted.slice(invMasterPageStart, invMasterPageStart + invMasterPageSize);
+    const invMasterSelected = invMasterItems.find(row => String(row.item_id) === String(s.invSelectedItem));
+    const invMasterSource = invMasterData.source || {};
+    const invMasterSummary = invMasterData.summary || {};
     const invSource = invData.source || {};
     const invIsStale = invSource.stale === true;
     /* Brand geometry: the mark is built from arches, so category markers, image
@@ -7522,6 +7704,120 @@ class Component extends DCLogic {
       ],
       invLotLastSync: invSource.lot_register_last_sync_at || '\u2014',
       invLotLastCheck: invSource.lot_integrity_last_checked_at || '\u2014',
+      invMasterOpen: s.invMasterOpen,
+      invMasterToggleLabel: s.invMasterOpen ? 'Close Item Master' : 'Browse all items',
+      onInvMasterToggle: () => this.set({ invMasterOpen: !s.invMasterOpen, invSelectedItem: null }),
+      invMasterConnectionLabel: invMasterSource.status === 'error' ? 'LAST SYNC FAILED'
+        : !invMasterSource.last_successful_sync_at ? 'NOT SYNCHRONIZED'
+          : invMasterSource.stale ? 'SYNC STALE' : 'LIVE ITEM MASTER',
+      invMasterConnectionStyle: 'display:inline-block;font:600 9px ui-monospace,monospace;letter-spacing:.06em;padding:4px 7px;background:'
+        + (invMasterSource.status === 'error' || invMasterSource.stale ? 'var(--ux-signal)' : invMasterSource.last_successful_sync_at ? 'var(--ux-accent)' : 'var(--ux-surface)')
+        + ';color:' + (invMasterSource.last_successful_sync_at ? '#fff' : 'var(--ux-muted-strong)'),
+      invMasterLastSync: invMasterSource.last_successful_sync_at || '\u2014',
+      invMasterLatestRecord: invMasterSource.latest_updated_at || '\u2014',
+      invMasterHasSyncError: invMasterSource.status === 'error',
+      invMasterSyncError: invMasterSource.status === 'error'
+        ? 'The most recent Item Master refresh failed. The last complete snapshot remains visible; no records were partially replaced.' : '',
+      invMasterCanSync: canStaff('inventory.sync'),
+      invMasterSyncPending: s.itemMasterSyncPending,
+      invMasterSyncOpacity: s.itemMasterSyncPending ? '.55' : '1',
+      invMasterSyncLabel: s.itemMasterSyncPending ? 'Synchronizing items\u2026' : 'Sync Item Master',
+      onInvMasterSync: () => this.syncItemMaster(),
+      invMasterKpiStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);margin-top:15px',
+      invMasterKpis: [
+        { label: 'ALL CANIX ITEMS', value: invNumber(invMasterSummary.items), note: invNumber(invMasterSummary.production_facility_items) + ' production · ' + invNumber(invMasterSummary.sandbox_facility_items) + ' sandbox.' },
+        { label: 'ACTIVE', value: invNumber(invMasterSummary.active), note: 'Active item definitions returned by Canix.' },
+        { label: 'INACTIVE', value: invNumber(invMasterSummary.inactive), note: invNumber(invMasterSummary.active_unknown) + ' with no active flag.' },
+        { label: 'NO CURRENT PACKAGE', value: invNumber(invMasterSummary.without_current_packages), note: 'Still retained as Item Master records.' }
+      ],
+      invMasterFilterGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 5) + ',minmax(0,1fr));gap:10px',
+      invMasterSearch: s.invMasterSearch,
+      onInvMasterSearch: e => this.itemMasterFilter({ invMasterSearch: e.target.value }),
+      invMasterStatus: s.invMasterStatus,
+      onInvMasterStatus: e => this.itemMasterFilter({ invMasterStatus: e.target.value }),
+      invMasterFacility: s.invMasterFacility,
+      onInvMasterFacility: e => this.itemMasterFilter({ invMasterFacility: e.target.value }),
+      invMasterFacilityOptions: (Array.isArray(invMasterData.facilities) ? invMasterData.facilities : [])
+        .map(facility => ({ value: String(facility.facility_id || ''),
+          label: (facility.facility_name || 'Facility not recorded') + ' (' + invNumber(facility.items) + ')' })),
+      invMasterQuantity: s.invMasterQuantity,
+      onInvMasterQuantity: e => this.itemMasterFilter({ invMasterQuantity: e.target.value }),
+      invMasterQuantityOptions: Array.from(new Set(invMasterItems.map(item => item.quantity_type || 'Not recorded')))
+        .sort((a, b) => String(a).localeCompare(String(b))).map(value => ({ value: String(value), label: String(value) })),
+      invMasterPackageCoverage: s.invMasterPackageCoverage,
+      onInvMasterPackageCoverage: e => this.itemMasterFilter({ invMasterPackageCoverage: e.target.value }),
+      onInvMasterReset: () => this.itemMasterReset(),
+      onInvMasterExport: () => this.itemMasterExport(invMasterSorted),
+      invMasterExportDisabled: invMasterSorted.length === 0,
+      invMasterExportStyle: 'background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:600 11px Archivo,sans-serif;cursor:'
+        + (invMasterSorted.length ? 'pointer' : 'not-allowed') + ';opacity:' + (invMasterSorted.length ? '1' : '.45'),
+      invMasterResultCount: invNumber(invMasterSorted.length),
+      invMasterRangeLabel: invMasterSorted.length ? invNumber(invMasterPageStart + 1) + '\u2013' + invNumber(Math.min(invMasterPageStart + invMasterPageSize, invMasterSorted.length))
+        + ' of ' + invNumber(invMasterSorted.length) : '0 of 0',
+      invMasterColumns: [
+        ['name', 'Item'], ['facility_name', 'Facility'], ['is_active', 'Status'], ['item_type_name', 'Type / subtype'],
+        ['brand_name', 'Brand / strain'], ['quantity_type', 'Quantity'], ['current_package_count', 'Current packages'],
+        ['total_for_sale', 'Canix totals'], ['source_updated_at', 'Updated'], ['item_id', 'Detail']
+      ].map(([key, label]) => ({ label,
+        arrow: s.invMasterSortKey === key ? (s.invMasterSortDir === 'asc' ? '\u2191' : '\u2193') : '',
+        ariaSort: s.invMasterSortKey === key ? (s.invMasterSortDir === 'asc' ? 'ascending' : 'descending') : 'none',
+        onSort: () => this.itemMasterSort(key) })),
+      invMasterHasRows: invMasterPageRows.length > 0,
+      invMasterNoRows: invMasterPageRows.length === 0,
+      invMasterTableRows: invMasterPageRows.map(item => ({
+        name: item.name || 'Unnamed item', idSku: 'Canix ' + item.item_id + (item.sku ? ' · ' + item.sku : ''),
+        facility: item.facility_name || 'Not recorded', license: item.facility_license || 'No license returned',
+        status: item.is_active === true ? 'ACTIVE' : item.is_active === false ? 'INACTIVE' : 'NOT RECORDED',
+        statusStyle: 'display:inline-block;font:600 9px ui-monospace,monospace;padding:3px 6px;background:'
+          + (item.is_active === true ? 'var(--ux-accent)' : item.is_active === false ? 'var(--ux-surface)' : 'var(--ux-signal)')
+          + ';color:' + (item.is_active === true || item.is_active === null || item.is_active === undefined ? '#fff' : 'var(--ux-muted-strong)'),
+        type: item.item_type_name || item.item_type || 'Not recorded', subtype: item.item_sub_type_name || item.item_category_name || 'No subtype',
+        brand: item.brand_name || item.product_brand_name || 'Not recorded', strain: item.strain_name || 'No strain',
+        quantity: item.quantity_type || 'Not recorded', unit: [item.unit_weight, item.unit_weight_unit || item.weight_unit].filter(value => value !== null && value !== undefined && value !== '').join(' ') || 'No unit weight',
+        packages: invNumber(item.current_package_count), packageSplit: invNumber(item.production_package_count) + ' production · ' + invNumber(item.sandbox_package_count) + ' sandbox',
+        totals: item.total_for_sale === null || item.total_for_sale === undefined ? 'Not supplied' : invNumber(item.total_for_sale, 3) + ' for sale',
+        orderTotals: 'Ordered ' + invNumber(item.ordered, 3) + ' · Backordered ' + invNumber(item.backordered, 3),
+        updated: item.source_updated_at ? String(item.source_updated_at).replace('T', ' · ').replace('Z', '') : '\u2014',
+        rowStyle: String(item.item_id) === String(s.invSelectedItem) ? 'background:var(--ux-surface)' : '',
+        onInspect: () => this.set({ invSelectedItem: item.item_id })
+      })),
+      invMasterPageSize: String(invMasterPageSize),
+      onInvMasterPageSize: e => this.set({ invMasterPageSize: Number(e.target.value), invMasterPage: 1 }),
+      invMasterPageLabel: 'Page ' + invNumber(invMasterPage) + ' of ' + invNumber(invMasterPageCount),
+      invMasterPrevDisabled: invMasterPage <= 1,
+      invMasterNextDisabled: invMasterPage >= invMasterPageCount,
+      invMasterPrevStyle: 'background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11px Archivo,sans-serif;cursor:' + (invMasterPage <= 1 ? 'not-allowed' : 'pointer') + ';opacity:' + (invMasterPage <= 1 ? '.45' : '1'),
+      invMasterNextStyle: 'background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11px Archivo,sans-serif;cursor:' + (invMasterPage >= invMasterPageCount ? 'not-allowed' : 'pointer') + ';opacity:' + (invMasterPage >= invMasterPageCount ? '.45' : '1'),
+      onInvMasterPrev: () => this.set({ invMasterPage: Math.max(1, invMasterPage - 1), invSelectedItem: null }),
+      onInvMasterNext: () => this.set({ invMasterPage: Math.min(invMasterPageCount, invMasterPage + 1), invSelectedItem: null }),
+      invMasterHasSelection: !!invMasterSelected,
+      invMasterSelectedTitle: invMasterSelected ? invMasterSelected.name || 'Unnamed Canix item' : '',
+      invMasterSelectedId: invMasterSelected ? 'Canix Item ' + invMasterSelected.item_id : '',
+      onInvMasterCloseDetail: () => this.set({ invSelectedItem: null }),
+      invMasterDetailRows: invMasterSelected ? [
+        ['Status', invMasterSelected.is_active === true ? 'Active' : invMasterSelected.is_active === false ? 'Inactive' : 'Not recorded'],
+        ['Facility', [invMasterSelected.facility_name, invMasterSelected.facility_license].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['SKU', invMasterSelected.sku || 'Not recorded'], ['Product ID', invMasterSelected.product_id || 'Not recorded'],
+        ['Type', invMasterSelected.item_type_name || invMasterSelected.item_type || 'Not recorded'],
+        ['Category / subtype', [invMasterSelected.item_category_name, invMasterSelected.item_sub_type_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Brand / Product Brand', [invMasterSelected.brand_name, invMasterSelected.product_brand_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Strain / phenotype', [invMasterSelected.strain_name, invMasterSelected.phenotype].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Quantity type', invMasterSelected.quantity_type || 'Not recorded'],
+        ['Unit weight', [invMasterSelected.unit_weight, invMasterSelected.unit_weight_unit || invMasterSelected.weight_unit].filter(value => value !== null && value !== undefined && value !== '').join(' ') || 'Not recorded'],
+        ['Case quantity', [invMasterSelected.case_quantity, invMasterSelected.case_quantity_unit].filter(Boolean).join(' ') || 'Not recorded'],
+        ['Package coverage', invNumber(invMasterSelected.current_package_count) + ' current · ' + invNumber(invMasterSelected.production_package_count) + ' production · ' + invNumber(invMasterSelected.sandbox_package_count) + ' sandbox'],
+        ['Canix availability totals', 'For sale ' + invNumber(invMasterSelected.total_for_sale, 3) + ' · ordered ' + invNumber(invMasterSelected.ordered, 3) + ' · backordered ' + invNumber(invMasterSelected.backordered, 3) + ' · unordered ' + invNumber(invMasterSelected.unordered, 3)],
+        ['Serving / doses', [invMasterSelected.serving_size && 'Serving ' + invMasterSelected.serving_size, invMasterSelected.number_of_doses && invMasterSelected.number_of_doses + ' doses'].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Ingredients', invMasterSelected.public_ingredients || 'Not recorded'], ['Allergens', invMasterSelected.allergens || 'Not recorded'],
+        ['Administration', invMasterSelected.administration_method || 'Not recorded'], ['Description', invMasterSelected.description || 'Not recorded'],
+        ['Accounting type', invMasterSelected.accounting_inventory_type || 'Not recorded'],
+        ['Standard cost', invMasterSource.cost_fields_included
+          ? (invMasterSelected.current_standard_cost_amount === null || invMasterSelected.current_standard_cost_amount === undefined ? 'Not recorded' : invNumber(invMasterSelected.current_standard_cost_amount, 4) + (invMasterSelected.current_standard_cost_currency ? ' ' + invMasterSelected.current_standard_cost_currency : ' · currency not supplied'))
+          : 'Restricted to Sales, Operations and Administrators'],
+        ['Integrations', [['Sage', invMasterSelected.sage_item_name], ['LeafLink', invMasterSelected.leaflink_item_name], ['Dutchie', invMasterSelected.dutchie_product_name]]
+          .filter(pair => pair[1]).map(pair => pair[0] + ': ' + pair[1]).join(' · ') || 'None returned'],
+        ['Last updated', invMasterSelected.source_updated_at || 'Not recorded']
+      ].map(([label, value]) => ({ label, value: String(value) })) : [],
       invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Refresh from Canix cache',
       onInvRefresh: () => this.loadInventory(),
       invInventoryBuckets: [
