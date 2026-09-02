@@ -16,6 +16,7 @@ status:
 - `Missing Type / Category`
 - `Missing Quantity Type`
 - `Missing Facility`
+- `Missing Canix ID`
 - `Missing Multiple`
 - `Inactive / Reference`
 - `Sandbox / Test`
@@ -37,6 +38,9 @@ containing Clone, Biomass, Seed, or Seeds is `Propagation`; Bulk identity is
 - Ambiguous or duplicate Canix Item IDs are counted as conflicts and are not
   overwritten.
 - Missing items are created in `Submitted for Review/Needs Re-Approval`.
+- Legacy Monday-only products that remain unlinked after the complete Canix
+  pass are grouped as `Missing Canix ID`; they are never mislabeled as Canix
+  sandbox inventory.
 - Source-specific columns do not overwrite curated sale-facing brand,
   descriptions, publishing status, pricing, or files.
 - Canix standard cost and the raw source payload remain excluded because the
