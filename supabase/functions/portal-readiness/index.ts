@@ -62,6 +62,15 @@ function ageMinutes(value: unknown): number | null {
     : null;
 }
 
+function effectiveQuickBooksConnectionStatus(qbo: Row | null): string {
+  const status = String(qbo?.connection_status ?? "disconnected");
+  if (status !== "authorizing") return status;
+  const expiresAt = Date.parse(String(qbo?.oauth_state_expires_at ?? ""));
+  return Number.isFinite(expiresAt) && expiresAt > Date.now()
+    ? "authorizing"
+    : "disconnected";
+}
+
 async function callerFor(request: Request): Promise<Row | null> {
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.startsWith("Bearer ")) return null;
@@ -132,7 +141,7 @@ Deno.serve(async (request) => {
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
       service.from("quickbooks_sync_state").select(
-        "status,connection_status,connected_at,realm_id,last_successful_at,last_error,customer_count",
+        "status,connection_status,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,customer_count",
       ).eq("id", 1).maybeSingle(),
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
@@ -251,6 +260,7 @@ Deno.serve(async (request) => {
       configured("MONDAY_CLIENT_SECRET") &&
       configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
       monday?.connection_status === "connected";
+    const qboConnectionStatus = effectiveQuickBooksConnectionStatus(qbo);
     const directMondayIntakeReady = mondayOAuthReady &&
       configured("MONDAY_ORDER_BOARD_ID") &&
       configured("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID");
@@ -498,14 +508,14 @@ Deno.serve(async (request) => {
             state:
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
                 configured("QBO_TOKEN_ENCRYPTION_KEY") &&
-                qbo?.connection_status === "connected" && Boolean(qbo?.realm_id)
+                qboConnectionStatus === "connected" && Boolean(qbo?.realm_id)
                 ? "pass"
                 : "warn",
             label: "Accounting connection",
             detail:
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
                 configured("QBO_TOKEN_ENCRYPTION_KEY") &&
-                qbo?.connection_status === "connected" && Boolean(qbo?.realm_id)
+                qboConnectionStatus === "connected" && Boolean(qbo?.realm_id)
                 ? "The encrypted server-side customer, invoice, and payment connection is active."
                 : "An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.",
           },
@@ -608,7 +618,7 @@ Deno.serve(async (request) => {
             latestMondayProductDetail.missingCanixItemId ?? null,
         },
         quickbooks: {
-          connectionStatus: qbo?.connection_status ?? "disconnected",
+          connectionStatus: qboConnectionStatus,
           connectedAt: qbo?.connected_at ?? null,
           lastSuccessfulAt: qbo?.last_successful_at ?? null,
         },

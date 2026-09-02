@@ -106,6 +106,15 @@ function configured(): boolean {
   );
 }
 
+function effectiveConnectionStatus(data: Row | null): string {
+  const status = String(data?.connection_status ?? "disconnected");
+  if (status !== "authorizing") return status;
+  const expiresAt = Date.parse(String(data?.oauth_state_expires_at ?? ""));
+  return Number.isFinite(expiresAt) && expiresAt > Date.now()
+    ? "authorizing"
+    : "disconnected";
+}
+
 async function administratorFor(request: Request): Promise<Caller | null> {
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.startsWith("Bearer ")) return null;
@@ -301,12 +310,12 @@ Deno.serve(async (request) => {
       return await startAuthorization(request, caller);
     }
     const { data, error } = await service.from("quickbooks_sync_state").select(
-      "connection_status,connected_at,refresh_token_expires_at,last_successful_at,status,last_error",
+      "connection_status,connected_at,refresh_token_expires_at,oauth_state_expires_at,last_successful_at,status,last_error",
     ).eq("id", 1).maybeSingle();
     if (error) throw error;
     return json(request, {
       configured: configured(),
-      connectionStatus: data?.connection_status ?? "disconnected",
+      connectionStatus: effectiveConnectionStatus(data),
       connectedAt: data?.connected_at ?? null,
       refreshTokenExpiresAt: data?.refresh_token_expires_at ?? null,
       lastSuccessfulAt: data?.last_successful_at ?? null,
