@@ -634,11 +634,13 @@ async function mutateBatch(
   const fields: string[] = [];
   items.forEach((item, index) => {
     variables[`values${index}`] = JSON.stringify(item.columnValues);
-    variables[`groupId${index}`] = item.targetGroupId;
-    declarations.push(
-      `$values${index}: JSON!`,
-      `$groupId${index}: String!`,
-    );
+    declarations.push(`$values${index}: JSON!`);
+    const needsGroupId = !item.boardItem ||
+      item.boardItem.groupId !== item.targetGroupId;
+    if (needsGroupId) {
+      variables[`groupId${index}`] = item.targetGroupId;
+      declarations.push(`$groupId${index}: String!`);
+    }
     if (item.boardItem) {
       variables[`itemId${index}`] = item.boardItem.id;
       declarations.push(`$itemId${index}: ID!`);
