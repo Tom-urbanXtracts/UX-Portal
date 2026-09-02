@@ -37,10 +37,10 @@ This document separates implementation evidence from company attestations. It is
 | --- | --- | --- |
 | Accounting API categories | Customers, invoices, and payments | Each sync queries Customer, Invoice, and Payment, with pages of at most 1,000 records. |
 | Frequency | Every five minutes for one connected company after production authorization | The Vault-gated scheduler remains off, without issuing failed calls, until its matching Edge Function and database credentials are ready. |
-| Syntax and validation errors tested | Not yet | Complete the sandbox checklist before changing this answer to Yes. |
+| Syntax and validation errors tested | No | Complete the sandbox checklist before changing this answer to Yes. |
 | `intuit_tid` captured | Yes | OAuth and Accounting failures sanitize and retain the response header in server-only sync state and internal Release readiness. A later success clears it. |
 | Error detail retained for support | Yes, with data minimization | The connector retains a bounded error message and `intuit_tid`. It deliberately excludes raw response bodies, access tokens, refresh tokens, bank data, and full accounting payloads. |
-| Customer support path | Needs company contact | The UI gives blocked users a recovery path, but urbanXtracts should designate the monitored support email/route before the assessment is submitted. Do not invent an address. |
+| Customer support path | No | The assessment records that the app does not yet provide an in-app support contact path. urbanXtracts should designate a monitored support email/route before submission. Do not invent an address. |
 
 ## Security facts
 
@@ -52,7 +52,7 @@ This document separates implementation evidence from company attestations. It is
 | MFA | Yes | The production portal requires TOTP authenticator enrollment or challenge after both Google Workspace SSO and retailer email/password authentication. Only an `aal2` token can load profiles, permissions, or protected Edge Functions. Database RLS independently requires the same assurance level. Administrator factor resets are permission-gated, prevent self-lockout, end the target's sessions, and are audited. |
 | CAPTCHA for authentication | No | Cloudflare Turnstile protects public retailer onboarding, not the login flow. Authentication is handled by Supabase and Google Workspace SSO. |
 | WebSocket use | No | The QuickBooks connector uses HTTPS request/response APIs only. |
-| Intuit data visible beyond the connected customer | Company review required | Data belongs to URBANXTRACTS INC's connected company and is displayed to authorized urbanXtracts staff and scoped retailer Owner/Buyer accounts. The authorized representative should confirm Intuit's intended interpretation before answering. |
+| Intuit data visible beyond the connected customer | Left unanswered | Data belongs to URBANXTRACTS INC's connected company and is displayed to authorized urbanXtracts staff and scoped retailer Owner/Buyer accounts. The authorized representative should confirm Intuit's intended interpretation before answering. |
 
 ## Company-supplied questionnaire answers (2026-09-02)
 
@@ -66,7 +66,7 @@ These responses were supplied by urbanXtracts. Engineering evidence supports the
 | Application uses multi-factor authentication | Yes | Supported by the production TOTP enrollment/challenge flow and independent `aal2` enforcement in the browser, every user-authenticated Edge Function, and database RLS. Applies to Google Workspace and retailer password accounts. |
 | CAPTCHA used for authentication | No | Correct for the current design. Turnstile protects public onboarding, not authentication. |
 | Application uses WebSocket | No | Supported by the implementation; the connector uses HTTPS request/response APIs. |
-| Intuit data used by or shown to anyone other than the original customer | Provisional: No | The selected answer requires authorized-representative review because scoped QuickBooks-derived data is shown to retailer Owners and Buyers. Confirm Intuit treats this as use solely for URBANXTRACTS INC's benefit before submitting No. |
+| Intuit data used by or shown to anyone other than the original customer | Left unanswered | Scoped QuickBooks-derived data is shown to retailer Owners and Buyers. Confirm Intuit treats this as use solely for URBANXTRACTS INC's benefit before selecting an answer. |
 
 ## Authorized-representative answers
 
@@ -98,7 +98,11 @@ Before submission, use an Intuit sandbox company and record the date and tester 
 - A fresh read-only refresh completed at `2026-09-02 18:16:46 UTC` with 33 Customers, 35 Invoices, and 16 Payments and no recorded error or `intuit_tid`.
 - The current financial run contains exactly the 35 Invoice and 16 Payment rows reported by sync state, with no stale financial-run rows and no Invoice or Payment referencing a missing cached Customer.
 - All 33 cached Customers are active in the current sandbox company. No raw Customer payload is retained.
-- The assessment remains **In-Progress** in Intuit. Its General, App Information, and Security controls were still unanswered when inspected; saving or submitting those answers remains an authorized-representative action.
+- The assessment remains **In-Progress** and has not been submitted.
+- Evidence-backed technical answers were saved for App Information, Authorization and Authentication, API Usage, Accounting API, Error Handling, and Security. General question 4 (QuickBooks/business-process relevance) was saved as Yes and question 6 (generative AI) was saved as No.
+- General questions 1, 2, 3, and 5 remain unanswered because they require company/legal attestations. Security/Data Display question 7 remains unanswered pending confirmation of Intuit's interpretation.
+- API Usage records Accounting API, an “Other” frequency of every five minutes for one connected company plus administrator-initiated refreshes, and no submission.
+- Accounting API records support for Simple Start, Essentials, Plus, and Advanced; no tested multicurrency or sales-tax feature; no webhooks; and no CDC operation.
 - Checklist items 3 through 7 above are not recorded as passed. Do not infer them from the healthy refresh.
 
 ## Production hosting
