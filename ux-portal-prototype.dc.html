@@ -6862,14 +6862,14 @@ class Component extends DCLogic {
       when: 'Published ' + pricingDate(row.publishedAt)
     })));
     const wholesaleStatusLabels = {
-      exact_ready: 'Exact match ready', normalized_review: 'Normalized review', missing_brand: 'Brand missing',
+      exact_ready: 'Exact match ready', normalized_review: 'Normalized review', structured_review: 'Structured candidate', missing_brand: 'Brand missing',
       brand_conflict: 'Brand conflict', name_collision: 'Name collision', linked_conflict: 'Already linked',
       no_match: 'No Canix match', unreviewed: 'Unreviewed', verified: 'Verified, unpublished',
       published: 'Published', rejected: 'Rejected'
     };
     const wholesaleStatusOrder = {
-      exact_ready: 0, normalized_review: 1, verified: 2, missing_brand: 3, brand_conflict: 4,
-      name_collision: 5, linked_conflict: 6, no_match: 7, unreviewed: 8, published: 9, rejected: 10
+      exact_ready: 0, normalized_review: 1, structured_review: 2, verified: 3, missing_brand: 4, brand_conflict: 5,
+      name_collision: 6, linked_conflict: 7, no_match: 8, unreviewed: 9, published: 10, rejected: 11
     };
     const wholesaleStatusOptions = Object.keys(wholesaleStatusLabels).map(value => ({
       value, label: wholesaleStatusLabels[value] + ' (' + Number(s.wholesaleSources.filter(row => row.reviewState === value).length) + ')'
@@ -8151,7 +8151,7 @@ class Component extends DCLogic {
       wholesaleMetrics: [
         { value: String(s.wholesaleSources.length), label: 'SOURCE ROWS STAGED' },
         { value: String(Number(s.wholesaleSummary.exact_ready || 0)), label: 'EXACT MATCHES READY' },
-        { value: String(Number(s.wholesaleSummary.normalized_review || 0) + Number(s.wholesaleSummary.no_match || 0)
+        { value: String(Number(s.wholesaleSummary.normalized_review || 0) + Number(s.wholesaleSummary.structured_review || 0) + Number(s.wholesaleSummary.no_match || 0)
           + Number(s.wholesaleSummary.brand_conflict || 0) + Number(s.wholesaleSummary.name_collision || 0)
           + Number(s.wholesaleSummary.missing_brand || 0) + Number(s.wholesaleSummary.linked_conflict || 0)), label: 'REVIEW REQUIRED' },
         { value: String(Number(s.wholesaleSummary.verified || 0)), label: 'VERIFIED · UNPUBLISHED' },

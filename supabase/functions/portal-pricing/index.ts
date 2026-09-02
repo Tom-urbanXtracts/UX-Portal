@@ -85,6 +85,22 @@ function brandKey(value: unknown): string {
   } as Record<string, string>)[normalized] ?? normalized;
 }
 
+function structuredIdentityKey(value: unknown, brand: unknown): string {
+  let tokens = normalizedIdentityKey(value).split(" ").filter(Boolean);
+  const normalizedBrand = brandKey(brand);
+  const brandTokens = normalizedBrand.split(" ").filter(Boolean);
+  if (
+    brandTokens.length && tokens.length >= brandTokens.length &&
+    brandTokens.every((token, index) => tokens[index] === token)
+  ) {
+    tokens = tokens.slice(brandTokens.length);
+  }
+  if (normalizedBrand === "urbanxtracts" && tokens[0] === "uxt") {
+    tokens = tokens.slice(1);
+  }
+  return tokens.sort().join(" ");
+}
+
 type CanixPriceItem = {
   itemId: number;
   itemName: string;
@@ -287,6 +303,14 @@ async function wholesalePriceSnapshot(
     canixItems,
     (item) => normalizedIdentityKey(item.itemName),
   );
+  const structuredCanix = groupBy(
+    canixItems,
+    (item) =>
+      structuredIdentityKey(
+        item.itemName,
+        item.brands.length === 1 ? item.brands[0] : null,
+      ),
+  );
   const reviewableSource = sourceRows.filter((row) =>
     !new Set(["verified", "published", "rejected"]).has(
       String(row.review_state),
@@ -299,6 +323,10 @@ async function wholesalePriceSnapshot(
   const normalizedSource = groupBy(
     reviewableSource,
     (row) => normalizedIdentityKey(row.product_name),
+  );
+  const structuredSource = groupBy(
+    reviewableSource,
+    (row) => structuredIdentityKey(row.product_name, row.brand),
   );
   const claimedIds = new Set(
     sourceRows.filter((row) =>
@@ -318,15 +346,23 @@ async function wholesalePriceSnapshot(
     } else if (persistedState !== "rejected") {
       const strictKey = identityKey(row.product_name);
       const normalizedKey = normalizedIdentityKey(row.product_name);
+      const structuredKey = structuredIdentityKey(
+        row.product_name,
+        row.brand,
+      );
       const strictCandidates = strictCanix.get(strictKey) ?? [];
       const normalizedCandidates = normalizedCanix.get(normalizedKey) ?? [];
+      const structuredCandidates = structuredCanix.get(structuredKey) ?? [];
       candidates = strictCandidates.length
         ? strictCandidates
-        : normalizedCandidates;
+        : normalizedCandidates.length
+        ? normalizedCandidates
+        : structuredCandidates;
       const sourceCollision = (strictSource.get(strictKey) ?? []).length > 1 ||
-        (normalizedSource.get(normalizedKey) ?? []).length > 1;
+        (normalizedSource.get(normalizedKey) ?? []).length > 1 ||
+        (structuredSource.get(structuredKey) ?? []).length > 1;
       const canixCollision = strictCandidates.length > 1 ||
-        normalizedCandidates.length > 1;
+        normalizedCandidates.length > 1 || structuredCandidates.length > 1;
       const sourceBrand = brandKey(row.brand);
       const matchingBrand = candidates.filter((candidate) => {
         const candidateBrands = new Set(
@@ -362,10 +398,15 @@ async function wholesalePriceSnapshot(
         reviewReason =
           "One current Canix item has the exact product name and Brand.";
         candidates = matchingBrand;
-      } else {
+      } else if (normalizedCandidates.length === 1) {
         reviewState = "normalized_review";
         reviewReason =
           "One normalized product-name and Brand candidate requires review.";
+        candidates = matchingBrand;
+      } else {
+        reviewState = "structured_review";
+        reviewReason =
+          "One same-Brand candidate has the same product-name tokens after removing a Brand or internal UXT prefix; an authorized pricing manager must review it.";
         candidates = matchingBrand;
       }
     }

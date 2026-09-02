@@ -13,6 +13,8 @@ The current wholesale source is the Google Sheet **Order Sheet (urbanXtracts + B
 
 The stricter production gate was run against the refreshed Canix snapshot on 2 September 2026. It found five unique **exact** product-name + Brand pairs. All five were verified and published as default prices; the other 113 rows remain review-required and unpublished.
 
+A second, non-publishing review aid now canonicalizes word order and removes only a matching Brand prefix or the internal `UXT` prefix. Against the same live snapshot it exposes 42 unique same-Brand structured candidates, two name collisions, two Brand conflicts, and 67 rows with no candidate. Structured candidates never enter the exact-match batch action: an authorized pricing manager must still inspect the source row, confirm the Canix Item ID, and supply a review note before verification. Publication remains a separate action.
+
 ## Staged portal workflow
 
 All 118 `ACTIVE CART` price rows are now copied into the protected `portal_wholesale_price_source` staging table with their source document, tab, row number, section-derived Brand, product details, case values, and unit price. The portal's internal **Wholesale list to Canix review queue** derives exact, normalized, collision, Brand-conflict, and no-match states against the latest CountBased Canix snapshot. The source spreadsheet remains unchanged.

@@ -92,6 +92,15 @@ Before submission, use an Intuit sandbox company and record the date and tester 
 7. Verify that a Budtender and Viewer receive no financial data; verify Owner and Buyer store scoping.
 8. Confirm there is no QuickBooks write, payment, delete, or invoice-creation control anywhere in the portal.
 
+## Sandbox verification record · 2 September 2026
+
+- The encrypted sandbox connection is active and the Vault-backed five-minute scheduler is configured.
+- A fresh read-only refresh completed at `2026-09-02 18:16:46 UTC` with 33 Customers, 35 Invoices, and 16 Payments and no recorded error or `intuit_tid`.
+- The current financial run contains exactly the 35 Invoice and 16 Payment rows reported by sync state, with no stale financial-run rows and no Invoice or Payment referencing a missing cached Customer.
+- All 33 cached Customers are active in the current sandbox company. No raw Customer payload is retained.
+- The assessment remains **In-Progress** in Intuit. Its General, App Information, and Security controls were still unanswered when inspected; saving or submitting those answers remains an authorized-representative action.
+- Checklist items 3 through 7 above are not recorded as passed. Do not infer them from the healthy refresh.
+
 ## Production hosting
 
 The static-egress deployment is complete. Intuit traffic is routed through `qbo-egress.urbanxtracts.com` at the reserved United States IP `34.45.103.119`. The full infrastructure, security, verification, and billing-alert record is maintained in [QuickBooks US static-egress deployment](qbo-static-egress-deployment.md). The hosting details have not been submitted to Intuit.
