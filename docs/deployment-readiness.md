@@ -17,6 +17,7 @@ Set these server-side deployment values only after the identity provider is conf
 
 - `UX_SSO_PROVIDER`: `google`.
 - `UX_SSO_DOMAIN`: `urbanxtracts.com` unless the approved workforce domain changes.
+- `UX_MFA_REQUIRED`: may be omitted because MFA defaults on. Set it to `false` only as a documented emergency rollback while server and database enforcement are also deliberately rolled back.
 
 SSO configuration and cutover requirements:
 
@@ -40,9 +41,10 @@ SSO configuration and cutover requirements:
 - Apply `20260901260000_deterministic_sso_provisioning.sql` next. It consolidates new-user provisioning into one trigger: `@urbanxtracts.com` users receive active internal Viewer access, while external users receive a pending retailer profile. It preserves existing administrator assignments and inactive-user state.
 - Apply `20260901270000_safe_canix_stage_cleanup.sql` after the inventory-commitment migration. It makes staging cleanup compatible with the database safe-update guard without weakening the guard.
 - Apply `20260901280000_private_portal_assets.sql` next. It creates the private product/COA bucket, fail-closed asset lifecycle, atomic activation links, and privacy-preserving public-intake rate claims.
+- Apply `20260902040000_mfa_enforcement.sql` after the authentication and profile migrations. It adds restrictive `aal2` policies to portal profiles and pending profiles, and gates role, organization, and permission helpers at the same assurance level.
 - The migrations initialize existing internal profiles as `viewer`; explicitly assign and verify the first `administrator` before releasing the fail-closed portal.
 - Workforce users receive an active internal Viewer profile on first SSO sign-in. Administrator, Operations, Sales, and Quality elevation remains an explicit administrator action.
-- Test sign-in, sign-out, deactivated users, missing profiles, and an account outside the approved domain.
+- Test sign-in, authenticator enrollment, returning-user challenge, sign-out, administrator recovery, deactivated users, missing profiles, and an account outside the approved domain.
 
 Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. On 2 September 2026 the production origin became the Site URL and an allowed redirect. The database-side Viewer provisioning repair is deployed and both existing workforce profiles are configured.
 
@@ -79,13 +81,13 @@ The production Turnstile widget is restricted to `portal.urbanxtracts.com`. Sign
 
 ### Live connector status — 2 September 2026
 
-- Supabase migrations are reconciled through `20260902010000`; all production Edge Functions are active and the 113-contract suite, including anonymous-denial checks, passes.
+- Supabase migrations are reconciled through `20260902040000`; all production Edge Functions are active and the 166-contract suite, including anonymous-denial and MFA-boundary checks, passes.
 - Canix is healthy and serving the last atomically published snapshot on the active five-minute schedule.
 - The dedicated Monday app is authorized with `boards:read`, `boards:write`, `webhooks:read`, and `webhooks:write`. Direct order creation, status writes, webhook administration, and product-board reads now share proactive OAuth 2.1 token renewal with encrypted refresh-token rotation. The direct path created and reconciled TEST order `SO-4A7A7E872A304A7F`; its signed `Ordered` and restored `Approved` callbacks each processed once with HTTP 200 on 2 September 2026. Eight obsolete order-status subscriptions were deleted and exactly one matching signed webhook remained active.
 - Make scenario `6043707` (`UX Portal intake to monday`) remains saved inactive as a compatibility and onboarding path. Its paused free-plan allowance no longer blocks direct portal order creation, portal-to-Monday status writes, or the signed Monday-to-portal order callback. Follow `docs/make-order-automation-remediation.md` before deliberately reactivating that compatibility path; do not modify the unrelated finance sandbox scenario.
 - `MONDAY_STATUS_SECRET`, `ORDER_SYNC_CRON_SECRET`, and a freshly rotated `MONDAY_PRODUCT_SECRET` are configured server-side. The independent Vault-backed five-minute outbox job is active and returned HTTP 200 during its controlled empty-queue test. Signed Monday order callbacks are operational. A direct product-board scan read all 529 records, synchronized the exact user-confirmed Wana Mango Classic Gummies → Canix item `2867738` record as Draft, skipped the 528 rows without explicit Canix links, and published no unapproved content. The scan also exercised automatic OAuth token renewal and completed successfully.
 - QuickBooks development OAuth values and the encrypted portal broker are deployed, but the portal connection is disconnected and no successful financial snapshot exists. Retailer financial views remain on the safe blank/last-snapshot path and do not write to QuickBooks. Do not authorize the live company until the Intuit production-review requirements in `docs/quickbooks-financials-setup.md` are complete.
-- Google Workspace SSO is enabled in Google and Supabase and passed a complete Tom-account consent-and-return flow on `portal.urbanxtracts.com`. Email/password remains available for retailer users, and new urbanXtracts workforce accounts are provisioned as least-privileged Viewers.
+- Google Workspace SSO is enabled in Google and Supabase and passed a complete Tom-account consent-and-return flow on `portal.urbanxtracts.com`. Email/password remains available for retailer users, and new urbanXtracts workforce accounts are provisioned as least-privileged Viewers. TOTP MFA is now mandatory after both first-factor paths; profile, capability, and authenticated API access require `aal2`.
 - Private portal asset infrastructure and production Turnstile onboarding protection are active. The signed-out form requires a single-use action-bound token, exact `portal.urbanxtracts.com` hostname validation, and a default three-request UTC-day limit. Product assets remain on hold pending the review-policy decision.
 - The wholesale pricing source audit is recorded in `docs/wholesale-pricing-source.md`. All 118 source rows are staged in the protected Pricing review queue. The five unique exact product-name + Brand pairs were verified and published on 2 September 2026; 113 exceptions remain unpublished pending an authoritative Canix Item ID. Published defaults remain subordinate to approved store-specific prices.
 

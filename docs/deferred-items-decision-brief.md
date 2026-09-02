@@ -38,7 +38,7 @@ These items do not block the current inventory, retailer onboarding, catalog, pr
 | P1 | License review evidence and cadence | Portal records explicit qualification; it does not claim independent validity | Quality / Compliance | Name reviewer, retained evidence, and recheck cycle |
 | P2 | Monday store-visit notes | Account notes remain source-labelled and unverified | Sales operations | Map board columns and retention |
 | P2 | Reorder interval definition | Uses only urbanXtracts order history; no retailer sell-through is inferred | Sales leadership | Choose average interval or days-since-last-order |
-| P2 | MFA policy | No portal-specific MFA promise; shared kiosk mode carries no personal account data | Administration | Set workforce and retailer MFA requirements |
+| Complete | MFA policy | TOTP is required for both workforce SSO and retailer password accounts; only `aal2` sessions reach profiles, capabilities, authenticated APIs, or RLS-protected data | Administration | Maintain administrator recovery procedures and test enrollment during account onboarding |
 | P2 | Rep-held order approval | Disabled | Legal / CCO / Sales leadership | Approve written authority model or reject feature |
 | P2 | Draft inventory holds | Drafts hold nothing; submit rechecks availability | Operations / Sales operations | Decide whether reservations ever occur before acceptance |
 | P2 | Receiving claims | Retailer self-service claim workflow is not a production connector | Operations | Set time window, evidence, and disposition process |
