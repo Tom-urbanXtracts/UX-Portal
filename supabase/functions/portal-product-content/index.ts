@@ -521,7 +521,7 @@ async function upsertItems(
   return results;
 }
 
-async function syncMondayProductBoard(caller: Caller): Promise<Row> {
+async function syncMondayProductBoard(caller: Caller | null): Promise<Row> {
   if (!/^\d+$/.test(MONDAY_PRODUCT_BOARD_ID)) {
     throw new ProductError(503, "The Monday catalog board is not configured.");
   }
@@ -638,15 +638,25 @@ async function syncMondayProductBoard(caller: Caller): Promise<Row> {
     duplicateCanixItemIds,
     missingFromCurrentCanix: missingFromCanix,
   };
-  const { error: auditError } = await service.from("portal_admin_audit").insert(
-    {
-      actor_id: caller.profile.id,
-      actor_org: caller.profile.org,
-      action: "monday.product_content_synced",
-      detail: summary,
-    },
-  );
-  if (auditError) throw auditError;
+  let actorId = caller?.profile.id ?? null;
+  const actorOrg = caller?.profile.org ?? "urbanXtracts";
+  if (!actorId) {
+    const { data: connection, error: connectionError } = await service.from(
+      "monday_connection_state",
+    ).select("connected_by").eq("id", 1).maybeSingle();
+    if (connectionError) throw connectionError;
+    actorId = connection?.connected_by ?? null;
+  }
+  if (actorId) {
+    const { error: auditError } = await service.from("portal_admin_audit")
+      .insert({
+        actor_id: actorId,
+        actor_org: actorOrg,
+        action: "monday.product_content_synced",
+        detail: summary,
+      });
+    if (auditError) throw auditError;
+  }
   return summary;
 }
 
@@ -680,7 +690,7 @@ Deno.serve(async (request) => {
     }
     const body = await request.json() as Row;
     if (String(body.action ?? "").toLowerCase() === "sync-monday") {
-      if (!caller || !caller.canManage) {
+      if (!mondayAuthorized && (!caller || !caller.canManage)) {
         return json(request, { error: "Forbidden" }, 403);
       }
       const summary = await syncMondayProductBoard(caller);

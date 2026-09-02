@@ -20,6 +20,7 @@ These items do not block the current inventory, retailer onboarding, catalog, pr
 | Lab release quantity | Only exact `TestPassed` package units count as released; a mixed line exceeding passing units is entirely pre-order | Connected Canix snapshot status domain and fail-closed order workflow |
 | Workforce SSO provider | Google Workspace through a dedicated Google Web OAuth client brokered by Supabase; first-time `@urbanxtracts.com` users receive Viewer | Google and email providers are enabled, the current callback/redirect flow was completed with Tom's Workspace account, and the deterministic provisioning trigger is deployed |
 | Monday order delivery and status return | Use the dedicated Monday app for idempotent, board-pinned order creation and status writes. Receive status changes through one app-signed webhook; retain Make only as a compatibility path | The TEST order was reconciled to Monday, `Ordered` and `Approved` callbacks each processed once with HTTP 200, eight obsolete subscriptions were removed, and one signed webhook remained active on 2 September 2026 |
+| Monday catalog-content ingestion | Pull only from pinned board `9620649212`; require an explicit current Canix Item ID and Draft, Published, or Archived state; never match by product name | The direct scan read all 529 board rows, synchronized the user-confirmed Wana Mango → Canix item `2867738` record as Draft, skipped 528 unmapped rows, and published nothing on 2 September 2026 |
 
 ## Controlled deferrals
 
