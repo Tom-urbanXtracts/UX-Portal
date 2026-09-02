@@ -20,6 +20,7 @@ function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
       "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      "https://portal.urbanxtracts.com",
       "https://tom-urbanxtracts.github.io",
       "http://127.0.0.1:4173",
       "http://localhost:4173",
@@ -501,10 +502,10 @@ Deno.serve(async (request) => {
         label: "Controlled release boundaries",
         checks: [
           {
-            state: "deferred",
+            state: "warn",
             label: "Production domain",
             detail:
-              "DNS and final Auth redirect changes remain deferred until deployment is approved.",
+              "portal.urbanxtracts.com is registered with Wix DNS and active SSL; the hosting provider is completing its final redeploy. Final Auth redirect changes remain deferred until SSO work resumes.",
           },
           {
             state: "deferred",

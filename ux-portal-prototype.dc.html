@@ -1904,13 +1904,23 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ onbAtCap }}" hint-placeholder-val="{{ false }}">
 <div style="font-size:12.5px;color:var(--ux-muted);margin-bottom:20px">Five is the cap on one submission.</div>
 </sc-if>
+<sc-if value="{{ onbTurnstileVisible }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin:0 0 18px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Request verification</div>
+<div id="ux-turnstile" style="min-height:65px"></div>
+<div role="status" aria-live="polite" style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-top:7px">{{ onbTurnstileStatus }}</div>
+</div>
+</sc-if>
+<sc-if value="{{ onbTurnstileMissing }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;font-size:13px;line-height:1.55">Request verification is temporarily unavailable. Sign in or contact urbanXtracts before submitting.</div>
+</sc-if>
 <sc-if value="{{ onbHasErr }}" hint-placeholder-val="{{ false }}">
 <div style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;max-width:72ch">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">NOT READY TO SEND</div>
 <div style="font-size:13px;line-height:1.55">{{ onbErr }}</div>
 </div>
 </sc-if>
-<button type="button" onClick="{{ onOnbSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">{{ onbSubmitLabel }}</button>
+<button type="button" onClick="{{ onOnbSubmit }}" disabled="{{ onbSubmitDisabled }}" aria-disabled="{{ onbSubmitDisabled }}" style="{{ onbSubmitStyle }}">{{ onbSubmitLabel }}</button>
 <sc-if value="{{ onbSent }}" hint-placeholder-val="{{ false }}">
 <div style="margin-top:20px;border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:72ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SUBMITTED &middot; STAGE 01 INTAKE</div>
@@ -2822,14 +2832,14 @@ const VALIDATION = [
   { cls: 'CANIX VALIDATION REQUIRED', closedBy: 'Closed by a Canix test or a vendor answer', items: [
     { severity: 'DECIDED', screen: 'Order builder', question: 'How are case quantity, minimum order and lead time handled?', detail: 'Resolved 1 Sep 2026: Canix item case_quantity is normalized when supplied. Each store defaults to accepting eaches; Administrator, Operations, or Sales may enable whole-case enforcement, which fails closed if the item has no single positive case quantity. Minimum order and lead time remain blank because the connected reporting contract does not expose them.', blocks: 'Nothing — unsupported fields stay blank', owner: 'Operations', evidence: 'Protected store policy plus server-side case-multiple validation' },
     { severity: 'DECIDED', screen: 'Catalog', question: 'What makes a package sellable and what groups packages into a product?', detail: 'Resolved from the connected Canix reporting contract and live urbanXtracts data on 1 Sep 2026. Sellable means active with status_category available. Explicit reservations are subtracted. The catalog groups by item_id because it covers the active package population; product_id is missing on 958 of 1,359 active non-sample packages.', blocks: 'Nothing — closed for v1', owner: 'Operations and Data', evidence: 'Canix schema plus live status, reservation and identifier coverage queries' },
-    { severity: 'Record and continue', screen: 'Catalog', question: 'Is there a per-item price list in Canix?', detail: 'Only realised order-line prices were found. If an item price list exists, it is a better source than deriving from history.', blocks: 'Nothing today; would replace the derived price', owner: 'Sales operations', evidence: 'Confirmation the object exists and is populated' }
+    { severity: 'Record and continue', screen: 'Catalog', question: 'How does the wholesale sheet map to immutable Canix items?', detail: 'The selected ACTIVE CART sheet has 118 priced rows but no Canix Item ID; Brand is encoded as section headings. Only unique exact product-name + Brand matches may be auto-associated. Every normalized, name-only, duplicate, or conflicting candidate remains review-only.', blocks: 'Default list-price publication for unmatched products', owner: 'Sales operations and Data', evidence: 'A reviewed Canix Item ID for each source row' }
   ] },
   { cls: 'TECHNICAL VALIDATION REQUIRED', closedBy: 'Closed by a hands-on test in the target system', items: [
     { severity: 'DECIDED', screen: 'Catalog · Store pricing', question: 'What replaces the missing per-account rate card?', detail: 'Resolved 1 Sep 2026: the portal owns a licensed-store rate card. Store Owners and Buyers may propose a price only for their assigned stores; Administrator, Operations, or Sales must approve it before the catalog or ordering flow can use it. Every proposal and decision is audited.', blocks: 'Nothing — closed', owner: 'Sales operations', evidence: 'Store-scoped proposal, internal approval, published price, and audit record' },
     { severity: 'DECIDED', screen: 'Inventory', question: 'How does the deployed portal authenticate to the Canix reporting API?', detail: 'Resolved 31 Aug 2026: a Supabase Edge Function holds the Canix credential, writes a private cache on a five-minute cron and exposes only the authenticated read endpoint to the browser. Canix credentials never enter the client bundle.', blocks: 'Nothing \u2014 closed', owner: 'Data engineering', evidence: 'Deployed server-side connector, private cache and successful five-minute scheduled sync' },
     { severity: 'Record and continue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
     { severity: 'DECIDED', screen: 'Inventory · Internal lot view', question: 'Are Brand, Canix Package Owner and Economic Owner the same field?', detail: 'Resolved 1 Sep 2026: no. Brand is the market identity; Canix Package Owner is an operational Canix user; Economic Owner is the entity carrying production risk. UX OS stores an effective-dated item default with package override, permits blank, and never falls back to Brand. The exact Canix source field remains pending vendor confirmation.', blocks: 'Only automated sourcing from Canix; protected classification works', owner: 'Finance operations · Data contracts', evidence: 'Canix API schema, Package Owner guide, protected ownership mapping and audit event' },
-    { severity: 'DECIDED', screen: 'Financials · Store performance', question: 'Is QuickBooks reachable for balances, invoices and payments?', detail: 'The server connector now stores last-successful normalized snapshots. Owners and Buyers receive store-scoped history; payment collection remains disabled.', blocks: 'Nothing in this release', owner: 'Finance', evidence: 'Sandbox sync plus Owner, Buyer and Budtender authorization tests' },
+    { severity: 'Record and continue', screen: 'Financials · Store performance', question: 'Is the portal authorized to read the production QuickBooks company?', detail: 'The encrypted OAuth broker and read-only Customer, Invoice, and Payment snapshot functions are deployed, but the portal connection is disconnected and no successful snapshot exists. Development credentials must not be used to authorize the live company.', blocks: 'Live QuickBooks financial views', owner: 'Finance and IT', evidence: 'Intuit production approval, read-only authorization, successful snapshot, and Owner/Buyer/Budtender scope tests' },
     { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' },
     { severity: 'Record and continue', screen: 'Account · API access', question: 'What scope, credential model and rate limits does the store API carry?', detail: 'A read-only endpoint over the store records surface, for chains running their own tooling. It is a second renderer of the same authorization, never a second authorization, and it depends on the unresolved multi-license question above.', blocks: 'The store API', owner: 'Administration', evidence: 'A scope, a credential model and a rate limit' }
   ] },
@@ -2914,6 +2924,8 @@ const SUPABASE_KEY = PORTAL_CONFIG.supabaseKey || 'sb_publishable_aIrwn28FxjXNT-
 const SSO_PROVIDER = PORTAL_CONFIG.ssoProvider === 'azure' ? 'azure' : 'google';
 const SSO_DOMAIN = String(PORTAL_CONFIG.ssoDomain || 'urbanxtracts.com').toLowerCase();
 const RECALL_NOTICE_ENABLED = PORTAL_CONFIG.recallNoticeEnabled === true;
+const TURNSTILE_REQUIRED = PORTAL_CONFIG.turnstileRequired === true;
+const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 
 // Workforce authorization is capability-based. Supabase owns the grants and
 // every server endpoint checks the same permission before returning data or
@@ -3351,6 +3363,7 @@ class Component extends DCLogic {
     onbBuyerName: '', onbBuyerEmail: '', onbBuyerLoc: '',
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
     onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
+    turnstileToken: '', turnstileError: null,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token,
     ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
@@ -3555,6 +3568,89 @@ class Component extends DCLogic {
     requestAnimationFrame(() => {
       const target = document.getElementById(id);
       if (target && target.focus) target.focus();
+    });
+  }
+
+  turnstileReady() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return Promise.reject(new Error('Browser verification is unavailable.'));
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (window.__uxTurnstileReady) return window.__uxTurnstileReady;
+    window.__uxTurnstileReady = new Promise((resolve, reject) => {
+      let script = document.querySelector('script[data-ux-turnstile="true"]');
+      const loaded = () => window.turnstile ? resolve(window.turnstile) : reject(new Error('The verification service did not start.'));
+      const failed = () => reject(new Error('The verification service could not be loaded.'));
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.defer = true;
+        script.async = true;
+        script.dataset.uxTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', loaded, { once: true });
+      script.addEventListener('error', failed, { once: true });
+    }).catch(error => {
+      window.__uxTurnstileReady = null;
+      throw error;
+    });
+    return window.__uxTurnstileReady;
+  }
+
+  removeTurnstile() {
+    if (typeof window !== 'undefined' && window.turnstile && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) {
+      try { window.turnstile.remove(this._turnstileWidgetId); } catch (e) {}
+    }
+    this._turnstileWidgetId = null;
+    this._turnstileHost = null;
+  }
+
+  resetTurnstile(message) {
+    if (typeof window !== 'undefined' && window.turnstile && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) {
+      try { window.turnstile.reset(this._turnstileWidgetId); } catch (e) {}
+    }
+    this.set({ turnstileToken: '', turnstileError: message || null });
+  }
+
+  mountTurnstile() {
+    if (typeof document === 'undefined') return;
+    if (!TURNSTILE_SITE_KEY || this.state.authUser || this.state.screen !== 'onboard') {
+      this.removeTurnstile();
+      return;
+    }
+    requestAnimationFrame(() => {
+      const host = document.getElementById('ux-turnstile');
+      if (!host || this.state.authUser || this.state.screen !== 'onboard') return;
+      if (this._turnstileHost === host && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) return;
+      this.removeTurnstile();
+      this._turnstileHost = host;
+      this.turnstileReady().then(turnstile => {
+        if (this.state.authUser || this.state.screen !== 'onboard') return;
+        const currentHost = document.getElementById('ux-turnstile');
+        if (!currentHost) return;
+        this._turnstileHost = currentHost;
+        this._turnstileWidgetId = turnstile.render(currentHost, {
+          sitekey: TURNSTILE_SITE_KEY,
+          action: 'retailer_onboarding',
+          appearance: 'always',
+          theme: 'light',
+          callback: token => {
+            if (token && token !== this.state.turnstileToken) this.set({ turnstileToken: token, turnstileError: null });
+          },
+          'expired-callback': () => {
+            if (this.state.turnstileToken || this.state.turnstileError !== 'Verification expired. Complete it again before submitting.') {
+              this.set({ turnstileToken: '', turnstileError: 'Verification expired. Complete it again before submitting.' });
+            }
+          },
+          'error-callback': () => {
+            if (this.state.turnstileToken || this.state.turnstileError !== 'Verification could not complete. Try again.') {
+              this.set({ turnstileToken: '', turnstileError: 'Verification could not complete. Try again.' });
+            }
+          }
+        });
+      }).catch(error => {
+        const message = (error && error.message) || 'The verification service could not be loaded.';
+        if (this.state.turnstileError !== message) this.set({ turnstileToken: '', turnstileError: message });
+      });
     });
   }
 
@@ -5017,6 +5113,7 @@ class Component extends DCLogic {
     this._onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this._onResize);
     this._onResize();
+    this.mountTurnstile();
     if (SSO_RETURN.token && !RECOVERY.active) {
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
       this.portalIdentity(SSO_RETURN.token, null, null)
@@ -5038,6 +5135,7 @@ class Component extends DCLogic {
 
   componentDidUpdate(prevProps, prevState) {
     const prior = prevState || {};
+    this.mountTurnstile();
     const inventoryScreen = ['inventory', 'catalog', 'product', 'pricing', 'field', 'kiosk', 'lineage'].includes(this.state.screen);
     if (this.state.role === 'internal' && this.hasPermission('inventory.read') && inventoryScreen
       && prior.screen !== this.state.screen && !this.loc().demo && !this.state.inventoryLoaded && !this.state.inventoryLoading) {
@@ -5094,7 +5192,7 @@ class Component extends DCLogic {
     }
   }
 
-  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); this.removeTurnstile(); }
 
   toggleFav(id) {
     this.setState(st => ({ favs: st.favs.indexOf(id) === -1 ? st.favs.concat([id]) : st.favs.filter(x => x !== id) }));
@@ -5252,6 +5350,15 @@ class Component extends DCLogic {
     const s = this.state;
     if (s.onbSubmitting) return;
     if (s.impersonating) { this.set({ onbErr: 'This is a read-only view-as session. End it before submitting an onboarding change.' }); return; }
+    if (!s.authUser && TURNSTILE_REQUIRED && !TURNSTILE_SITE_KEY) {
+      this.set({ onbErr: 'Request verification is not configured. Sign in or contact urbanXtracts before submitting.' });
+      return;
+    }
+    if (!s.authUser && TURNSTILE_REQUIRED && !s.turnstileToken) {
+      this.set({ onbErr: 'Complete the request verification before submitting.' });
+      this.mountTurnstile();
+      return;
+    }
     const miss = [];
     if (!s.onbEntity.trim()) miss.push('the legal entity name');
     const stores = s.onbStores.filter(store => store.name.trim() || store.license.trim() || store.address.trim());
@@ -5278,15 +5385,21 @@ class Component extends DCLogic {
       budtenders: buds.map(b => ({ name: b.name.trim(), email: b.email.trim(), location: b.loc.trim() })),
       budtenderCount: buds.length,
       stage: '01 Intake',
-      submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store')
-    }, reply => this.set({ onbSubmitting: false, onbSent: true, onbErr: null,
-      onbReceipt: reply && reply.portalOnboardingRequestId ? reply.portalOnboardingRequestId : clientRequestId,
-      onbClientRequestId: null,
-      toast: 'Submitted and recorded. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' }),
-    (why, detail) => this.set({ onbSubmitting: false, onbSent: false,
-      onbErr: detail && detail.reconciliationRequired
-        ? 'The request is safely recorded but Monday did not confirm it. Give support reference ' + (detail.portalOnboardingRequestId || clientRequestId) + '; do not resubmit it.'
-        : 'The request was not accepted: ' + why }));
+      submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store'),
+      antiAbuseToken: s.authUser ? undefined : s.turnstileToken
+    }, reply => {
+      if (!s.authUser && TURNSTILE_SITE_KEY) this.resetTurnstile();
+      this.set({ onbSubmitting: false, onbSent: true, onbErr: null,
+        onbReceipt: reply && reply.portalOnboardingRequestId ? reply.portalOnboardingRequestId : clientRequestId,
+        onbClientRequestId: null,
+        toast: 'Submitted and recorded. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' });
+    }, (why, detail) => {
+      if (!s.authUser && TURNSTILE_SITE_KEY) this.resetTurnstile();
+      this.set({ onbSubmitting: false, onbSent: false,
+        onbErr: detail && detail.reconciliationRequired
+          ? 'The request is safely recorded but Monday did not confirm it. Give support reference ' + (detail.portalOnboardingRequestId || clientRequestId) + '; do not resubmit it.'
+          : 'The request was not accepted: ' + why });
+    });
   }
 
   post(kind, payload, onOk, onFail) {
@@ -6512,8 +6625,9 @@ class Component extends DCLogic {
       isLicense: s.screen === 'license' && !!s.authUser,
       isOnboard: s.screen === 'onboard',
       goLicense: () => this.set({ screen: 'license', licSent: false, licErr: null }),
-      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null, onbReceipt: null }),
-      backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin' }),
+      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null, onbReceipt: null,
+        turnstileToken: '', turnstileError: null }),
+      backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin', turnstileToken: '', turnstileError: null }),
       licTypes: ['Licence renewal', 'Insurance certificate', 'Resale or exemption', 'Other'].map(t => ({
         label: t, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.licType === t ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
@@ -6561,7 +6675,15 @@ class Component extends DCLogic {
       onAddBud: () => this.onbAddBud(),
       onbHasErr: !!s.onbErr, onbErr: s.onbErr || '',
       onbSent: s.onbSent, onbSubmitting: s.onbSubmitting,
+      onbTurnstileVisible: !s.authUser && !!TURNSTILE_SITE_KEY,
+      onbTurnstileMissing: !s.authUser && TURNSTILE_REQUIRED && !TURNSTILE_SITE_KEY,
+      onbTurnstileStatus: s.turnstileError || (s.turnstileToken
+        ? 'Verification complete. Submit this request within five minutes.'
+        : 'Required for requests made without signing in. Tokens expire after five minutes and are used once.'),
+      onbSubmitDisabled: s.onbSubmitting || (!s.authUser && TURNSTILE_REQUIRED && (!TURNSTILE_SITE_KEY || !s.turnstileToken)),
       onbSubmitLabel: s.onbSubmitting ? 'Submitting securely\u2026' : 'Submit the request',
+      onbSubmitStyle: 'background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;min-height:46px;cursor:'
+        + (s.onbSubmitting || (!s.authUser && TURNSTILE_REQUIRED && (!TURNSTILE_SITE_KEY || !s.turnstileToken)) ? 'not-allowed;opacity:.52' : 'pointer;opacity:1'),
       onbReceipt: s.onbReceipt || '', onOnbSubmit: () => this.onbSubmit(),
       pwNoticeShown: !!s.pwNotice && !!s.authUser, pwNotice: s.pwNotice || '',
       onPwFix: () => this.fixPassword(), onPwDismiss: () => this.set({ pwNotice: null }),

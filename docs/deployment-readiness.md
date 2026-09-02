@@ -1,11 +1,10 @@
 # UX OS portal deployment readiness
 
-The current Sites domain stays in place until urbanXtracts chooses the production domain. No DNS or publishing change is part of the current local build.
+The production hostname is `portal.urbanxtracts.com`. It was registered with the Sites project and its Wix-managed CNAME and two validation TXT records were published on 1 September 2026. SSL became active on 2 September 2026; the hosting provider is completing its final redeploy. SSO/Auth site-URL cutover remains intentionally deferred until the custom host serves the verified release.
 
 ## Production domain
 
-- Choose the final hostname, preferably a dedicated subdomain such as `portal.urbanxtracts.com`.
-- Add the hostname to the hosting project and complete DNS verification.
+- Confirm the registered `portal.urbanxtracts.com` custom domain finishes its final redeploy; SSL is already active. Do not remove the validation TXT records.
 - Add the exact production callback URL to Supabase Auth redirect allow-lists.
 - Update the Supabase Site URL after the production hostname is serving successfully.
 - Keep the old Sites URL available during a short verification window, then redirect or retire it deliberately.
@@ -46,9 +45,10 @@ SSO configuration and cutover requirements:
 
 Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, the current Sites and exact local paths are allowlisted, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. The database-side Viewer provisioning repair is deployed and both existing workforce profiles are configured. The final hostname remains a cutover check and must not be allowlisted before it is approved.
 
-The current Sites callback to allow during pre-deployment testing is:
+Keep both portal origins in the redirect allow-list during cutover:
 
 - `https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site/`
+- `https://portal.urbanxtracts.com/`
 
 ## Connected workflows
 
@@ -81,9 +81,10 @@ The current Sites callback to allow during pre-deployment testing is:
 - The dedicated Monday app is authorized with `boards:read`, `boards:write`, `webhooks:read`, and `webhooks:write`. Direct order creation, status writes, webhook administration, and product-board reads now share proactive OAuth 2.1 token renewal with encrypted refresh-token rotation. The direct path created and reconciled TEST order `SO-4A7A7E872A304A7F`; its signed `Ordered` and restored `Approved` callbacks each processed once with HTTP 200 on 2 September 2026. Eight obsolete order-status subscriptions were deleted and exactly one matching signed webhook remained active.
 - Make scenario `6043707` (`UX Portal intake to monday`) remains saved inactive as a compatibility and onboarding path. Its paused free-plan allowance no longer blocks direct portal order creation, portal-to-Monday status writes, or the signed Monday-to-portal order callback. Follow `docs/make-order-automation-remediation.md` before deliberately reactivating that compatibility path; do not modify the unrelated finance sandbox scenario.
 - `MONDAY_STATUS_SECRET`, `ORDER_SYNC_CRON_SECRET`, and a freshly rotated `MONDAY_PRODUCT_SECRET` are configured server-side. The independent Vault-backed five-minute outbox job is active and returned HTTP 200 during its controlled empty-queue test. Signed Monday order callbacks are operational. A direct product-board scan read all 529 records, synchronized the exact user-confirmed Wana Mango Classic Gummies → Canix item `2867738` record as Draft, skipped the 528 rows without explicit Canix links, and published no unapproved content. The scan also exercised automatic OAuth token renewal and completed successfully.
-- QuickBooks OAuth values are not configured; retailer financial views remain on the safe last-snapshot/blank path and do not write to QuickBooks.
+- QuickBooks development OAuth values and the encrypted portal broker are deployed, but the portal connection is disconnected and no successful financial snapshot exists. Retailer financial views remain on the safe blank/last-snapshot path and do not write to QuickBooks. Do not authorize the live company until the Intuit production-review requirements in `docs/quickbooks-financials-setup.md` are complete.
 - Google Workspace SSO is enabled in Google and Supabase and passed a Tom-account round trip to the local portal. The current owner-only Sites release supplies and exposes the Google provider/domain flags. The final-domain callback must still be added and retested during cutover.
-- Private portal asset infrastructure and Turnstile-ready onboarding protection are implemented. Asset activation remains empty pending Quality/IT review policy; the public challenge remains disabled until a public host, widget site key, server secret, and exact hostname list are approved.
+- Private portal asset infrastructure and Turnstile-ready onboarding protection are implemented. The signed-out form now supports the production widget, single-use action-bound tokens, exact-host validation, and a default three-request UTC-day limit. Product assets remain on hold. The challenge stays disabled until the production widget credentials are created, installed, and tested against `portal.urbanxtracts.com`.
+- The wholesale pricing source audit is recorded in `docs/wholesale-pricing-source.md`. The 118 source rows are ready to stage, but default-price publication remains blocked for 107 rows until a reviewed Canix Item ID crosswalk exists.
 
 ## Executive-demo baseline
 

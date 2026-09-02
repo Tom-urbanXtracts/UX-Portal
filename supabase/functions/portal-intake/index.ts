@@ -236,6 +236,7 @@ function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
       "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      "https://portal.urbanxtracts.com",
       "https://tom-urbanxtracts.github.io",
       "http://127.0.0.1:4173",
       "http://localhost:4173",
@@ -322,7 +323,7 @@ async function verifyPublicOnboardingHuman(payload: Row): Promise<void> {
     );
   }
   const token = String(payload.antiAbuseToken || "").trim();
-  if (!token || token.length > 4096) {
+  if (!token || token.length > 2048) {
     throw new IntakeError(400, "Complete the verification challenge.");
   }
   const form = new FormData();
@@ -342,6 +343,7 @@ async function verifyPublicOnboardingHuman(payload: Row): Promise<void> {
   const hostname = String(result.hostname || "").toLowerCase();
   if (
     result.success !== true ||
+    result.action !== "retailer_onboarding" ||
     (TURNSTILE_ALLOWED_HOSTS.size > 0 &&
       !TURNSTILE_ALLOWED_HOSTS.has(hostname))
   ) {

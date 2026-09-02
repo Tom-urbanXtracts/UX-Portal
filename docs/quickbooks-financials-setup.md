@@ -25,7 +25,7 @@ The Intuit accounting scope is broader than the portal's feature set. UX OS enfo
 
 ## Intuit production-key handoff
 
-The dedicated Intuit app is registered on the no-charge Builder tier. Its development credentials and redirect URI are configured. Payments permission is not enabled, accepted connections are limited to the United States, and the current owner-only preview URL is recorded as the temporary launch/connect/disconnect URL until the production domain is approved.
+The dedicated Intuit app is registered on the no-charge Builder tier. Its development credentials and redirect URI are configured. Payments permission is not enabled, accepted connections are limited to the United States, and `portal.urbanxtracts.com` is now the approved launch/connect/disconnect return host. The portal remains disconnected and no successful financial snapshot exists.
 
 Production credentials remain intentionally locked until two owner decisions are complete:
 

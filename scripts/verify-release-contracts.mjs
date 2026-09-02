@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const source = await readFile(resolve(root, "ux-portal-prototype.dc.html"), "utf8");
+const siteBuild = await readFile(resolve(root, "scripts/build-sites.mjs"), "utf8");
 const inventory = await readFile(resolve(root, "supabase/functions/canix-inventory/index.ts"), "utf8");
 const catalog = await readFile(resolve(root, "supabase/functions/canix-catalog/index.ts"), "utf8");
 const intake = await readFile(resolve(root, "supabase/functions/portal-intake/index.ts"), "utf8");
@@ -72,6 +73,9 @@ assertContract(assets.includes('state: "pending_review"') && assets.includes('"p
 assertContract(catalog.includes('createSignedUrls(paths, 300)') && catalog.includes('.eq("state", "active")'), "catalog assets use short-lived URLs for active records only");
 assertContract(intake.includes("TURNSTILE_REQUIRED") && intake.includes("siteverify") && !intake.includes('form.set("remoteip"'), "public onboarding supports Turnstile without sending visitor IP addresses");
 assertContract(intake.includes("PUBLIC_INTAKE_RATE_SECRET") && intake.includes("portal_claim_public_intake_rate") && intake.includes("delete verifiedPayload.antiAbuseToken"), "public onboarding rate scope is HMAC-protected and the anti-bot token is not forwarded");
+assertContract(source.includes("TURNSTILE_SITE_KEY") && source.includes("action: 'retailer_onboarding'") && source.includes("antiAbuseToken:"), "public onboarding renders Turnstile and sends its single-use token");
+assertContract(intake.includes('result.action !== "retailer_onboarding"') && intake.includes('"https://portal.urbanxtracts.com"'), "Turnstile validation binds the onboarding action and production portal origin");
+assertContract(siteBuild.includes("UX_TURNSTILE_SITE_KEY") && siteBuild.includes("frame-src https://challenges.cloudflare.com") && siteBuild.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com"), "the hosted worker injects Turnstile configuration and permits only its required script and frame origins");
 assertContract(readiness.includes("pendingAssetReviews") && readiness.includes('Deno.env.get("TURNSTILE_REQUIRED")'), "live readiness reports private assets and public-onboarding protection state");
 assertContract(readiness.includes("directMondayIntakeReady") && readiness.includes("Direct, board-pinned Monday order intake is active"), "live readiness recognizes the direct Monday order path without depending on Make");
 assertContract(readiness.includes("Latest signed callback") && readiness.includes("lastRefreshHasOneWebhook") && readiness.includes("Exactly one matching signed webhook remains"), "live readiness reports signed callback health and stale-webhook cleanup evidence");
@@ -109,6 +113,11 @@ assertContract(!source.includes("QBO_CLIENT_SECRET"), "QuickBooks client secret 
 for (const name of functionNames) {
   const text = await readFile(resolve(root, "supabase/functions", name, "index.ts"), "utf8");
   assertContract(text.includes("authorization") || text.includes("x-ux-") || text.includes("x-cron-secret"), `${name} has an authentication boundary`);
+  if (name === "monday-webhook") {
+    assertContract(!text.includes("access-control-allow-origin"), "monday-webhook remains server-to-server and does not expose a browser CORS surface");
+  } else {
+    assertContract(text.includes('"https://portal.urbanxtracts.com"'), `${name} permits the production portal origin`);
+  }
 }
 
 if (process.argv.includes("--remote")) {
