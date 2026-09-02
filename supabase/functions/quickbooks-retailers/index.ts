@@ -513,6 +513,15 @@ async function cachedAccounts(): Promise<Row[]> {
   });
 }
 
+async function quickBooksConnected(): Promise<boolean> {
+  const { data, error } = await service.from("quickbooks_sync_state").select(
+    "connection_status,realm_id,encrypted_refresh_token",
+  ).eq("id", 1).maybeSingle();
+  if (error) throw error;
+  return data?.connection_status === "connected" && Boolean(data.realm_id) &&
+    Boolean(data.encrypted_refresh_token || QBO_REFRESH_TOKEN);
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(request) });
@@ -527,6 +536,13 @@ Deno.serve(async (request) => {
       return json(request, { error: "Forbidden" }, 403);
     }
     if (request.method === "POST") {
+      if (cron && !(await quickBooksConnected())) {
+        return json(request, {
+          ok: true,
+          skipped: true,
+          reason: "QuickBooks is not connected.",
+        }, 202);
+      }
       const counts = await syncQuickBooks();
       return json(request, {
         ok: true,
