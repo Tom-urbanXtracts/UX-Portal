@@ -126,6 +126,7 @@ Deno.serve(async (request) => {
 
     const [
       canixResult,
+      canixSchedulerResult,
       qboResult,
       qboSchedulerResult,
       mondayResult,
@@ -153,6 +154,7 @@ Deno.serve(async (request) => {
       service.from("canix_sync_state").select(
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
+      service.rpc("portal_canix_scheduler_state"),
       service.from("quickbooks_sync_state").select(
         "status,connection_status,connection_environment,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
       ).eq("id", 1).maybeSingle(),
@@ -229,6 +231,7 @@ Deno.serve(async (request) => {
       ),
     ]);
     if (canixResult.error) throw canixResult.error;
+    if (canixSchedulerResult.error) throw canixSchedulerResult.error;
     if (qboResult.error) throw qboResult.error;
     if (qboSchedulerResult.error) throw qboSchedulerResult.error;
     if (mondayResult.error) throw mondayResult.error;
@@ -241,6 +244,10 @@ Deno.serve(async (request) => {
     }
 
     const canix = canixResult.data as Row | null;
+    const canixScheduler = Array.isArray(canixSchedulerResult.data) &&
+        canixSchedulerResult.data.length
+      ? canixSchedulerResult.data[0] as Row
+      : null;
     const qbo = qboResult.data as Row | null;
     const qboScheduler = Array.isArray(qboSchedulerResult.data) &&
         qboSchedulerResult.data.length
@@ -328,11 +335,17 @@ Deno.serve(async (request) => {
               : "CANIX_API_KEY is not configured.",
           },
           {
-            state: configured("CANIX_CRON_SECRET") ? "pass" : "block",
-            label: "Five-minute scheduler authentication",
-            detail: configured("CANIX_CRON_SECRET")
-              ? "Scheduler secret is configured."
-              : "CANIX_CRON_SECRET is not configured.",
+            state: configured("CANIX_CRON_SECRET") &&
+                canixScheduler?.secret_configured &&
+                canixScheduler?.job_scheduled
+              ? "pass"
+              : "block",
+            label: "Vault-backed five-minute scheduler",
+            detail: configured("CANIX_CRON_SECRET") &&
+                canixScheduler?.secret_configured &&
+                canixScheduler?.job_scheduled
+              ? "The Edge credential and matching Vault-backed job are configured; no secret is embedded in the cron command."
+              : "The Canix Edge credential, Vault credential, or active five-minute job is incomplete.",
           },
           {
             state: canix?.last_successful_at

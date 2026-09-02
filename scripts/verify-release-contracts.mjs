@@ -39,6 +39,7 @@ const quickbooksEnvironmentMigration = await readFile(resolve(root, "supabase/mi
 const quickbooksSafeCacheMigration = await readFile(resolve(root, "supabase/migrations/20260902060000_quickbooks_environment_safe_cache_clear.sql"), "utf8");
 const lotIntegrityMigration = await readFile(resolve(root, "supabase/migrations/20260902070000_inbound_lot_integrity.sql"), "utf8");
 const lotIntegrityCronMigration = await readFile(resolve(root, "supabase/migrations/20260902080000_lot_integrity_cron.sql"), "utf8");
+const canixCronMigration = await readFile(resolve(root, "supabase/migrations/20260902090000_canix_sync_cron_vault.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -82,6 +83,8 @@ assertContract(catalog.includes('lotEnforcementMode === "block"') && orders.incl
 assertContract(lotIntegrity.includes('const LOT_BOARD_ID = Deno.env.get("MONDAY_LOT_BOARD_ID")') && lotIntegrity.includes('String(boards[0].id ?? "") !== LOT_BOARD_ID') && lotIntegrity.includes('permission: string'), "Monday lot synchronization is board-pinned and capability-gated");
 assertContract(lotIntegrityCronMigration.includes("portal-lot-integrity-daily") && lotIntegrityCronMigration.includes("vault.decrypted_secrets") && lotIntegrityCronMigration.includes("portal_lot_integrity_scheduler_state"), "lot ownership has a Vault-gated daily synchronization and integrity scheduler");
 assertContract(!/[A-Fa-f0-9]{64}/.test(lotIntegrityCronMigration), "the lot-integrity scheduler migration contains no embedded high-entropy secret");
+assertContract(canixCronMigration.includes("canix-inventory-sync-5m") && canixCronMigration.includes("vault.decrypted_secrets") && canixCronMigration.includes("portal_canix_scheduler_state"), "Canix refresh uses a Vault-backed five-minute scheduler and protected readiness state");
+assertContract(!/[A-Fa-f0-9]{64}/.test(canixCronMigration) && !canixCronMigration.includes("sb_publishable_"), "the Canix scheduler migration contains no embedded cron secret or public API key");
 assertContract(inventory.includes('"canix_claim_sync_run"') && !inventory.includes("await syncInventory(true);"), "inventory reads are cache-only and sync claims are serialized");
 assertContract(inventory.includes('"canix_package_sync_stage"') && inventory.includes('"canix_publish_sync_run"') && securityMigration.includes("Canix sync ownership was lost before snapshot publication"), "Canix snapshots publish atomically from a private stage");
 assertContract(admin.includes("Store Owners may deactivate current Buyers and Budtenders only."), "Store Owners cannot mutate current Owner or internal roles");
