@@ -1533,7 +1533,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 <sc-if value="{{ auClosed }}" hint-placeholder-val="{{ true }}">
-<div style="margin:0 0 24px"><button type="button" onClick="{{ onAuToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add a user</button></div>
+<div style="margin:0 0 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" onClick="{{ onAuToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add a user</button><button type="button" onClick="{{ onUsersRefresh }}" aria-disabled="{{ usersLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer">{{ usersRefreshLabel }}</button><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ testUserSummary }}</span></div>
 </sc-if>
 <sc-if value="{{ auOpen }}" hint-placeholder-val="{{ false }}">
 <div style="border:1px solid rgba(23,14,11,.3);padding:20px;margin:0 0 26px;max-width:460px">
@@ -1572,6 +1572,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </div>
 </sc-if>
+<sc-if value="{{ usersHasError }}" hint-placeholder-val="{{ false }}"><div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:16px;font-size:12.5px;line-height:1.55">{{ usersError }}</div></sc-if>
+<sc-if value="{{ usersLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:14px 16px;margin-bottom:14px;font-size:12px;color:var(--ux-muted)">Loading the protected user directory…</div></sc-if>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>User</div><div>Organisation</div><div>Role</div><div>Scope</div><div>Actions</div>
@@ -1592,11 +1594,15 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ u.canDeactivate }}" hint-placeholder-val="{{ true }}">
 <button type="button" onClick="{{ u.onDeactivate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)" style-hover="background:var(--ux-surface)">Deactivate</button>
 </sc-if>
+<sc-if value="{{ u.canRemoveTest }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ u.onRemoveTest }}" aria-label="Remove test user {{ u.email }}" style="background:var(--ux-signal);color:#fff;border:1px solid var(--ux-signal);padding:7px 10px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Remove test user</button>
+</sc-if>
 </div>
 </div>
 </sc-for>
 </div>
-<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Both actions write an audit entry that the affected organisation can read. A kiosk device has no personal login, so it cannot be viewed as — there is no user behind it to attribute anything to.</div>
+<sc-if value="{{ usersNoRows }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:18px;margin-top:10px;font-size:12.5px;color:var(--ux-muted)">No portal users are available in this scope.</div></sc-if>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">This is the live portal directory. Deactivation ends access but preserves the account record. The stronger remove action is available only for identities that the server independently classifies as test or executive-demo accounts; it soft-deletes authentication data while retaining historical attribution.</div>
 </div>
 </sc-if>
 
@@ -3379,7 +3385,7 @@ function pwnedCount(password) {
 
 class Component extends DCLogic {
   state = {
-    deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
+    deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null, auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
     token: null, auLocs: [], auLocOpen: false, pwNotice: null,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
@@ -3805,6 +3811,7 @@ class Component extends DCLogic {
     this.set({ authUser: u, role, screen: role === 'budtender' ? 'kiosk' : 'dash', order: null,
       loc: demoAccount ? 'l-demo' : 'l1', demoTourActive: demoAccount, demoTourStep: 0, demoTourCompleted: false,
       ordersLoaded: false, ordersError: null, orderTransitioning: null,
+      liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
       financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all',
       toast: 'Signed in as ' + u.name + '. Your ' + accessLabel.toLowerCase() + ' access determines which sections and actions are available.', toastKind: 'SIGNED IN' });
   }
@@ -3837,6 +3844,7 @@ class Component extends DCLogic {
       retailerAccountsLoaded: false, retailerAccountsError: null,
       financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
       financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
+      liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
       retailerOnboarding: [], retailerOnboardingError: null,
       retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
       accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '',
@@ -4518,6 +4526,30 @@ class Component extends DCLogic {
         if (!ok) throw new Error((body && body.error) || ('Access service returned ' + status + '.'));
         return body;
       });
+  }
+
+  loadUsers(force) {
+    const s = this.state;
+    if (!s.authUser || !s.token || s.usersLoading || (!force && s.usersLoaded)) return Promise.resolve();
+    if (!(s.role === 'owner' || (s.role === 'internal' && this.hasPermission('users.manage')))) return Promise.resolve();
+    this.set({ usersLoading: true, usersError: null });
+    return this.portalAdmin('list-users', {})
+      .then(body => this.set({ liveUsers: Array.isArray(body.users) ? body.users : [], usersLoading: false,
+        usersLoaded: true, usersError: null }))
+      .catch(error => this.set({ liveUsers: [], usersLoading: false, usersLoaded: true,
+        usersError: (error && error.message) || 'The protected user directory could not be loaded.' }));
+  }
+
+  removeTestUser(user) {
+    if (!user || !user.testDemo || this.state.accessPending || this.state.impersonating) return;
+    if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'remove test users')) return;
+    this.set({ accessPending: user.email });
+    this.portalAdmin('remove-test-user', { email: user.email })
+      .then(() => this.loadUsers(true))
+      .then(() => this.set({ accessPending: null, toast: user.name + ' was removed from portal access.',
+        toastKind: 'TEST USER REMOVED' }))
+      .catch(error => this.set({ accessPending: null,
+        toast: 'The test user was not removed: ' + error.message, toastKind: 'NOT REMOVED' }));
   }
 
   pricingCall(method, payload) {
@@ -5239,7 +5271,7 @@ class Component extends DCLogic {
     if (/\.invalid$/i.test(user.email)) { apply(); return; }
     this.set({ accessPending: user.email });
     this.portalAdmin('update-user', { email: user.email, org: user.org, role: next, locations: user.locs, active: true })
-      .then(apply)
+      .then(() => { apply(); this.loadUsers(true); })
       .catch(error => this.set({ accessPending: null, toast: 'Access was not changed: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
@@ -5254,7 +5286,7 @@ class Component extends DCLogic {
     if (/\.invalid$/i.test(user.email)) { apply(); return; }
     this.set({ accessPending: user.email });
     this.portalAdmin('update-user', { email: user.email, org: user.org, role: user.role, locations: user.locs, active: false })
-      .then(apply)
+      .then(() => { apply(); this.loadUsers(true); })
       .catch(error => this.set({ accessPending: null, toast: 'Access was not changed: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
@@ -5340,6 +5372,13 @@ class Component extends DCLogic {
     if (this.state.role === 'internal' && this.hasPermission('readiness.read') && this.state.screen === 'validation'
       && prior.screen !== this.state.screen && !this.state.readinessLoaded && !this.state.readinessLoading) {
       this.loadReadiness();
+    }
+    const userDirectoryAllowed = this.state.role === 'owner'
+      || (this.state.role === 'internal' && this.hasPermission('users.manage'));
+    if (this.state.authUser && userDirectoryAllowed && ['admin', 'users'].includes(this.state.screen)
+      && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.usersLoaded && !this.state.usersLoading) {
+      this.loadUsers();
     }
   }
 
@@ -5456,6 +5495,7 @@ class Component extends DCLogic {
             ? u.name + ' added to the isolated executive demo. No email was sent.'
             : u.name + ' was invited as ' + u.role + ' for ' + locs + '.',
           toastKind: result && result.demo ? 'DEMO USER ADDED' : 'INVITATION SENT' }));
+        if (!(result && result.demo)) this.loadUsers(true);
         if ((result && result.demo) || s.auRole === 'Account management' || !intakeLocations.length) return;
         this.post('onboarding', {
           clientRequestId: this.newClientRequestId(),
@@ -6694,21 +6734,36 @@ class Component extends DCLogic {
        organisation; anyone else — including an administrator in a view-as session —
        is scoped to one. Rows are filtered server-side in a real build; this mirrors it. */
     const actingOrg = s.impersonating ? s.impersonating.org : (isInternal ? (loc.demo ? DEMO_ORG : null) : this.actingOrg());
-    const users = USERS.concat(s.extraUsers).filter(u => actingOrg === null ? !isDemoOrganization(u.org) : u.org === actingOrg).map(u => {
+    const userRoleLabel = { internal: 'Workforce', owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender' };
+    const connectedUsers = s.liveUsers.map(row => ({
+      name: row.fullName || row.email || 'Unnamed user', email: row.email || '', org: row.org || '',
+      role: row.role === 'internal' ? (STAFF_ROLE_LABELS[row.staffRole] || 'Workforce') : (userRoleLabel[row.role] || row.role || 'Not assigned'),
+      locs: row.locations || (row.role === 'owner' ? 'All organization stores' : 'No store assigned'),
+      active: row.active !== false, testDemo: !!row.testDemo, testDemoReason: row.testDemoReason || '', sourceRole: row.role
+    }));
+    const userSource = actingOrg === DEMO_ORG
+      ? USERS.concat(s.extraUsers).filter(u => isDemoOrganization(u.org))
+      : connectedUsers;
+    const users = userSource.filter(u => actingOrg === null || u.org === actingOrg).map(u => {
       const ownOrg = actingOrg === null || u.org === actingOrg;
       const override = s.userOverrides[u.email] || {};
       const effective = { ...u, ...override };
-      const isDeactivated = s.deactivated.includes(u.email);
+      const isDeactivated = effective.active === false || s.deactivated.includes(u.email);
+      const retailerIdentity = ['owner', 'buyer', 'budtender'].includes(effective.sourceRole)
+        || ['Store owner', 'Buyer', 'Budtender'].includes(effective.role);
+      const testLabel = effective.testDemo ? ' \u00b7 test/demo' : '';
       return {
         ...effective,
-        canImpersonate: canStaff('users.manage') && !s.impersonating && effective.role !== 'Kiosk device' && !isDeactivated,
-        canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !isDeactivated,
-        canDeactivate: (isInternal ? canStaff('users.manage') : role === 'owner') && ownOrg && !s.impersonating && effective.role !== 'Kiosk device' && !isDeactivated,
-        role: isDeactivated ? effective.role + ' \u00b7 deactivated' : effective.role,
-        roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (effective.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (effective.role === 'Kiosk device' ? 'var(--ux-muted-strong)' : 'var(--ux-ground)'),
+        canImpersonate: canStaff('users.manage') && !s.impersonating && retailerIdentity && !isDeactivated,
+        canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
+        canDeactivate: (isInternal ? canStaff('users.manage') : role === 'owner') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
+        canRemoveTest: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !!effective.testDemo,
+        role: isDeactivated ? effective.role + testLabel + ' \u00b7 deactivated' : effective.role + testLabel,
+        roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (effective.testDemo ? 'var(--ux-signal)' : effective.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (effective.testDemo || effective.role !== 'Kiosk device' ? 'var(--ux-ground)' : 'var(--ux-muted-strong)'),
         onDeactivate: () => this.deactivateUser(effective),
         onImpersonate: () => this.impersonate(effective),
-        onRoleChange: () => this.changeUserRole(effective)
+        onRoleChange: () => this.changeUserRole(effective),
+        onRemoveTest: () => this.removeTestUser(effective)
       };
     });
 
@@ -8227,8 +8282,17 @@ class Component extends DCLogic {
         onPick: () => this.set({ auRole: r, auLocs: r === 'Budtender' && s.auLocs.length > 1 ? s.auLocs.slice(0, 1) : s.auLocs }) })),
       auHasErr: !!s.auErr, auErr: s.auErr || '',
       onAuSubmit: () => this.auSubmit(),
+      usersLoading: s.usersLoading,
+      usersHasError: !!s.usersError,
+      usersError: s.usersError || '',
+      usersNoRows: s.usersLoaded && !s.usersLoading && users.length === 0,
+      usersRefreshLabel: s.usersLoading ? 'Refreshing…' : 'Refresh users',
+      onUsersRefresh: () => this.loadUsers(true),
+      testUserSummary: users.filter(user => user.testDemo).length
+        ? users.filter(user => user.testDemo).length + ' test/demo account' + (users.filter(user => user.testDemo).length === 1 ? '' : 's') + ' identified'
+        : 'No test/demo accounts identified',
       adminSub: isInternal
-        ? 'Retailer users are managed here. Workforce users sign in with Google Workspace and receive a separate staff preset; they are never created as a retailer account.'
+        ? 'Live workforce and retailer accounts are listed here. Google Workspace proves employee identity; the stored staff preset and retailer assignments determine access.'
         : 'Users in your organisation. You assign buyer and budtender access; kiosk devices are paired by urbanXtracts.',
       auditRows: s.audit, notifications,
       notifSub: 'Three events push to a store user: an order state change, an approaching license expiry, and a past-due balance. Everything else waits to be found.',

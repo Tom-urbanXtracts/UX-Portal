@@ -99,6 +99,143 @@ async function findAuthUser(email: string): Promise<Row | null> {
   return null;
 }
 
+async function listAuthUsers(): Promise<Row[]> {
+  const users: Row[] = [];
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await service.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+    if (error) throw error;
+    users.push(...(data.users as unknown as Row[]));
+    if (data.users.length < 1000) break;
+    if (page === 20) {
+      throw new AdminError(503, "The user directory is too large to review safely.");
+    }
+  }
+  return users;
+}
+
+function testDemoReason(user: Row, profile: Row): string | null {
+  const email = text(user.email, 320).toLowerCase();
+  const org = text(profile.org, 200).toLowerCase();
+  if (email.endsWith("@executive-demo.invalid")) {
+    return "Executive-demo identity";
+  }
+  if (
+    /^(uxos-e2e|ux-os-e2e|portal-e2e|test|demo)[+._-][a-z0-9+._-]+@(example\.com|example\.org|example\.net)$/i
+      .test(email)
+  ) {
+    return "Reserved-domain test identity";
+  }
+  if (
+    new Set(["cannabis store (demo)", "executive demo retail group"])
+      .has(org)
+  ) {
+    return "Executive-demo organization";
+  }
+  return null;
+}
+
+async function portalUsers(actor: Row): Promise<Row[]> {
+  if (
+    actor.role === "internal" &&
+    !(await hasPermission(actor, "users.manage"))
+  ) {
+    throw new AdminError(403, "Only an Administrator may list portal users.");
+  }
+  const [authUsers, profileResult] = await Promise.all([
+    listAuthUsers(),
+    service.from("portal_profile").select(
+      "id,full_name,org,role,locations,active,staff_role",
+    ).order("full_name", { ascending: true }),
+  ]);
+  if (profileResult.error) throw profileResult.error;
+  const authById = new Map(
+    authUsers.map((user) => [String(user.id), user]),
+  );
+  return ((profileResult.data ?? []) as Row[]).filter((profile) =>
+    actor.role === "internal" ||
+    (profile.org === actor.org && EXTERNAL_ROLES.has(String(profile.role)))
+  ).map((profile) => {
+    const user = authById.get(String(profile.id)) ?? {};
+    const email = text(user.email, 320).toLowerCase();
+    const reason = testDemoReason(user, profile);
+    return {
+      id: profile.id,
+      email,
+      fullName: text(profile.full_name, 160) || email || "Unnamed user",
+      org: profile.org,
+      role: profile.role,
+      staffRole: profile.staff_role,
+      locations: profile.locations,
+      active: profile.active !== false && !user.deleted_at,
+      testDemo: !!reason,
+      testDemoReason: reason,
+    };
+  }).filter((user) => user.email);
+}
+
+async function removeTestDemoUser(
+  request: Request,
+  actor: Row,
+  email: string,
+): Promise<Response> {
+  if (
+    actor.role !== "internal" ||
+    !(await hasPermission(actor, "users.manage"))
+  ) {
+    return json(request, {
+      error: "Only an Administrator may remove test or demo users.",
+    }, 403);
+  }
+  const target = await findAuthUser(email);
+  if (!target) return json(request, { error: "User not found" }, 404);
+  if (String(target.id) === String(actor.id)) {
+    return json(request, { error: "You cannot remove your own account." }, 409);
+  }
+  const { data: profile, error: profileError } = await service.from(
+    "portal_profile",
+  ).select("id,full_name,org,role,locations,active,staff_role").eq(
+    "id",
+    target.id,
+  ).maybeSingle();
+  if (profileError) throw profileError;
+  if (!profile) return json(request, { error: "Portal profile not found" }, 404);
+  const reason = testDemoReason(target, profile as Row);
+  if (!reason) {
+    return json(request, {
+      error:
+        "This account is not marked as a test or executive-demo identity. Deactivate it instead.",
+    }, 409);
+  }
+  await audit(actor, "remove-test-user", { ...target, email }, {
+    org: profile.org,
+    role: profile.role,
+    locations: profile.locations,
+    reason,
+    deletionMode: "soft",
+  });
+  const { error: authError } = await service.auth.admin.deleteUser(
+    String(target.id),
+    true,
+  );
+  if (authError) throw authError;
+  const { error: deleteProfileError } = await service.from("portal_profile")
+    .delete().eq("id", target.id);
+  if (deleteProfileError) {
+    await service.from("portal_profile").update({ active: false }).eq(
+      "id",
+      target.id,
+    );
+    throw deleteProfileError;
+  }
+  return json(request, {
+    ok: true,
+    removed: { email, fullName: profile.full_name, org: profile.org, reason },
+  });
+}
+
 function ensureScope(actor: Row, targetOrg: string, role: string): void {
   if (!EXTERNAL_ROLES.has(role)) {
     throw new AdminError(
@@ -384,6 +521,15 @@ Deno.serve(async (request) => {
       return await inviteOnboardingPerson(request, actor, body);
     }
     const email = text(body.email, 320).toLowerCase();
+    if (action === "list-users") {
+      return json(request, { users: await portalUsers(actor) });
+    }
+    if (action === "remove-test-user") {
+      if (!email || !email.includes("@")) {
+        return json(request, { error: "A valid user email is required." }, 400);
+      }
+      return await removeTestDemoUser(request, actor, email);
+    }
     const org = text(body.org, 200);
     const roleLabel = text(body.role, 40);
     const role = ({
