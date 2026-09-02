@@ -27,7 +27,7 @@ Every Intuit route requires the Edge-only `x-ux-egress-secret`. The service vali
 
 1. Confirm the Google Cloud project, billing account, and a monthly spend cap.
 2. Reserve one regional external IPv4 address in `us-central1`.
-3. Create a minimal current Ubuntu LTS `e2-micro` VM with a standard persistent disk, Shielded VM features, OS Login, automatic security updates, and no project-wide SSH keys.
+3. Create a minimal current Debian or Ubuntu LTS `e2-micro` VM with a standard persistent disk, Shielded VM features, OS Login, automatic security updates, and no project-wide SSH keys.
 4. Apply a VPC firewall that exposes TCP 80/443 publicly for certificate issuance and HTTPS. Restrict TCP 22 to the administrator's current trusted source or use Identity-Aware Proxy; never expose the Node port 8788.
 5. Create the unprivileged system account `ux-qbo-egress` with no login shell or home directory.
 6. Install a supported Node.js LTS and Caddy from their signed vendor repositories.
@@ -39,6 +39,29 @@ Every Intuit route requires the Edge-only `x-ux-egress-secret`. The service vali
 12. Set `QBO_EGRESS_PROXY_URL=https://qbo-egress.urbanxtracts.com` in Supabase. Deploy the QuickBooks functions and confirm direct calls cease.
 13. Enter the VM's reserved US IP and hosting country in Intuit's production settings only after verifying the actual address from the running service.
 14. Enable Google Cloud billing alerts, uptime monitoring, unattended security updates, and a monthly patch/restart window. Document the operational owner.
+
+## Production deployment record (2026-09-02)
+
+The locked-down QuickBooks egress path is deployed with the following production configuration:
+
+- Google Cloud project: `urbanxtracts-ux-os-prod` (`71882342961`)
+- Billing account: `01074E-657EB6-8FFAAC`
+- VM: `qbo-egress-us-central1` in `us-central1-a`, `e2-micro`, Debian 13, with a 10 GB standard persistent disk
+- Reserved public IPv4: `34.45.103.119`
+- DNS: `qbo-egress.urbanxtracts.com` points to `34.45.103.119` with a 300-second TTL
+- Network: `ux-prod-vpc`; subnet `ux-prod-us-central1` (`10.42.0.0/28`) with flow logs and Private Google Access enabled
+- Public web firewall: `qbo-egress-web`, TCP 80/443 from `0.0.0.0/0`, limited to instances tagged `qbo-egress`
+- Administrator firewall: `qbo-egress-iap-ssh`, TCP 22 only from Google IAP `35.235.240.0/20`, limited to instances tagged `qbo-egress`
+- VM service account: `qbo-egress-vm@urbanxtracts-ux-os-prod.iam.gserviceaccount.com`
+- Secret Manager secret: `qbo-egress-proxy-secret`; the VM service account has Secret Manager Secret Accessor only on this secret
+- Supabase project: `cbhsavfbtcpdyxcvguay`
+- Supabase Edge secrets: `QBO_EGRESS_PROXY_URL` and `QBO_EGRESS_PROXY_SECRET`
+- Deployed Supabase functions: `quickbooks-oauth` and `quickbooks-retailers`
+- VM controls: Secure Boot, vTPM, integrity monitoring, OS Login, and OS Login 2FA enabled; project-wide SSH keys disabled; deletion protection enabled
+- Runtime controls: the proxy is bound to loopback behind Caddy HTTPS, the startup process reads only the latest Secret Manager version, and unattended security upgrades are enabled
+- Billing guardrail: alert-only monthly budget `UX OS production – $10 monthly alert`, scoped to this project, with billing-admin/user email alerts at 50%, 90%, and 100%. This is not an automatic hard spending cap.
+
+The public health check returned HTTP 200 with `{"ok":true}` after the production secret rotation and VM restart. Google Cloud Free Tier eligibility is account-dependent and is not guaranteed. No Intuit production questionnaire or hosting-information submission was performed as part of this deployment.
 
 ## Verification and rollback
 
