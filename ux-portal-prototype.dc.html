@@ -1097,6 +1097,16 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:10px;max-width:80ch">Grams and units remain separate. WeightBased uses Canix <code>c_weight_g</code>; CountBased uses the package&rsquo;s raw unit count. Only those two quantity types are in scope.</div>
 </section>
 
+<section aria-label="Inventory lanes" style="margin-bottom:28px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-muted);margin-bottom:8px">INVENTORY LANE</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ invInventoryBuckets }}" as="b" hint-placeholder-count="3">
+<button type="button" onClick="{{ b.onPick }}" aria-pressed="{{ b.pressed }}" style="{{ b.style }}" style-hover="border-color:var(--ux-ink)">{{ b.label }} <span style="opacity:.65">{{ b.count }}</span></button>
+</sc-for>
+</div>
+<div style="font-size:11px;color:var(--ux-muted);line-height:1.55;margin-top:8px;max-width:92ch">Plant material is matched from the Canix Item Name (Clone, Biomass, Seed or Seeds). Bulk is matched from the Canix item or category identity. Plant material takes priority when both rules match, so every package appears in exactly one lane.</div>
+</section>
+
 <section aria-labelledby="inventory-risk-heading" style="margin-bottom:34px">
 <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">INTERNAL ECONOMIC CLASSIFICATION</div><h2 id="inventory-risk-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic risk coverage</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Shows who carries production risk and which commercial model applies. Grams and units remain separate; dollar exposure is not estimated without an approved cost basis.</p></div><span style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;padding:4px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">NO INFERRED VALUE</span></div>
 <div style="{{ invRiskKpiStyle }}"><sc-for list="{{ invRiskKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:13px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 19px Archivo,sans-serif">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for></div>
@@ -1126,8 +1136,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px">
 <div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">PACKAGE WORKBENCH</div>
-<h2 id="inventory-workbench-heading" style="font:800 21px/1.2 Archivo,sans-serif;margin:0 0 5px">Read, filter and inspect every package</h2>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">Search across package, item, SKU, brand, strain and room. Quick views and filters combine; every table heading sorts the current result.</p>
+<h2 id="inventory-workbench-heading" style="font:800 21px/1.2 Archivo,sans-serif;margin:0 0 5px">{{ invWorkbenchTitle }}</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">{{ invWorkbenchDescription }} Search, quick views and filters combine; every table heading sorts the current result.</p>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button type="button" onClick="{{ onInvExport }}" aria-disabled="{{ invExportDisabled }}" style="{{ invExportStyle }}" style-hover="background:var(--ux-accent);border-color:var(--ux-accent)">Export filtered CSV</button>
@@ -3059,6 +3069,7 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'is_finished_good', 'packaged_date', 'expiration_date', 'use_by_date', 'age_days',
   'order_item_id', 'cost_object_id', 'sales_order_id', 'sales_order_name', 'sales_order_status',
   'sales_order_delivery_date', 'source_updated_at',
+  'inventory_bucket', 'inventory_bucket_reason',
   'economic_partner_id', 'economic_partner_name', 'economic_partner_source',
   'economic_owner_id', 'economic_owner_name', 'commercial_model',
   'settlement_counterparty_id', 'settlement_counterparty_name',
@@ -3334,7 +3345,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-    invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
+    invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
     economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
@@ -3818,6 +3829,15 @@ class Component extends DCLogic {
     this.set({ ...patch, invPage: 1, invSelectedPackage: null });
   }
 
+  inventoryBucketSelect(bucket) {
+    if (!['packaged', 'plant_material', 'bulk'].includes(bucket)) return;
+    this.set({ invInventoryBucket: bucket, invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
+      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
+      invPage: 1, invSelectedPackage: null, invQueueItemId: null,
+      invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
+  }
+
   inventoryReset() {
     this.set({ invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
       invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
@@ -3834,6 +3854,7 @@ class Component extends DCLogic {
     if (!rows || !rows.length) return;
     const fields = [
       ['Package ID', 'package_id'], ['Compliance tag', 'tag'], ['Item', 'item_name'], ['SKU', 'sku'],
+      ['Inventory lane', 'inventory_bucket'], ['Lane rule', 'inventory_bucket_reason'],
       ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Economic Partner', 'economic_partner_name'], ['Economic Owner', 'economic_owner_name'],
       ['Commercial model', 'commercial_model'], ['Settlement counterparty', 'settlement_counterparty_name'],
       ['Canix package owner (operational)', 'canix_package_owner_name'], ['Strain', 'strain_name'],
@@ -5543,13 +5564,16 @@ class Component extends DCLogic {
         _display_quantity: isWeight ? Number(record.c_weight_g || 0) : Number(record.weight || 0),
         _display_unit: isWeight ? 'g' : 'units' };
     });
+    const invInventoryBucket = ['packaged', 'plant_material', 'bulk'].includes(s.invInventoryBucket)
+      ? s.invInventoryBucket : 'packaged';
+    const invScopedPackages = invPackages.filter(row => row.inventory_bucket === invInventoryBucket);
     const invTitle = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const invFacet = (key, emptyLabel) => Array.from(new Set(invPackages.map(row => row[key] || emptyLabel).filter(Boolean)))
+    const invFacet = (key, emptyLabel) => Array.from(new Set(invScopedPackages.map(row => row[key] || emptyLabel).filter(Boolean)))
       .sort((a, b) => String(a).localeCompare(String(b)))
       .map(value => ({ value: String(value), label: invTitle(value) }));
     const invRiskGroup = (key, emptyLabel) => {
       const groups = new Map();
-      invPackages.forEach(row => {
+      invScopedPackages.forEach(row => {
         const value = String(row[key] || emptyLabel);
         const current = groups.get(value) || { value, packages: 0, weight_g: 0, units: 0 };
         current.packages += 1;
@@ -5562,7 +5586,7 @@ class Component extends DCLogic {
     const invOwnerRisk = invRiskGroup('economic_owner_name', 'Not classified');
     const invModelRisk = invRiskGroup('commercial_model', 'Not classified');
     const invOwnershipQueueMap = new Map();
-    invPackages.filter(row => !row.economic_owner_name).forEach(row => {
+    invScopedPackages.filter(row => !row.economic_owner_name).forEach(row => {
       const itemId = Number(row.item_id) || null;
       const key = itemId ? String(itemId) : 'missing:' + String(row.item_name || row.package_id || 'unknown');
       const current = invOwnershipQueueMap.get(key) || { itemId, itemName: row.item_name || 'Unnamed item',
@@ -5584,14 +5608,14 @@ class Component extends DCLogic {
       : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
       : view === 'zero' ? Number(row._display_quantity) === 0
       : true;
-    const invViewCounts = view => invPackages.filter(row => invViewMatch(row, view)).length;
+    const invViewCounts = view => invScopedPackages.filter(row => invViewMatch(row, view)).length;
     const invNeedle = String(s.invSearch || '').trim().toLowerCase();
     const invMatchesAge = row => s.invAge === 'all'
       || (s.invAge === '0-30' && Number(row.age_days) <= 30)
       || (s.invAge === '31-60' && Number(row.age_days) >= 31 && Number(row.age_days) <= 60)
       || (s.invAge === '61-90' && Number(row.age_days) >= 61 && Number(row.age_days) <= 90)
       || (s.invAge === '90+' && Number(row.age_days) > 90);
-    const invFiltered = invPackages.filter(row => {
+    const invFiltered = invScopedPackages.filter(row => {
       if (!invViewMatch(row, s.invView)) return false;
       if (s.invFacility !== 'all' && String(row.facility_id) !== s.invFacility) return false;
       if (s.invStatus !== 'all' && row.status_category !== s.invStatus) return false;
@@ -5635,7 +5659,7 @@ class Component extends DCLogic {
     const invPageRows = invSorted.slice(invPageStart, invPageStart + invPageSize);
     const invFilteredWeightValue = invFiltered.filter(row => row.quantity_type === 'WeightBased').reduce((sum, row) => sum + (Number(row.c_weight_g) || 0), 0);
     const invFilteredUnitsValue = invFiltered.filter(row => row.quantity_type === 'CountBased').reduce((sum, row) => sum + (Number(row.weight) || 0), 0);
-    const invSelected = invPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
+    const invSelected = invScopedPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
     const invSource = invData.source || {};
     const invIsStale = invSource.stale === true;
     /* Brand geometry: the mark is built from arches, so category markers, image
@@ -6500,6 +6524,24 @@ class Component extends DCLogic {
       invLastSync: invSource.last_successful_sync_at || (s.inventoryLoaded ? '\u2014' : 'Loads after sign-in'),
       invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Refresh from Canix cache',
       onInvRefresh: () => this.loadInventory(),
+      invInventoryBuckets: [
+        ['packaged', 'Packaged / each'],
+        ['plant_material', 'Clones, biomass & seeds'],
+        ['bulk', 'Bulk items']
+      ].map(([id, label]) => ({ label, count: invNumber(invPackages.filter(row => row.inventory_bucket === id).length),
+        pressed: invInventoryBucket === id ? 'true' : 'false',
+        style: 'background:' + (invInventoryBucket === id ? 'var(--ux-ink)' : 'transparent') + ';color:'
+          + (invInventoryBucket === id ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:1px solid '
+          + (invInventoryBucket === id ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)')
+          + ';padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.inventoryBucketSelect(id) })),
+      invWorkbenchTitle: invInventoryBucket === 'plant_material' ? 'Clones, biomass and seeds'
+        : invInventoryBucket === 'bulk' ? 'Bulk inventory' : 'Packaged and each inventory',
+      invWorkbenchDescription: invInventoryBucket === 'plant_material'
+        ? 'Canix packages whose Item Name contains Clone, Biomass, Seed or Seeds.'
+        : invInventoryBucket === 'bulk'
+          ? 'Canix packages identified as Bulk, excluding plant material already routed to its own lane.'
+          : 'Finished packaged and each inventory, excluding plant material and Bulk items.',
       invViews: [
         ['all', 'All usable', invViewCounts('all')],
         ['available', 'Available status', invViewCounts('available')],
@@ -6519,7 +6561,7 @@ class Component extends DCLogic {
       onInvSearch: e => this.inventoryFilter({ invSearch: e.target.value }),
       invFacility: s.invFacility,
       onInvFacility: e => this.inventoryFilter({ invFacility: e.target.value }),
-      invFacilityOptions: Array.from(new Map(invPackages.map(row => [String(row.facility_id), row.facility_name])).entries())
+      invFacilityOptions: Array.from(new Map(invScopedPackages.map(row => [String(row.facility_id), row.facility_name])).entries())
         .sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label })),
       invStatus: s.invStatus,
       onInvStatus: e => this.inventoryFilter({ invStatus: e.target.value }),
@@ -6564,10 +6606,10 @@ class Component extends DCLogic {
       invRangeLabel: invSorted.length ? invNumber(invPageStart + 1) + '\u2013' + invNumber(Math.min(invPageStart + invPageSize, invSorted.length)) + ' of ' + invNumber(invSorted.length) : '0 of 0',
       invRiskKpiStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);border-top:1px solid rgba(23,14,11,.16);border-bottom:1px solid rgba(23,14,11,.16);margin-bottom:18px',
       invRiskKpis: [
-        { label: 'CLASSIFIED PACKAGES', value: invNumber(invPackages.filter(row => !!row.economic_owner_name).length), note: 'Carries an explicit Economic Owner.' },
-        { label: 'UNCLASSIFIED PACKAGES', value: invNumber(invPackages.filter(row => !row.economic_owner_name).length), note: 'Click the queue below to resolve.' },
-        { label: 'BACKEND DEAL PACKAGES', value: invNumber(invPackages.filter(row => row.commercial_model === 'backend_revenue_share').length), note: 'Revenue-share model; risk owner remains explicit.' },
-        { label: 'PACKAGE OVERRIDES', value: invNumber(invPackages.filter(row => row.ownership_scope === 'package').length), note: 'Exceptions to an item-level default.' }
+        { label: 'CLASSIFIED PACKAGES', value: invNumber(invScopedPackages.filter(row => !!row.economic_owner_name).length), note: 'Carries an explicit Economic Owner in this lane.' },
+        { label: 'UNCLASSIFIED PACKAGES', value: invNumber(invScopedPackages.filter(row => !row.economic_owner_name).length), note: 'Click the queue below to resolve.' },
+        { label: 'BACKEND DEAL PACKAGES', value: invNumber(invScopedPackages.filter(row => row.commercial_model === 'backend_revenue_share').length), note: 'Revenue-share model; risk owner remains explicit.' },
+        { label: 'PACKAGE OVERRIDES', value: invNumber(invScopedPackages.filter(row => row.ownership_scope === 'package').length), note: 'Exceptions to an item-level default.' }
       ],
       invRiskTablesStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 2) + ',minmax(0,1fr));gap:' + (narrow ? 22 : 28) + 'px',
       invOwnerRiskRows: invOwnerRisk.map(group => ({ label: group.value, packages: invNumber(group.packages),
@@ -6682,6 +6724,8 @@ class Component extends DCLogic {
       invDetailGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 4) + ',minmax(0,1fr));gap:15px 18px',
       invDetailRows: invSelected ? [
         ['Package ID', invSelected.package_id], ['SKU', invSelected.sku || 'Not recorded'],
+        ['Inventory lane', invSelected.inventory_bucket ? invTitle(invSelected.inventory_bucket) : 'Not classified'],
+        ['Lane rule', invSelected.inventory_bucket_reason ? invTitle(invSelected.inventory_bucket_reason) : 'Not recorded'],
         ['Category', invSelected.item_category_name || 'Not recorded'], ['Brand / strain', [invSelected.brand_name, invSelected.strain_name].filter(Boolean).join(' · ') || 'Not recorded'],
         ['Economic Partner', invSelected.economic_partner_name || 'Not mapped'],
         ['Economic Owner', invSelected.economic_owner_name || 'Not classified'],

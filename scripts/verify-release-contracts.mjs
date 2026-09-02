@@ -35,6 +35,10 @@ function assertContract(condition, name) {
 }
 
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
+assertContract(inventory.includes("function inventoryBucket(row: Json)") && inventory.includes('"inventory_bucket_reason"'), "inventory publishes one auditable lane classification per package");
+assertContract(inventory.includes("/\\b(?:clone|biomass|seeds?)\\b/i.test(itemName)") && inventory.indexOf("item_name_keyword") < inventory.indexOf("bulkIdentity"), "Clone, Biomass, Seed, and Seeds item names take priority over Bulk routing");
+assertContract(inventory.includes("row.item_category_name") && inventory.includes("row.item_sub_category_name") && inventory.includes("/\\bbulk\\b/i.test(bulkIdentity)"), "Bulk routing uses the Canix item and category identity");
+assertContract(source.includes("invInventoryBuckets") && source.includes("invScopedPackages") && source.includes("inventoryBucketSelect(bucket)"), "inventory UI separates Packaged, plant-material, and Bulk lanes before filtering");
 assertContract(inventory.includes('"economic_partner_name"') && inventory.includes('service.from("portal_brand_economic_partner")'), "inventory exposes Economic Partner independently from Economic Owner");
 assertContract(economicPartnerMigration.includes("portal_sync_brand_economic_partners") && economicPartnerMigration.includes("Never used as an Economic Owner fallback"), "every current Canix Brand has a separate Economic Partner sync contract");
 assertContract(economicPartnerMigration.includes("where party_code = 'WANA'") && economicPartnerMigration.includes("display_name = 'Wana'"), "Wana uses the requested Economic Partner display name");

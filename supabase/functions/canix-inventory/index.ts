@@ -95,6 +95,8 @@ const STORED_PACKAGE_COLUMNS = [
 
 const PACKAGE_COLUMNS = [
   ...STORED_PACKAGE_COLUMNS,
+  "inventory_bucket",
+  "inventory_bucket_reason",
   "economic_partner_id",
   "economic_partner_name",
   "economic_partner_source",
@@ -116,6 +118,26 @@ type Allocation = {
   sales_order_status: string | null;
   sales_order_delivery_date: string | null;
 };
+
+function inventoryBucket(row: Json): {
+  bucket: "packaged" | "plant_material" | "bulk";
+  reason: "default" | "item_name_keyword" | "bulk_item";
+} {
+  const itemName = String(row.item_name ?? "");
+  if (/\b(?:clone|biomass|seeds?)\b/i.test(itemName)) {
+    return { bucket: "plant_material", reason: "item_name_keyword" };
+  }
+  const bulkIdentity = [
+    row.item_name,
+    row.item_category_name,
+    row.item_sub_category_name,
+    row.product_name,
+  ].filter(Boolean).join(" ");
+  if (/\bbulk\b/i.test(bulkIdentity)) {
+    return { bucket: "bulk", reason: "bulk_item" };
+  }
+  return { bucket: "packaged", reason: "default" };
+}
 
 function allowedOrigin(request: Request): string {
   const origin = request.headers.get("origin") ?? "";
@@ -875,8 +897,11 @@ async function withEconomicOwnership(rows: Json[]): Promise<Json[]> {
     const economicPartnerId = economicPartner
       ? stringOrNull(economicPartner.economic_partner_party_id)
       : null;
+    const inventoryClassification = inventoryBucket(row);
     return {
       ...row,
+      inventory_bucket: inventoryClassification.bucket,
+      inventory_bucket_reason: inventoryClassification.reason,
       economic_partner_id: economicPartnerId,
       economic_partner_name: economicPartnerId
         ? partyNames.get(economicPartnerId) ?? null
