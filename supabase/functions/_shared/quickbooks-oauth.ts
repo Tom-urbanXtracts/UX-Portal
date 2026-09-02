@@ -4,6 +4,33 @@ const EGRESS_PROXY_URL = (Deno.env.get("QBO_EGRESS_PROXY_URL") ?? "").trim();
 const EGRESS_PROXY_SECRET = (Deno.env.get("QBO_EGRESS_PROXY_SECRET") ?? "")
   .trim();
 
+export type QuickBooksEnvironment = "sandbox" | "production";
+
+export function configuredQuickBooksEnvironment():
+  | QuickBooksEnvironment
+  | null {
+  const value = (Deno.env.get("QBO_ENVIRONMENT") ?? "").trim().toLowerCase();
+  return value === "sandbox" || value === "production" ? value : null;
+}
+
+export function requireQuickBooksEnvironment(): QuickBooksEnvironment {
+  const value = configuredQuickBooksEnvironment();
+  if (!value) {
+    throw new Error(
+      "QBO_ENVIRONMENT must be explicitly set to sandbox or production.",
+    );
+  }
+  return value;
+}
+
+export function quickBooksAccountingBase(
+  environment = requireQuickBooksEnvironment(),
+): string {
+  return environment === "sandbox"
+    ? "https://sandbox-quickbooks.api.intuit.com"
+    : "https://quickbooks.api.intuit.com";
+}
+
 export type IntuitOAuthEndpoints = {
   authorizationEndpoint: string;
   tokenEndpoint: string;
@@ -35,8 +62,16 @@ function proxyTarget(upstream: URL): URL {
   const accounting = upstream.pathname.match(
     /^\/v3\/company\/([A-Za-z0-9_-]{1,64})\/query$/,
   );
-  if (upstream.hostname === "quickbooks.api.intuit.com" && accounting) {
-    const target = new URL(`/v1/accounting/${accounting[1]}/query`, base);
+  const environment = upstream.hostname === "quickbooks.api.intuit.com"
+    ? "production"
+    : upstream.hostname === "sandbox-quickbooks.api.intuit.com"
+    ? "sandbox"
+    : null;
+  if (environment && accounting) {
+    const target = new URL(
+      `/v1/accounting/${environment}/${accounting[1]}/query`,
+      base,
+    );
     target.search = upstream.search;
     return target;
   }

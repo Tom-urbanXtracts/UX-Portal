@@ -6,6 +6,8 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
   "9620649212";
+const QBO_ENVIRONMENT = (Deno.env.get("QBO_ENVIRONMENT") ?? "").trim()
+  .toLowerCase();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -64,6 +66,10 @@ function ageMinutes(value: unknown): number | null {
 }
 
 function effectiveQuickBooksConnectionStatus(qbo: Row | null): string {
+  if (
+    !["sandbox", "production"].includes(QBO_ENVIRONMENT) ||
+    qbo?.connection_environment !== QBO_ENVIRONMENT
+  ) return "disconnected";
   const status = String(qbo?.connection_status ?? "disconnected");
   if (status !== "authorizing") return status;
   const expiresAt = Date.parse(String(qbo?.oauth_state_expires_at ?? ""));
@@ -144,7 +150,7 @@ Deno.serve(async (request) => {
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
       service.from("quickbooks_sync_state").select(
-        "status,connection_status,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
+        "status,connection_status,connection_environment,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
       ).eq("id", 1).maybeSingle(),
       service.rpc("portal_quickbooks_scheduler_state"),
       service.from("monday_connection_state").select(
@@ -514,6 +520,19 @@ Deno.serve(async (request) => {
         label: "QuickBooks read model",
         checks: [
           {
+            state: QBO_ENVIRONMENT === "production"
+              ? "pass"
+              : QBO_ENVIRONMENT === "sandbox"
+              ? "warn"
+              : "block",
+            label: "Environment isolation",
+            detail: QBO_ENVIRONMENT === "production"
+              ? "Production API routing is explicit; sandbox connections and snapshots cannot be reused."
+              : QBO_ENVIRONMENT === "sandbox"
+              ? "Sandbox API routing is explicit for pre-production evidence. Switching to production clears the sandbox cache before a live connection is accepted."
+              : "QBO_ENVIRONMENT must be explicitly set to sandbox or production before authorization.",
+          },
+          {
             state:
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
                 configured("QBO_TOKEN_ENCRYPTION_KEY") &&
@@ -525,7 +544,7 @@ Deno.serve(async (request) => {
               configured("QBO_CLIENT_ID") && configured("QBO_CLIENT_SECRET") &&
                 configured("QBO_TOKEN_ENCRYPTION_KEY") &&
                 qboConnectionStatus === "connected" && Boolean(qbo?.realm_id)
-                ? "The encrypted server-side customer, invoice, and payment connection is active."
+                ? `The encrypted server-side customer, invoice, and payment connection is active in ${QBO_ENVIRONMENT}.`
                 : `An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.${
                   qbo?.last_intuit_tid
                     ? ` Latest Intuit support ID: ${qbo.last_intuit_tid}.`
@@ -651,6 +670,10 @@ Deno.serve(async (request) => {
         },
         quickbooks: {
           connectionStatus: qboConnectionStatus,
+          environment: ["sandbox", "production"].includes(QBO_ENVIRONMENT)
+            ? QBO_ENVIRONMENT
+            : "not_configured",
+          connectedEnvironment: qbo?.connection_environment ?? null,
           connectedAt: qbo?.connected_at ?? null,
           lastSuccessfulAt: qbo?.last_successful_at ?? null,
         },

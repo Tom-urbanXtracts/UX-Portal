@@ -62,7 +62,7 @@ test("forwards only the fixed discovery document and support ID", async () => {
   );
 });
 
-test("validates and forwards one Accounting query", async () => {
+test("validates and forwards a production Accounting query", async () => {
   let request = null;
   await withProxy(async (url, init) => {
     request = { url, authorization: init.headers.get("authorization") };
@@ -72,7 +72,7 @@ test("validates and forwards one Accounting query", async () => {
       "select * from Customer startposition 1 maxresults 1000",
     );
     const response = await fetch(
-      `${base}/v1/accounting/123456/query?minorversion=75&query=${query}`,
+      `${base}/v1/accounting/production/123456/query?minorversion=75&query=${query}`,
       {
         headers: {
           "x-ux-egress-secret": SECRET,
@@ -88,6 +88,49 @@ test("validates and forwards one Accounting query", async () => {
     /^https:\/\/quickbooks\.api\.intuit\.com\/v3\/company\/123456\/query\?/,
   );
   assert.match(request.url, /minorversion=75/);
+});
+
+test("validates and forwards a sandbox Accounting query", async () => {
+  let requested = "";
+  await withProxy(async (url) => {
+    requested = url;
+    return Response.json({ QueryResponse: { Customer: [] } });
+  }, async (base) => {
+    const query = encodeURIComponent(
+      "select * from Customer startposition 1 maxresults 1000",
+    );
+    const response = await fetch(
+      `${base}/v1/accounting/sandbox/987654/query?minorversion=75&query=${query}`,
+      {
+        headers: {
+          "x-ux-egress-secret": SECRET,
+          authorization: "Bearer sandbox-access-token",
+        },
+      },
+    );
+    assert.equal(response.status, 200);
+  });
+  assert.match(
+    requested,
+    /^https:\/\/sandbox-quickbooks\.api\.intuit\.com\/v3\/company\/987654\/query\?/,
+  );
+});
+
+test("rejects an unspecified Accounting environment", async () => {
+  await withProxy(async () => {
+    throw new Error("must not fetch");
+  }, async (base) => {
+    const response = await fetch(
+      `${base}/v1/accounting/123456/query?minorversion=75&query=select%20*%20from%20Customer`,
+      {
+        headers: {
+          "x-ux-egress-secret": SECRET,
+          authorization: "Bearer access-token",
+        },
+      },
+    );
+    assert.equal(response.status, 400);
+  });
 });
 
 test("rejects token requests without the expected content type", async () => {

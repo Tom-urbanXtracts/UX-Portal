@@ -4,13 +4,14 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 
 ## Deploy
 
-1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, and `20260902030000_quickbooks_sync_cron.sql`.
+1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, `20260902030000_quickbooks_sync_cron.sql`, and `20260902050000_quickbooks_environment_isolation.sql`.
 2. Deploy `quickbooks-oauth`, the updated `quickbooks-retailers`, `quickbooks-financials`, and `portal-readiness` Edge Functions.
 3. Register this exact Intuit redirect URI:
    - `https://cbhsavfbtcpdyxcvguay.supabase.co/functions/v1/quickbooks-oauth/callback`
 4. Keep these values server-side:
    - QBO_CLIENT_ID
    - QBO_CLIENT_SECRET
+   - QBO_ENVIRONMENT (`sandbox` during pre-production evidence; change to `production` only with production credentials)
    - QBO_TOKEN_ENCRYPTION_KEY (at least 32 random characters; keep it stable)
    - QBO_CRON_SECRET
    - QBO_REDIRECT_URI (optional when using the exact default above)
@@ -22,6 +23,8 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Invoices, and Payments together.
 
 The scheduled endpoint returns HTTP 202 with `skipped: true` while no encrypted QuickBooks connection exists. This keeps the production schedule ready without turning the intentionally disconnected pre-approval state into a recurring error. The first interval after a successful OAuth connection begins normal synchronization automatically.
+
+The selected Intuit Accounting environment is explicit and is bound to the one-time OAuth state, encrypted realm, refresh-token rotations, API hostname, and published snapshot. The static-egress proxy maps separate fixed routes to Intuit's exact sandbox and production hosts. When the environment changes, the prior Customer, Invoice, and Payment cache is cleared before the new connection is accepted; the old token and snapshot cannot be reused. Release readiness and the administrator connection card display the active environment.
 
 The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atomically. The refresh token is encrypted with the Edge-Function-only encryption key. The sync persists every rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
 

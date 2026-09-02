@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import {
+  configuredQuickBooksEnvironment,
   intuitFetch,
   intuitOAuthEndpoints,
 } from "../_shared/quickbooks-oauth.ts";
@@ -11,6 +12,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const QBO_CLIENT_ID = Deno.env.get("QBO_CLIENT_ID") ?? "";
 const QBO_CLIENT_SECRET = Deno.env.get("QBO_CLIENT_SECRET") ?? "";
 const QBO_TOKEN_ENCRYPTION_KEY = Deno.env.get("QBO_TOKEN_ENCRYPTION_KEY") ?? "";
+const QBO_ENVIRONMENT = configuredQuickBooksEnvironment();
 const PORTAL_URL = Deno.env.get("QBO_PORTAL_RETURN_URL") ??
   "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site/";
 const REDIRECT_URI = Deno.env.get("QBO_REDIRECT_URI") ??
@@ -114,7 +116,8 @@ async function sha256(value: string): Promise<string> {
 function configured(): boolean {
   return Boolean(
     SUPABASE_URL && SUPABASE_ANON_KEY && SERVICE_ROLE_KEY && QBO_CLIENT_ID &&
-      QBO_CLIENT_SECRET && QBO_TOKEN_ENCRYPTION_KEY.length >= 32,
+      QBO_CLIENT_SECRET && QBO_TOKEN_ENCRYPTION_KEY.length >= 32 &&
+      QBO_ENVIRONMENT,
   );
 }
 
@@ -170,6 +173,7 @@ async function startAuthorization(
   const { error } = await service.rpc("portal_begin_quickbooks_oauth", {
     p_state_hash: stateHash,
     p_actor: caller.id,
+    p_environment: QBO_ENVIRONMENT,
   });
   if (error) throw error;
   await service.from("portal_admin_audit").insert({
@@ -179,6 +183,7 @@ async function startAuthorization(
     detail: {
       scope: "com.intuit.quickbooks.accounting",
       mode: "read_only_portal",
+      environment: QBO_ENVIRONMENT,
     },
   });
   const endpoints = await intuitOAuthEndpoints();
@@ -222,8 +227,11 @@ async function callback(request: Request): Promise<Response> {
     );
   }
   const { data: claims, error: claimError } = await service.rpc(
-    "portal_consume_quickbooks_oauth_state",
-    { p_state_hash: await sha256(state) },
+    "portal_consume_quickbooks_oauth_state_v2",
+    {
+      p_state_hash: await sha256(state),
+      p_environment: QBO_ENVIRONMENT,
+    },
   );
   const actorId = Array.isArray(claims) && claims.length
     ? String(claims[0].actor_id || "")
@@ -268,13 +276,14 @@ async function callback(request: Request): Promise<Response> {
     ? new Date(Date.now() + refreshSeconds * 1000).toISOString()
     : null;
   const { error: storeError } = await service.rpc(
-    "portal_store_quickbooks_connection",
+    "portal_store_quickbooks_connection_v2",
     {
       p_realm_id: realmId,
       p_refresh_token: refreshToken,
       p_encryption_key: QBO_TOKEN_ENCRYPTION_KEY,
       p_refresh_token_expires_at: refreshExpiresAt,
       p_actor: actorId,
+      p_environment: QBO_ENVIRONMENT,
     },
   );
   if (storeError) throw storeError;
@@ -289,10 +298,11 @@ async function callback(request: Request): Promise<Response> {
     detail: {
       scope: "com.intuit.quickbooks.accounting",
       mode: "read_only_portal",
+      environment: QBO_ENVIRONMENT,
     },
   });
   return safeHtml(
-    "URBANXTRACTS INC is authorized for the portal's server-side read-only customer, invoice, and payment sync.",
+    `The ${QBO_ENVIRONMENT} company is authorized for the portal's server-side read-only customer, invoice, and payment sync.`,
     true,
   );
 }
@@ -327,12 +337,15 @@ Deno.serve(async (request) => {
       return await startAuthorization(request, caller);
     }
     const { data, error } = await service.from("quickbooks_sync_state").select(
-      "connection_status,connected_at,refresh_token_expires_at,oauth_state_expires_at,last_successful_at,status,last_error",
+      "connection_status,connection_environment,connected_at,refresh_token_expires_at,oauth_state_expires_at,last_successful_at,status,last_error",
     ).eq("id", 1).maybeSingle();
     if (error) throw error;
     return json(request, {
       configured: configured(),
-      connectionStatus: effectiveConnectionStatus(data),
+      environment: QBO_ENVIRONMENT,
+      connectionStatus: data?.connection_environment === QBO_ENVIRONMENT
+        ? effectiveConnectionStatus(data)
+        : "disconnected",
       connectedAt: data?.connected_at ?? null,
       refreshTokenExpiresAt: data?.refresh_token_expires_at ?? null,
       lastSuccessfulAt: data?.last_successful_at ?? null,

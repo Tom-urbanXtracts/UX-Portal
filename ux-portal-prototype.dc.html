@@ -1492,7 +1492,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ canConnectQuickBooks }}" hint-placeholder-val="{{ false }}">
 <div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
-<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">QUICKBOOKS · {{ quickBooksConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only connection for customer, invoice, and payment snapshots. The portal uses accounting read operations only; it never creates or changes a QuickBooks record.</div><sc-if value="{{ quickBooksConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ quickBooksConnectionError }}</div></sc-if></div>
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">QUICKBOOKS · {{ quickBooksEnvironmentLabel }} · {{ quickBooksConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only connection for customer, invoice, and payment snapshots. Sandbox and production connections are isolated. The portal uses accounting read operations only; it never creates or changes a QuickBooks record.</div><sc-if value="{{ quickBooksConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ quickBooksConnectionError }}</div></sc-if></div>
 <button type="button" onClick="{{ onQuickBooksConnect }}" aria-disabled="{{ quickBooksConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ quickBooksConnectLabel }}</button>
 </div>
 </sc-if>
@@ -8758,6 +8758,7 @@ class Component extends DCLogic {
       quickBooksConnecting: s.quickBooksConnecting,
       quickBooksConnectionHasError: !!s.quickBooksConnectionError,
       quickBooksConnectionError: s.quickBooksConnectionError || '',
+      quickBooksEnvironmentLabel: String((((s.readinessData || {}).integrations || {}).quickbooks || {}).environment || 'not configured').replace(/_/g, ' ').toUpperCase(),
       quickBooksConnectionLabel: String((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus || 'disconnected').replace(/_/g, ' ').toUpperCase(),
       quickBooksConnectLabel: s.quickBooksConnecting ? 'Opening Intuit…'
         : ((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus === 'connected' ? 'Reconnect QuickBooks' : 'Connect QuickBooks'),

@@ -53,7 +53,7 @@ function upstreamFor(request) {
     return { url: INTUIT_TOKEN, method: "POST", body: "token" };
   }
   const accounting = url.pathname.match(
-    /^\/v1\/accounting\/([A-Za-z0-9_-]{1,64})\/query$/,
+    /^\/v1\/accounting\/(sandbox|production)\/([A-Za-z0-9_-]{1,64})\/query$/,
   );
   if (request.method === "GET" && accounting) {
     const query = url.searchParams.get("query") || "";
@@ -66,8 +66,10 @@ function upstreamFor(request) {
       )
     ) throw new Error("invalid_accounting_query");
     const upstream = new URL(
-      `/v3/company/${accounting[1]}/query`,
-      "https://quickbooks.api.intuit.com",
+      `/v3/company/${accounting[2]}/query`,
+      accounting[1] === "sandbox"
+        ? "https://sandbox-quickbooks.api.intuit.com"
+        : "https://quickbooks.api.intuit.com",
     );
     upstream.searchParams.set("minorversion", minorVersion);
     upstream.searchParams.set("query", query);
@@ -85,7 +87,10 @@ function forwardedHeaders(request, route) {
     }
     headers.set("authorization", authorization);
     headers.set("content-type", "application/x-www-form-urlencoded");
-  } else if (route.url.startsWith("https://quickbooks.api.intuit.com/")) {
+  } else if (
+    route.url.startsWith("https://quickbooks.api.intuit.com/") ||
+    route.url.startsWith("https://sandbox-quickbooks.api.intuit.com/")
+  ) {
     const authorization = String(request.headers.authorization || "");
     if (!authorization.startsWith("Bearer ")) {
       throw new Error("missing_bearer_authorization");

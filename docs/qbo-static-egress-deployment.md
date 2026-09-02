@@ -18,10 +18,10 @@ The proxy cannot receive a destination URL. It recognizes only:
 
 - `GET /v1/discovery`
 - `POST /v1/token`
-- `GET /v1/accounting/{realm}/query?minorversion=...&query=...`
+- `GET /v1/accounting/{sandbox|production}/{realm}/query?minorversion=...&query=...`
 - `GET /healthz`
 
-Every Intuit route requires the Edge-only `x-ux-egress-secret`. The service validates request method, content type, realm format, query keys and size; applies a per-process rate limit; requires HTTPS from the reverse proxy; follows no redirects; and forwards only safe response headers. It never logs request headers, tokens, query text, or response bodies.
+Every Intuit route requires the Edge-only `x-ux-egress-secret`. The service validates request method, explicit environment, content type, realm format, query keys and size; applies a per-process rate limit; requires HTTPS from the reverse proxy; follows no redirects; and forwards only safe response headers. Sandbox routes can reach only `sandbox-quickbooks.api.intuit.com`; production routes can reach only `quickbooks.api.intuit.com`. It never logs request headers, tokens, query text, or response bodies.
 
 ## Provisioning checklist
 

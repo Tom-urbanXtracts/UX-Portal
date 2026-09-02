@@ -1,9 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { configuredQuickBooksEnvironment } from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const QBO_ENVIRONMENT = configuredQuickBooksEnvironment();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -324,18 +326,27 @@ Deno.serve(async (request) => {
   try {
     const caller = await callerFor(request);
     if (!caller) return json(request, { error: "Unauthorized" }, 401);
+    if (!QBO_ENVIRONMENT) {
+      return json(request, {
+        error: "QuickBooks environment is not configured.",
+      }, 503);
+    }
     const { data: state, error: stateError } = await service.from(
       "quickbooks_sync_state",
     )
       .select(
-        "status,last_financial_run_id,financial_last_successful_at,invoice_count,payment_count",
+        "status,connection_environment,last_financial_run_id,financial_last_successful_at,invoice_count,payment_count",
       )
       .eq("id", 1).maybeSingle();
     if (stateError) throw stateError;
-    if (!state?.last_financial_run_id) {
+    if (
+      state?.connection_environment !== QBO_ENVIRONMENT ||
+      !state?.last_financial_run_id
+    ) {
       return json(request, {
         source: {
           system: "QuickBooks",
+          environment: QBO_ENVIRONMENT,
           connectionMode: "not_loaded",
           stale: true,
         },
@@ -354,6 +365,7 @@ Deno.serve(async (request) => {
       return json(request, {
         source: {
           system: "QuickBooks",
+          environment: QBO_ENVIRONMENT,
           connectionMode: "mapped_no_data",
           stale: state.status === "error",
           lastSuccessfulSyncAt: state.financial_last_successful_at,
@@ -520,6 +532,7 @@ Deno.serve(async (request) => {
     return json(request, {
       source: {
         system: "QuickBooks",
+        environment: QBO_ENVIRONMENT,
         connectionMode: "server_snapshot",
         stale: state.status === "error",
         lastSuccessfulSyncAt: state.financial_last_successful_at,

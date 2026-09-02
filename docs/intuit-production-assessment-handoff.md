@@ -29,6 +29,7 @@ This document separates implementation evidence from company attestations. It is
 | Expired refresh token / invalid grant | Yes | The connector records an error, preserves the last complete financial snapshot, and requires administrator reconnection. |
 | CSRF | Yes | OAuth state uses 32 random bytes, is stored only as a SHA-256 hash, expires after ten minutes, and is consumed atomically once. |
 | OAuth Playground / offline token tool | No | Production authorization starts only from the permission-gated portal flow. |
+| Sandbox/production isolation | Yes | `QBO_ENVIRONMENT` is mandatory. OAuth state, encrypted connection custody, Accounting API hostname, and snapshot reads must all match it. Switching environments clears the prior cache. |
 
 ## API usage and error handling
 

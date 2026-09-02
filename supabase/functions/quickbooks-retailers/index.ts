@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import {
   intuitFetch,
   intuitOAuthEndpoints,
+  quickBooksAccountingBase,
+  requireQuickBooksEnvironment,
 } from "../_shared/quickbooks-oauth.ts";
 import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
@@ -10,10 +12,9 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const QBO_CLIENT_ID = Deno.env.get("QBO_CLIENT_ID") ?? "";
 const QBO_CLIENT_SECRET = Deno.env.get("QBO_CLIENT_SECRET") ?? "";
-const QBO_REALM_ID = Deno.env.get("QBO_REALM_ID") ?? "";
-const QBO_REFRESH_TOKEN = Deno.env.get("QBO_REFRESH_TOKEN") ?? "";
 const QBO_TOKEN_ENCRYPTION_KEY = Deno.env.get("QBO_TOKEN_ENCRYPTION_KEY") ?? "";
 const QBO_CRON_SECRET = Deno.env.get("QBO_CRON_SECRET") ?? "";
+const QBO_ENVIRONMENT = requireQuickBooksEnvironment();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -138,24 +139,23 @@ async function accessToken(): Promise<
   }
 > {
   let encrypted: Row | null = null;
-  if (QBO_TOKEN_ENCRYPTION_KEY) {
+  if (QBO_TOKEN_ENCRYPTION_KEY && QBO_ENVIRONMENT) {
     const { data, error } = await service.rpc(
-      "portal_get_quickbooks_connection",
+      "portal_get_quickbooks_connection_v2",
       {
         p_encryption_key: QBO_TOKEN_ENCRYPTION_KEY,
+        p_environment: QBO_ENVIRONMENT,
       },
     );
     if (error) throw error;
     encrypted = Array.isArray(data) && data.length ? data[0] as Row : null;
   }
-  const { data: legacy } = await service.from("quickbooks_sync_state").select(
-    "realm_id,refresh_token",
-  ).eq("id", 1).maybeSingle();
-  const refresh = String(
-    encrypted?.refresh_token || legacy?.refresh_token || QBO_REFRESH_TOKEN,
-  );
-  const realm = String(encrypted?.realm_id || legacy?.realm_id || QBO_REALM_ID);
-  if (!QBO_CLIENT_ID || !QBO_CLIENT_SECRET || !realm || !refresh) {
+  const refresh = String(encrypted?.refresh_token || "");
+  const realm = String(encrypted?.realm_id || "");
+  if (
+    !QBO_ENVIRONMENT || !QBO_CLIENT_ID || !QBO_CLIENT_SECRET || !realm ||
+    !refresh
+  ) {
     throw new Error("QuickBooks server credentials are not configured.");
   }
   const endpoints = await intuitOAuthEndpoints();
@@ -202,7 +202,7 @@ async function qboQuery(
       where ? ` ${where}` : ""
     } startposition ${start} maxresults 1000`;
     const response = await accountingGet(
-      `https://quickbooks.api.intuit.com/v3/company/${
+      `${quickBooksAccountingBase(QBO_ENVIRONMENT)}/v3/company/${
         encodeURIComponent(auth.realm)
       }/query?minorversion=75&query=${encodeURIComponent(query)}`,
       auth.token,
@@ -284,10 +284,11 @@ async function syncQuickBooks(): Promise<
     // already-retired token.
     const tokenSavedAt = new Date().toISOString();
     const { error: tokenError } = QBO_TOKEN_ENCRYPTION_KEY
-      ? await service.rpc("portal_rotate_quickbooks_refresh_token", {
+      ? await service.rpc("portal_rotate_quickbooks_refresh_token_v2", {
         p_refresh_token: auth.refresh,
         p_encryption_key: QBO_TOKEN_ENCRYPTION_KEY,
         p_refresh_token_expires_at: auth.refreshExpiresAt,
+        p_environment: QBO_ENVIRONMENT,
       })
       : await service.from("quickbooks_sync_state").update({
         realm_id: auth.realm,
@@ -520,11 +521,13 @@ async function cachedAccounts(): Promise<Row[]> {
 
 async function quickBooksConnected(): Promise<boolean> {
   const { data, error } = await service.from("quickbooks_sync_state").select(
-    "connection_status,realm_id,encrypted_refresh_token",
+    "connection_status,connection_environment,realm_id,encrypted_refresh_token",
   ).eq("id", 1).maybeSingle();
   if (error) throw error;
-  return data?.connection_status === "connected" && Boolean(data.realm_id) &&
-    Boolean(data.encrypted_refresh_token || QBO_REFRESH_TOKEN);
+  return data?.connection_status === "connected" &&
+    data?.connection_environment === QBO_ENVIRONMENT &&
+    Boolean(data.realm_id) &&
+    Boolean(data.encrypted_refresh_token);
 }
 
 Deno.serve(async (request) => {
@@ -551,8 +554,16 @@ Deno.serve(async (request) => {
       const counts = await syncQuickBooks();
       return json(request, {
         ok: true,
+        environment: QBO_ENVIRONMENT,
         ...counts,
         accounts: await cachedAccounts(),
+      });
+    }
+    if (!(await quickBooksConnected())) {
+      return json(request, {
+        accounts: [],
+        environment: QBO_ENVIRONMENT,
+        connectionStatus: "disconnected",
       });
     }
     let accounts = await cachedAccounts();
@@ -560,7 +571,11 @@ Deno.serve(async (request) => {
       await syncQuickBooks();
       accounts = await cachedAccounts();
     }
-    return json(request, { accounts });
+    return json(request, {
+      accounts,
+      environment: QBO_ENVIRONMENT,
+      connectionStatus: "connected",
+    });
   } catch (error) {
     console.error("quickbooks-retailers", error);
     return json(request, {
