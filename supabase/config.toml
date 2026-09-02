@@ -8,6 +8,9 @@ verify_jwt = false
 [functions.canix-item-master]
 verify_jwt = false
 
+[functions.monday-item-master-sync]
+verify_jwt = false
+
 [functions.portal-intake]
 verify_jwt = false
 

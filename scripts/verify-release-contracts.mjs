@@ -6,6 +6,7 @@ const source = await readFile(resolve(root, "ux-portal-prototype.dc.html"), "utf
 const siteBuild = await readFile(resolve(root, "scripts/build-sites.mjs"), "utf8");
 const inventory = await readFile(resolve(root, "supabase/functions/canix-inventory/index.ts"), "utf8");
 const itemMaster = await readFile(resolve(root, "supabase/functions/canix-item-master/index.ts"), "utf8");
+const mondayItemMasterSync = await readFile(resolve(root, "supabase/functions/monday-item-master-sync/index.ts"), "utf8");
 const catalog = await readFile(resolve(root, "supabase/functions/canix-catalog/index.ts"), "utf8");
 const intake = await readFile(resolve(root, "supabase/functions/portal-intake/index.ts"), "utf8");
 const policy = await readFile(resolve(root, "supabase/functions/portal-order-policy/index.ts"), "utf8");
@@ -44,6 +45,8 @@ const canixCronMigration = await readFile(resolve(root, "supabase/migrations/202
 const lotReviewStagingMigration = await readFile(resolve(root, "supabase/migrations/20260902100000_lot_review_staging.sql"), "utf8");
 const itemMasterMigration = await readFile(resolve(root, "supabase/migrations/20260902110000_canix_item_master.sql"), "utf8");
 const itemMasterCronMigration = await readFile(resolve(root, "supabase/migrations/20260902120000_canix_item_sync_cron.sql"), "utf8");
+const mondayItemMasterMigration = await readFile(resolve(root, "supabase/migrations/20260902130000_monday_item_master_sync.sql"), "utf8");
+const mondayItemMasterTuningMigration = await readFile(resolve(root, "supabase/migrations/20260902140000_monday_item_master_batch_tuning.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -98,6 +101,15 @@ assertContract(!/[A-Fa-f0-9]{64}/.test(itemMasterCronMigration) && !itemMasterCr
 assertContract(inventory.includes("STORED_ITEM_MASTER_COLUMNS") && inventory.includes('hasCapability(profile, "economics.manage")') && inventory.includes("cost_fields_included: canReadCosts"), "Item Master is exposed to inventory readers while standard cost remains capability-gated");
 assertContract(itemMaster.includes("standardCost.cost") && itemMaster.includes("current_standard_cost_currency"), "Canix current standard-cost objects normalize their documented and live amount shapes without inferring currency");
 assertContract(source.includes("Canix Item Master") && source.includes("itemMasterFilter(patch)") && source.includes("itemMasterSort(key)") && source.includes("Export filtered CSV"), "Inventory provides a searchable, filterable, sortable, exportable Item Master workbench");
+assertContract(mondayItemMasterSync.includes('"9620649212"') && mondayItemMasterSync.includes('MONDAY_REVIEW_GROUP_ID') && mondayItemMasterSync.includes('Object.values(COLUMNS).filter'), "Monday Item Master synchronization is pinned to the reviewed product board, intake group, and exact source-column schema");
+assertContract(mondayItemMasterSync.includes('"existing_id" | "exact_name_brand" | "created"') && mondayItemMasterSync.includes('sourceHash') && mondayItemMasterMigration.includes('monday_item_master_link'), "Monday Item Master writes are idempotent and reuse only explicit IDs or unique exact name-and-brand matches");
+assertContract(mondayItemMasterSync.includes('"Missing Multiple"') && mondayItemMasterSync.includes('"Inactive / Reference"') && mondayItemMasterSync.includes('"Sandbox / Test"') && mondayItemMasterSync.includes('itemClass === "Catalog"'), "Monday Item Master completeness separates actionable missing data from inactive, sandbox, Bulk, and Propagation records");
+assertContract(mondayItemMasterSync.includes('/\\b(?:clone|biomass|seeds?)\\b/i') && mondayItemMasterSync.includes('/\\bbulk\\b/i'), "Monday Item Master preserves the portal Propagation-before-Bulk routing policy");
+assertContract(!mondayItemMasterSync.includes('current_standard_cost') && !mondayItemMasterSync.includes('source_payload'), "Monday Item Master excludes permission-gated cost and private raw Canix payloads");
+assertContract(mondayItemMasterMigration.includes("monday-item-master-sync-5m") && mondayItemMasterMigration.includes("'3-59/5 * * * *'") && mondayItemMasterMigration.includes("vault.decrypted_secrets"), "Monday Item Master converges through a Vault-backed five-minute incremental schedule after Canix refresh");
+assertContract(!/[A-Fa-f0-9]{64}/.test(mondayItemMasterMigration), "the Monday Item Master scheduler contains no embedded high-entropy secret");
+assertContract(mondayItemMasterSync.includes("runScheduledSync") && mondayItemMasterSync.includes('source: "backfill-continuation"') && mondayItemMasterTuningMigration.includes("'limit', 100"), "Monday Item Master backfill checkpoints in runtime-safe self-continuing batches");
+assertContract(!/[A-Fa-f0-9]{64}/.test(mondayItemMasterTuningMigration), "the Monday Item Master batch tuning contains no embedded credential");
 assertContract(lotReviewStagingMigration.includes("portal_claim_lot_review_staging") && lotReviewStagingMigration.includes("target.last_attempt_at < now() - interval '10 minutes'") && lotReviewStagingMigration.includes("portal_finish_lot_review_staging"), "unknown Canix Lot ID staging is retryable and idempotency-claimed before Monday creation");
 assertContract(lotIntegrity.includes('action === "stage-unknown-lots"') && lotIntegrity.includes('["boards:read", "boards:write"]') && lotIntegrity.includes('{ label: "Pending Review" }') && source.includes("stageUnknownLots()"), "authorized staff can stage unknown valid Canix lots as unapproved Monday review rows without inferring ownership");
 assertContract(inventory.includes('"canix_claim_sync_run"') && !inventory.includes("await syncInventory(true);"), "inventory reads are cache-only and sync claims are serialized");
