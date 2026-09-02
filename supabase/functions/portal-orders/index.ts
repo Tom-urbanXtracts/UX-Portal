@@ -873,6 +873,39 @@ Deno.serve(async (request) => {
       }
       return json(request, { ok: true, ...(await flushOutbox()) });
     }
+    if (action === "resync-monday-status") {
+      if (caller.profile.role !== "internal" || !caller.canManageOrders) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const orderId = clean(body.orderId, 80);
+      if (!orderId) {
+        return json(request, { error: "The portal order is required." }, 400);
+      }
+      const order = await orderById(orderId);
+      if (!order || order.workflow_state !== "accepted") {
+        return json(request, { error: "Portal order not found" }, 404);
+      }
+      await assertOrderAccess(caller, order);
+      if (
+        clean(order.monday_board_id, 160) !== MONDAY_ORDER_BOARD_ID ||
+        !/^\d+$/.test(clean(order.monday_item_id, 160))
+      ) {
+        return json(request, {
+          error: "That order is not linked to the configured Monday order board.",
+        }, 409);
+      }
+      if (!(await sendDirectMondayStatus(order))) {
+        return json(request, {
+          error: "Monday write access is not connected.",
+        }, 409);
+      }
+      return json(request, {
+        ok: true,
+        synced: true,
+        state: String(order.state),
+        mondayItemId: String(order.monday_item_id),
+      });
+    }
     if (action === "reconcile") {
       if (caller.profile.role !== "internal" || !caller.canManageOrders) {
         return json(request, { error: "Forbidden" }, 403);

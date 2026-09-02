@@ -5503,6 +5503,30 @@ class Component extends DCLogic {
     }));
   }
 
+  resyncMondayStatus(order) {
+    if (!order || order.demo || !order.durableId || !order.mondayItemId || this.state.orderTransitioning) return;
+    if (!this.requirePermission('orders.manage', 'resynchronize Monday order status')) return;
+    if (this.state.impersonating) {
+      this.set({ toast: 'This is a read-only view-as session. Monday was not changed.', toastKind: 'BLOCKED — READ ONLY' });
+      return;
+    }
+    this.set({ orderTransitioning: order.durableId,
+      toast: 'Sending the current verified portal state to the linked Monday item…', toastKind: 'SYNCING MONDAY' });
+    this.orderCall('POST', { action: 'resync-monday-status', orderId: order.durableId })
+      .then(body => {
+        if (!body || body.synced !== true) throw new Error('Monday did not confirm the status update.');
+        this.logAudit('Monday status resynchronized', order.id,
+          'Current portal state sent to Monday item ' + String(body.mondayItemId || order.mondayItemId));
+        this.set({ orderTransitioning: null,
+          toast: order.id + ' was resynchronized to Monday without changing the portal order.',
+          toastKind: 'MONDAY RESYNCED' });
+        this.loadOrders(true);
+      })
+      .catch(error => this.set({ orderTransitioning: null,
+        toast: 'Monday was not resynchronized: ' + ((error && error.message) || 'the order service could not be reached.'),
+        toastKind: 'MONDAY NOT SYNCED' }));
+  }
+
   reorder(o) {
     this.patchActive(() => o.lines.map(l => { const current = this.priceFor(P(l.id)); return { ...l, price: current === null ? l.price : current }; }));
     const gone = o.lines.filter(l => P(l.id).oos).length;
@@ -5990,6 +6014,9 @@ class Component extends DCLogic {
       if (workflowReady && od.state === 'Shipped') actions.push({ label: 'Confirm received', style: primary, onDo: () => this.advance(od.id, 'Received', 'RECEIVED') });
       if (!isInternal && od.state === 'Received') {
         actions.push({ label: 'Report a problem', style: secondary, onDo: () => this.openClaim(od.id) });
+      }
+      if (workflowReady && isInternal && !od.demo && od.mondayItemId) {
+        actions.push({ label: 'Resync Monday status', style: secondary, onDo: () => this.resyncMondayStatus(od) });
       }
       if (canOrder) actions.push({ label: 'Reorder these lines', style: secondary, onDo: () => this.reorder(od) });
       actions.push({ label: 'Download order CSV', style: secondary, onDo: () => this.downloadOrder(od) });
