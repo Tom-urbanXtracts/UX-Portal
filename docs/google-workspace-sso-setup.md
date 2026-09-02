@@ -22,7 +22,7 @@ This portal uses Supabase Auth as the broker and Google Workspace as the workfor
 
    `https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site/`
 
-5. After `portal.urbanxtracts.com` reports active SSL, add `https://portal.urbanxtracts.com/`. Keep the old URL during the cutover verification window.
+5. Keep `https://portal.urbanxtracts.com/` in the redirect allow-list and use it as the Site URL. Keep the old URL during the cutover verification window.
 
 ## Portal authorization
 
@@ -48,11 +48,11 @@ This portal uses Supabase Auth as the broker and Google Workspace as the workfor
 - `inventory.sync` is required for a manual Canix sync; the scheduled sync continues to use its server-side secret.
 - Signing out revokes the Supabase session and returns to the regular sign-in screen.
 
-## Current live status — 1 September 2026
+## Current live status — 2 September 2026
 
 - Email/password is enabled and remains the working recovery and retailer sign-in path.
 - A dedicated **UX Portal Supabase** Google Web OAuth client is enabled in the urbanXtracts-owned Google Cloud project. Its audience is internal to the urbanXtracts Workspace organization and its only authorized callback is the Supabase Auth callback above.
-- Supabase reports both email and Google providers enabled. The current Sites root, `/portal`, `/dist/portal.html`, and the two exact `127.0.0.1:4173` development paths are in the Auth redirect allow-list; the current Sites root is the Site URL.
+- Supabase reports both email and Google providers enabled. The production root, the prior Sites paths, and the two exact `127.0.0.1:4173` development paths are in the Auth redirect allow-list; `https://portal.urbanxtracts.com/` is the Site URL.
 - The complete Google consent flow was tested with Tom's `@urbanxtracts.com` Workspace account. It returned to the local portal and preserved Tom's existing Administrator preset. The database trigger continues to provision only first-time workforce users as Viewers.
 - The OAuth client secret was transferred directly into Supabase, was not written to this repository, and the one-time Google secret dialog was closed after configuration.
-- The owner-only Sites release now supplies `UX_SSO_PROVIDER=google` and `UX_SSO_DOMAIN=urbanxtracts.com`; the deployed response was verified to contain that exact non-secret configuration. Wix DNS for `portal.urbanxtracts.com` was published on 1 September 2026. Add and test the final Auth redirect only after its certificate is active.
+- The Sites release supplies `UX_SSO_PROVIDER=google` and `UX_SSO_DOMAIN=urbanxtracts.com`; the deployed response contains that exact non-secret configuration. The outer Sites/ChatGPT viewer gate is removed so visitors reach the portal's own sign-in screen, while protected data still requires a valid Supabase session and server-authorized role.

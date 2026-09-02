@@ -1,12 +1,12 @@
 # UX OS portal deployment readiness
 
-The production hostname is `portal.urbanxtracts.com`. It was registered with the Sites project and its Wix-managed CNAME and two validation TXT records were published on 1 September 2026. SSL became active on 2 September 2026; the hosting provider is completing its final redeploy. SSO/Auth site-URL cutover remains intentionally deferred until the custom host serves the verified release.
+The production hostname is `portal.urbanxtracts.com`. It was registered with the Sites project and its Wix-managed CNAME and two validation TXT records were published on 1 September 2026. DNS and SSL became active on 2 September 2026. The portal now exposes its own sign-in screen; Supabase authentication and server-side permissions replace the outer ChatGPT/Sites viewer gate.
 
 ## Production domain
 
-- Confirm the registered `portal.urbanxtracts.com` custom domain finishes its final redeploy; SSL is already active. Do not remove the validation TXT records.
-- Add the exact production callback URL to Supabase Auth redirect allow-lists.
-- Update the Supabase Site URL after the production hostname is serving successfully.
+- Keep the active Wix DNS and validation TXT records for `portal.urbanxtracts.com` in place.
+- Keep the exact production URL in the Supabase Auth redirect allow-list.
+- Keep the Supabase Site URL set to `https://portal.urbanxtracts.com/`.
 - Keep the old Sites URL available during a short verification window, then redirect or retire it deliberately.
 
 ## Sign-in and workforce SSO
@@ -23,7 +23,7 @@ SSO configuration and cutover requirements:
 - Create a Google Web OAuth client and set its authorized redirect URI to `https://cbhsavfbtcpdyxcvguay.supabase.co/auth/v1/callback`.
 - Configure the Google client ID and secret in Supabase Auth, then enable the Google provider.
 - Keep the Google app internal to the urbanXtracts Workspace organization when the selected Google Cloud project supports that audience setting.
-- Add the current portal URL and, later, the final production URL to the Supabase Auth redirect allow-list. The Google OAuth redirect URI remains the Supabase callback above.
+- Keep both the prior Sites URL and the production URL in the Supabase Auth redirect allow-list during verification. The Google OAuth redirect URI remains the Supabase callback above.
 - Apply `20260901090000_portal_staff_access.sql` before deploying the permission-aware inventory function and portal.
 - Apply `20260901101500_portal_admin_and_quickbooks.sql` before deploying user administration or QuickBooks customer sync.
 - Apply `20260901123000_store_pricing_workflow.sql` before deploying store pricing. It also provisions first-time `@urbanxtracts.com` SSO users as least-privileged workforce Viewers.
@@ -43,12 +43,14 @@ SSO configuration and cutover requirements:
 - Workforce users receive an active internal Viewer profile on first SSO sign-in. Administrator, Operations, Sales, and Quality elevation remains an explicit administrator action.
 - Test sign-in, sign-out, deactivated users, missing profiles, and an account outside the approved domain.
 
-Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, the current Sites and exact local paths are allowlisted, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. The database-side Viewer provisioning repair is deployed and both existing workforce profiles are configured. The final hostname remains a cutover check and must not be allowlisted before it is approved.
+Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. On 2 September 2026 the production origin became the Site URL and an allowed redirect. The database-side Viewer provisioning repair is deployed and both existing workforce profiles are configured.
 
 Keep both portal origins in the redirect allow-list during cutover:
 
 - `https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site/`
 - `https://portal.urbanxtracts.com/`
+
+The production Turnstile widget is restricted to `portal.urbanxtracts.com`. Signed-out onboarding fails closed without a single-use `retailer_onboarding` token, and the server also applies a privacy-preserving daily limit of 3.
 
 ## Connected workflows
 

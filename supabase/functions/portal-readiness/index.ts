@@ -502,10 +502,10 @@ Deno.serve(async (request) => {
         label: "Controlled release boundaries",
         checks: [
           {
-            state: "warn",
+            state: "pass",
             label: "Production domain",
             detail:
-              "portal.urbanxtracts.com is registered with Wix DNS and active SSL; the hosting provider is completing its final redeploy. Final Auth redirect changes remain deferred until SSO work resumes.",
+              "portal.urbanxtracts.com is active with Wix DNS and SSL. The outer hosting gate is removed; the portal's Supabase session and server-side permissions remain the authorization boundary.",
           },
           {
             state: "deferred",
@@ -534,7 +534,7 @@ Deno.serve(async (request) => {
                   configured("PUBLIC_INTAKE_RATE_SECRET")
                 ? "Turnstile and HMAC-scoped daily limits are configured without IP collection."
                 : "Public onboarding is enabled but its protection values are incomplete."
-              : "Public onboarding remains unexposed on the owner-only preview; Turnstile enforcement is dormant.",
+              : "Public onboarding protection is disabled; signed-out intake must remain unexposed.",
           },
         ],
       },
