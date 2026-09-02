@@ -13,6 +13,10 @@ const MONDAY_TOKEN_ENCRYPTION_KEY =
 const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
   "9620649212";
 const MONDAY_PRODUCT_COLUMNS = Object.freeze({
+  brandName: "short_textwtwb2vrw",
+  productType: "dropdown_mksz27fn",
+  strainFlavor: "text_mm1213qv",
+  productBatchId: "text_mm0zvezb",
   canixItemId: "text_mm6shxmd",
   publicationState: "color_mm6sxyjd",
   shortDescription: "long_text_mm6srkee",
@@ -171,8 +175,8 @@ async function mondayGraphql(
     throw new ProductError(
       response.status === 401 ? 409 : 502,
       response.status === 401
-        ? "Reconnect Monday before synchronizing catalog content."
-        : "Monday did not return the catalog board.",
+        ? "Reconnect Monday before managing catalog content."
+        : "Monday did not complete the catalog request.",
     );
   }
   return body.data && typeof body.data === "object" ? body.data as Row : {};
@@ -224,6 +228,7 @@ async function mondayProductItems(accessToken: string): Promise<Row[]> {
           cursor
           items {
             id name updated_at
+            group { id title }
             column_values(ids: $columnIds) { id text value }
           }
         }
@@ -263,6 +268,7 @@ async function mondayProductItems(accessToken: string): Promise<Row[]> {
           cursor
           items {
             id name updated_at
+            group { id title }
             column_values(ids: $columnIds) { id text value }
           }
         }
@@ -284,6 +290,413 @@ async function mondayProductItems(accessToken: string): Promise<Row[]> {
     );
   }
   return items;
+}
+
+function identityKey(value: unknown): string {
+  return String(value ?? "").trim().toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizedIdentityKey(value: unknown): string {
+  return String(value ?? "").normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function brandKey(value: unknown): string {
+  const normalized = normalizedIdentityKey(value);
+  return ({
+    "bud ese": "bud ese",
+    cannaprint: "cannaprint",
+    cannaprints: "cannaprint",
+  } as Record<string, string>)[normalized] ?? normalized;
+}
+
+function mondayGroupTitle(item: Row): string {
+  const group = item.group && typeof item.group === "object"
+    ? item.group as Row
+    : {};
+  return clean(group.title, 240) ?? "";
+}
+
+function mondayMappingEligible(item: Row): boolean {
+  return !new Set(["no longer valid", "non cannabis"]).has(
+    normalizedIdentityKey(mondayGroupTitle(item)),
+  );
+}
+
+type CanixCatalogItem = {
+  itemId: number;
+  itemName: string;
+  sku: string | null;
+  brands: string[];
+  category: string | null;
+  subcategory: string | null;
+  quantityType: string | null;
+  packageCount: number;
+};
+
+type MappingSuggestion = {
+  mondayItemId: string;
+  mondayItemName: string;
+  mondayBrand: string | null;
+  mondayProductType: string | null;
+  mondayStrainFlavor: string | null;
+  mondayGroup: string;
+  mondayUrl: string;
+  canixItemId: number;
+  canixItemName: string;
+  canixSku: string | null;
+  canixBrand: string | null;
+  canixCategory: string | null;
+  packageCount: number;
+  matchKind: "exact_name_brand" | "normalized_name_brand";
+  matchLabel: string;
+};
+
+async function currentCanixCatalogItems(): Promise<CanixCatalogItem[]> {
+  const { data: state, error: stateError } = await service.from(
+    "canix_sync_state",
+  ).select("last_successful_run_id").eq("id", 1).single();
+  if (stateError) throw stateError;
+  if (!state?.last_successful_run_id) {
+    throw new ProductError(
+      409,
+      "A successful Canix snapshot is required before product mappings can be reviewed.",
+    );
+  }
+  const rows: Row[] = [];
+  for (let start = 0; start < 20000; start += 1000) {
+    const { data, error } = await service.from("canix_package_current").select(
+      "package_id,item_id,item_name,sku,brand_name,item_category_name,item_sub_category_name,quantity_type",
+    ).eq("sync_run_id", state.last_successful_run_id).order("package_id", {
+      ascending: true,
+    }).range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as Row[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+    if (start === 19000) {
+      throw new ProductError(
+        502,
+        "The current Canix snapshot is too large to audit safely in one request.",
+      );
+    }
+  }
+  const grouped = new Map<number, CanixCatalogItem>();
+  for (const row of rows) {
+    const itemId = Number(row.item_id);
+    const itemName = clean(row.item_name, 600);
+    if (!Number.isSafeInteger(itemId) || itemId <= 0 || !itemName) continue;
+    const current = grouped.get(itemId) ?? {
+      itemId,
+      itemName,
+      sku: clean(row.sku, 200),
+      brands: [],
+      category: clean(row.item_category_name, 240),
+      subcategory: clean(row.item_sub_category_name, 240),
+      quantityType: clean(row.quantity_type, 80),
+      packageCount: 0,
+    };
+    const brand = clean(row.brand_name, 240);
+    if (brand && !current.brands.includes(brand)) current.brands.push(brand);
+    current.packageCount += 1;
+    grouped.set(itemId, current);
+  }
+  return Array.from(grouped.values());
+}
+
+function uniqueByKey<T>(
+  values: T[],
+  keyFor: (value: T) => string,
+): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const value of values) {
+    const key = keyFor(value);
+    if (!key) continue;
+    grouped.set(key, [...(grouped.get(key) ?? []), value]);
+  }
+  return grouped;
+}
+
+async function catalogMappingAudit(
+  accessToken: string,
+): Promise<{ summary: Row; suggestions: MappingSuggestion[] }> {
+  const [mondayItems, canixItems] = await Promise.all([
+    mondayProductItems(accessToken),
+    currentCanixCatalogItems(),
+  ]);
+  const eligible = mondayItems.filter(mondayMappingEligible);
+  const unmapped = eligible.filter((item) => {
+    const columns = mondayColumnValues(item);
+    return !mondayText(columns, MONDAY_PRODUCT_COLUMNS.canixItemId);
+  });
+  const mondayStrict = uniqueByKey(unmapped, (item) => identityKey(item.name));
+  const mondayNormalized = uniqueByKey(
+    unmapped,
+    (item) => normalizedIdentityKey(item.name),
+  );
+  const canixStrict = uniqueByKey(
+    canixItems,
+    (item) => identityKey(item.itemName),
+  );
+  const canixNormalized = uniqueByKey(
+    canixItems,
+    (item) => normalizedIdentityKey(item.itemName),
+  );
+  const suggestions: MappingSuggestion[] = [];
+  const pairedMonday = new Set<string>();
+  const pairedCanix = new Set<number>();
+  const brandConflicts = new Set<string>();
+  const ambiguousNameCollisions = new Set<string>();
+
+  function consider(
+    mondayGroups: Map<string, Row[]>,
+    canixGroups: Map<string, CanixCatalogItem[]>,
+    matchKind: MappingSuggestion["matchKind"],
+  ): void {
+    for (const [key, mondayMatches] of mondayGroups) {
+      const canixMatches = canixGroups.get(key) ?? [];
+      if (!canixMatches.length) continue;
+      if (mondayMatches.length !== 1 || canixMatches.length !== 1) {
+        ambiguousNameCollisions.add(
+          [
+            ...mondayMatches.map((item) => `m${String(item.id ?? "")}`),
+            ...canixMatches.map((item) => `c${item.itemId}`),
+          ].sort().join(":"),
+        );
+        continue;
+      }
+      const monday = mondayMatches[0];
+      const canix = canixMatches[0];
+      const mondayId = String(monday.id ?? "");
+      if (pairedMonday.has(mondayId) || pairedCanix.has(canix.itemId)) continue;
+      const columns = mondayColumnValues(monday);
+      const mondayBrand = mondayText(columns, MONDAY_PRODUCT_COLUMNS.brandName);
+      const matchesBrand = !!mondayBrand &&
+        canix.brands.some((brand) => brandKey(brand) === brandKey(mondayBrand));
+      if (!matchesBrand) {
+        brandConflicts.add(`${mondayId}:${canix.itemId}`);
+        continue;
+      }
+      suggestions.push({
+        mondayItemId: mondayId,
+        mondayItemName: clean(monday.name, 600) ?? "Unnamed Monday item",
+        mondayBrand,
+        mondayProductType: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.productType,
+        ),
+        mondayStrainFlavor: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.strainFlavor,
+        ),
+        mondayGroup: mondayGroupTitle(monday),
+        mondayUrl:
+          `https://urban915991.monday.com/boards/${MONDAY_PRODUCT_BOARD_ID}/pulses/${mondayId}`,
+        canixItemId: canix.itemId,
+        canixItemName: canix.itemName,
+        canixSku: canix.sku,
+        canixBrand: canix.brands[0] ?? null,
+        canixCategory: canix.category,
+        packageCount: canix.packageCount,
+        matchKind,
+        matchLabel: matchKind === "exact_name_brand"
+          ? "Exact product name + brand"
+          : "Normalized product name + brand",
+      });
+      pairedMonday.add(mondayId);
+      pairedCanix.add(canix.itemId);
+    }
+  }
+
+  consider(mondayStrict, canixStrict, "exact_name_brand");
+  consider(mondayNormalized, canixNormalized, "normalized_name_brand");
+  suggestions.sort((left, right) =>
+    left.matchKind.localeCompare(right.matchKind) ||
+    left.mondayItemName.localeCompare(right.mondayItemName)
+  );
+  return {
+    summary: {
+      mondayRows: mondayItems.length,
+      canixCurrentItems: canixItems.length,
+      mappedRows: eligible.length - unmapped.length,
+      unmappedRows: unmapped.length,
+      excludedMondayRows: mondayItems.length - eligible.length,
+      exactSuggestions:
+        suggestions.filter((item) => item.matchKind === "exact_name_brand")
+          .length,
+      normalizedSuggestions:
+        suggestions.filter((item) => item.matchKind === "normalized_name_brand")
+          .length,
+      brandConflicts: brandConflicts.size,
+      ambiguousNameCollisions: ambiguousNameCollisions.size,
+      automaticMappingsApplied: 0,
+      identityRule:
+        "Canix Item ID is the only authoritative join. Name and brand matches are review suggestions only.",
+    },
+    suggestions: suggestions.slice(0, 200),
+  };
+}
+
+async function writeMondayMapping(
+  accessToken: string,
+  mondayItemId: string,
+  canixItemId: number,
+): Promise<void> {
+  const data = await mondayGraphql(
+    accessToken,
+    `mutation ApprovePortalCatalogMapping(
+      $boardId: ID!, $itemId: ID!, $columnValues: JSON!
+    ) {
+      change_multiple_column_values(
+        board_id: $boardId,
+        item_id: $itemId,
+        column_values: $columnValues
+      ) { id }
+    }`,
+    {
+      boardId: MONDAY_PRODUCT_BOARD_ID,
+      itemId: mondayItemId,
+      columnValues: JSON.stringify({
+        [MONDAY_PRODUCT_COLUMNS.canixItemId]: String(canixItemId),
+        [MONDAY_PRODUCT_COLUMNS.publicationState]: { label: "Draft" },
+      }),
+    },
+  );
+  const changed = data.change_multiple_column_values as Row | undefined;
+  if (String(changed?.id ?? "") !== mondayItemId) {
+    throw new ProductError(
+      502,
+      "Monday did not confirm the product mapping update.",
+    );
+  }
+}
+
+function mondayProductRecord(
+  item: Row,
+  canixItemId: number,
+  publicationState: string,
+): Row {
+  const columns = mondayColumnValues(item);
+  return {
+    canixItemId,
+    mondayItemId: String(item.id ?? ""),
+    mondayBoardId: MONDAY_PRODUCT_BOARD_ID,
+    publicationState,
+    shortDescription: mondayText(
+      columns,
+      MONDAY_PRODUCT_COLUMNS.shortDescription,
+    ),
+    longDescription: mondayText(
+      columns,
+      MONDAY_PRODUCT_COLUMNS.longDescription,
+    ),
+    sellingPoints: splitLines(
+      mondayText(columns, MONDAY_PRODUCT_COLUMNS.sellingPoints),
+    ),
+    ingredients: mondayText(columns, MONDAY_PRODUCT_COLUMNS.ingredients),
+    usageInformation: mondayText(
+      columns,
+      MONDAY_PRODUCT_COLUMNS.usageInformation,
+    ),
+    productProfile: mondayText(
+      columns,
+      MONDAY_PRODUCT_COLUMNS.productProfile,
+    ),
+    imageUrl: mondayLink(columns, MONDAY_PRODUCT_COLUMNS.imageUrl),
+    keywords: splitKeywords(
+      mondayText(columns, MONDAY_PRODUCT_COLUMNS.keywords),
+    ),
+    sourceUpdatedAt: iso(item.updated_at),
+  };
+}
+
+async function approveCatalogMapping(
+  caller: Caller,
+  body: Row,
+): Promise<Row> {
+  const mondayItemId = clean(body.mondayItemId, 160) ?? "";
+  const canixItemId = Number(body.canixItemId);
+  if (
+    !/^\d+$/.test(mondayItemId) || !Number.isSafeInteger(canixItemId) ||
+    canixItemId <= 0
+  ) {
+    throw new ProductError(400, "Choose a valid Monday and Canix item pair.");
+  }
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read", "boards:write"]);
+  if (!accessToken) {
+    throw new ProductError(
+      409,
+      "Reconnect Monday with board read and write access before approving product mappings.",
+    );
+  }
+  const audit = await catalogMappingAudit(accessToken);
+  const suggestion = audit.suggestions.find((item) =>
+    item.mondayItemId === mondayItemId && item.canixItemId === canixItemId
+  );
+  if (!suggestion) {
+    throw new ProductError(
+      409,
+      "That suggestion is no longer a unique product-name and brand match. Refresh the review queue.",
+    );
+  }
+  const mondayItems = await mondayProductItems(accessToken);
+  const mondayItem = mondayItems.find((item) =>
+    String(item.id ?? "") === mondayItemId
+  );
+  if (!mondayItem) {
+    throw new ProductError(
+      409,
+      "The Monday product row is no longer available.",
+    );
+  }
+  await verifyCanixItems([canixItemId]);
+  const { data: existingSource, error: existingSourceError } = await service
+    .from("portal_product_content").select("canix_item_id,monday_item_id")
+    .eq("canix_item_id", canixItemId).maybeSingle();
+  if (existingSourceError) throw existingSourceError;
+  if (
+    existingSource?.monday_item_id &&
+    String(existingSource.monday_item_id) !== mondayItemId
+  ) {
+    throw new ProductError(
+      409,
+      "That Canix item is already linked to a different Monday product row.",
+    );
+  }
+  await writeMondayMapping(accessToken, mondayItemId, canixItemId);
+  const products = await upsertItems(
+    [
+      mondayProductRecord(mondayItem, canixItemId, "draft"),
+    ],
+    caller,
+    "monday",
+  );
+  const detail = {
+    mondayItemId,
+    mondayItemName: suggestion.mondayItemName,
+    canixItemId,
+    canixItemName: suggestion.canixItemName,
+    matchKind: suggestion.matchKind,
+    publicationState: "draft",
+  };
+  const { error: auditError } = await service.from("portal_admin_audit")
+    .insert({
+      actor_id: caller.profile.id,
+      actor_org: caller.profile.org,
+      action: "monday.product_mapping_approved",
+      detail,
+    });
+  if (auditError) throw auditError;
+  return { mapping: detail, product: products[0] ?? null };
 }
 
 async function currentCanixItemIds(itemIds: number[]): Promise<Set<number>> {
@@ -689,7 +1102,33 @@ Deno.serve(async (request) => {
       return json(request, { error: "Forbidden" }, 403);
     }
     const body = await request.json() as Row;
-    if (String(body.action ?? "").toLowerCase() === "sync-monday") {
+    const action = String(body.action ?? "").toLowerCase();
+    if (action === "mapping-audit") {
+      if (mondayAuthorized || !caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const accessToken = await mondayAccessToken(service, {
+        encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+        clientId: MONDAY_CLIENT_ID,
+        clientSecret: MONDAY_CLIENT_SECRET,
+      }, ["boards:read"]);
+      if (!accessToken) {
+        throw new ProductError(
+          409,
+          "Reconnect Monday with board read access before reviewing product mappings.",
+        );
+      }
+      const audit = await catalogMappingAudit(accessToken);
+      return json(request, { ok: true, ...audit }, 200);
+    }
+    if (action === "approve-mapping") {
+      if (mondayAuthorized || !caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const result = await approveCatalogMapping(caller, body);
+      return json(request, { ok: true, ...result }, 200);
+    }
+    if (action === "sync-monday") {
       if (!mondayAuthorized && (!caller || !caller.canManage)) {
         return json(request, { error: "Forbidden" }, 403);
       }
