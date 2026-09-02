@@ -398,15 +398,15 @@ button{font-family:inherit}
 <sc-if value="{{ canReviewCatalogMappings }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="catalog-mapping-heading" style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:18px 20px;margin-bottom:24px">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
-<div><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL · CATALOG IDENTITY CONTROL</div><h2 id="catalog-mapping-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 6px">Monday to Canix review queue</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted-strong);max-width:72ch;margin:0">Canix Item ID is the authoritative join. Product name and brand can nominate a pair for review, but the portal never links products automatically.</p></div>
-<button type="button" onClick="{{ onCatalogMappingLoad }}" aria-disabled="{{ catalogMappingLoading }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogMappingLoadLabel }}</button>
+<div><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL · CATALOG IDENTITY CONTROL</div><h2 id="catalog-mapping-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 6px">Monday to Canix review queue</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted-strong);max-width:72ch;margin:0">Canix Item ID remains the authoritative join. A unique exact product-name and brand pair can be automatically verified as Draft; normalized names and every conflict still require review.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ catalogMappingCanApproveExact }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ onCatalogMappingApproveExact }}" aria-disabled="{{ catalogMappingBusy }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogMappingApproveExactLabel }}</button></sc-if><button type="button" onClick="{{ onCatalogMappingLoad }}" aria-disabled="{{ catalogMappingBusy }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogMappingLoadLabel }}</button></div>
 </div>
 <sc-if value="{{ catalogMappingHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-top:16px;font-size:12.5px;line-height:1.5"><strong>Review queue unavailable.</strong> {{ catalogMappingError }}</div></sc-if>
 <sc-if value="{{ catalogMappingHasData }}" hint-placeholder-val="{{ false }}">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:18px">
 <sc-for list="{{ catalogMappingMetrics }}" as="metric" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.16);padding:11px 12px"><div style="font:800 19px/1 Archivo,sans-serif;margin-bottom:5px">{{ metric.value }}</div><div style="font:600 9px/1.4 ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">{{ metric.label }}</div></div></sc-for>
 </div>
-<div style="border-left:3px solid var(--ux-accent);padding:9px 0 9px 12px;margin:14px 0;font-size:12px;line-height:1.5"><strong>Zero automatic mappings.</strong> Brand conflicts and duplicate-name collisions stay blocked. “Verify &amp; link” writes the Canix Item ID and Draft status to Monday, then records the reviewer.</div>
+<div style="border-left:3px solid var(--ux-accent);padding:9px 0 9px 12px;margin:14px 0;font-size:12px;line-height:1.5"><strong>Exact means exact.</strong> The batch action accepts only a unique product name with one matching brand on both sources. Brand conflicts, reused Canix IDs, duplicate names, normalized-only matches, and invalid Monday groups stay blocked. Every accepted link remains Draft and is audited.</div>
 <sc-if value="{{ catalogMappingHasSuggestions }}" hint-placeholder-val="{{ false }}"><div style="border-top:2px solid rgba(23,14,11,.4)"><sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(200px,1.25fr) minmax(200px,1.25fr) minmax(140px,.75fr) auto;gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:center;{{ catalogMappingRowStyle }}"><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.mondayName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.mondayGroup }}</div></div><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div></div><div><span style="display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;background:var(--ux-accent);color:#fff;padding:4px 6px">{{ mapping.matchLabel }}</span></div><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></div></sc-for></div></sc-if>
 <sc-if value="{{ catalogMappingNoSuggestions }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No unambiguous product-name and brand suggestions are awaiting review.</div></sc-if>
 </sc-if>
@@ -4500,9 +4500,11 @@ class Component extends DCLogic {
         const skipped = Number(summary.missingCanixItemId || 0) + Number(summary.missingPublicationState || 0)
           + Number(summary.invalidCanixItemId || 0) + Number((summary.duplicateCanixItemIds || []).length)
           + Number((summary.missingFromCurrentCanix || []).length);
+        const autoApproved = Number(summary.automaticMappingsApplied || 0);
         this.set({ mondayCatalogSyncing: false,
           toast: Number(summary.synced || 0) + ' catalog record' + (Number(summary.synced || 0) === 1 ? '' : 's')
-            + ' synchronized; ' + skipped + ' board row' + (skipped === 1 ? '' : 's') + ' need mapping or publication review.',
+            + ' synchronized; ' + autoApproved + ' exact match' + (autoApproved === 1 ? '' : 'es')
+            + ' verified as Draft; ' + skipped + ' board row' + (skipped === 1 ? '' : 's') + ' need mapping or publication review.',
           toastKind: 'MONDAY CATALOG SCANNED' });
         this.loadReadiness(true);
       })
@@ -4555,6 +4557,34 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ catalogMappingPending: null,
         catalogMappingError: (error && error.message) || 'The catalog identity link was not saved.' }));
+  }
+
+  approveExactCatalogMappings() {
+    const s = this.state;
+    const exactCount = Number(s.catalogMappingData && s.catalogMappingData.summary
+      && s.catalogMappingData.summary.exactSuggestions || 0);
+    if (!exactCount || s.catalogMappingLoading || s.catalogMappingPending || s.impersonating
+      || s.role !== 'internal' || !s.authUser || !this.hasPermission('catalog.manage')) return;
+    this.set({ catalogMappingPending: 'exact-batch', catalogMappingError: null });
+    this.catalogMappingCall({ action: 'approve-exact-mappings' })
+      .then(body => {
+        const summary = body && body.summary;
+        if (!summary) throw new Error('Catalog mapping service did not return a synchronization summary.');
+        const applied = Number(summary.automaticMappingsApplied || 0);
+        const failed = Array.isArray(summary.automaticMappingFailures) ? summary.automaticMappingFailures.length : 0;
+        const conflicts = Number(summary.automaticMappingExistingContentConflicts || 0);
+        this.setState({ catalogMappingPending: null,
+          toast: applied + ' exact product-name + brand match' + (applied === 1 ? '' : 'es')
+            + ' verified as Draft.' + (failed || conflicts ? ' ' + (failed + conflicts) + ' protected exception'
+              + (failed + conflicts === 1 ? ' remains' : 's remain') + ' blocked.' : ''),
+          toastKind: 'EXACT MATCHES VERIFIED' }, () => {
+          this.loadCatalogMappings();
+          this.loadCatalog();
+          this.loadReadiness(true);
+        });
+      })
+      .catch(error => this.set({ catalogMappingPending: null,
+        catalogMappingError: (error && error.message) || 'Exact catalog matches could not be approved.' }));
   }
 
   orderCall(method, payload) {
@@ -5871,7 +5901,7 @@ class Component extends DCLogic {
     const catalogMappingMetrics = catalogMappingSummary ? [
       { value: String(catalogMappingSummary.mappedRows || 0), label: 'MONDAY ROWS LINKED' },
       { value: String(catalogMappingSummary.unmappedRows || 0), label: 'AWAITING ID REVIEW' },
-      { value: String(catalogMappingSuggestions.length), label: 'SAFE REVIEW SUGGESTIONS' },
+      { value: String(catalogMappingSummary.exactSuggestions || 0), label: 'EXACT MATCHES READY' },
       { value: String(catalogMappingSummary.brandConflicts || 0), label: 'BRAND CONFLICTS BLOCKED' },
       { value: String(catalogMappingSummary.ambiguousNameCollisions || 0), label: 'NAME COLLISIONS BLOCKED' }
     ] : [];
@@ -5886,7 +5916,7 @@ class Component extends DCLogic {
       canixCategory: mapping.canixCategory || 'Category not recorded',
       packageCount: Number(mapping.packageCount || 0) + ' active package' + (Number(mapping.packageCount || 0) === 1 ? '' : 's'),
       matchLabel: mapping.matchLabel,
-      pending: String(s.catalogMappingPending || '') === String(mapping.mondayItemId),
+      pending: !!s.catalogMappingPending,
       buttonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Verify & link',
       onApprove: () => this.approveCatalogMapping(mapping)
     }));
@@ -7076,6 +7106,12 @@ class Component extends DCLogic {
       catalogMappingLoading: s.catalogMappingLoading,
       catalogMappingLoadLabel: s.catalogMappingLoading ? 'Scanning sources…' : s.catalogMappingData ? 'Refresh review queue' : 'Review mappings',
       onCatalogMappingLoad: () => this.loadCatalogMappings(),
+      catalogMappingBusy: !!s.catalogMappingLoading || !!s.catalogMappingPending,
+      catalogMappingCanApproveExact: !!catalogMappingSummary && Number(catalogMappingSummary.exactSuggestions || 0) > 0,
+      catalogMappingApproveExactLabel: s.catalogMappingPending === 'exact-batch'
+        ? 'Verifying exact matches…'
+        : 'Approve ' + Number(catalogMappingSummary && catalogMappingSummary.exactSuggestions || 0) + ' exact matches',
+      onCatalogMappingApproveExact: () => this.approveExactCatalogMappings(),
       catalogMappingHasError: !!s.catalogMappingError, catalogMappingError: s.catalogMappingError || '',
       catalogMappingHasData: !!catalogMappingSummary,
       catalogMappingMetrics, catalogMappingRows,

@@ -422,18 +422,26 @@ function uniqueByKey<T>(
   return grouped;
 }
 
-async function catalogMappingAudit(
-  accessToken: string,
-): Promise<{ summary: Row; suggestions: MappingSuggestion[] }> {
-  const [mondayItems, canixItems] = await Promise.all([
-    mondayProductItems(accessToken),
-    currentCanixCatalogItems(),
-  ]);
+function catalogMappingAuditFrom(
+  mondayItems: Row[],
+  canixItems: CanixCatalogItem[],
+): { summary: Row; suggestions: MappingSuggestion[] } {
   const eligible = mondayItems.filter(mondayMappingEligible);
   const unmapped = eligible.filter((item) => {
     const columns = mondayColumnValues(item);
     return !mondayText(columns, MONDAY_PRODUCT_COLUMNS.canixItemId);
   });
+  const linkedCanixIds = new Set(
+    mondayItems.map((item) => {
+      const raw = mondayText(
+        mondayColumnValues(item),
+        MONDAY_PRODUCT_COLUMNS.canixItemId,
+      );
+      if (!raw || !/^\d+$/.test(raw)) return null;
+      const itemId = Number(raw);
+      return Number.isSafeInteger(itemId) && itemId > 0 ? itemId : null;
+    }).filter((itemId): itemId is number => itemId !== null),
+  );
   const mondayStrict = uniqueByKey(unmapped, (item) => identityKey(item.name));
   const mondayNormalized = uniqueByKey(
     unmapped,
@@ -452,6 +460,7 @@ async function catalogMappingAudit(
   const pairedCanix = new Set<number>();
   const brandConflicts = new Set<string>();
   const ambiguousNameCollisions = new Set<string>();
+  const linkedCanixConflicts = new Set<number>();
 
   function consider(
     mondayGroups: Map<string, Row[]>,
@@ -474,10 +483,17 @@ async function catalogMappingAudit(
       const canix = canixMatches[0];
       const mondayId = String(monday.id ?? "");
       if (pairedMonday.has(mondayId) || pairedCanix.has(canix.itemId)) continue;
+      if (linkedCanixIds.has(canix.itemId)) {
+        linkedCanixConflicts.add(canix.itemId);
+        continue;
+      }
       const columns = mondayColumnValues(monday);
       const mondayBrand = mondayText(columns, MONDAY_PRODUCT_COLUMNS.brandName);
-      const matchesBrand = !!mondayBrand &&
-        canix.brands.some((brand) => brandKey(brand) === brandKey(mondayBrand));
+      const canixBrandKeys = new Set(
+        canix.brands.map(brandKey).filter(Boolean),
+      );
+      const matchesBrand = !!mondayBrand && canixBrandKeys.size === 1 &&
+        canixBrandKeys.has(brandKey(mondayBrand));
       if (!matchesBrand) {
         brandConflicts.add(`${mondayId}:${canix.itemId}`);
         continue;
@@ -534,12 +550,23 @@ async function catalogMappingAudit(
           .length,
       brandConflicts: brandConflicts.size,
       ambiguousNameCollisions: ambiguousNameCollisions.size,
+      linkedCanixConflicts: linkedCanixConflicts.size,
       automaticMappingsApplied: 0,
       identityRule:
-        "Canix Item ID is the only authoritative join. Name and brand matches are review suggestions only.",
+        "Unique exact product-name and brand matches may be automatically verified as Draft. Normalized names and every conflict remain review-only.",
     },
     suggestions: suggestions.slice(0, 200),
   };
+}
+
+async function catalogMappingAudit(
+  accessToken: string,
+): Promise<{ summary: Row; suggestions: MappingSuggestion[] }> {
+  const [mondayItems, canixItems] = await Promise.all([
+    mondayProductItems(accessToken),
+    currentCanixCatalogItems(),
+  ]);
+  return catalogMappingAuditFrom(mondayItems, canixItems);
 }
 
 async function writeMondayMapping(
@@ -574,6 +601,86 @@ async function writeMondayMapping(
       "Monday did not confirm the product mapping update.",
     );
   }
+}
+
+type AutomaticMappingOutcome = {
+  candidates: MappingSuggestion[];
+  approved: MappingSuggestion[];
+  failures: Array<{
+    mondayItemId: string;
+    canixItemId: number;
+    reason: string;
+  }>;
+  existingContentConflicts: number;
+};
+
+async function applyExactProductMappings(
+  accessToken: string,
+  mondayItems: Row[],
+  canixItems: CanixCatalogItem[],
+): Promise<AutomaticMappingOutcome> {
+  const mappingAudit = catalogMappingAuditFrom(mondayItems, canixItems);
+  const candidates = mappingAudit.suggestions.filter((suggestion) =>
+    suggestion.matchKind === "exact_name_brand"
+  );
+  if (!candidates.length) {
+    return {
+      candidates,
+      approved: [],
+      failures: [],
+      existingContentConflicts: 0,
+    };
+  }
+
+  const { data: existingRows, error: existingError } = await service.from(
+    "portal_product_content",
+  ).select("canix_item_id,monday_item_id").in(
+    "canix_item_id",
+    candidates.map((candidate) => candidate.canixItemId),
+  );
+  if (existingError) throw existingError;
+  const existingByCanixId = new Map(
+    (existingRows ?? []).map((row) => [Number(row.canix_item_id), row as Row]),
+  );
+  const safeCandidates = candidates.filter((candidate) => {
+    const existing = existingByCanixId.get(candidate.canixItemId);
+    return !existing?.monday_item_id ||
+      String(existing.monday_item_id) === candidate.mondayItemId;
+  });
+  const failures: AutomaticMappingOutcome["failures"] = [];
+  const approved: MappingSuggestion[] = [];
+  for (let index = 0; index < safeCandidates.length; index += 5) {
+    const batch = safeCandidates.slice(index, index + 5);
+    const results = await Promise.allSettled(
+      batch.map((candidate) =>
+        writeMondayMapping(
+          accessToken,
+          candidate.mondayItemId,
+          candidate.canixItemId,
+        )
+      ),
+    );
+    results.forEach((result, resultIndex) => {
+      const candidate = batch[resultIndex];
+      if (result.status === "fulfilled") {
+        approved.push(candidate);
+      } else {
+        failures.push({
+          mondayItemId: candidate.mondayItemId,
+          canixItemId: candidate.canixItemId,
+          reason: result.reason instanceof Error
+            ? clean(result.reason.message, 300) ?? "Monday update failed."
+            : "Monday update failed.",
+        });
+      }
+    });
+  }
+  return {
+    candidates,
+    approved,
+    failures,
+    existingContentConflicts: candidates.length - safeCandidates.length,
+  };
 }
 
 function mondayProductRecord(
@@ -942,24 +1049,44 @@ async function syncMondayProductBoard(caller: Caller | null): Promise<Row> {
     encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
     clientId: MONDAY_CLIENT_ID,
     clientSecret: MONDAY_CLIENT_SECRET,
-  }, ["boards:read"]);
+  }, ["boards:read", "boards:write"]);
   if (!accessToken) {
     throw new ProductError(
       409,
-      "Connect Monday with board read access before synchronizing catalog content.",
+      "Connect Monday with board read and write access before synchronizing catalog content.",
     );
   }
-  const mondayItems = await mondayProductItems(accessToken);
+  const [mondayItems, canixItems] = await Promise.all([
+    mondayProductItems(accessToken),
+    currentCanixCatalogItems(),
+  ]);
+  const automaticMappings = await applyExactProductMappings(
+    accessToken,
+    mondayItems,
+    canixItems,
+  );
+  const automaticByMondayId = new Map(
+    automaticMappings.approved.map((mapping) => [
+      mapping.mondayItemId,
+      mapping.canixItemId,
+    ]),
+  );
   const parsed: Array<{ itemId: number; record: Row }> = [];
   let missingCanixItemId = 0;
   let invalidCanixItemId = 0;
   let missingPublicationState = 0;
   for (const item of mondayItems) {
     const columns = mondayColumnValues(item);
-    const rawItemId = mondayText(columns, MONDAY_PRODUCT_COLUMNS.canixItemId);
-    const publicationState = mondayPublicationState(
-      mondayText(columns, MONDAY_PRODUCT_COLUMNS.publicationState),
-    );
+    const mondayItemId = String(item.id ?? "");
+    const automaticCanixId = automaticByMondayId.get(mondayItemId);
+    const rawItemId = automaticCanixId
+      ? String(automaticCanixId)
+      : mondayText(columns, MONDAY_PRODUCT_COLUMNS.canixItemId);
+    const publicationState = automaticCanixId
+      ? "draft"
+      : mondayPublicationState(
+        mondayText(columns, MONDAY_PRODUCT_COLUMNS.publicationState),
+      );
     if (!rawItemId) {
       missingCanixItemId += 1;
       continue;
@@ -1050,6 +1177,17 @@ async function syncMondayProductBoard(caller: Caller | null): Promise<Row> {
     missingPublicationState,
     duplicateCanixItemIds,
     missingFromCurrentCanix: missingFromCanix,
+    automaticMappingRule: "unique_exact_product_name_and_brand_v1",
+    automaticMappingCandidates: automaticMappings.candidates.length,
+    automaticMappingsApplied: automaticMappings.approved.length,
+    automaticMappingFailures: automaticMappings.failures,
+    automaticMappingExistingContentConflicts:
+      automaticMappings.existingContentConflicts,
+    automaticMappingPublicationState: "draft",
+    automaticMappingIds: automaticMappings.approved.map((mapping) => ({
+      mondayItemId: mapping.mondayItemId,
+      canixItemId: mapping.canixItemId,
+    })),
   };
   let actorId = caller?.profile.id ?? null;
   const actorOrg = caller?.profile.org ?? "urbanXtracts";
@@ -1061,6 +1199,28 @@ async function syncMondayProductBoard(caller: Caller | null): Promise<Row> {
     actorId = connection?.connected_by ?? null;
   }
   if (actorId) {
+    if (automaticMappings.approved.length) {
+      const { error: mappingAuditError } = await service.from(
+        "portal_admin_audit",
+      ).insert({
+        actor_id: actorId,
+        actor_org: actorOrg,
+        action: "monday.product_exact_mappings_auto_approved",
+        detail: {
+          rule: "unique_exact_product_name_and_brand_v1",
+          publicationState: "draft",
+          count: automaticMappings.approved.length,
+          mappings: automaticMappings.approved.map((mapping) => ({
+            mondayItemId: mapping.mondayItemId,
+            mondayItemName: mapping.mondayItemName,
+            canixItemId: mapping.canixItemId,
+            canixItemName: mapping.canixItemName,
+            brand: mapping.mondayBrand,
+          })),
+        },
+      });
+      if (mappingAuditError) throw mappingAuditError;
+    }
     const { error: auditError } = await service.from("portal_admin_audit")
       .insert({
         actor_id: actorId,
@@ -1127,6 +1287,13 @@ Deno.serve(async (request) => {
       }
       const result = await approveCatalogMapping(caller, body);
       return json(request, { ok: true, ...result }, 200);
+    }
+    if (action === "approve-exact-mappings") {
+      if (mondayAuthorized || !caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const summary = await syncMondayProductBoard(caller);
+      return json(request, { ok: true, summary }, 200);
     }
     if (action === "sync-monday") {
       if (!mondayAuthorized && (!caller || !caller.canManage)) {
