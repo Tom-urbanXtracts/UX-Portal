@@ -4,7 +4,7 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 
 ## Deploy
 
-1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, `20260902030000_quickbooks_sync_cron.sql`, and `20260902050000_quickbooks_environment_isolation.sql`.
+1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, `20260902030000_quickbooks_sync_cron.sql`, `20260902050000_quickbooks_environment_isolation.sql`, and `20260902060000_quickbooks_environment_safe_cache_clear.sql`.
 2. Deploy `quickbooks-oauth`, the updated `quickbooks-retailers`, `quickbooks-financials`, and `portal-readiness` Edge Functions.
 3. Register this exact Intuit redirect URI:
    - `https://cbhsavfbtcpdyxcvguay.supabase.co/functions/v1/quickbooks-oauth/callback`
@@ -38,7 +38,7 @@ The Intuit accounting scope is broader than the portal's feature set. UX OS enfo
 
 ## Intuit production-key handoff
 
-The dedicated Intuit app is registered on the no-charge Builder tier. Its development credentials and redirect URI are configured. Payments permission is not enabled, accepted connections are limited to the United States, and `portal.urbanxtracts.com` is now the approved launch/connect/disconnect return host. The portal remains disconnected and no successful financial snapshot exists.
+The dedicated Intuit app is registered on the no-charge Builder tier. Its development credentials and redirect URI are configured. Payments permission is not enabled, accepted connections are limited to the United States, and `portal.urbanxtracts.com` is now the approved launch/connect/disconnect return host. On 2 September 2026, Tom authorized the isolated sandbox connection and the first scheduled read-only snapshot completed successfully with 33 Customers, 35 Invoices, and 16 Payments. The production company remains intentionally disconnected.
 
 Production credentials remain intentionally locked until two owner decisions are complete:
 
