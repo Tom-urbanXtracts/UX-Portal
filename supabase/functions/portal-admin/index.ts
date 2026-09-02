@@ -119,6 +119,17 @@ async function listAuthUsers(): Promise<Row[]> {
 function testDemoReason(user: Row, profile: Row): string | null {
   const email = text(user.email, 320).toLowerCase();
   const org = text(profile.org, 200).toLowerCase();
+  if (
+    new Set([
+      "dana@downtownprovisions.com",
+      "marcus@downtownprovisions.com",
+      "priya@downtownprovisions.com",
+      "sam@riversidecollective.com",
+      "toni@urbanxtracts.com",
+    ]).has(email)
+  ) {
+    return "Legacy prototype fixture identity";
+  }
   if (email.endsWith("@executive-demo.invalid")) {
     return "Executive-demo identity";
   }
