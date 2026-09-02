@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { labFailed, labPassed } from "../_shared/security-contract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -6,6 +7,18 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MAKE_WEBHOOK_URL = Deno.env.get("MAKE_WEBHOOK_URL") ?? "";
 const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
+const MONDAY_TOKEN_ENCRYPTION_KEY =
+  Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
+const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
+const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
+const MONDAY_ORDER_BOARD_ID = Deno.env.get("MONDAY_ORDER_BOARD_ID") ??
+  "18428025898";
+const MONDAY_ACCOUNT_BOARD_ID = Deno.env.get("MONDAY_ACCOUNT_BOARD_ID") ??
+  "6217203913";
+const MONDAY_ACCOUNT_LICENSE_COLUMN_ID =
+  Deno.env.get("MONDAY_ACCOUNT_LICENSE_COLUMN_ID") ?? "text_mm607sg6";
+const MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID =
+  Deno.env.get("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID") ?? "text_mm6shj0q";
 const TURNSTILE_SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
 const TURNSTILE_REQUIRED = Deno.env.get("TURNSTILE_REQUIRED") === "true";
 const TURNSTILE_ALLOWED_HOSTS = new Set(
@@ -37,10 +50,193 @@ class IntakeError extends Error {
   }
 }
 
+function mondayText(value: unknown, max = 2000): string {
+  return String(value ?? "").trim().slice(0, max);
+}
+
+function mondayColumnId(value: string): string {
+  if (!/^[A-Za-z0-9_]+$/.test(value)) {
+    throw new Error("A configured Monday column identifier is invalid.");
+  }
+  return value;
+}
+
+async function mondayGraphql(
+  accessToken: string,
+  query: string,
+  variables: Row = {},
+): Promise<Row> {
+  const response = await fetch("https://api.monday.com/v2", {
+    method: "POST",
+    headers: {
+      authorization: accessToken,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const body = await response.json().catch(() => ({})) as Row;
+  if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    throw new Error("Monday did not accept the direct order request.");
+  }
+  return body.data && typeof body.data === "object" ? body.data as Row : {};
+}
+
+async function mondayWriteToken(): Promise<string | null> {
+  if (
+    MONDAY_TOKEN_ENCRYPTION_KEY.length < 32 ||
+    !/^\d+$/.test(MONDAY_ORDER_BOARD_ID)
+  ) return null;
+  return await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:write"]);
+}
+
+function firstMondayItem(data: Row): Row | null {
+  const page = data.items_page_by_column_values;
+  const items = page && typeof page === "object" &&
+      Array.isArray((page as Row).items)
+    ? (page as Row).items as Row[]
+    : [];
+  return items[0] ?? null;
+}
+
+async function directMondayOrder(payload: Row): Promise<Row | null> {
+  const accessToken = await mondayWriteToken();
+  if (!accessToken) return null;
+  const clientRequestId = mondayText(payload.clientRequestId, 80);
+  const portalOrderId = mondayText(payload.portalOrderId, 80);
+  const orderNumber = mondayText(
+    payload.orderNumber || payload.portalReference,
+    160,
+  );
+  if (!clientRequestId || !portalOrderId || !orderNumber) {
+    throw new Error("The direct Monday order identifiers are incomplete.");
+  }
+  const requestColumnId = mondayColumnId(
+    MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID,
+  );
+
+  const existingData = await mondayGraphql(
+    accessToken,
+    `query ExistingPortalOrder($boardId: ID!, $requestId: String!) {
+      items_page_by_column_values(
+        board_id: $boardId,
+        limit: 1,
+        columns: [{
+          column_id: "${requestColumnId}",
+          column_values: [$requestId]
+        }]
+      ) { items { id name } }
+    }`,
+    { boardId: MONDAY_ORDER_BOARD_ID, requestId: clientRequestId },
+  );
+  const existing = firstMondayItem(existingData);
+  if (existing?.id) {
+    return {
+      orderNumber,
+      mondayItemId: String(existing.id),
+      mondayBoardId: MONDAY_ORDER_BOARD_ID,
+      status: "accepted",
+      idempotent: true,
+      transport: "monday-direct",
+    };
+  }
+
+  let accountItemId = "";
+  const license = mondayText(payload.licenceNumber, 120);
+  if (
+    license && /^\d+$/.test(MONDAY_ACCOUNT_BOARD_ID) &&
+    MONDAY_ACCOUNT_LICENSE_COLUMN_ID
+  ) {
+    const accountLicenseColumnId = mondayColumnId(
+      MONDAY_ACCOUNT_LICENSE_COLUMN_ID,
+    );
+    const accountData = await mondayGraphql(
+      accessToken,
+      `query PortalAccount($boardId: ID!, $license: String!) {
+        items_page_by_column_values(
+          board_id: $boardId,
+          limit: 1,
+          columns: [{
+            column_id: "${accountLicenseColumnId}",
+            column_values: [$license]
+          }]
+        ) { items { id name } }
+      }`,
+      { boardId: MONDAY_ACCOUNT_BOARD_ID, license },
+    );
+    accountItemId = mondayText(firstMondayItem(accountData)?.id, 80);
+  }
+
+  const submittedBy = mondayText(payload.submittedBy, 300);
+  const columnValues: Row = {
+    text_mm6jgek: orderNumber,
+    text_mm6j3476: mondayText(payload.location, 300),
+    text_mm6jpgsm: submittedBy,
+    text_mm6jnqbk: submittedBy,
+    date_mm6j8kmp: { date: new Date().toISOString().slice(0, 10) },
+    numeric_mm6jmfwg: String(Number(payload.orderValue) || 0),
+    numeric_mm6j94q3: String(Number(payload.lineCount) || 0),
+    long_text_mm6j2xp2: mondayText(payload.orderDetailText, 10_000),
+    long_text_mm6j47ww: mondayText(payload.deliveryText, 10_000),
+    color_mm6jxv8f: { label: "Ordered" },
+    color_mm6jqkwx: {
+      label: mondayText(payload.approvalState, 120) || "Ordered",
+    },
+    color_mm6jzvmf: {
+      label: mondayText(payload.submittedVia, 120) || "UX Store Portal",
+    },
+    text_mm6jq08r: mondayText(payload.approvalHeldBy, 300),
+    long_text_mm6jw2wy: mondayText(payload.gatesAtSubmission, 10_000),
+    [requestColumnId]: clientRequestId,
+    text_mm6sphg5: portalOrderId,
+  };
+  if (/^\d+$/.test(accountItemId)) {
+    columnValues.board_relation_mm6jmjd4 = {
+      item_ids: [Number(accountItemId)],
+    };
+  }
+  const account = mondayText(payload.account, 300);
+  const location = mondayText(payload.location, 300);
+  const createdData = await mondayGraphql(
+    accessToken,
+    `mutation CreatePortalOrder(
+      $boardId: ID!, $itemName: String!, $columnValues: JSON!
+    ) {
+      create_item(
+        board_id: $boardId,
+        item_name: $itemName,
+        column_values: $columnValues,
+        create_labels_if_missing: true
+      ) { id }
+    }`,
+    {
+      boardId: MONDAY_ORDER_BOARD_ID,
+      itemName: `${orderNumber} · ${account} (${location})`.slice(0, 500),
+      columnValues: JSON.stringify(columnValues),
+    },
+  );
+  const created = createdData.create_item as Row | undefined;
+  if (!created?.id) {
+    throw new Error("Monday did not return the created order item.");
+  }
+  return {
+    orderNumber,
+    mondayItemId: String(created.id),
+    mondayBoardId: MONDAY_ORDER_BOARD_ID,
+    status: "accepted",
+    transport: "monday-direct",
+  };
+}
+
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
       "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      "https://portal.urbanxtracts.com",
       "https://tom-urbanxtracts.github.io",
       "http://127.0.0.1:4173",
       "http://localhost:4173",
@@ -127,7 +323,7 @@ async function verifyPublicOnboardingHuman(payload: Row): Promise<void> {
     );
   }
   const token = String(payload.antiAbuseToken || "").trim();
-  if (!token || token.length > 4096) {
+  if (!token || token.length > 2048) {
     throw new IntakeError(400, "Complete the verification challenge.");
   }
   const form = new FormData();
@@ -147,6 +343,7 @@ async function verifyPublicOnboardingHuman(payload: Row): Promise<void> {
   const hostname = String(result.hostname || "").toLowerCase();
   if (
     result.success !== true ||
+    result.action !== "retailer_onboarding" ||
     (TURNSTILE_ALLOWED_HOSTS.size > 0 &&
       !TURNSTILE_ALLOWED_HOSTS.has(hostname))
   ) {
@@ -764,9 +961,6 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") {
     return json(request, { error: "Method not allowed" }, 405);
   }
-  if (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) {
-    return json(request, { error: "The order intake is not configured." }, 503);
-  }
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 3_000_000) {
     return json(request, { error: "Submission is too large." }, 413);
@@ -796,6 +990,25 @@ Deno.serve(async (request) => {
         request,
         { error: "This role cannot submit that request." },
         403,
+      );
+    }
+    let directOrderConfigured = false;
+    if (kind === "order" && caller) {
+      try {
+        directOrderConfigured = !!(await mondayWriteToken());
+      } catch {
+        // The existing Make path remains available if connection-state
+        // inspection is temporarily unavailable.
+      }
+    }
+    if (
+      (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) &&
+      !directOrderConfigured
+    ) {
+      return json(
+        request,
+        { error: "The order intake is not configured." },
+        503,
       );
     }
 
@@ -876,35 +1089,58 @@ Deno.serve(async (request) => {
         );
       }
     }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 28_000);
-    let response: Response;
-    try {
-      response = await fetch(MAKE_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json",
-        },
-        body: JSON.stringify({
-          kind,
-          secret: MAKE_INTAKE_SECRET,
-          sentAt: new Date().toISOString(),
-          source: "UX Store Portal",
-          unauthenticated: !caller,
-          payload: verifiedPayload,
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-    const text = await response.text();
+    let response: Response | null = null;
     let result: Row = {};
-    try {
-      result = text ? JSON.parse(text) as Row : {};
-    } catch {
-      result = {};
+    if (kind === "order" && durableOrderId) {
+      try {
+        result = (await directMondayOrder(verifiedPayload)) ?? {};
+      } catch {
+        // A direct API failure still gets the existing Make compatibility
+        // path. Both paths use the same client request identifier.
+        result = {};
+      }
+    }
+    if (!result.orderNumber && !result.id) {
+      if (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) {
+        throw new IntakeError(
+          503,
+          "Monday order delivery is temporarily unavailable.",
+        );
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 28_000);
+      try {
+        response = await fetch(MAKE_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify({
+            kind,
+            secret: MAKE_INTAKE_SECRET,
+            sentAt: new Date().toISOString(),
+            source: "UX Store Portal",
+            unauthenticated: !caller,
+            payload: verifiedPayload,
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+      const text = await response.text();
+      try {
+        result = text ? JSON.parse(text) as Row : {};
+      } catch {
+        result = {};
+      }
+    }
+    if (!response) {
+      response = new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
     }
     if (!response.ok) {
       const message = String(

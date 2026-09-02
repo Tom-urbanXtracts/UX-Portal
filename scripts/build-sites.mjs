@@ -59,6 +59,8 @@ function configuredPortalHtml(env = {}) {
     ssoProvider: provider,
     ssoDomain: String(env.UX_SSO_DOMAIN || "urbanxtracts.com").toLowerCase(),
     recallNoticeEnabled: env.UX_RECALL_NOTICE_ENABLED === "true",
+    turnstileRequired: env.UX_TURNSTILE_REQUIRED === "true",
+    turnstileSiteKey: String(env.UX_TURNSTILE_SITE_KEY || ""),
   };
   const serialized = JSON.stringify(config).replace(/</g, "\\u003c");
   return PORTAL_HTML.replace("</head>", "<script>window.UX_PORTAL_CONFIG=" + serialized + ";</" + "script></head>");
@@ -67,7 +69,7 @@ function configuredPortalHtml(env = {}) {
 const HTML_HEADERS = {
   "content-type": "text/html; charset=utf-8",
   "cache-control": "private, no-store",
-  "content-security-policy": "default-src 'self' blob: data:; base-uri 'none'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; connect-src 'self' https://cbhsavfbtcpdyxcvguay.supabase.co https://api.pwnedpasswords.com; img-src 'self' blob: data: https:; font-src 'self' blob: data:; style-src 'self' 'unsafe-inline' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+  "content-security-policy": "default-src 'self' blob: data:; base-uri 'none'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; connect-src 'self' https://cbhsavfbtcpdyxcvguay.supabase.co https://api.pwnedpasswords.com; frame-src https://challenges.cloudflare.com; img-src 'self' blob: data: https:; font-src 'self' blob: data:; style-src 'self' 'unsafe-inline' blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com",
   "x-content-type-options": "nosniff",
   "referrer-policy": "same-origin",
   "x-frame-options": "SAMEORIGIN",

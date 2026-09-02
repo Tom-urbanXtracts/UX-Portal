@@ -17,7 +17,7 @@ Before production use, Quality and IT still need to decide whether manual review
 
 ## Public onboarding
 
-The existing owner-only preview does not expose public onboarding. The server is ready to fail closed when a future public host sets:
+The portal renders an explicit Turnstile widget for signed-out onboarding when the hosting worker receives `UX_TURNSTILE_SITE_KEY`. The server fails closed for those public requests when production sets:
 
 - `TURNSTILE_REQUIRED=true`
 - `TURNSTILE_SECRET_KEY` as a server secret
@@ -25,7 +25,8 @@ The existing owner-only preview does not expose public onboarding. The server is
 - `PUBLIC_INTAKE_RATE_SECRET` as a distinct high-entropy server secret
 - `PUBLIC_ONBOARDING_DAILY_LIMIT` between 1 and 20; default 3
 
+The hosting worker must also set `UX_TURNSTILE_REQUIRED=true` when the server flag is enabled. The browser sends the single-use token with action `retailer_onboarding`; the server verifies that action and the exact Siteverify hostname. The production widget should authorize only `portal.urbanxtracts.com`. Use Cloudflare's published test keys for local automation rather than adding localhost to the production widget.
+
 For an unauthenticated onboarding request, the server verifies the Turnstile token without storing or forwarding the visitor IP address. It then HMACs the normalized owner email and atomically claims a UTC-day submission slot. The database never stores the raw rate-limit identifier. The Turnstile token is removed before the request is persisted or sent to Monday.
 
-Do not enable `TURNSTILE_REQUIRED` until the public form renders a widget using an approved public site key. Authenticated Owners and internal users do not receive the public challenge; their normal portal identity and authorization continue to apply.
-
+Enable `TURNSTILE_REQUIRED` and `UX_TURNSTILE_REQUIRED` together only after the production site key, secret, and exact hostname are installed and the public form passes an end-to-end submission test. Authenticated Owners and internal users do not receive the public challenge; their normal portal identity and authorization continue to apply.

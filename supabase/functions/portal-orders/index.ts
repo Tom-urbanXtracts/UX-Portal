@@ -5,6 +5,7 @@ import {
   mondayOrderState,
   orderTransitionAllowed,
 } from "../_shared/security-contract.ts";
+import { mondayAccessToken } from "../_shared/monday-connection.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -15,6 +16,14 @@ const MAKE_ORDER_STATUS_WEBHOOK_URL =
 const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
 const MONDAY_STATUS_SECRET = Deno.env.get("MONDAY_STATUS_SECRET") ?? "";
 const ORDER_SYNC_CRON_SECRET = Deno.env.get("ORDER_SYNC_CRON_SECRET") ?? "";
+const MONDAY_TOKEN_ENCRYPTION_KEY =
+  Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
+const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
+const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
+const MONDAY_ORDER_BOARD_ID = Deno.env.get("MONDAY_ORDER_BOARD_ID") ??
+  "18428025898";
+const MONDAY_ORDER_STATUS_COLUMN_ID =
+  Deno.env.get("MONDAY_ORDER_STATUS_COLUMN_ID") ?? "color_mm6jxv8f";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -34,6 +43,7 @@ function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
       "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      "https://portal.urbanxtracts.com",
       "https://tom-urbanxtracts.github.io",
       "http://127.0.0.1:4173",
       "http://localhost:4173",
@@ -67,6 +77,65 @@ function json(request: Request, body: unknown, status = 200): Response {
 
 function clean(value: unknown, max = 300): string {
   return String(value ?? "").trim().slice(0, max);
+}
+
+async function mondayWriteToken(): Promise<string | null> {
+  if (
+    MONDAY_TOKEN_ENCRYPTION_KEY.length < 32 ||
+    !/^\d+$/.test(MONDAY_ORDER_BOARD_ID)
+  ) return null;
+  return await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:write"]);
+}
+
+async function sendDirectMondayStatus(order: Row): Promise<boolean> {
+  const accessToken = await mondayWriteToken();
+  const itemId = clean(order.monday_item_id, 160);
+  if (!accessToken || !/^\d+$/.test(itemId)) return false;
+  const response = await fetch("https://api.monday.com/v2", {
+    method: "POST",
+    headers: {
+      authorization: accessToken,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      query: `mutation UpdatePortalOrderStatus(
+        $boardId: ID!, $itemId: ID!, $columnValues: JSON!
+      ) {
+        change_multiple_column_values(
+          board_id: $boardId,
+          item_id: $itemId,
+          column_values: $columnValues,
+          create_labels_if_missing: true
+        ) { id }
+      }`,
+      variables: {
+        boardId: MONDAY_ORDER_BOARD_ID,
+        itemId,
+        columnValues: JSON.stringify({
+          [MONDAY_ORDER_STATUS_COLUMN_ID]: {
+            label: publicState(String(order.state)),
+          },
+        }),
+      },
+    }),
+  });
+  const body = await response.json().catch(() => ({})) as Row;
+  if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    throw new Error("Monday did not accept the direct status update.");
+  }
+  const data = body.data && typeof body.data === "object"
+    ? body.data as Row
+    : {};
+  const changed = data.change_multiple_column_values as Row | undefined;
+  if (String(changed?.id ?? "") !== itemId) {
+    throw new Error("Monday did not confirm the direct status update.");
+  }
+  return true;
 }
 
 function positiveInteger(value: unknown): number | null {
@@ -441,12 +510,6 @@ async function sendOutbox(eventId: string): Promise<Row> {
     .select("*").eq("event_id", eventId).maybeSingle();
   if (outboxError) throw outboxError;
   if (!outbox) return { state: "not_queued" };
-  if (!MAKE_ORDER_STATUS_WEBHOOK_URL || !MAKE_INTAKE_SECRET) {
-    return {
-      state: "pending",
-      error: "Monday status synchronization is not configured.",
-    };
-  }
   const { data: order, error: orderError } = await service.from("portal_order")
     .select("*").eq("id", outbox.order_id).maybeSingle();
   if (orderError) throw orderError;
@@ -458,52 +521,66 @@ async function sendOutbox(eventId: string): Promise<Row> {
   const attempt = Number(outbox.attempts || 0) + 1;
   const attemptedAt = new Date().toISOString();
   let errorMessage: string | null = null;
+  let sentDirectly = false;
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20_000);
-    let response: Response;
-    try {
-      response = await fetch(MAKE_ORDER_STATUS_WEBHOOK_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json",
-        },
-        body: JSON.stringify({
-          kind: "order-status",
-          secret: MAKE_INTAKE_SECRET,
-          sentAt: attemptedAt,
-          source: "UX Store Portal",
-          payload: {
-            portalOrderId: order.id,
-            portalReference: order.portal_reference,
-            orderNumber: order.order_number,
-            mondayItemId: order.monday_item_id,
-            account: order.organization,
-            licenceNumber: order.location_license,
-            location: order.location_name,
-            state: order.state,
-            publicState: publicState(String(order.state)),
-            eventId,
-            fromState: event?.from_state,
-            rawStatus: event?.raw_status,
-            note: event?.note,
-          },
-        }),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-    if (!response.ok) {
-      errorMessage = `Monday status workflow returned ${response.status}.`;
-    }
+    sentDirectly = await sendDirectMondayStatus(order as unknown as Row);
   } catch (error) {
     errorMessage = error instanceof Error && error.name === "AbortError"
       ? "Monday status workflow timed out."
       : error instanceof Error
       ? error.message
       : "Monday status workflow failed.";
+  }
+  if (!sentDirectly && MAKE_ORDER_STATUS_WEBHOOK_URL && MAKE_INTAKE_SECRET) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20_000);
+      let response: Response;
+      try {
+        response = await fetch(MAKE_ORDER_STATUS_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify({
+            kind: "order-status",
+            secret: MAKE_INTAKE_SECRET,
+            sentAt: attemptedAt,
+            source: "UX Store Portal",
+            payload: {
+              portalOrderId: order.id,
+              portalReference: order.portal_reference,
+              orderNumber: order.order_number,
+              mondayItemId: order.monday_item_id,
+              account: order.organization,
+              licenceNumber: order.location_license,
+              location: order.location_name,
+              state: order.state,
+              publicState: publicState(String(order.state)),
+              eventId,
+              fromState: event?.from_state,
+              rawStatus: event?.raw_status,
+              note: event?.note,
+            },
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+      errorMessage = response.ok
+        ? null
+        : `Monday status workflow returned ${response.status}.`;
+    } catch (error) {
+      errorMessage = error instanceof Error && error.name === "AbortError"
+        ? "Monday status workflow timed out."
+        : error instanceof Error
+        ? error.message
+        : "Monday status workflow failed.";
+    }
+  } else if (!sentDirectly && !errorMessage) {
+    errorMessage = "Monday status synchronization is not configured.";
   }
   const state = errorMessage ? "failed" : "sent";
   const { error: updateError } = await service.from("portal_order_sync_outbox")
@@ -788,6 +865,40 @@ Deno.serve(async (request) => {
         return json(request, { error: "Forbidden" }, 403);
       }
       return json(request, { ok: true, ...(await flushOutbox()) });
+    }
+    if (action === "resync-monday-status") {
+      if (caller.profile.role !== "internal" || !caller.canManageOrders) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const orderId = clean(body.orderId, 80);
+      if (!orderId) {
+        return json(request, { error: "The portal order is required." }, 400);
+      }
+      const order = await orderById(orderId);
+      if (!order || order.workflow_state !== "accepted") {
+        return json(request, { error: "Portal order not found" }, 404);
+      }
+      await assertOrderAccess(caller, order);
+      if (
+        clean(order.monday_board_id, 160) !== MONDAY_ORDER_BOARD_ID ||
+        !/^\d+$/.test(clean(order.monday_item_id, 160))
+      ) {
+        return json(request, {
+          error:
+            "That order is not linked to the configured Monday order board.",
+        }, 409);
+      }
+      if (!(await sendDirectMondayStatus(order))) {
+        return json(request, {
+          error: "Monday write access is not connected.",
+        }, 409);
+      }
+      return json(request, {
+        ok: true,
+        synced: true,
+        state: String(order.state),
+        mondayItemId: String(order.monday_item_id),
+      });
     }
     if (action === "reconcile") {
       if (caller.profile.role !== "internal" || !caller.canManageOrders) {

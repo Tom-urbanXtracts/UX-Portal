@@ -22,7 +22,7 @@ This portal uses Supabase Auth as the broker and Google Workspace as the workfor
 
    `https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site/`
 
-5. Add the future production URL only after its hostname is final. Keep the old URL during the cutover verification window.
+5. After `portal.urbanxtracts.com` reports active SSL, add `https://portal.urbanxtracts.com/`. Keep the old URL during the cutover verification window.
 
 ## Portal authorization
 
@@ -55,4 +55,4 @@ This portal uses Supabase Auth as the broker and Google Workspace as the workfor
 - Supabase reports both email and Google providers enabled. The current Sites root, `/portal`, `/dist/portal.html`, and the two exact `127.0.0.1:4173` development paths are in the Auth redirect allow-list; the current Sites root is the Site URL.
 - The complete Google consent flow was tested with Tom's `@urbanxtracts.com` Workspace account. It returned to the local portal and preserved Tom's existing Administrator preset. The database trigger continues to provision only first-time workforce users as Viewers.
 - The OAuth client secret was transferred directly into Supabase, was not written to this repository, and the one-time Google secret dialog was closed after configuration.
-- The owner-only Sites release now supplies `UX_SSO_PROVIDER=google` and `UX_SSO_DOMAIN=urbanxtracts.com`; the deployed response was verified to contain that exact non-secret configuration. The final production hostname still needs to be added and tested during the approved domain cutover.
+- The owner-only Sites release now supplies `UX_SSO_PROVIDER=google` and `UX_SSO_DOMAIN=urbanxtracts.com`; the deployed response was verified to contain that exact non-secret configuration. Wix DNS for `portal.urbanxtracts.com` was published on 1 September 2026. Add and test the final Auth redirect only after its certificate is active.

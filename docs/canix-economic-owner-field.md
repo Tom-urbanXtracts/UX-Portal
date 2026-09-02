@@ -1,17 +1,20 @@
-# Canix field decision: Brand, Package Owner, and Economic Owner
+# Canix field decision: Brand, Economic Partner, Package Owner, and Economic Owner
 
 Decision date: 2026-09-01
 
 ## Decision
 
-Brand and Economic Owner are separate fields in UX OS.
+Brand, Economic Partner, and Economic Owner are separate fields in UX OS.
 
 - **Brand** is the product's customer-facing market identity. Its source is the Canix Item/Package Brand.
+- **Economic Partner** is the organization associated with that market identity. UX OS automatically maintains this relationship from every nonblank Canix Brand in the latest successful inventory snapshot. For example, Canix Brand `Wana` maps to Economic Partner `Wana`, `PAX` maps to `PAX`, and `Royal Genetics` maps to `Royal Genetics`.
 - **Canix Package Owner** is the Canix user assigned for operational organization and reporting. It is not a company, title holder, risk bearer, or settlement party.
 - **Economic Owner** is the organization carrying production economic risk. It is internal, may be blank, and never inherits Brand.
 - **Commercial Model** explains the arrangement. For a backend deal where urbanXtracts funds production and collects the sale proceeds, the model is `backend_revenue_share`, Economic Owner is `urbanXtracts`, and the brand partner may be recorded separately as Settlement Counterparty.
 
-An item-level Economic Owner is the default. A package-level classification overrides the item default. Every change is effective-dated and audited.
+Economic Partner is synchronized after every successful Canix inventory publication. An item-level Economic Owner is the default. A package-level classification overrides the item default. Every Owner change is effective-dated and audited.
+
+The Brand-to-Partner association never overwrites Economic Owner, Commercial Model, or Settlement Counterparty. This is especially important for backend deals: the displayed Economic Partner may be Wana, PAX, or Royal Genetics while urbanXtracts remains the Economic Owner because it carries the production risk.
 
 ## Administrative workflow
 
@@ -43,7 +46,7 @@ Authorized staff also receive an item-level classification queue. It groups uncl
 
 Canix documents Brand as an Item field and exposes `brand` on Item and Package API objects. It also has a separate Assign Package Owners feature, but the owner must be a Canix user and is described as the person working on the package. The public API schema does not document an organization-valued package or item field for economic ownership.
 
-The connected Canix Reporting `inventory` schema was also checked on 2026-09-01. `package_inventory_facts_current` includes `brand_id`, `brand_name`, and `company_id`. Canix defines `company_id` as the company owning the Canix record for row-level access control; it is automatically filtered and must not be repurposed as the deal-level Economic Owner. No Economic Owner or organization-valued Package Owner column is exposed in that reporting table.
+The connected Canix Reporting `inventory` schema was also checked on 2026-09-01. `package_inventory_facts_current` includes `brand_id`, `brand_name`, and `company_id`. UX OS uses `brand_name` for Economic Partner association. Canix defines `company_id` as the company owning the Canix record for row-level access control; it is automatically filtered and must not be repurposed as the deal-level Economic Owner. No Economic Owner or organization-valued Package Owner column is exposed in that reporting table.
 
 References:
 
@@ -57,6 +60,7 @@ References:
 | Concept | UX OS field | Source | May be blank? | Exposure |
 |---|---|---|---:|---|
 | Market identity | `brand_name` | Canix Item/Package Brand | Yes | Internal and catalog |
+| Market relationship | `economic_partner_name` | Automatic association from Canix Brand | Yes, only when Brand is blank or sync is incomplete | Internal inventory and administration |
 | Operational user | `canix_package_owner_name` | Canix Package Owner, only if returned by API | Yes | Internal only |
 | Production risk bearer | `economic_owner_name` | Protected UX OS mapping; future Canix custom field if approved | Yes | Internal only |
 | Commercial arrangement | `commercial_model` | Protected UX OS mapping | Yes | Internal only |

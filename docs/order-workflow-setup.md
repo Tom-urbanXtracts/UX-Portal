@@ -2,7 +2,7 @@
 
 The portal owns the durable customer-facing order and its append-only event history. Monday remains the operations work board. QuickBooks is not written automatically in this release; accounting staff create the record after the store data has been reviewed.
 
-> Live status, 1 September 2026: the portal and Supabase order layer are deployed, but Make scenario `6043707` is not production-ready. The Make organization is paused, the existing webhook is detached, and the scenario does not yet implement the deduplication, complete response, callback, and retry contracts below. Keep live ordering gated until those items pass an end-to-end test.
+> Live status, 1 September 2026: the portal and Supabase order layer are deployed. Make scenario `6043707` now has structurally validated request-ID deduplication, complete order/onboarding responses, and a portal-to-Monday status route. It remains inactive and untested because the Make organization is paused after exceeding its free operation allowance. The Monday-to-portal callback and five-minute retry schedule also remain unverified. Keep live ordering gated until the full matrix passes end to end.
 
 ## Data flow
 
@@ -21,6 +21,8 @@ Active commitments remain through approval and processing. They are released onl
 - `MAKE_ORDER_STATUS_WEBHOOK_URL`: portal-to-Monday status scenario; falls back to `MAKE_WEBHOOK_URL` when not set.
 - `MAKE_INTAKE_SECRET`: shared secret included inside the server-to-Make payload.
 - `MONDAY_STATUS_SECRET`: high-entropy secret used in the `x-ux-monday-secret` callback header.
+- `MONDAY_TOKEN_ENCRYPTION_KEY`: also enables the server-side direct Monday fallback after the installed UX OS app is granted `boards:write`.
+- `MONDAY_ORDER_BOARD_ID`, `MONDAY_ORDER_STATUS_COLUMN_ID`, and the optional account/order column overrides pin direct writes to the intended boards and columns. The fallback checks the stable client request ID before creating an item, so a Make timeout or malformed response cannot create a second order.
 - `ORDER_SYNC_CRON_SECRET`: independent high-entropy secret used in the `x-ux-cron-secret` retry header.
 
 Do not expose any of these values in the browser configuration.
@@ -69,6 +71,8 @@ Call `portal-orders` on a schedule with:
 ```
 
 Authenticate it with `x-ux-cron-secret`. The function processes up to 25 pending or failed messages per run. A signed-in internal user with `orders.manage` may also trigger the same action for support diagnostics.
+
+The deployed `portal-order-outbox-flush-5m` Supabase cron runs this request every five minutes. Its credential is read from Supabase Vault at execution time and is not embedded in the cron command. The 1 September 2026 controlled empty-queue test returned HTTP 200 with zero attempted, sent, failed, or pending events.
 
 ## Reconciliation rule
 

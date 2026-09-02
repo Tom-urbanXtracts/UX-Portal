@@ -395,6 +395,24 @@ button{font-family:inherit}
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Catalog</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 22px">{{ catalogSub }}</p>
 
+<sc-if value="{{ canReviewCatalogMappings }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="catalog-mapping-heading" style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:18px 20px;margin-bottom:24px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+<div><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL · CATALOG IDENTITY CONTROL</div><h2 id="catalog-mapping-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 6px">Monday to Canix review queue</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted-strong);max-width:72ch;margin:0">Canix Item ID remains the authoritative join. A unique exact product-name and brand pair can be automatically verified as Draft; normalized names and every conflict still require review.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ catalogMappingCanApproveExact }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ onCatalogMappingApproveExact }}" aria-disabled="{{ catalogMappingBusy }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogMappingApproveExactLabel }}</button></sc-if><button type="button" onClick="{{ onCatalogMappingLoad }}" aria-disabled="{{ catalogMappingBusy }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogMappingLoadLabel }}</button></div>
+</div>
+<sc-if value="{{ catalogMappingHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-top:16px;font-size:12.5px;line-height:1.5"><strong>Review queue unavailable.</strong> {{ catalogMappingError }}</div></sc-if>
+<sc-if value="{{ catalogMappingHasData }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:18px">
+<sc-for list="{{ catalogMappingMetrics }}" as="metric" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.16);padding:11px 12px"><div style="font:800 19px/1 Archivo,sans-serif;margin-bottom:5px">{{ metric.value }}</div><div style="font:600 9px/1.4 ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">{{ metric.label }}</div></div></sc-for>
+</div>
+<div style="border-left:3px solid var(--ux-accent);padding:9px 0 9px 12px;margin:14px 0;font-size:12px;line-height:1.5"><strong>Exact means exact.</strong> The batch action accepts only a unique product name with one matching brand on both sources. Brand conflicts, reused Canix IDs, duplicate names, normalized-only matches, and invalid Monday groups stay blocked. Every accepted link remains Draft and is audited.</div>
+<sc-if value="{{ catalogMappingHasSuggestions }}" hint-placeholder-val="{{ false }}"><div style="border-top:2px solid rgba(23,14,11,.4)"><sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(200px,1.25fr) minmax(200px,1.25fr) minmax(140px,.75fr) auto;gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:center;{{ catalogMappingRowStyle }}"><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.mondayName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.mondayGroup }}</div></div><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div></div><div><span style="display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;background:var(--ux-accent);color:#fff;padding:4px 6px">{{ mapping.matchLabel }}</span></div><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></div></sc-for></div></sc-if>
+<sc-if value="{{ catalogMappingNoSuggestions }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No unambiguous product-name and brand suggestions are awaiting review.</div></sc-if>
+</sc-if>
+</section>
+</sc-if>
+
 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:16px;border-bottom:2px solid rgba(23,14,11,.4)">
 <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="Search product, SKU, strain, terpene, potency or full tag" style="flex:1;min-width:220px;border:1px solid rgba(23,14,11,.35);background:#fff;padding:10px 12px;font:14px Archivo,sans-serif;border-radius:0">
 <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5">
@@ -1054,8 +1072,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ invCanManageOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="economic-party-heading" style="margin-bottom:32px;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
-<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">FINANCE OPERATIONS · INTERNAL</div><h2 id="economic-party-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic parties</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Organizations that may carry production risk or participate in settlement. This registry is independent of Canix Brand and Canix Package Owner.</p></div>
-<button type="button" onClick="{{ onEconomicPartyAdd }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Add economic party</button>
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">FINANCE OPERATIONS · INTERNAL</div><h2 id="economic-party-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic parties</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Every current Canix Brand is automatically associated with an Economic Partner. Economic Owner remains the entity carrying production risk, and Settlement Counterparty remains a separate contractual relationship.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onClick="{{ onEconomicPartnerSync }}" aria-disabled="{{ economicPartnerSyncPending }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ economicPartnerSyncOpacity }}">{{ economicPartnerSyncLabel }}</button><button type="button" onClick="{{ onEconomicPartyAdd }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Add economic party</button></div>
 </div>
 <sc-if value="{{ economicOwnershipHasError }}" hint-placeholder-val="{{ false }}"><div style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-top:14px;font-size:12px;line-height:1.5">{{ economicOwnershipError }}</div></sc-if>
 <sc-if value="{{ economicOwnershipLoading }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 0 0;font-size:11.5px;color:var(--ux-muted)">Loading the protected economic-party registry…</div></sc-if>
@@ -1076,7 +1094,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="{{ economicPartyHeaderStyle }}"><div>Party</div><div>Type</div><div>Current mappings</div><div>Status</div><div>Actions</div></div>
 <sc-for list="{{ economicPartyRows }}" as="p" hint-placeholder-count="4"><div style="{{ economicPartyRowStyle }}"><div style="min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted)">{{ p.code }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.legal }}</div></div><div>{{ p.type }}</div><div><div style="font:700 12px ui-monospace,monospace">{{ p.mappingCount }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ p.mappingNote }}</div></div><div><span style="{{ p.statusStyle }}">{{ p.status }}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" onClick="{{ p.onEdit }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 8px;font:600 10px Archivo,sans-serif;cursor:pointer">Edit</button><sc-if value="{{ p.canToggle }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ p.onToggle }}" style="{{ p.toggleStyle }}">{{ p.toggleLabel }}</button></sc-if></div></div></sc-for>
 </div>
-<div style="font-size:11px;line-height:1.5;color:var(--ux-muted);margin-top:11px">Inactive parties remain visible on existing historical classifications but cannot be selected for new assignments. The urbanXtracts internal party cannot be deactivated.</div>
+<div style="font-size:11px;line-height:1.5;color:var(--ux-muted);margin-top:11px">Canix Brand mappings are refreshed automatically after each successful inventory sync. Inactive parties remain visible on historical classifications but cannot be selected for new Owner or Settlement assignments. The urbanXtracts internal party cannot be deactivated.</div>
 </section>
 </sc-if>
 
@@ -1095,6 +1113,16 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 <div style="font-size:12px;color:var(--ux-muted);line-height:1.6;margin-top:10px;max-width:80ch">Grams and units remain separate. WeightBased uses Canix <code>c_weight_g</code>; CountBased uses the package&rsquo;s raw unit count. Only those two quantity types are in scope.</div>
+</section>
+
+<section aria-label="Inventory lanes" style="margin-bottom:28px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-muted);margin-bottom:8px">INVENTORY LANE</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ invInventoryBuckets }}" as="b" hint-placeholder-count="3">
+<button type="button" onClick="{{ b.onPick }}" aria-pressed="{{ b.pressed }}" style="{{ b.style }}" style-hover="border-color:var(--ux-ink)">{{ b.label }} <span style="opacity:.65">{{ b.count }}</span></button>
+</sc-for>
+</div>
+<div style="font-size:11px;color:var(--ux-muted);line-height:1.55;margin-top:8px;max-width:92ch">Plant material is matched from the Canix Item Name (Clone, Biomass, Seed or Seeds). Bulk is matched from the Canix item or category identity. Plant material takes priority when both rules match, so every package appears in exactly one lane.</div>
 </section>
 
 <section aria-labelledby="inventory-risk-heading" style="margin-bottom:34px">
@@ -1126,8 +1154,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px">
 <div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">PACKAGE WORKBENCH</div>
-<h2 id="inventory-workbench-heading" style="font:800 21px/1.2 Archivo,sans-serif;margin:0 0 5px">Read, filter and inspect every package</h2>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">Search across package, item, SKU, brand, strain and room. Quick views and filters combine; every table heading sorts the current result.</p>
+<h2 id="inventory-workbench-heading" style="font:800 21px/1.2 Archivo,sans-serif;margin:0 0 5px">{{ invWorkbenchTitle }}</h2>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">{{ invWorkbenchDescription }} Search, quick views and filters combine; every table heading sorts the current result.</p>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button type="button" onClick="{{ onInvExport }}" aria-disabled="{{ invExportDisabled }}" style="{{ invExportStyle }}" style-hover="background:var(--ux-accent);border-color:var(--ux-accent)">Export filtered CSV</button>
@@ -1184,6 +1212,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </select>
 </label>
 <label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">ECONOMIC PARTNER</span>
+<select value="{{ invPartner }}" onChange="{{ onInvPartner }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
+<option value="all">All economic partners</option>
+<sc-for list="{{ invPartnerOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">ECONOMIC OWNER</span>
 <select value="{{ invOwner }}" onChange="{{ onInvOwner }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
 <option value="all">Assigned and blank</option>
@@ -1234,17 +1269,18 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 
 <div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:650px">
-<div role="table" aria-label="Canix package inventory" style="min-width:1580px">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
-<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="12">
+<div role="table" aria-label="Canix package inventory" style="min-width:1720px">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
+<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="13">
 <button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ invHasRows }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ invTableRows }}" as="r" hint-placeholder-count="8">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
 <div style="min-width:0"><div style="font:700 12.5px/1.35 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.skuTag }}</div></div>
 <div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div>
+<div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.partner }}</div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.owner }}</div>
 <div style="font:700 10.5px ui-monospace,monospace">{{ r.uom }}</div>
 <div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div>
@@ -1397,6 +1433,20 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Release readiness</h1>
 <p style="font-size:15px;line-height:1.6;max-width:66ch;margin:0 0 8px">Open decisions and resolved controls, grouped by the evidence that closes them. An item closes when the named answer exists &mdash; not when someone builds a screen around it.</p>
 <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:0 0 22px"><p style="font-size:13px;color:var(--ux-muted);margin:0">{{ validationSummary }}</p><button type="button" onClick="{{ onReadinessRefresh }}" aria-disabled="{{ readinessLoading }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ readinessRefreshLabel }}</button></div>
+
+<sc-if value="{{ canConnectQuickBooks }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">QUICKBOOKS · {{ quickBooksConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only connection for customer, invoice, and payment snapshots. The portal uses accounting read operations only; it never creates or changes a QuickBooks record.</div><sc-if value="{{ quickBooksConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ quickBooksConnectionError }}</div></sc-if></div>
+<button type="button" onClick="{{ onQuickBooksConnect }}" aria-disabled="{{ quickBooksConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ quickBooksConnectLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ canConnectMonday }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY · {{ mondayConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only installation for orders and catalog content. The dedicated app renews its server token, updates linked order status, manages its signed callback, and reads only explicitly linked product-content rows.</div><sc-if value="{{ mondayConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ mondayConnectionError }}</div></sc-if></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ mondayConnected }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayCatalogSync }}" aria-disabled="{{ mondayCatalogSyncing }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayCatalogSyncLabel }}</button></sc-if><sc-if value="{{ mondayWebhookActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayWebhookRefresh }}" aria-disabled="{{ mondayConnecting }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh signed webhook</button></sc-if><button type="button" onClick="{{ onMondayConnect }}" aria-disabled="{{ mondayConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayConnectLabel }}</button></div>
+</div>
+</sc-if>
 
 <sc-if value="{{ readinessHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:22px;font-size:13px;line-height:1.55"><strong>Live diagnostics unavailable.</strong> {{ readinessError }} The decision register below remains available.</div></sc-if>
 <sc-if value="{{ readinessHasData }}" hint-placeholder-val="{{ false }}">
@@ -1854,13 +1904,23 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ onbAtCap }}" hint-placeholder-val="{{ false }}">
 <div style="font-size:12.5px;color:var(--ux-muted);margin-bottom:20px">Five is the cap on one submission.</div>
 </sc-if>
+<sc-if value="{{ onbTurnstileVisible }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin:0 0 18px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Request verification</div>
+<div id="ux-turnstile" style="min-height:65px"></div>
+<div role="status" aria-live="polite" style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-top:7px">{{ onbTurnstileStatus }}</div>
+</div>
+</sc-if>
+<sc-if value="{{ onbTurnstileMissing }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;font-size:13px;line-height:1.55">Request verification is temporarily unavailable. Sign in or contact urbanXtracts before submitting.</div>
+</sc-if>
 <sc-if value="{{ onbHasErr }}" hint-placeholder-val="{{ false }}">
 <div style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;max-width:72ch">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">NOT READY TO SEND</div>
 <div style="font-size:13px;line-height:1.55">{{ onbErr }}</div>
 </div>
 </sc-if>
-<button type="button" onClick="{{ onOnbSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">{{ onbSubmitLabel }}</button>
+<button type="button" onClick="{{ onOnbSubmit }}" disabled="{{ onbSubmitDisabled }}" aria-disabled="{{ onbSubmitDisabled }}" style="{{ onbSubmitStyle }}">{{ onbSubmitLabel }}</button>
 <sc-if value="{{ onbSent }}" hint-placeholder-val="{{ false }}">
 <div style="margin-top:20px;border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:72ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SUBMITTED &middot; STAGE 01 INTAKE</div>
@@ -2772,14 +2832,14 @@ const VALIDATION = [
   { cls: 'CANIX VALIDATION REQUIRED', closedBy: 'Closed by a Canix test or a vendor answer', items: [
     { severity: 'DECIDED', screen: 'Order builder', question: 'How are case quantity, minimum order and lead time handled?', detail: 'Resolved 1 Sep 2026: Canix item case_quantity is normalized when supplied. Each store defaults to accepting eaches; Administrator, Operations, or Sales may enable whole-case enforcement, which fails closed if the item has no single positive case quantity. Minimum order and lead time remain blank because the connected reporting contract does not expose them.', blocks: 'Nothing — unsupported fields stay blank', owner: 'Operations', evidence: 'Protected store policy plus server-side case-multiple validation' },
     { severity: 'DECIDED', screen: 'Catalog', question: 'What makes a package sellable and what groups packages into a product?', detail: 'Resolved from the connected Canix reporting contract and live urbanXtracts data on 1 Sep 2026. Sellable means active with status_category available. Explicit reservations are subtracted. The catalog groups by item_id because it covers the active package population; product_id is missing on 958 of 1,359 active non-sample packages.', blocks: 'Nothing — closed for v1', owner: 'Operations and Data', evidence: 'Canix schema plus live status, reservation and identifier coverage queries' },
-    { severity: 'Record and continue', screen: 'Catalog', question: 'Is there a per-item price list in Canix?', detail: 'Only realised order-line prices were found. If an item price list exists, it is a better source than deriving from history.', blocks: 'Nothing today; would replace the derived price', owner: 'Sales operations', evidence: 'Confirmation the object exists and is populated' }
+    { severity: 'Record and continue', screen: 'Catalog', question: 'How does the wholesale sheet map to immutable Canix items?', detail: 'The selected ACTIVE CART sheet has 118 priced rows but no Canix Item ID; Brand is encoded as section headings. Only unique exact product-name + Brand matches may be auto-associated. Every normalized, name-only, duplicate, or conflicting candidate remains review-only.', blocks: 'Default list-price publication for unmatched products', owner: 'Sales operations and Data', evidence: 'A reviewed Canix Item ID for each source row' }
   ] },
   { cls: 'TECHNICAL VALIDATION REQUIRED', closedBy: 'Closed by a hands-on test in the target system', items: [
     { severity: 'DECIDED', screen: 'Catalog · Store pricing', question: 'What replaces the missing per-account rate card?', detail: 'Resolved 1 Sep 2026: the portal owns a licensed-store rate card. Store Owners and Buyers may propose a price only for their assigned stores; Administrator, Operations, or Sales must approve it before the catalog or ordering flow can use it. Every proposal and decision is audited.', blocks: 'Nothing — closed', owner: 'Sales operations', evidence: 'Store-scoped proposal, internal approval, published price, and audit record' },
     { severity: 'DECIDED', screen: 'Inventory', question: 'How does the deployed portal authenticate to the Canix reporting API?', detail: 'Resolved 31 Aug 2026: a Supabase Edge Function holds the Canix credential, writes a private cache on a five-minute cron and exposes only the authenticated read endpoint to the browser. Canix credentials never enter the client bundle.', blocks: 'Nothing \u2014 closed', owner: 'Data engineering', evidence: 'Deployed server-side connector, private cache and successful five-minute scheduled sync' },
     { severity: 'Record and continue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
     { severity: 'DECIDED', screen: 'Inventory · Internal lot view', question: 'Are Brand, Canix Package Owner and Economic Owner the same field?', detail: 'Resolved 1 Sep 2026: no. Brand is the market identity; Canix Package Owner is an operational Canix user; Economic Owner is the entity carrying production risk. UX OS stores an effective-dated item default with package override, permits blank, and never falls back to Brand. The exact Canix source field remains pending vendor confirmation.', blocks: 'Only automated sourcing from Canix; protected classification works', owner: 'Finance operations · Data contracts', evidence: 'Canix API schema, Package Owner guide, protected ownership mapping and audit event' },
-    { severity: 'DECIDED', screen: 'Financials · Store performance', question: 'Is QuickBooks reachable for balances, invoices and payments?', detail: 'The server connector now stores last-successful normalized snapshots. Owners and Buyers receive store-scoped history; payment collection remains disabled.', blocks: 'Nothing in this release', owner: 'Finance', evidence: 'Sandbox sync plus Owner, Buyer and Budtender authorization tests' },
+    { severity: 'Record and continue', screen: 'Financials · Store performance', question: 'Is the portal authorized to read the production QuickBooks company?', detail: 'The encrypted OAuth broker and read-only Customer, Invoice, and Payment snapshot functions are deployed, but the portal connection is disconnected and no successful snapshot exists. Development credentials must not be used to authorize the live company.', blocks: 'Live QuickBooks financial views', owner: 'Finance and IT', evidence: 'Intuit production approval, read-only authorization, successful snapshot, and Owner/Buyer/Budtender scope tests' },
     { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' },
     { severity: 'Record and continue', screen: 'Account · API access', question: 'What scope, credential model and rate limits does the store API carry?', detail: 'A read-only endpoint over the store records surface, for chains running their own tooling. It is a second renderer of the same authorization, never a second authorization, and it depends on the unresolved multi-license question above.', blocks: 'The store API', owner: 'Administration', evidence: 'A scope, a credential model and a rate limit' }
   ] },
@@ -2864,6 +2924,8 @@ const SUPABASE_KEY = PORTAL_CONFIG.supabaseKey || 'sb_publishable_aIrwn28FxjXNT-
 const SSO_PROVIDER = PORTAL_CONFIG.ssoProvider === 'azure' ? 'azure' : 'google';
 const SSO_DOMAIN = String(PORTAL_CONFIG.ssoDomain || 'urbanxtracts.com').toLowerCase();
 const RECALL_NOTICE_ENABLED = PORTAL_CONFIG.recallNoticeEnabled === true;
+const TURNSTILE_REQUIRED = PORTAL_CONFIG.turnstileRequired === true;
+const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 
 // Workforce authorization is capability-based. Supabase owns the grants and
 // every server endpoint checks the same permission before returning data or
@@ -3037,6 +3099,8 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'is_finished_good', 'packaged_date', 'expiration_date', 'use_by_date', 'age_days',
   'order_item_id', 'cost_object_id', 'sales_order_id', 'sales_order_name', 'sales_order_status',
   'sales_order_delivery_date', 'source_updated_at',
+  'inventory_bucket', 'inventory_bucket_reason',
+  'economic_partner_id', 'economic_partner_name', 'economic_partner_source',
   'economic_owner_id', 'economic_owner_name', 'commercial_model',
   'settlement_counterparty_id', 'settlement_counterparty_name',
   'economic_owner_source', 'economic_owner_source_field', 'ownership_scope'
@@ -3064,6 +3128,12 @@ const ECONOMIC_OWNERSHIP_API = PORTAL_CONFIG.economicOwnershipUrl
   || SUPABASE_URL + '/functions/v1/portal-economic-ownership';
 const PORTAL_READINESS_API = PORTAL_CONFIG.portalReadinessUrl
   || SUPABASE_URL + '/functions/v1/portal-readiness';
+const QUICKBOOKS_OAUTH_API = PORTAL_CONFIG.quickbooksOAuthUrl
+  || SUPABASE_URL + '/functions/v1/quickbooks-oauth';
+const MONDAY_OAUTH_API = PORTAL_CONFIG.mondayOAuthUrl
+  || SUPABASE_URL + '/functions/v1/monday-oauth';
+const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
+  || SUPABASE_URL + '/functions/v1/portal-product-content';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3293,6 +3363,7 @@ class Component extends DCLogic {
     onbBuyerName: '', onbBuyerEmail: '', onbBuyerLoc: '',
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
     onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
+    turnstileToken: '', turnstileError: null,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token,
     ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
@@ -3307,14 +3378,14 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-    invBrand: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
+    invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
-    economicParties: [], economicOwnershipMappings: [], economicOwnershipLoading: false,
+    economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
     economicOwnershipLoaded: false, economicOwnershipError: null,
     economicPartyOpen: false, economicPartyEditId: null, economicPartyCode: '', economicPartyName: '',
     economicPartyLegalName: '', economicPartyType: 'brand_partner', economicPartyActive: true,
-    economicPartyPending: false, economicPartyError: null,
+    economicPartyPending: false, economicPartyError: null, economicPartnerSyncPending: false,
     invOwnershipScope: 'item', invEconomicOwnerDraft: '', invCommercialModelDraft: '',
     invSettlementPartyDraft: '', invOwnershipNote: '', invOwnershipPending: false,
     invQueueItemId: null, invQueueOwnerDraft: '', invQueueModelDraft: '',
@@ -3326,6 +3397,9 @@ class Component extends DCLogic {
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+    quickBooksConnecting: false, quickBooksConnectionError: null,
+    mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
+    catalogMappingData: null, catalogMappingLoading: false, catalogMappingError: null, catalogMappingPending: null,
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -3494,6 +3568,89 @@ class Component extends DCLogic {
     requestAnimationFrame(() => {
       const target = document.getElementById(id);
       if (target && target.focus) target.focus();
+    });
+  }
+
+  turnstileReady() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return Promise.reject(new Error('Browser verification is unavailable.'));
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (window.__uxTurnstileReady) return window.__uxTurnstileReady;
+    window.__uxTurnstileReady = new Promise((resolve, reject) => {
+      let script = document.querySelector('script[data-ux-turnstile="true"]');
+      const loaded = () => window.turnstile ? resolve(window.turnstile) : reject(new Error('The verification service did not start.'));
+      const failed = () => reject(new Error('The verification service could not be loaded.'));
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+        script.defer = true;
+        script.async = true;
+        script.dataset.uxTurnstile = 'true';
+        document.head.appendChild(script);
+      }
+      script.addEventListener('load', loaded, { once: true });
+      script.addEventListener('error', failed, { once: true });
+    }).catch(error => {
+      window.__uxTurnstileReady = null;
+      throw error;
+    });
+    return window.__uxTurnstileReady;
+  }
+
+  removeTurnstile() {
+    if (typeof window !== 'undefined' && window.turnstile && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) {
+      try { window.turnstile.remove(this._turnstileWidgetId); } catch (e) {}
+    }
+    this._turnstileWidgetId = null;
+    this._turnstileHost = null;
+  }
+
+  resetTurnstile(message) {
+    if (typeof window !== 'undefined' && window.turnstile && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) {
+      try { window.turnstile.reset(this._turnstileWidgetId); } catch (e) {}
+    }
+    this.set({ turnstileToken: '', turnstileError: message || null });
+  }
+
+  mountTurnstile() {
+    if (typeof document === 'undefined') return;
+    if (!TURNSTILE_SITE_KEY || this.state.authUser || this.state.screen !== 'onboard') {
+      this.removeTurnstile();
+      return;
+    }
+    requestAnimationFrame(() => {
+      const host = document.getElementById('ux-turnstile');
+      if (!host || this.state.authUser || this.state.screen !== 'onboard') return;
+      if (this._turnstileHost === host && this._turnstileWidgetId !== undefined && this._turnstileWidgetId !== null) return;
+      this.removeTurnstile();
+      this._turnstileHost = host;
+      this.turnstileReady().then(turnstile => {
+        if (this.state.authUser || this.state.screen !== 'onboard') return;
+        const currentHost = document.getElementById('ux-turnstile');
+        if (!currentHost) return;
+        this._turnstileHost = currentHost;
+        this._turnstileWidgetId = turnstile.render(currentHost, {
+          sitekey: TURNSTILE_SITE_KEY,
+          action: 'retailer_onboarding',
+          appearance: 'always',
+          theme: 'light',
+          callback: token => {
+            if (token && token !== this.state.turnstileToken) this.set({ turnstileToken: token, turnstileError: null });
+          },
+          'expired-callback': () => {
+            if (this.state.turnstileToken || this.state.turnstileError !== 'Verification expired. Complete it again before submitting.') {
+              this.set({ turnstileToken: '', turnstileError: 'Verification expired. Complete it again before submitting.' });
+            }
+          },
+          'error-callback': () => {
+            if (this.state.turnstileToken || this.state.turnstileError !== 'Verification could not complete. Try again.') {
+              this.set({ turnstileToken: '', turnstileError: 'Verification could not complete. Try again.' });
+            }
+          }
+        });
+      }).catch(error => {
+        const message = (error && error.message) || 'The verification service could not be loaded.';
+        if (this.state.turnstileError !== message) this.set({ turnstileToken: '', turnstileError: message });
+      });
     });
   }
 
@@ -3789,9 +3946,18 @@ class Component extends DCLogic {
     this.set({ ...patch, invPage: 1, invSelectedPackage: null });
   }
 
+  inventoryBucketSelect(bucket) {
+    if (!['packaged', 'plant_material', 'bulk'].includes(bucket)) return;
+    this.set({ invInventoryBucket: bucket, invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
+      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
+      invPage: 1, invSelectedPackage: null, invQueueItemId: null,
+      invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
+  }
+
   inventoryReset() {
     this.set({ invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-      invBrand: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
       invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
       invPage: 1, invSelectedPackage: null, invQueueItemId: null,
       invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
@@ -3805,7 +3971,8 @@ class Component extends DCLogic {
     if (!rows || !rows.length) return;
     const fields = [
       ['Package ID', 'package_id'], ['Compliance tag', 'tag'], ['Item', 'item_name'], ['SKU', 'sku'],
-      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Economic Owner', 'economic_owner_name'],
+      ['Inventory lane', 'inventory_bucket'], ['Lane rule', 'inventory_bucket_reason'],
+      ['Category', 'item_category_name'], ['Brand', 'brand_name'], ['Economic Partner', 'economic_partner_name'], ['Economic Owner', 'economic_owner_name'],
       ['Commercial model', 'commercial_model'], ['Settlement counterparty', 'settlement_counterparty_name'],
       ['Canix package owner (operational)', 'canix_package_owner_name'], ['Strain', 'strain_name'],
       ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
@@ -3915,6 +4082,7 @@ class Component extends DCLogic {
     return this.economicOwnershipCall('GET')
       .then(payload => this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : [],
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : [],
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : [],
         economicOwnershipLoading: false, economicOwnershipLoaded: true, economicOwnershipError: null }))
       .catch(error => this.set({ economicOwnershipLoading: false, economicOwnershipLoaded: false,
         economicOwnershipError: (error && error.message) || 'Economic ownership options could not be loaded.' }));
@@ -3935,6 +4103,27 @@ class Component extends DCLogic {
       economicPartyActive: true, economicPartyError: null });
   }
 
+  syncEconomicPartners() {
+    if (this.state.economicPartnerSyncPending
+      || !this.requirePermission('economics.manage', 'sync economic partners from Canix')) return;
+    this.set({ economicPartnerSyncPending: true, economicOwnershipError: null });
+    this.economicOwnershipCall('POST', { action: 'sync-brand-partners' })
+      .then(payload => {
+        const sync = payload && payload.sync || {};
+        this.set({
+          economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
+          economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
+          economicOwnershipLoaded: true, economicPartnerSyncPending: false,
+          toast: (sync.mappedBrands === undefined ? 'Economic partners' : sync.mappedBrands + ' economic partners') + ' synchronized from the current Canix Brand values.',
+          toastKind: 'PARTNERS SYNCED'
+        });
+        if (this.state.inventoryLoaded) this.loadInventory();
+      })
+      .catch(error => this.set({ economicPartnerSyncPending: false,
+        economicOwnershipError: (error && error.message) || 'Economic partners could not be synchronized from Canix.' }));
+  }
+
   saveEconomicParty() {
     if (this.state.economicPartyPending || !this.requirePermission('economics.manage', 'manage economic parties')) return;
     const code = String(this.state.economicPartyCode || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '_');
@@ -3952,6 +4141,7 @@ class Component extends DCLogic {
           displayName, code + ' · ' + this.state.economicPartyType);
         this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
           economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
           economicOwnershipLoaded: true, economicPartyOpen: false, economicPartyEditId: null,
           economicPartyCode: '', economicPartyName: '', economicPartyLegalName: '', economicPartyType: 'brand_partner',
           economicPartyActive: true, economicPartyPending: false, economicPartyError: null,
@@ -3972,6 +4162,7 @@ class Component extends DCLogic {
       active: party.active === false })
       .then(payload => this.set({ economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
         economicOwnershipLoaded: true, economicPartyPending: false,
         toast: party.display_name + (party.active === false ? ' was reactivated.' : ' was made inactive for new assignments.'),
         toastKind: party.active === false ? 'PARTY ACTIVE' : 'PARTY INACTIVE' }))
@@ -4019,6 +4210,7 @@ class Component extends DCLogic {
         (this.state.invEconomicOwnerDraft || 'Blank') + ' · ' + (this.state.invCommercialModelDraft || 'No commercial model') + ' · ' + scopeType);
       this.set({ invOwnershipPending: false, economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
         economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+        economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
         economicOwnershipLoaded: true, toast: 'Economic ownership was saved. Inventory is refreshing with the audited classification.',
         toastKind: 'OWNERSHIP SAVED' });
       this.loadInventory();
@@ -4067,6 +4259,7 @@ class Component extends DCLogic {
           invQueueSettlementDraft: '', invQueueNote: '',
           economicParties: Array.isArray(payload.parties) ? payload.parties : this.state.economicParties,
           economicOwnershipMappings: Array.isArray(payload.ownership) ? payload.ownership : this.state.economicOwnershipMappings,
+          economicBrandMappings: Array.isArray(payload.brandPartners) ? payload.brandPartners : this.state.economicBrandMappings,
           toast: (sample.item_name || 'The Canix item') + ' now has an audited Economic Owner default. Inventory is refreshing.',
           toastKind: 'ITEM CLASSIFIED' });
         this.loadInventory();
@@ -4336,6 +4529,158 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ readinessLoading: false, readinessLoaded: true,
         readinessError: (error && error.message) || 'Live release diagnostics could not be loaded.' }));
+  }
+
+  connectQuickBooks() {
+    const s = this.state;
+    if (s.quickBooksConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ quickBooksConnecting: true, quickBooksConnectionError: null });
+    return fetch(QUICKBOOKS_OAUTH_API, { method: 'POST', headers, body: '{}' })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('QuickBooks connection service returned ' + status + '.'));
+        window.location.assign(body.authorizationUrl);
+      })
+      .catch(error => this.set({ quickBooksConnecting: false,
+        quickBooksConnectionError: (error && error.message) || 'QuickBooks authorization could not start.' }));
+  }
+
+  connectMonday() {
+    const s = this.state;
+    if (s.mondayConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ mondayConnecting: true, mondayConnectionError: null });
+    return fetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: '{}' })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('Monday connection service returned ' + status + '.'));
+        window.location.assign(body.authorizationUrl);
+      })
+      .catch(error => this.set({ mondayConnecting: false,
+        mondayConnectionError: (error && error.message) || 'Monday authorization could not start.' }));
+  }
+
+  refreshMondayWebhook() {
+    const s = this.state;
+    if (s.mondayConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ mondayConnecting: true, mondayConnectionError: null });
+    return fetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: JSON.stringify({ action: 'refresh-webhook' }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.webhookId) throw new Error((body && body.error) || ('Monday webhook service returned ' + status + '.'));
+        this.set({ mondayConnecting: false, toast: 'A fresh signed Monday order-status webhook is active.',
+          toastKind: 'MONDAY WEBHOOK REFRESHED' });
+        this.loadReadiness(true);
+      })
+      .catch(error => this.set({ mondayConnecting: false,
+        mondayConnectionError: (error && error.message) || 'The signed Monday webhook could not be refreshed.' }));
+  }
+
+  syncMondayCatalog() {
+    const s = this.state;
+    if (s.mondayCatalogSyncing || s.impersonating || s.role !== 'internal' || !s.authUser
+      || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ mondayCatalogSyncing: true, mondayConnectionError: null });
+    return fetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify({ action: 'sync-monday' }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.summary) throw new Error((body && body.error) || ('Monday catalog service returned ' + status + '.'));
+        const summary = body.summary;
+        const skipped = Number(summary.missingCanixItemId || 0) + Number(summary.missingPublicationState || 0)
+          + Number(summary.invalidCanixItemId || 0) + Number((summary.duplicateCanixItemIds || []).length)
+          + Number((summary.missingFromCurrentCanix || []).length);
+        const autoApproved = Number(summary.automaticMappingsApplied || 0);
+        this.set({ mondayCatalogSyncing: false,
+          toast: Number(summary.synced || 0) + ' catalog record' + (Number(summary.synced || 0) === 1 ? '' : 's')
+            + ' synchronized; ' + autoApproved + ' exact match' + (autoApproved === 1 ? '' : 'es')
+            + ' verified as Draft; ' + skipped + ' board row' + (skipped === 1 ? '' : 's') + ' need mapping or publication review.',
+          toastKind: 'MONDAY CATALOG SCANNED' });
+        this.loadReadiness(true);
+      })
+      .catch(error => this.set({ mondayCatalogSyncing: false,
+        mondayConnectionError: (error && error.message) || 'Monday catalog content could not be synchronized.' }));
+  }
+
+  catalogMappingCall(payload) {
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
+    return fetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify(payload) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Catalog mapping service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  loadCatalogMappings() {
+    const s = this.state;
+    if (s.catalogMappingLoading || s.catalogMappingPending || s.impersonating || s.role !== 'internal'
+      || !s.authUser || !this.hasPermission('catalog.manage')) return Promise.resolve();
+    this.set({ catalogMappingLoading: true, catalogMappingError: null });
+    return this.catalogMappingCall({ action: 'mapping-audit' })
+      .then(body => {
+        if (!body.summary || !Array.isArray(body.suggestions)) throw new Error('Catalog mapping service returned an incomplete response.');
+        this.set({ catalogMappingData: body, catalogMappingLoading: false, catalogMappingError: null });
+      })
+      .catch(error => this.set({ catalogMappingLoading: false,
+        catalogMappingError: (error && error.message) || 'The catalog mapping review could not be loaded.' }));
+  }
+
+  approveCatalogMapping(mapping) {
+    const s = this.state;
+    if (!mapping || s.catalogMappingPending || s.impersonating || s.role !== 'internal'
+      || !s.authUser || !this.hasPermission('catalog.manage')) return;
+    const pending = String(mapping.mondayItemId || '');
+    this.set({ catalogMappingPending: pending, catalogMappingError: null });
+    this.catalogMappingCall({ action: 'approve-mapping', mondayItemId: mapping.mondayItemId,
+      canixItemId: mapping.canixItemId })
+      .then(body => {
+        if (!body.mapping) throw new Error('Catalog mapping service did not confirm the link.');
+        this.setState({ catalogMappingPending: null,
+          toast: mapping.mondayItemName + ' is now linked to Canix Item ' + mapping.canixItemId + ' as a Draft.',
+          toastKind: 'CATALOG ID LINKED' }, () => {
+          this.loadCatalogMappings();
+          this.loadCatalog();
+          this.loadReadiness(true);
+        });
+      })
+      .catch(error => this.set({ catalogMappingPending: null,
+        catalogMappingError: (error && error.message) || 'The catalog identity link was not saved.' }));
+  }
+
+  approveExactCatalogMappings() {
+    const s = this.state;
+    const exactCount = Number(s.catalogMappingData && s.catalogMappingData.summary
+      && s.catalogMappingData.summary.exactSuggestions || 0);
+    if (!exactCount || s.catalogMappingLoading || s.catalogMappingPending || s.impersonating
+      || s.role !== 'internal' || !s.authUser || !this.hasPermission('catalog.manage')) return;
+    this.set({ catalogMappingPending: 'exact-batch', catalogMappingError: null });
+    this.catalogMappingCall({ action: 'approve-exact-mappings' })
+      .then(body => {
+        const summary = body && body.summary;
+        if (!summary) throw new Error('Catalog mapping service did not return a synchronization summary.');
+        const applied = Number(summary.automaticMappingsApplied || 0);
+        const failed = Array.isArray(summary.automaticMappingFailures) ? summary.automaticMappingFailures.length : 0;
+        const conflicts = Number(summary.automaticMappingExistingContentConflicts || 0);
+        this.setState({ catalogMappingPending: null,
+          toast: applied + ' exact product-name + brand match' + (applied === 1 ? '' : 'es')
+            + ' verified as Draft.' + (failed || conflicts ? ' ' + (failed + conflicts) + ' protected exception'
+              + (failed + conflicts === 1 ? ' remains' : 's remain') + ' blocked.' : ''),
+          toastKind: 'EXACT MATCHES VERIFIED' }, () => {
+          this.loadCatalogMappings();
+          this.loadCatalog();
+          this.loadReadiness(true);
+        });
+      })
+      .catch(error => this.set({ catalogMappingPending: null,
+        catalogMappingError: (error && error.message) || 'Exact catalog matches could not be approved.' }));
   }
 
   orderCall(method, payload) {
@@ -4768,6 +5113,7 @@ class Component extends DCLogic {
     this._onResize = () => this.setState({ vw: window.innerWidth });
     window.addEventListener('resize', this._onResize);
     this._onResize();
+    this.mountTurnstile();
     if (SSO_RETURN.token && !RECOVERY.active) {
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
       this.portalIdentity(SSO_RETURN.token, null, null)
@@ -4789,6 +5135,7 @@ class Component extends DCLogic {
 
   componentDidUpdate(prevProps, prevState) {
     const prior = prevState || {};
+    this.mountTurnstile();
     const inventoryScreen = ['inventory', 'catalog', 'product', 'pricing', 'field', 'kiosk', 'lineage'].includes(this.state.screen);
     if (this.state.role === 'internal' && this.hasPermission('inventory.read') && inventoryScreen
       && prior.screen !== this.state.screen && !this.loc().demo && !this.state.inventoryLoaded && !this.state.inventoryLoading) {
@@ -4845,7 +5192,7 @@ class Component extends DCLogic {
     }
   }
 
-  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); this.removeTurnstile(); }
 
   toggleFav(id) {
     this.setState(st => ({ favs: st.favs.indexOf(id) === -1 ? st.favs.concat([id]) : st.favs.filter(x => x !== id) }));
@@ -5003,6 +5350,15 @@ class Component extends DCLogic {
     const s = this.state;
     if (s.onbSubmitting) return;
     if (s.impersonating) { this.set({ onbErr: 'This is a read-only view-as session. End it before submitting an onboarding change.' }); return; }
+    if (!s.authUser && TURNSTILE_REQUIRED && !TURNSTILE_SITE_KEY) {
+      this.set({ onbErr: 'Request verification is not configured. Sign in or contact urbanXtracts before submitting.' });
+      return;
+    }
+    if (!s.authUser && TURNSTILE_REQUIRED && !s.turnstileToken) {
+      this.set({ onbErr: 'Complete the request verification before submitting.' });
+      this.mountTurnstile();
+      return;
+    }
     const miss = [];
     if (!s.onbEntity.trim()) miss.push('the legal entity name');
     const stores = s.onbStores.filter(store => store.name.trim() || store.license.trim() || store.address.trim());
@@ -5029,15 +5385,21 @@ class Component extends DCLogic {
       budtenders: buds.map(b => ({ name: b.name.trim(), email: b.email.trim(), location: b.loc.trim() })),
       budtenderCount: buds.length,
       stage: '01 Intake',
-      submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store')
-    }, reply => this.set({ onbSubmitting: false, onbSent: true, onbErr: null,
-      onbReceipt: reply && reply.portalOnboardingRequestId ? reply.portalOnboardingRequestId : clientRequestId,
-      onbClientRequestId: null,
-      toast: 'Submitted and recorded. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' }),
-    (why, detail) => this.set({ onbSubmitting: false, onbSent: false,
-      onbErr: detail && detail.reconciliationRequired
-        ? 'The request is safely recorded but Monday did not confirm it. Give support reference ' + (detail.portalOnboardingRequestId || clientRequestId) + '; do not resubmit it.'
-        : 'The request was not accepted: ' + why }));
+      submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store'),
+      antiAbuseToken: s.authUser ? undefined : s.turnstileToken
+    }, reply => {
+      if (!s.authUser && TURNSTILE_SITE_KEY) this.resetTurnstile();
+      this.set({ onbSubmitting: false, onbSent: true, onbErr: null,
+        onbReceipt: reply && reply.portalOnboardingRequestId ? reply.portalOnboardingRequestId : clientRequestId,
+        onbClientRequestId: null,
+        toast: 'Submitted and recorded. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' });
+    }, (why, detail) => {
+      if (!s.authUser && TURNSTILE_SITE_KEY) this.resetTurnstile();
+      this.set({ onbSubmitting: false, onbSent: false,
+        onbErr: detail && detail.reconciliationRequired
+          ? 'The request is safely recorded but Monday did not confirm it. Give support reference ' + (detail.portalOnboardingRequestId || clientRequestId) + '; do not resubmit it.'
+          : 'The request was not accepted: ' + why });
+    });
   }
 
   post(kind, payload, onOk, onFail) {
@@ -5395,6 +5757,30 @@ class Component extends DCLogic {
     }));
   }
 
+  resyncMondayStatus(order) {
+    if (!order || order.demo || !order.durableId || !order.mondayItemId || this.state.orderTransitioning) return;
+    if (!this.requirePermission('orders.manage', 'resynchronize Monday order status')) return;
+    if (this.state.impersonating) {
+      this.set({ toast: 'This is a read-only view-as session. Monday was not changed.', toastKind: 'BLOCKED — READ ONLY' });
+      return;
+    }
+    this.set({ orderTransitioning: order.durableId,
+      toast: 'Sending the current verified portal state to the linked Monday item…', toastKind: 'SYNCING MONDAY' });
+    this.orderCall('POST', { action: 'resync-monday-status', orderId: order.durableId })
+      .then(body => {
+        if (!body || body.synced !== true) throw new Error('Monday did not confirm the status update.');
+        this.logAudit('Monday status resynchronized', order.id,
+          'Current portal state sent to Monday item ' + String(body.mondayItemId || order.mondayItemId));
+        this.set({ orderTransitioning: null,
+          toast: order.id + ' was resynchronized to Monday without changing the portal order.',
+          toastKind: 'MONDAY RESYNCED' });
+        this.loadOrders(true);
+      })
+      .catch(error => this.set({ orderTransitioning: null,
+        toast: 'Monday was not resynchronized: ' + ((error && error.message) || 'the order service could not be reached.'),
+        toastKind: 'MONDAY NOT SYNCED' }));
+  }
+
   reorder(o) {
     this.patchActive(() => o.lines.map(l => { const current = this.priceFor(P(l.id)); return { ...l, price: current === null ? l.price : current }; }));
     const gone = o.lines.filter(l => P(l.id).oos).length;
@@ -5456,13 +5842,16 @@ class Component extends DCLogic {
         _display_quantity: isWeight ? Number(record.c_weight_g || 0) : Number(record.weight || 0),
         _display_unit: isWeight ? 'g' : 'units' };
     });
+    const invInventoryBucket = ['packaged', 'plant_material', 'bulk'].includes(s.invInventoryBucket)
+      ? s.invInventoryBucket : 'packaged';
+    const invScopedPackages = invPackages.filter(row => row.inventory_bucket === invInventoryBucket);
     const invTitle = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    const invFacet = (key, emptyLabel) => Array.from(new Set(invPackages.map(row => row[key] || emptyLabel).filter(Boolean)))
+    const invFacet = (key, emptyLabel) => Array.from(new Set(invScopedPackages.map(row => row[key] || emptyLabel).filter(Boolean)))
       .sort((a, b) => String(a).localeCompare(String(b)))
       .map(value => ({ value: String(value), label: invTitle(value) }));
     const invRiskGroup = (key, emptyLabel) => {
       const groups = new Map();
-      invPackages.forEach(row => {
+      invScopedPackages.forEach(row => {
         const value = String(row[key] || emptyLabel);
         const current = groups.get(value) || { value, packages: 0, weight_g: 0, units: 0 };
         current.packages += 1;
@@ -5475,7 +5864,7 @@ class Component extends DCLogic {
     const invOwnerRisk = invRiskGroup('economic_owner_name', 'Not classified');
     const invModelRisk = invRiskGroup('commercial_model', 'Not classified');
     const invOwnershipQueueMap = new Map();
-    invPackages.filter(row => !row.economic_owner_name).forEach(row => {
+    invScopedPackages.filter(row => !row.economic_owner_name).forEach(row => {
       const itemId = Number(row.item_id) || null;
       const key = itemId ? String(itemId) : 'missing:' + String(row.item_name || row.package_id || 'unknown');
       const current = invOwnershipQueueMap.get(key) || { itemId, itemName: row.item_name || 'Unnamed item',
@@ -5494,23 +5883,24 @@ class Component extends DCLogic {
       : view === 'failed' ? String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1
       : view === 'aged' ? Number(row.age_days) > 90
       : view === 'ownership' ? !row.economic_owner_name
-      : view === 'mapping' ? !row.economic_owner_name || !row.uom_code || !row.cost_object_id
+      : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
       : view === 'zero' ? Number(row._display_quantity) === 0
       : true;
-    const invViewCounts = view => invPackages.filter(row => invViewMatch(row, view)).length;
+    const invViewCounts = view => invScopedPackages.filter(row => invViewMatch(row, view)).length;
     const invNeedle = String(s.invSearch || '').trim().toLowerCase();
     const invMatchesAge = row => s.invAge === 'all'
       || (s.invAge === '0-30' && Number(row.age_days) <= 30)
       || (s.invAge === '31-60' && Number(row.age_days) >= 31 && Number(row.age_days) <= 60)
       || (s.invAge === '61-90' && Number(row.age_days) >= 61 && Number(row.age_days) <= 90)
       || (s.invAge === '90+' && Number(row.age_days) > 90);
-    const invFiltered = invPackages.filter(row => {
+    const invFiltered = invScopedPackages.filter(row => {
       if (!invViewMatch(row, s.invView)) return false;
       if (s.invFacility !== 'all' && String(row.facility_id) !== s.invFacility) return false;
       if (s.invStatus !== 'all' && row.status_category !== s.invStatus) return false;
       if (s.invQuantity !== 'all' && row.quantity_type !== s.invQuantity) return false;
       if (s.invCategory !== 'all' && row.item_category_name !== s.invCategory) return false;
       if (s.invBrand !== 'all' && (row.brand_name || 'Not recorded') !== s.invBrand) return false;
+      if (s.invPartner !== 'all' && (row.economic_partner_name || 'Not mapped') !== s.invPartner) return false;
       if (s.invOwner !== 'all' && (row.economic_owner_name || 'Not classified') !== s.invOwner) return false;
       if (s.invCommercial !== 'all' && (row.commercial_model || 'Not classified') !== s.invCommercial) return false;
       if (s.invUom !== 'all' && (row.uom_code || 'Not assigned') !== s.invUom) return false;
@@ -5520,7 +5910,7 @@ class Component extends DCLogic {
       if (!invMatchesAge(row)) return false;
       if (!invNeedle) return true;
       return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name,
-        row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
+        row.economic_partner_name, row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
         row.uom_code, row.cost_object_id, row.strain_name, row.room_name]
         .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
     });
@@ -5547,7 +5937,7 @@ class Component extends DCLogic {
     const invPageRows = invSorted.slice(invPageStart, invPageStart + invPageSize);
     const invFilteredWeightValue = invFiltered.filter(row => row.quantity_type === 'WeightBased').reduce((sum, row) => sum + (Number(row.c_weight_g) || 0), 0);
     const invFilteredUnitsValue = invFiltered.filter(row => row.quantity_type === 'CountBased').reduce((sum, row) => sum + (Number(row.weight) || 0), 0);
-    const invSelected = invPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
+    const invSelected = invScopedPackages.find(row => String(row.package_id) === String(s.invSelectedPackage));
     const invSource = invData.source || {};
     const invIsStale = invSource.stale === true;
     /* Brand geometry: the mark is built from arches, so category markers, image
@@ -5618,6 +6008,31 @@ class Component extends DCLogic {
         ? liveCatalog.filter(item => item.releaseVerified || item.preorder)
         : seedCatalog;
     const catalogCategories = ['All'].concat(Array.from(new Set(catalogPool.map(item => item.cat))).sort());
+    const catalogMappingSummary = s.catalogMappingData && s.catalogMappingData.summary || null;
+    const catalogMappingSuggestions = s.catalogMappingData && Array.isArray(s.catalogMappingData.suggestions)
+      ? s.catalogMappingData.suggestions : [];
+    const catalogMappingMetrics = catalogMappingSummary ? [
+      { value: String(catalogMappingSummary.mappedRows || 0), label: 'MONDAY ROWS LINKED' },
+      { value: String(catalogMappingSummary.unmappedRows || 0), label: 'AWAITING ID REVIEW' },
+      { value: String(catalogMappingSummary.exactSuggestions || 0), label: 'EXACT MATCHES READY' },
+      { value: String(catalogMappingSummary.brandConflicts || 0), label: 'BRAND CONFLICTS BLOCKED' },
+      { value: String(catalogMappingSummary.ambiguousNameCollisions || 0), label: 'NAME COLLISIONS BLOCKED' }
+    ] : [];
+    const catalogMappingRows = catalogMappingSuggestions.map(mapping => ({
+      mondayId: mapping.mondayItemId,
+      mondayName: mapping.mondayItemName,
+      mondayBrand: mapping.mondayBrand || 'Brand not recorded',
+      mondayGroup: mapping.mondayGroup || 'Group not recorded',
+      canixId: String(mapping.canixItemId),
+      canixName: mapping.canixItemName,
+      canixBrand: mapping.canixBrand || 'Brand not recorded',
+      canixCategory: mapping.canixCategory || 'Category not recorded',
+      packageCount: Number(mapping.packageCount || 0) + ' active package' + (Number(mapping.packageCount || 0) === 1 ? '' : 's'),
+      matchLabel: mapping.matchLabel,
+      pending: !!s.catalogMappingPending,
+      buttonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Verify & link',
+      onApprove: () => this.approveCatalogMapping(mapping)
+    }));
     const product = catalogPool.find(item => item.id === s.product) || catalogPool[0] || PRODUCTS[0];
     const lot = product.lots[Math.min(s.lot, product.lots.length - 1)] || product.lots[0];
     const productContent = product.content || {};
@@ -5878,6 +6293,9 @@ class Component extends DCLogic {
       if (workflowReady && od.state === 'Shipped') actions.push({ label: 'Confirm received', style: primary, onDo: () => this.advance(od.id, 'Received', 'RECEIVED') });
       if (!isInternal && od.state === 'Received') {
         actions.push({ label: 'Report a problem', style: secondary, onDo: () => this.openClaim(od.id) });
+      }
+      if (workflowReady && isInternal && !od.demo && od.mondayItemId) {
+        actions.push({ label: 'Resync Monday status', style: secondary, onDo: () => this.resyncMondayStatus(od) });
       }
       if (canOrder) actions.push({ label: 'Reorder these lines', style: secondary, onDo: () => this.reorder(od) });
       actions.push({ label: 'Download order CSV', style: secondary, onDo: () => this.downloadOrder(od) });
@@ -6170,6 +6588,8 @@ class Component extends DCLogic {
     const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
     const demoTourStep = DEMO_TOUR_STEPS[Math.max(0, Math.min(s.demoTourStep, DEMO_TOUR_STEPS.length - 1))];
     const economicPartyRows = (s.economicParties || []).map(party => {
+      const brandMappings = (s.economicBrandMappings || []).filter(mapping => mapping.is_current !== false
+        && String(mapping.economic_partner_party_id || '') === String(party.id));
       const mappings = (s.economicOwnershipMappings || []).filter(mapping =>
         String(mapping.economic_owner_party_id || '') === String(party.id)
         || String(mapping.settlement_counterparty_party_id || '') === String(party.id));
@@ -6178,8 +6598,8 @@ class Component extends DCLogic {
       const active = party.active !== false;
       return {
         name: party.display_name, code: party.party_code, legal: party.legal_name || 'Legal name not recorded',
-        type: invTitle(party.party_type), mappingCount: invNumber(mappings.length),
-        mappingNote: ownerMappings + ' owner · ' + settlementMappings + ' settlement',
+        type: invTitle(party.party_type), mappingCount: invNumber(brandMappings.length + mappings.length),
+        mappingNote: brandMappings.length + ' brand · ' + ownerMappings + ' owner · ' + settlementMappings + ' settlement',
         status: active ? 'ACTIVE' : 'INACTIVE',
         statusStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;letter-spacing:.06em;padding:3px 6px;background:'
           + (active ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (active ? '#fff' : 'var(--ux-muted-strong)'),
@@ -6205,8 +6625,9 @@ class Component extends DCLogic {
       isLicense: s.screen === 'license' && !!s.authUser,
       isOnboard: s.screen === 'onboard',
       goLicense: () => this.set({ screen: 'license', licSent: false, licErr: null }),
-      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null, onbReceipt: null }),
-      backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin' }),
+      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null, onbReceipt: null,
+        turnstileToken: '', turnstileError: null }),
+      backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin', turnstileToken: '', turnstileError: null }),
       licTypes: ['Licence renewal', 'Insurance certificate', 'Resale or exemption', 'Other'].map(t => ({
         label: t, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.licType === t ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
@@ -6254,7 +6675,15 @@ class Component extends DCLogic {
       onAddBud: () => this.onbAddBud(),
       onbHasErr: !!s.onbErr, onbErr: s.onbErr || '',
       onbSent: s.onbSent, onbSubmitting: s.onbSubmitting,
+      onbTurnstileVisible: !s.authUser && !!TURNSTILE_SITE_KEY,
+      onbTurnstileMissing: !s.authUser && TURNSTILE_REQUIRED && !TURNSTILE_SITE_KEY,
+      onbTurnstileStatus: s.turnstileError || (s.turnstileToken
+        ? 'Verification complete. Submit this request within five minutes.'
+        : 'Required for requests made without signing in. Tokens expire after five minutes and are used once.'),
+      onbSubmitDisabled: s.onbSubmitting || (!s.authUser && TURNSTILE_REQUIRED && (!TURNSTILE_SITE_KEY || !s.turnstileToken)),
       onbSubmitLabel: s.onbSubmitting ? 'Submitting securely\u2026' : 'Submit the request',
+      onbSubmitStyle: 'background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;min-height:46px;cursor:'
+        + (s.onbSubmitting || (!s.authUser && TURNSTILE_REQUIRED && (!TURNSTILE_SITE_KEY || !s.turnstileToken)) ? 'not-allowed;opacity:.52' : 'pointer;opacity:1'),
       onbReceipt: s.onbReceipt || '', onOnbSubmit: () => this.onbSubmit(),
       pwNoticeShown: !!s.pwNotice && !!s.authUser, pwNotice: s.pwNotice || '',
       onPwFix: () => this.fixPassword(), onPwDismiss: () => this.set({ pwNotice: null }),
@@ -6363,6 +6792,10 @@ class Component extends DCLogic {
       isPricing: s.screen === 'pricing' && (canReviewPricing || ['owner', 'buyer'].includes(role)),
       isInventory: s.screen === 'inventory' && canStaff('inventory.read'),
       onEconomicPartyAdd: () => this.openEconomicParty(null),
+      onEconomicPartnerSync: () => this.syncEconomicPartners(),
+      economicPartnerSyncPending: s.economicPartnerSyncPending,
+      economicPartnerSyncOpacity: s.economicPartnerSyncPending ? '.55' : '1',
+      economicPartnerSyncLabel: s.economicPartnerSyncPending ? 'Syncing Canix brands\u2026' : 'Sync partners from Canix',
       economicOwnershipHasError: !!s.economicOwnershipError,
       economicOwnershipError: s.economicOwnershipError || '',
       economicOwnershipLoading: s.economicOwnershipLoading,
@@ -6406,6 +6839,24 @@ class Component extends DCLogic {
       invLastSync: invSource.last_successful_sync_at || (s.inventoryLoaded ? '\u2014' : 'Loads after sign-in'),
       invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Refresh from Canix cache',
       onInvRefresh: () => this.loadInventory(),
+      invInventoryBuckets: [
+        ['packaged', 'Packaged / each'],
+        ['plant_material', 'Clones, biomass & seeds'],
+        ['bulk', 'Bulk items']
+      ].map(([id, label]) => ({ label, count: invNumber(invPackages.filter(row => row.inventory_bucket === id).length),
+        pressed: invInventoryBucket === id ? 'true' : 'false',
+        style: 'background:' + (invInventoryBucket === id ? 'var(--ux-ink)' : 'transparent') + ';color:'
+          + (invInventoryBucket === id ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:1px solid '
+          + (invInventoryBucket === id ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)')
+          + ';padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.inventoryBucketSelect(id) })),
+      invWorkbenchTitle: invInventoryBucket === 'plant_material' ? 'Clones, biomass and seeds'
+        : invInventoryBucket === 'bulk' ? 'Bulk inventory' : 'Packaged and each inventory',
+      invWorkbenchDescription: invInventoryBucket === 'plant_material'
+        ? 'Canix packages whose Item Name contains Clone, Biomass, Seed or Seeds.'
+        : invInventoryBucket === 'bulk'
+          ? 'Canix packages identified as Bulk, excluding plant material already routed to its own lane.'
+          : 'Finished packaged and each inventory, excluding plant material and Bulk items.',
       invViews: [
         ['all', 'All usable', invViewCounts('all')],
         ['available', 'Available status', invViewCounts('available')],
@@ -6425,7 +6876,7 @@ class Component extends DCLogic {
       onInvSearch: e => this.inventoryFilter({ invSearch: e.target.value }),
       invFacility: s.invFacility,
       onInvFacility: e => this.inventoryFilter({ invFacility: e.target.value }),
-      invFacilityOptions: Array.from(new Map(invPackages.map(row => [String(row.facility_id), row.facility_name])).entries())
+      invFacilityOptions: Array.from(new Map(invScopedPackages.map(row => [String(row.facility_id), row.facility_name])).entries())
         .sort((a, b) => String(a[1]).localeCompare(String(b[1]))).map(([value, label]) => ({ value, label })),
       invStatus: s.invStatus,
       onInvStatus: e => this.inventoryFilter({ invStatus: e.target.value }),
@@ -6439,6 +6890,9 @@ class Component extends DCLogic {
       invBrand: s.invBrand,
       onInvBrand: e => this.inventoryFilter({ invBrand: e.target.value }),
       invBrandOptions: invFacet('brand_name', 'Not recorded'),
+      invPartner: s.invPartner,
+      onInvPartner: e => this.inventoryFilter({ invPartner: e.target.value }),
+      invPartnerOptions: invFacet('economic_partner_name', 'Not mapped'),
       invOwner: s.invOwner,
       onInvOwner: e => this.inventoryFilter({ invOwner: e.target.value }),
       invOwnerOptions: invFacet('economic_owner_name', 'Not classified'),
@@ -6467,10 +6921,10 @@ class Component extends DCLogic {
       invRangeLabel: invSorted.length ? invNumber(invPageStart + 1) + '\u2013' + invNumber(Math.min(invPageStart + invPageSize, invSorted.length)) + ' of ' + invNumber(invSorted.length) : '0 of 0',
       invRiskKpiStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4) + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);border-top:1px solid rgba(23,14,11,.16);border-bottom:1px solid rgba(23,14,11,.16);margin-bottom:18px',
       invRiskKpis: [
-        { label: 'CLASSIFIED PACKAGES', value: invNumber(invPackages.filter(row => !!row.economic_owner_name).length), note: 'Carries an explicit Economic Owner.' },
-        { label: 'UNCLASSIFIED PACKAGES', value: invNumber(invPackages.filter(row => !row.economic_owner_name).length), note: 'Click the queue below to resolve.' },
-        { label: 'BACKEND DEAL PACKAGES', value: invNumber(invPackages.filter(row => row.commercial_model === 'backend_revenue_share').length), note: 'Revenue-share model; risk owner remains explicit.' },
-        { label: 'PACKAGE OVERRIDES', value: invNumber(invPackages.filter(row => row.ownership_scope === 'package').length), note: 'Exceptions to an item-level default.' }
+        { label: 'CLASSIFIED PACKAGES', value: invNumber(invScopedPackages.filter(row => !!row.economic_owner_name).length), note: 'Carries an explicit Economic Owner in this lane.' },
+        { label: 'UNCLASSIFIED PACKAGES', value: invNumber(invScopedPackages.filter(row => !row.economic_owner_name).length), note: 'Click the queue below to resolve.' },
+        { label: 'BACKEND DEAL PACKAGES', value: invNumber(invScopedPackages.filter(row => row.commercial_model === 'backend_revenue_share').length), note: 'Revenue-share model; risk owner remains explicit.' },
+        { label: 'PACKAGE OVERRIDES', value: invNumber(invScopedPackages.filter(row => row.ownership_scope === 'package').length), note: 'Exceptions to an item-level default.' }
       ],
       invRiskTablesStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 2) + ',minmax(0,1fr));gap:' + (narrow ? 22 : 28) + 'px',
       invOwnerRiskRows: invOwnerRisk.map(group => ({ label: group.value, packages: invNumber(group.packages),
@@ -6513,7 +6967,7 @@ class Component extends DCLogic {
         onClassify: () => this.openOwnershipQueueItem(item) })),
       invQueueEmpty: invOwnershipQueue.length === 0,
       invColumns: [
-        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'], ['status_category', 'Status'],
+        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'], ['status_category', 'Status'],
         ['quantity', 'On hand'], ['lab_test_status', 'Lab'], ['age_days', 'Age'], ['allocation', 'Allocation'],
         ['cost_object_id', 'Cost object'], ['source_updated_at', 'Updated'], ['package_id', 'Detail']
       ].map(([key, label]) => ({ label, arrow: s.invSortKey === key ? (s.invSortDir === 'asc' ? '\u2191' : '\u2193') : '',
@@ -6532,6 +6986,7 @@ class Component extends DCLogic {
           item: row.item_name || 'Unnamed item',
           skuTag: (row.sku ? row.sku + ' \u00b7 ' : '') + (row.tag || 'No compliance tag'),
           facility: row.facility_name || '\u2014', room: row.room_name || 'No room assigned',
+          partner: row.economic_partner_name || 'Not mapped',
           owner: row.economic_owner_name || 'Not classified',
           uom: row.uom_code || '\u2014',
           status: invTitle(row.status_category),
@@ -6584,7 +7039,10 @@ class Component extends DCLogic {
       invDetailGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 4) + ',minmax(0,1fr));gap:15px 18px',
       invDetailRows: invSelected ? [
         ['Package ID', invSelected.package_id], ['SKU', invSelected.sku || 'Not recorded'],
+        ['Inventory lane', invSelected.inventory_bucket ? invTitle(invSelected.inventory_bucket) : 'Not classified'],
+        ['Lane rule', invSelected.inventory_bucket_reason ? invTitle(invSelected.inventory_bucket_reason) : 'Not recorded'],
         ['Category', invSelected.item_category_name || 'Not recorded'], ['Brand / strain', [invSelected.brand_name, invSelected.strain_name].filter(Boolean).join(' · ') || 'Not recorded'],
+        ['Economic Partner', invSelected.economic_partner_name || 'Not mapped'],
         ['Economic Owner', invSelected.economic_owner_name || 'Not classified'],
         ['Commercial model', invSelected.commercial_model ? invTitle(invSelected.commercial_model) : 'Not classified'],
         ['Settlement counterparty', invSelected.settlement_counterparty_name || 'None recorded'],
@@ -6766,6 +7224,22 @@ class Component extends DCLogic {
         onPick: () => { if (c !== 'All' && s.cat !== c) this.bump(m => ({ filters: m.filters + 1 })); this.set({ cat: c }); }
       })),
       catalogItems, resultCount: catalogItems.length + ' products', noResults: catalogItems.length === 0,
+      canReviewCatalogMappings: isInternal && canStaff('catalog.manage') && !s.impersonating,
+      catalogMappingLoading: s.catalogMappingLoading,
+      catalogMappingLoadLabel: s.catalogMappingLoading ? 'Scanning sources…' : s.catalogMappingData ? 'Refresh review queue' : 'Review mappings',
+      onCatalogMappingLoad: () => this.loadCatalogMappings(),
+      catalogMappingBusy: !!s.catalogMappingLoading || !!s.catalogMappingPending,
+      catalogMappingCanApproveExact: !!catalogMappingSummary && Number(catalogMappingSummary.exactSuggestions || 0) > 0,
+      catalogMappingApproveExactLabel: s.catalogMappingPending === 'exact-batch'
+        ? 'Verifying exact matches…'
+        : 'Approve ' + Number(catalogMappingSummary && catalogMappingSummary.exactSuggestions || 0) + ' exact matches',
+      onCatalogMappingApproveExact: () => this.approveExactCatalogMappings(),
+      catalogMappingHasError: !!s.catalogMappingError, catalogMappingError: s.catalogMappingError || '',
+      catalogMappingHasData: !!catalogMappingSummary,
+      catalogMappingMetrics, catalogMappingRows,
+      catalogMappingHasSuggestions: catalogMappingRows.length > 0,
+      catalogMappingNoSuggestions: !!catalogMappingSummary && catalogMappingRows.length === 0,
+      catalogMappingRowStyle: narrow ? 'grid-template-columns:1fr' : '',
 
       pdName: product.name, pdBrand: product.brand, pdCat: product.cat, pdCatDot: catDot(product.cat, 9), pdFormat: product.format,
       pdSku: product.sku, pdStrain: product.strain, pdBand: product.band,
@@ -7639,6 +8113,33 @@ class Component extends DCLogic {
       readinessHasError: !!s.readinessError, readinessError: s.readinessError || '', readinessLoading: s.readinessLoading,
       readinessRefreshLabel: s.readinessLoading ? 'Refreshing…' : 'Refresh diagnostics',
       onReadinessRefresh: () => this.loadReadiness(true),
+      canConnectQuickBooks: isInternal && s.authUser && s.authUser.staffRole === 'administrator' && !s.impersonating,
+      quickBooksConnecting: s.quickBooksConnecting,
+      quickBooksConnectionHasError: !!s.quickBooksConnectionError,
+      quickBooksConnectionError: s.quickBooksConnectionError || '',
+      quickBooksConnectionLabel: String((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus || 'disconnected').replace(/_/g, ' ').toUpperCase(),
+      quickBooksConnectLabel: s.quickBooksConnecting ? 'Opening Intuit…'
+        : ((((s.readinessData || {}).integrations || {}).quickbooks || {}).connectionStatus === 'connected' ? 'Reconnect QuickBooks' : 'Connect QuickBooks'),
+      onQuickBooksConnect: () => this.connectQuickBooks(),
+      canConnectMonday: isInternal && s.authUser && s.authUser.staffRole === 'administrator' && !s.impersonating,
+      mondayConnecting: s.mondayConnecting,
+      mondayConnectionHasError: !!s.mondayConnectionError,
+      mondayConnectionError: s.mondayConnectionError || '',
+      mondayConnectionLabel: (() => {
+        const monday = (((s.readinessData || {}).integrations || {}).monday || {});
+        const connection = String(monday.connectionStatus || 'disconnected').replace(/_/g, ' ');
+        const webhook = String(monday.webhookStatus || 'not configured').replace(/_/g, ' ');
+        return (connection + ' · webhook ' + webhook).toUpperCase();
+      })(),
+      mondayConnectLabel: s.mondayConnecting ? 'Opening Monday…'
+        : (((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active') ? 'Reconnect Monday' : 'Connect Monday'),
+      onMondayConnect: () => this.connectMonday(),
+      mondayConnected: ((((s.readinessData || {}).integrations || {}).monday || {}).connectionStatus === 'connected'),
+      mondayCatalogSyncing: s.mondayCatalogSyncing,
+      mondayCatalogSyncLabel: s.mondayCatalogSyncing ? 'Scanning catalog…' : 'Sync catalog content',
+      onMondayCatalogSync: () => this.syncMondayCatalog(),
+      mondayWebhookActive: ((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active'),
+      onMondayWebhookRefresh: () => this.refreshMondayWebhook(),
       readinessStatus: s.readinessData
         ? String(s.readinessData.status || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
           + ' · ' + Number(s.readinessData.blocking || 0) + ' blocking · ' + Number(s.readinessData.warnings || 0) + ' warnings'

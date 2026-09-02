@@ -11,7 +11,7 @@
 
 1. Apply `20260901190000_catalog_content_and_coa.sql`, then `20260901240000_canix_availability_contract.sql`, then `20260901250000_security_and_inventory_commitments.sql`.
 2. Deploy the updated `canix-inventory` function so the next successful snapshot normalizes COA, lab, and explicit source-package fields.
-3. Deploy `portal-product-content` with JWT gateway verification disabled, set `MONDAY_PRODUCT_SECRET` to a high-entropy server-only value, and set `PORTAL_EXTERNAL_ASSET_HOSTS` to the comma-separated exact hostnames approved for COAs and product images. The function performs its own dual authentication because Monday has no Supabase user JWT; browser requests still require and validate a Supabase bearer token.
+3. Deploy `portal-product-content` with JWT gateway verification disabled, set `MONDAY_PRODUCT_SECRET` to a high-entropy server-only value for push compatibility, and set `PORTAL_EXTERNAL_ASSET_HOSTS` to the comma-separated exact hostnames approved for COAs and product images. The function performs its own dual authentication because Monday has no Supabase user JWT; browser requests still require and validate a Supabase bearer token. The dedicated Monday OAuth app is the primary pull path and uses the pinned product board plus automatically rotated server-custodied tokens.
 4. Deploy the updated `canix-catalog` function.
 5. Deploy the rebuilt portal.
 
@@ -34,7 +34,11 @@ The selected source is board `9620649212`, **SKUs - Final Product Specification 
 | `imageUrl` | Portal Image URL | `link_mm6scxse` |
 | `keywords` | Portal Search Keywords | `long_text_mm6svyb9` |
 
-The view ID is `278640861`. All new fields begin blank and the publication state begins unset, which is treated as non-published. No record may be synced by name: each publishable row first needs a positive Canix Item ID present in the latest successful Canix snapshot.
+The view ID is `278640861`. All new fields begin blank and the publication state begins unset, which is treated as non-published. The only name-based bootstrap rule is `unique_exact_product_name_and_brand_v1`: exactly one eligible Monday row and exactly one current Canix item must have the same case-insensitive, whitespace-normalized product name, and both must resolve to one identical canonical Brand. Every other row first needs a positive Canix Item ID present in the latest successful Canix snapshot.
+
+An Administrator can run **Sync catalog content** from Release readiness. The scan reads all pages from board `9620649212`, automatically writes the Canix Item ID and `Draft` state only for rows satisfying `unique_exact_product_name_and_brand_v1`, rejects duplicate or invalid Canix IDs, skips every other row without an explicit publication state, verifies every accepted ID against the current Canix snapshot, and records both the approved pairs and the synchronization summary in the administrative audit. Monday OAuth access tokens renew automatically within five minutes of expiry and the rotated refresh token replaces the prior encrypted token.
+
+Internal users with `catalog.manage` also have a **Monday to Canix review queue** in Catalog. It compares current non-sample Canix items with Monday rows outside **No Longer Valid** and **Non-Cannabis**. Selecting **Approve exact matches** processes only unique exact product-name + Brand pairs; a Canix item with multiple Brand values, a Brand conflict, a reused Canix ID, or a duplicate name remains blocked. Punctuation-normalized matches are labelled separately and always require **Verify & link**. Both paths recheck live sources, write the confirmed Canix Item ID and `Draft` publication state to Monday, create the protected product-content record, and record the approving user or Monday connection owner in the administrative audit. Publication remains a separate deliberate action.
 
 The board's existing file links use Monday's `protected_static` host and redirect an unauthenticated request to Monday sign-in. They are not valid retailer-facing catalog assets and must not be added to `PORTAL_EXTERNAL_ASSET_HOSTS`. **Portal Image URL** must point to an IT-approved public CDN or a portal-controlled signed/proxied asset URL after redirect, MIME, malware-scanning, and retention behavior are approved. Until then, images and document links remain blank in the external catalog.
 
@@ -106,3 +110,4 @@ No value is calculated, copied from another lot, or interpreted. When a normaliz
 - Test a store with case enforcement off, then on. With enforcement on, confirm a valid whole-case line passes, a non-multiple fails, and a missing/ambiguous Canix case quantity fails closed.
 - Change a Canix COA record, run a new sync, and confirm the prior normalized version is retained.
 - Archive a Monday product record and confirm its merchandising content disappears while the Canix product identity remains available.
+- Open the internal Catalog mapping queue and confirm invalid Monday groups, brand conflicts, and duplicate-name collisions cannot be linked. Verify one suggested pair, confirm Monday receives the exact Canix Item ID with `Draft` status, and confirm no content becomes retailer-visible until it is explicitly published.
