@@ -769,14 +769,24 @@ async function runSync(limit: number): Promise<Row> {
     const selected = pending.slice(0, limit);
     let created = 0;
     let updated = 0;
-    for (let index = 0; index < selected.length; index += 20) {
-      const result = await mutateBatch(
-        accessToken,
+    for (let index = 0; index < selected.length; index += 40) {
+      const batches = [
         selected.slice(index, index + 20),
-      );
-      await upsertLinks(result);
-      created += result.filter((entry) => entry.created).length;
-      updated += result.filter((entry) => !entry.created).length;
+        selected.slice(index + 20, index + 40),
+      ].filter((batch) => batch.length);
+      const settled = await Promise.allSettled(batches.map(async (batch) => {
+        const result = await mutateBatch(accessToken, batch);
+        await upsertLinks(result);
+        return result;
+      }));
+      for (const outcome of settled) {
+        if (outcome.status === "fulfilled") {
+          created += outcome.value.filter((entry) => entry.created).length;
+          updated += outcome.value.filter((entry) => !entry.created).length;
+        }
+      }
+      const failed = settled.find((outcome) => outcome.status === "rejected");
+      if (failed?.status === "rejected") throw failed.reason;
     }
     const sourceRemaining = Math.max(0, pending.length - selected.length);
     const remaining = sourceRemaining;
