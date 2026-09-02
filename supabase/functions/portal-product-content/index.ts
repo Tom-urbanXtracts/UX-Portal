@@ -358,6 +358,35 @@ type MappingSuggestion = {
   matchLabel: string;
 };
 
+type MappingReviewCandidate = {
+  canixItemId: number;
+  canixItemName: string;
+  canixSku: string | null;
+  canixBrand: string | null;
+  canixCategory: string | null;
+  packageCount: number;
+};
+
+type MappingReviewItem = {
+  mondayItemId: string;
+  mondayItemName: string;
+  mondayBrand: string | null;
+  mondayProductType: string | null;
+  mondayStrainFlavor: string | null;
+  mondayGroup: string;
+  mondayUrl: string;
+  sourceUpdatedAt: string | null;
+  reviewStatus: string;
+  reviewLabel: string;
+  reviewReason: string;
+  candidateCount: number;
+  candidates: MappingReviewCandidate[];
+  suggestedCanixItemId: number | null;
+  matchKind: MappingSuggestion["matchKind"] | null;
+  matchLabel: string | null;
+  canApprove: boolean;
+};
+
 async function currentCanixCatalogItems(): Promise<CanixCatalogItem[]> {
   const { data: state, error: stateError } = await service.from(
     "canix_sync_state",
@@ -426,7 +455,11 @@ function uniqueByKey<T>(
 function catalogMappingAuditFrom(
   mondayItems: Row[],
   canixItems: CanixCatalogItem[],
-): { summary: Row; suggestions: MappingSuggestion[] } {
+): {
+  summary: Row;
+  suggestions: MappingSuggestion[];
+  reviewItems: MappingReviewItem[];
+} {
   const eligible = mondayItems.filter(mondayMappingEligible);
   const unmapped = eligible.filter((item) => {
     const columns = mondayColumnValues(item);
@@ -536,6 +569,110 @@ function catalogMappingAuditFrom(
     left.matchKind.localeCompare(right.matchKind) ||
     left.mondayItemName.localeCompare(right.mondayItemName)
   );
+  const suggestionByMondayId = new Map(
+    suggestions.map((suggestion) => [suggestion.mondayItemId, suggestion]),
+  );
+  const reviewItems = unmapped.map((item): MappingReviewItem => {
+    const mondayItemId = String(item.id ?? "");
+    const mondayItemName = clean(item.name, 600) ?? "Unnamed Monday item";
+    const columns = mondayColumnValues(item);
+    const mondayBrand = mondayText(columns, MONDAY_PRODUCT_COLUMNS.brandName);
+    const strictKey = identityKey(mondayItemName);
+    const normalizedKey = normalizedIdentityKey(mondayItemName);
+    const strictMondayMatches = mondayStrict.get(strictKey) ?? [];
+    const strictCanixMatches = canixStrict.get(strictKey) ?? [];
+    const normalizedMondayMatches = mondayNormalized.get(normalizedKey) ?? [];
+    const normalizedCanixMatches = canixNormalized.get(normalizedKey) ?? [];
+    const nameMatchKind = strictCanixMatches.length
+      ? "exact"
+      : normalizedCanixMatches.length
+      ? "normalized"
+      : "none";
+    const nameMatches = nameMatchKind === "exact"
+      ? strictCanixMatches
+      : nameMatchKind === "normalized"
+      ? normalizedCanixMatches
+      : [];
+    const suggestion = suggestionByMondayId.get(mondayItemId) ?? null;
+    let reviewStatus = "no_match";
+    let reviewLabel = "No Canix name match";
+    let reviewReason =
+      "No current Canix item has the same product name after normalization.";
+
+    if (suggestion) {
+      reviewStatus = suggestion.matchKind === "exact_name_brand"
+        ? "exact_ready"
+        : "normalized_review";
+      reviewLabel = suggestion.matchKind === "exact_name_brand"
+        ? "Exact match ready"
+        : "Normalized match review";
+      reviewReason = suggestion.matchKind === "exact_name_brand"
+        ? "One Canix item has the exact product name and brand."
+        : "Product name punctuation or spacing differs; the unique brand match requires review.";
+    } else if (
+      strictMondayMatches.length > 1 || strictCanixMatches.length > 1 ||
+      normalizedMondayMatches.length > 1 || normalizedCanixMatches.length > 1
+    ) {
+      reviewStatus = "name_collision";
+      reviewLabel = "Name collision";
+      reviewReason =
+        "The normalized product name is not unique in Monday or Canix; select an authoritative Canix Item ID before linking.";
+    } else if (nameMatches.some((candidate) => linkedCanixIds.has(candidate.itemId))) {
+      reviewStatus = "linked_conflict";
+      reviewLabel = "Canix ID already linked";
+      reviewReason =
+        "The matching Canix Item ID is already assigned to another Monday product row.";
+    } else if (nameMatches.length && !mondayBrand) {
+      reviewStatus = "missing_brand";
+      reviewLabel = "Brand missing in Monday";
+      reviewReason =
+        "The product name has a Canix candidate, but Monday needs a brand before the identity can be verified.";
+    } else if (nameMatches.length) {
+      reviewStatus = "brand_conflict";
+      reviewLabel = "Brand conflict";
+      reviewReason =
+        "The product name matches, but the Monday and Canix brands do not resolve to the same brand.";
+    }
+
+    return {
+      mondayItemId,
+      mondayItemName,
+      mondayBrand,
+      mondayProductType: mondayText(
+        columns,
+        MONDAY_PRODUCT_COLUMNS.productType,
+      ),
+      mondayStrainFlavor: mondayText(
+        columns,
+        MONDAY_PRODUCT_COLUMNS.strainFlavor,
+      ),
+      mondayGroup: mondayGroupTitle(item),
+      mondayUrl:
+        `https://urban915991.monday.com/boards/${MONDAY_PRODUCT_BOARD_ID}/pulses/${mondayItemId}`,
+      sourceUpdatedAt: iso(item.updated_at),
+      reviewStatus,
+      reviewLabel,
+      reviewReason,
+      candidateCount: nameMatches.length,
+      candidates: nameMatches.slice(0, 5).map((candidate) => ({
+        canixItemId: candidate.itemId,
+        canixItemName: candidate.itemName,
+        canixSku: candidate.sku,
+        canixBrand: candidate.brands.length === 1
+          ? candidate.brands[0]
+          : candidate.brands.join(" / ") || null,
+        canixCategory: candidate.category,
+        packageCount: candidate.packageCount,
+      })),
+      suggestedCanixItemId: suggestion?.canixItemId ?? null,
+      matchKind: suggestion?.matchKind ?? null,
+      matchLabel: suggestion?.matchLabel ?? null,
+      canApprove: Boolean(suggestion),
+    };
+  }).sort((left, right) =>
+    left.reviewLabel.localeCompare(right.reviewLabel) ||
+    left.mondayItemName.localeCompare(right.mondayItemName)
+  );
   return {
     summary: {
       mondayRows: mondayItems.length,
@@ -557,12 +694,17 @@ function catalogMappingAuditFrom(
         "Unique exact product-name and brand matches may be automatically verified as Draft. Normalized names and every conflict remain review-only.",
     },
     suggestions: suggestions.slice(0, 200),
+    reviewItems: reviewItems.slice(0, 1000),
   };
 }
 
 async function catalogMappingAudit(
   accessToken: string,
-): Promise<{ summary: Row; suggestions: MappingSuggestion[] }> {
+): Promise<{
+  summary: Row;
+  suggestions: MappingSuggestion[];
+  reviewItems: MappingReviewItem[];
+}> {
   const [mondayItems, canixItems] = await Promise.all([
     mondayProductItems(accessToken),
     currentCanixCatalogItems(),

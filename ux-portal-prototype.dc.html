@@ -407,8 +407,22 @@ button{font-family:inherit}
 <sc-for list="{{ catalogMappingMetrics }}" as="metric" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.16);padding:11px 12px"><div style="font:800 19px/1 Archivo,sans-serif;margin-bottom:5px">{{ metric.value }}</div><div style="font:600 9px/1.4 ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">{{ metric.label }}</div></div></sc-for>
 </div>
 <div style="border-left:3px solid var(--ux-accent);padding:9px 0 9px 12px;margin:14px 0;font-size:12px;line-height:1.5"><strong>Exact means exact.</strong> The batch action accepts only a unique product name with one matching brand on both sources. Brand conflicts, reused Canix IDs, duplicate names, normalized-only matches, and invalid Monday groups stay blocked. Every accepted link remains Draft and is audited.</div>
-<sc-if value="{{ catalogMappingHasSuggestions }}" hint-placeholder-val="{{ false }}"><div style="border-top:2px solid rgba(23,14,11,.4)"><sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:minmax(200px,1.25fr) minmax(200px,1.25fr) minmax(140px,.75fr) auto;gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:center;{{ catalogMappingRowStyle }}"><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.mondayName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.mondayGroup }}</div></div><div><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div></div><div><span style="display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;background:var(--ux-accent);color:#fff;padding:4px 6px">{{ mapping.matchLabel }}</span></div><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></div></sc-for></div></sc-if>
-<sc-if value="{{ catalogMappingNoSuggestions }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No unambiguous product-name and brand suggestions are awaiting review.</div></sc-if>
+<sc-if value="{{ catalogMappingHasReviewItems }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:#fff;border:1px solid rgba(23,14,11,.16);padding:12px;margin:14px 0 10px">
+<label style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:230px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SEARCH REVIEW QUEUE</span><input type="search" value="{{ catalogMappingQuery }}" onInput="{{ onCatalogMappingQuery }}" placeholder="Monday item, brand, group, Canix ID or reason" style="width:100%;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"></label>
+<label style="display:flex;flex-direction:column;gap:5px;min-width:210px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">REVIEW STATE</span><select value="{{ catalogMappingStatus }}" onChange="{{ onCatalogMappingStatus }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">All awaiting items</option><sc-for list="{{ catalogMappingStatusOptions }}" as="status" hint-placeholder-count="7"><option value="{{ status.value }}">{{ status.label }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:5px;min-width:180px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SORT</span><select value="{{ catalogMappingSort }}" onChange="{{ onCatalogMappingSort }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="status">Review state</option><option value="name">Product name</option><option value="brand">Brand</option><option value="group">Monday group</option></select></label>
+<div style="font:700 10px ui-monospace,monospace;letter-spacing:.04em;color:var(--ux-muted);padding:10px 2px">{{ catalogMappingFilteredCount }}</div>
+</div>
+<sc-if value="{{ catalogMappingHasFilteredRows }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Monday to Canix identity review items" style="border-top:2px solid rgba(23,14,11,.4)">
+<div role="row" style="display:grid;grid-template-columns:minmax(210px,1.15fr) minmax(210px,1.15fr) minmax(190px,1fr) minmax(120px,.55fr);gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.24);font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);{{ catalogMappingRowStyle }}"><div role="columnheader">MONDAY PRODUCT</div><div role="columnheader">CANIX CANDIDATE</div><div role="columnheader">REVIEW STATE</div><div role="columnheader">ACTION</div></div>
+<sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:minmax(210px,1.15fr) minmax(210px,1.15fr) minmax(190px,1fr) minmax(120px,.55fr);gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start;{{ catalogMappingRowStyle }}"><div role="cell"><a href="{{ mapping.mondayUrl }}" target="_blank" rel="noopener noreferrer" style="font:700 13px/1.4 Archivo,sans-serif;color:var(--ux-ink)">{{ mapping.mondayName }}</a><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.mondayGroup }} · {{ mapping.mondayMeta }}</div></div><div role="cell"><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div><sc-if value="{{ mapping.hasMoreCandidates }}" hint-placeholder-val="{{ false }}"><div style="font:700 9px/1.4 ui-monospace,monospace;color:var(--ux-signal-text);margin-top:5px">+ {{ mapping.candidateMoreLabel }}</div></sc-if></div><div role="cell"><span style="{{ mapping.matchStyle }}">{{ mapping.matchLabel }}</span><div style="font-size:11px;line-height:1.5;color:var(--ux-muted-strong);margin-top:7px">{{ mapping.matchReason }}</div></div><div role="cell"><sc-if value="{{ mapping.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="width:100%;background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></sc-if><sc-if value="{{ mapping.cannotApprove }}" hint-placeholder-val="{{ true }}"><span style="display:block;font:700 8.5px/1.45 ui-monospace,monospace;letter-spacing:.045em;color:var(--ux-muted)">{{ mapping.actionLabel }}</span></sc-if></div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ catalogMappingNoFilteredRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No awaiting items match the current search and review-state filter.</div></sc-if>
+</sc-if>
+<sc-if value="{{ catalogMappingNoReviewItems }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">Every eligible Monday product row has a Canix Item ID.</div></sc-if>
 </sc-if>
 </section>
 </sc-if>
@@ -3400,6 +3414,7 @@ class Component extends DCLogic {
     quickBooksConnecting: false, quickBooksConnectionError: null,
     mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
     catalogMappingData: null, catalogMappingLoading: false, catalogMappingError: null, catalogMappingPending: null,
+    catalogMappingQuery: '', catalogMappingStatus: 'all', catalogMappingSort: 'status',
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -6011,6 +6026,16 @@ class Component extends DCLogic {
     const catalogMappingSummary = s.catalogMappingData && s.catalogMappingData.summary || null;
     const catalogMappingSuggestions = s.catalogMappingData && Array.isArray(s.catalogMappingData.suggestions)
       ? s.catalogMappingData.suggestions : [];
+    const catalogMappingReviewItems = s.catalogMappingData && Array.isArray(s.catalogMappingData.reviewItems)
+      ? s.catalogMappingData.reviewItems
+      : catalogMappingSuggestions.map(mapping => ({
+          ...mapping, reviewStatus: mapping.matchKind === 'exact_name_brand' ? 'exact_ready' : 'normalized_review',
+          reviewLabel: mapping.matchLabel, reviewReason: 'A unique product-name and brand candidate is ready for review.',
+          candidateCount: 1, suggestedCanixItemId: mapping.canixItemId, canApprove: true,
+          candidates: [{ canixItemId: mapping.canixItemId, canixItemName: mapping.canixItemName,
+            canixSku: mapping.canixSku, canixBrand: mapping.canixBrand, canixCategory: mapping.canixCategory,
+            packageCount: mapping.packageCount }]
+        }));
     const catalogMappingMetrics = catalogMappingSummary ? [
       { value: String(catalogMappingSummary.mappedRows || 0), label: 'MONDAY ROWS LINKED' },
       { value: String(catalogMappingSummary.unmappedRows || 0), label: 'AWAITING ID REVIEW' },
@@ -6018,21 +6043,78 @@ class Component extends DCLogic {
       { value: String(catalogMappingSummary.brandConflicts || 0), label: 'BRAND CONFLICTS BLOCKED' },
       { value: String(catalogMappingSummary.ambiguousNameCollisions || 0), label: 'NAME COLLISIONS BLOCKED' }
     ] : [];
-    const catalogMappingRows = catalogMappingSuggestions.map(mapping => ({
-      mondayId: mapping.mondayItemId,
-      mondayName: mapping.mondayItemName,
-      mondayBrand: mapping.mondayBrand || 'Brand not recorded',
-      mondayGroup: mapping.mondayGroup || 'Group not recorded',
-      canixId: String(mapping.canixItemId),
-      canixName: mapping.canixItemName,
-      canixBrand: mapping.canixBrand || 'Brand not recorded',
-      canixCategory: mapping.canixCategory || 'Category not recorded',
-      packageCount: Number(mapping.packageCount || 0) + ' active package' + (Number(mapping.packageCount || 0) === 1 ? '' : 's'),
-      matchLabel: mapping.matchLabel,
-      pending: !!s.catalogMappingPending,
-      buttonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Verify & link',
-      onApprove: () => this.approveCatalogMapping(mapping)
+    const catalogMappingStatusLabels = {
+      exact_ready: 'Exact matches ready', normalized_review: 'Normalized matches', missing_brand: 'Brand missing',
+      brand_conflict: 'Brand conflicts', name_collision: 'Name collisions', linked_conflict: 'Already linked conflicts',
+      no_match: 'No Canix name match'
+    };
+    const catalogMappingStatusOrder = {
+      exact_ready: 0, normalized_review: 1, missing_brand: 2, brand_conflict: 3,
+      name_collision: 4, linked_conflict: 5, no_match: 6
+    };
+    const catalogMappingStatusCounts = catalogMappingReviewItems.reduce((counts, item) => {
+      const key = String(item.reviewStatus || 'no_match');
+      counts[key] = Number(counts[key] || 0) + 1;
+      return counts;
+    }, {});
+    const catalogMappingStatusOptions = Object.keys(catalogMappingStatusLabels).map(value => ({
+      value, label: catalogMappingStatusLabels[value] + ' (' + Number(catalogMappingStatusCounts[value] || 0) + ')'
     }));
+    const catalogMappingQuery = String(s.catalogMappingQuery || '').trim().toLowerCase();
+    const catalogMappingFiltered = catalogMappingReviewItems.filter(mapping => {
+      if (s.catalogMappingStatus !== 'all' && mapping.reviewStatus !== s.catalogMappingStatus) return false;
+      if (!catalogMappingQuery) return true;
+      const candidates = Array.isArray(mapping.candidates) ? mapping.candidates : [];
+      const searchable = [mapping.mondayItemId, mapping.mondayItemName, mapping.mondayBrand, mapping.mondayGroup,
+        mapping.mondayProductType, mapping.mondayStrainFlavor, mapping.reviewLabel, mapping.reviewReason]
+        .concat(candidates.flatMap(candidate => [candidate.canixItemId, candidate.canixItemName, candidate.canixSku,
+          candidate.canixBrand, candidate.canixCategory])).filter(value => value !== null && value !== undefined).join(' ').toLowerCase();
+      return searchable.includes(catalogMappingQuery);
+    }).sort((left, right) => {
+      if (s.catalogMappingSort === 'name') return String(left.mondayItemName || '').localeCompare(String(right.mondayItemName || ''));
+      if (s.catalogMappingSort === 'brand') return String(left.mondayBrand || '').localeCompare(String(right.mondayBrand || ''))
+        || String(left.mondayItemName || '').localeCompare(String(right.mondayItemName || ''));
+      if (s.catalogMappingSort === 'group') return String(left.mondayGroup || '').localeCompare(String(right.mondayGroup || ''))
+        || String(left.mondayItemName || '').localeCompare(String(right.mondayItemName || ''));
+      return Number(catalogMappingStatusOrder[left.reviewStatus] ?? 99) - Number(catalogMappingStatusOrder[right.reviewStatus] ?? 99)
+        || String(left.mondayItemName || '').localeCompare(String(right.mondayItemName || ''));
+    });
+    const catalogMappingRows = catalogMappingFiltered.map(mapping => {
+      const candidates = Array.isArray(mapping.candidates) ? mapping.candidates : [];
+      const candidate = candidates.find(item => Number(item.canixItemId) === Number(mapping.suggestedCanixItemId))
+        || candidates[0] || null;
+      const approvePayload = candidate ? { ...mapping, canixItemId: candidate.canixItemId,
+        canixItemName: candidate.canixItemName } : null;
+      const canApprove = !!mapping.canApprove && !!approvePayload;
+      const statusIsReady = mapping.reviewStatus === 'exact_ready' || mapping.reviewStatus === 'normalized_review';
+      return {
+        mondayId: mapping.mondayItemId,
+        mondayName: mapping.mondayItemName,
+        mondayBrand: mapping.mondayBrand || 'Brand not recorded',
+        mondayGroup: mapping.mondayGroup || 'Group not recorded',
+        mondayMeta: [mapping.mondayProductType, mapping.mondayStrainFlavor].filter(Boolean).join(' · ') || 'Product type and strain not recorded',
+        mondayUrl: mapping.mondayUrl || '#',
+        canixId: candidate ? String(candidate.canixItemId) : '—',
+        canixName: candidate ? candidate.canixItemName : 'No current candidate',
+        canixBrand: candidate && candidate.canixBrand || 'Brand not recorded',
+        canixCategory: candidate && candidate.canixCategory || 'Category not recorded',
+        packageCount: candidate ? Number(candidate.packageCount || 0) + ' active package' + (Number(candidate.packageCount || 0) === 1 ? '' : 's') : 'No matching Canix name',
+        candidateMore: Math.max(0, Number(mapping.candidateCount || candidates.length) - 1),
+        candidateMoreLabel: Math.max(0, Number(mapping.candidateCount || candidates.length) - 1) + ' additional candidate' + (Math.max(0, Number(mapping.candidateCount || candidates.length) - 1) === 1 ? '' : 's'),
+        hasMoreCandidates: Number(mapping.candidateCount || candidates.length) > 1,
+        matchLabel: mapping.reviewLabel || 'Awaiting review',
+        matchReason: mapping.reviewReason || 'Review the Monday and Canix product identities before linking.',
+        matchStyle: 'display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;padding:4px 6px;background:'
+          + (statusIsReady ? 'var(--ux-accent)' : mapping.reviewStatus === 'no_match' ? 'var(--ux-surface)' : 'var(--ux-signal-tint)')
+          + ';color:' + (statusIsReady ? '#fff' : mapping.reviewStatus === 'no_match' ? 'var(--ux-muted-strong)' : 'var(--ux-signal-text)'),
+        canApprove,
+        cannotApprove: !canApprove,
+        pending: !!s.catalogMappingPending,
+        buttonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Verify & link',
+        actionLabel: mapping.reviewStatus === 'no_match' ? 'ADD CANIX ID IN MONDAY' : 'RESOLVE SOURCE DATA',
+        onApprove: () => this.approveCatalogMapping(approvePayload)
+      };
+    });
     const product = catalogPool.find(item => item.id === s.product) || catalogPool[0] || PRODUCTS[0];
     const lot = product.lots[Math.min(s.lot, product.lots.length - 1)] || product.lots[0];
     const productContent = product.content || {};
@@ -7237,8 +7319,18 @@ class Component extends DCLogic {
       catalogMappingHasError: !!s.catalogMappingError, catalogMappingError: s.catalogMappingError || '',
       catalogMappingHasData: !!catalogMappingSummary,
       catalogMappingMetrics, catalogMappingRows,
-      catalogMappingHasSuggestions: catalogMappingRows.length > 0,
-      catalogMappingNoSuggestions: !!catalogMappingSummary && catalogMappingRows.length === 0,
+      catalogMappingQuery: s.catalogMappingQuery,
+      onCatalogMappingQuery: e => this.set({ catalogMappingQuery: e.target.value }),
+      catalogMappingStatus: s.catalogMappingStatus,
+      onCatalogMappingStatus: e => this.set({ catalogMappingStatus: e.target.value }),
+      catalogMappingSort: s.catalogMappingSort,
+      onCatalogMappingSort: e => this.set({ catalogMappingSort: e.target.value }),
+      catalogMappingStatusOptions,
+      catalogMappingFilteredCount: catalogMappingRows.length + ' of ' + catalogMappingReviewItems.length + ' awaiting items',
+      catalogMappingHasReviewItems: catalogMappingReviewItems.length > 0,
+      catalogMappingNoReviewItems: !!catalogMappingSummary && catalogMappingReviewItems.length === 0,
+      catalogMappingHasFilteredRows: catalogMappingRows.length > 0,
+      catalogMappingNoFilteredRows: catalogMappingReviewItems.length > 0 && catalogMappingRows.length === 0,
       catalogMappingRowStyle: narrow ? 'grid-template-columns:1fr' : '',
 
       pdName: product.name, pdBrand: product.brand, pdCat: product.cat, pdCatDot: catDot(product.cat, 9), pdFormat: product.format,
