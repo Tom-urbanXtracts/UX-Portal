@@ -1,4 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import {
+  mondayAccessToken,
+  mondayTokenExpiry,
+} from "../_shared/monday-connection.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -155,24 +159,6 @@ async function administratorFor(request: Request): Promise<Caller | null> {
   };
 }
 
-function tokenExpiry(accessToken: string, expiresIn: unknown): string | null {
-  const seconds = Number(expiresIn);
-  if (Number.isFinite(seconds) && seconds > 0) {
-    return new Date(Date.now() + seconds * 1000).toISOString();
-  }
-  try {
-    const payload = accessToken.split(".")[1];
-    const padded = payload.replaceAll("-", "+").replaceAll("_", "/") +
-      "=".repeat((4 - payload.length % 4) % 4);
-    const exp = Number((JSON.parse(atob(padded)) as Row).exp);
-    return Number.isFinite(exp) && exp > 0
-      ? new Date(exp * 1000).toISOString()
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 async function mondayGraphql(
   accessToken: string,
   query: string,
@@ -305,16 +291,12 @@ async function refreshWebhook(
   request: Request,
   caller: Caller,
 ): Promise<Response> {
-  const { data: rows, error: connectionError } = await service.rpc(
-    "portal_get_monday_connection",
-    { p_encryption_key: TOKEN_ENCRYPTION_KEY },
-  );
-  if (connectionError) throw connectionError;
-  const connection = Array.isArray(rows)
-    ? rows[0] as Row | undefined
-    : undefined;
-  const accessToken = String(connection?.access_token ?? "");
-  if (!accessToken || connection?.connection_status !== "connected") {
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["webhooks:read", "webhooks:write"]);
+  if (!accessToken) {
     return json(request, {
       error:
         "Monday must be connected before its signed webhook can be refreshed.",
@@ -533,7 +515,7 @@ async function callback(request: Request): Promise<Response> {
       p_access_token: accessToken,
       p_refresh_token: refreshToken,
       p_encryption_key: TOKEN_ENCRYPTION_KEY,
-      p_access_token_expires_at: tokenExpiry(
+      p_access_token_expires_at: mondayTokenExpiry(
         accessToken,
         tokenBody.expires_in,
       ),

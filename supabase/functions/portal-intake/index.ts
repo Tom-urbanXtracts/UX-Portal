@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { labFailed, labPassed } from "../_shared/security-contract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -8,6 +9,8 @@ const MAKE_WEBHOOK_URL = Deno.env.get("MAKE_WEBHOOK_URL") ?? "";
 const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
 const MONDAY_TOKEN_ENCRYPTION_KEY =
   Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
+const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
+const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
 const MONDAY_ORDER_BOARD_ID = Deno.env.get("MONDAY_ORDER_BOARD_ID") ??
   "18428025898";
 const MONDAY_ACCOUNT_BOARD_ID = Deno.env.get("MONDAY_ACCOUNT_BOARD_ID") ??
@@ -84,22 +87,11 @@ async function mondayWriteToken(): Promise<string | null> {
     MONDAY_TOKEN_ENCRYPTION_KEY.length < 32 ||
     !/^\d+$/.test(MONDAY_ORDER_BOARD_ID)
   ) return null;
-  const { data: state, error: stateError } = await service.from(
-    "monday_connection_state",
-  ).select("connection_status,granted_scopes").eq("id", 1).maybeSingle();
-  if (stateError) throw stateError;
-  if (
-    state?.connection_status !== "connected" ||
-    !Array.isArray(state.granted_scopes) ||
-    !state.granted_scopes.includes("boards:write")
-  ) return null;
-  const { data, error } = await service.rpc("portal_get_monday_connection", {
-    p_encryption_key: MONDAY_TOKEN_ENCRYPTION_KEY,
-  });
-  if (error) throw error;
-  const connection = Array.isArray(data) ? data[0] : null;
-  const token = mondayText(connection?.access_token, 10_000);
-  return connection?.connection_status === "connected" && token ? token : null;
+  return await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:write"]);
 }
 
 function firstMondayItem(data: Row): Row | null {

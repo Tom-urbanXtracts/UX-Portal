@@ -16,6 +16,7 @@ const productContent = await readFile(resolve(root, "supabase/functions/portal-p
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
 const mondayOAuth = await readFile(resolve(root, "supabase/functions/monday-oauth/index.ts"), "utf8");
+const mondayConnection = await readFile(resolve(root, "supabase/functions/_shared/monday-connection.ts"), "utf8");
 const mondayWebhook = await readFile(resolve(root, "supabase/functions/monday-webhook/index.ts"), "utf8");
 const readiness = await readFile(resolve(root, "supabase/functions/portal-readiness/index.ts"), "utf8");
 const migration = await readFile(resolve(root, "supabase/migrations/20260901240000_canix_availability_contract.sql"), "utf8");
@@ -82,6 +83,8 @@ assertContract(mondayOAuth.includes("code_challenge_method: \"S256\"") && monday
 assertContract(mondayOAuth.includes('scope: REQUESTED_SCOPES.join(" ")') && mondayOAuth.includes('"me:read"') && mondayOAuth.includes('"boards:read"') && mondayOAuth.includes('"webhooks:read"') && mondayOAuth.includes('"webhooks:write"'), "Monday authorization explicitly requests the configured least-privilege scopes");
 assertContract(mondayOAuth.includes("params.app_version_id = APP_VERSION_ID") && mondayOAuth.includes('params.force_install_if_needed = "true"'), "Monday draft collaborators use version-specific OAuth while the live-app path still enforces installation");
 assertContract(mondayOAuth.includes("status: 303") && mondayOAuth.includes('target.searchParams.set("monday", "connected")') && mondayOAuth.includes("location: target.toString()"), "successful Monday authorization redirects cleanly back to the portal");
+assertContract(mondayConnection.includes('grant_type: "refresh_token"') && mondayConnection.includes("portal_rotate_monday_tokens") && mondayConnection.includes("5 * 60_000"), "Monday OAuth tokens renew proactively and store the rotated refresh token server-side");
+assertContract(intake.includes("mondayAccessToken") && orders.includes("mondayAccessToken") && mondayOAuth.includes("mondayAccessToken"), "every direct Monday order and webhook-admin path uses renewable OAuth custody");
 assertContract(mondayOAuth.includes("webhooks(board_id: $boardId, app_webhooks_only: true)") && mondayOAuth.includes("change_status_column_value") && intake.includes("MONDAY_ORDER_BOARD_ID") && orders.includes("MONDAY_ORDER_BOARD_ID"), "Monday writes and signed callbacks are pinned to the configured order board");
 assertContract(mondayWebhook.includes("verifyHs256Jwt") && mondayWebhook.includes("MONDAY_SIGNING_SECRET") && mondayWebhook.includes("portal_claim_monday_webhook_event"), "Monday board callbacks require signed, deduplicated events");
 assertContract(mondayOAuth.includes('"boards:write"') && intake.includes("directMondayOrder") && intake.includes("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID"), "orders have an idempotent, board-pinned direct Monday fallback");
@@ -91,6 +94,9 @@ assertContract(mondayOAuthMigration.includes("pgp_sym_encrypt") && mondayOAuthMi
 assertContract(mondayOAuthMigration.includes("if existing_state = 'failed'") && mondayOAuthMigration.includes("attempt_count = attempt_count + 1"), "failed Monday callbacks can retry while processed events remain deduplicated");
 assertContract(source.includes("QUICKBOOKS_OAUTH_API") && source.includes("connectQuickBooks()"), "portal administrators can launch the protected QuickBooks connection flow");
 assertContract(source.includes("MONDAY_OAUTH_API") && source.includes("connectMonday()"), "portal administrators can launch the protected Monday connection flow");
+assertContract(productContent.includes("MONDAY_PRODUCT_BOARD_ID") && productContent.includes("syncMondayProductBoard") && productContent.includes("missingCanixItemId") && !productContent.includes("match by name"), "Monday catalog sync is board-pinned and requires explicit Canix Item IDs");
+assertContract(source.includes("syncMondayCatalog()") && source.includes("Sync catalog content"), "portal administrators can scan linked Monday catalog content from release readiness");
+assertContract(readiness.includes("Latest Monday catalog scan") && readiness.includes("lastProductSyncMissingCanixItemId"), "live readiness reports Monday catalog mapping and sync evidence");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");

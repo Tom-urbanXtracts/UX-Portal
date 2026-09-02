@@ -3,6 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
+  "9620649212";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -108,6 +110,7 @@ Deno.serve(async (request) => {
       mondayResult,
       latestMondayEventResult,
       latestMondayRefreshResult,
+      latestMondayProductSyncResult,
       pendingOutbox,
       failedOutbox,
       activeCommitments,
@@ -128,7 +131,7 @@ Deno.serve(async (request) => {
         "status,connection_status,connected_at,realm_id,last_successful_at,last_error,customer_count",
       ).eq("id", 1).maybeSingle(),
       service.from("monday_connection_state").select(
-        "connection_status,connected_at,account_id,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
+        "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
       ).eq("id", 1).maybeSingle(),
       service.from("monday_webhook_event").select(
         "subscription_id,board_id,item_id,status_label,processing_state,attempt_count,received_at,processed_at,response_status,last_error",
@@ -136,6 +139,10 @@ Deno.serve(async (request) => {
       service.from("portal_admin_audit").select("created_at,detail").eq(
         "action",
         "monday.webhook_refreshed",
+      ).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      service.from("portal_admin_audit").select("created_at,detail").eq(
+        "action",
+        "monday.product_content_synced",
       ).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       exactCount(
         "portal_order_sync_outbox",
@@ -186,12 +193,18 @@ Deno.serve(async (request) => {
     if (mondayResult.error) throw mondayResult.error;
     if (latestMondayEventResult.error) throw latestMondayEventResult.error;
     if (latestMondayRefreshResult.error) throw latestMondayRefreshResult.error;
+    if (latestMondayProductSyncResult.error) {
+      throw latestMondayProductSyncResult.error;
+    }
 
     const canix = canixResult.data as Row | null;
     const qbo = qboResult.data as Row | null;
     const monday = mondayResult.data as Row | null;
     const latestMondayEvent = latestMondayEventResult.data as Row | null;
     const latestMondayRefresh = latestMondayRefreshResult.data as Row | null;
+    const latestMondayProductSync = latestMondayProductSyncResult.data as
+      | Row
+      | null;
     const latestMondayRefreshDetail = latestMondayRefresh?.detail &&
         typeof latestMondayRefresh.detail === "object"
       ? latestMondayRefresh.detail as Row
@@ -211,6 +224,13 @@ Deno.serve(async (request) => {
       )
       ? latestMondayRefreshDetail.removedWebhookIds.map(String)
       : [];
+    const latestMondayProductDetail = latestMondayProductSync?.detail &&
+        typeof latestMondayProductSync.detail === "object"
+      ? latestMondayProductSync.detail as Row
+      : {};
+    const mondayScopes = Array.isArray(monday?.granted_scopes)
+      ? monday.granted_scopes.map(String)
+      : [];
     const canixAge = ageMinutes(canix?.last_successful_at);
     const qboAge = ageMinutes(qbo?.last_successful_at);
     const mondayCallbackAge = ageMinutes(latestMondayEvent?.received_at);
@@ -221,6 +241,9 @@ Deno.serve(async (request) => {
     const directMondayIntakeReady = mondayOAuthReady &&
       configured("MONDAY_ORDER_BOARD_ID") &&
       configured("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID");
+    const directMondayProductReady = mondayOAuthReady &&
+      mondayScopes.includes("boards:read") &&
+      /^\d+$/.test(MONDAY_PRODUCT_BOARD_ID);
     const makeIntakeReady = configured("MAKE_WEBHOOK_URL") &&
       configured("MAKE_INTAKE_SECRET");
     const signedMondayReady = mondayOAuthReady &&
@@ -386,11 +409,39 @@ Deno.serve(async (request) => {
         label: "Catalog content and COAs",
         checks: [
           {
-            state: configured("MONDAY_PRODUCT_SECRET") ? "pass" : "warn",
+            state:
+              directMondayProductReady || configured("MONDAY_PRODUCT_SECRET")
+                ? "pass"
+                : "warn",
             label: "Monday product content",
-            detail: configured("MONDAY_PRODUCT_SECRET")
-              ? `${publishedContent} published product records.`
-              : "MONDAY_PRODUCT_SECRET is not configured; Canix identity still works, but merchandising content cannot sync.",
+            detail: directMondayProductReady
+              ? "The dedicated Monday app can scan the pinned product board using renewed server tokens."
+              : configured("MONDAY_PRODUCT_SECRET")
+              ? "Authenticated push ingestion is configured."
+              : "Neither direct Monday board sync nor authenticated push ingestion is ready.",
+          },
+          {
+            state: publishedContent > 0 ? "pass" : "warn",
+            label: "Published merchandising records",
+            detail:
+              `${publishedContent} published product records. Canix product identity remains available when merchandising content is blank.`,
+          },
+          {
+            state: !latestMondayProductSync
+              ? "warn"
+              : Number(latestMondayProductDetail.synced ?? 0) > 0
+              ? "pass"
+              : "warn",
+            label: "Latest Monday catalog scan",
+            detail: !latestMondayProductSync
+              ? "No direct Monday product-board scan has been recorded yet."
+              : `${Number(latestMondayProductDetail.synced ?? 0)} of ${
+                Number(latestMondayProductDetail.scanned ?? 0)
+              } board rows synchronized; ${
+                Number(latestMondayProductDetail.missingCanixItemId ?? 0)
+              } still need an explicit Canix Item ID and ${
+                Number(latestMondayProductDetail.missingPublicationState ?? 0)
+              } linked rows still need a publication state.`,
           },
           {
             state: configured("PORTAL_EXTERNAL_ASSET_HOSTS") ? "pass" : "warn",
@@ -526,6 +577,13 @@ Deno.serve(async (request) => {
             null,
           matchingWebhookCount: remainingWebhookIds.length || null,
           lastWebhookRefreshAt: latestMondayRefresh?.created_at ?? null,
+          accessTokenExpiresAt: monday?.access_token_expires_at ?? null,
+          productBoardId: MONDAY_PRODUCT_BOARD_ID,
+          lastProductSyncAt: latestMondayProductSync?.created_at ?? null,
+          lastProductSyncScanned: latestMondayProductDetail.scanned ?? null,
+          lastProductSyncSynced: latestMondayProductDetail.synced ?? null,
+          lastProductSyncMissingCanixItemId:
+            latestMondayProductDetail.missingCanixItemId ?? null,
         },
         quickbooks: {
           connectionStatus: qbo?.connection_status ?? "disconnected",

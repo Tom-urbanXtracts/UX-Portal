@@ -1425,8 +1425,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ canConnectMonday }}" hint-placeholder-val="{{ false }}">
 <div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
-<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY · {{ mondayConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only installation for the order board. The dedicated app can read order data, update linked order status, and manage its own signed webhook.</div><sc-if value="{{ mondayConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ mondayConnectionError }}</div></sc-if></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ mondayWebhookActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayWebhookRefresh }}" aria-disabled="{{ mondayConnecting }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh signed webhook</button></sc-if><button type="button" onClick="{{ onMondayConnect }}" aria-disabled="{{ mondayConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayConnectLabel }}</button></div>
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY · {{ mondayConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only installation for orders and catalog content. The dedicated app renews its server token, updates linked order status, manages its signed callback, and reads only explicitly linked product-content rows.</div><sc-if value="{{ mondayConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ mondayConnectionError }}</div></sc-if></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ mondayConnected }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayCatalogSync }}" aria-disabled="{{ mondayCatalogSyncing }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayCatalogSyncLabel }}</button></sc-if><sc-if value="{{ mondayWebhookActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayWebhookRefresh }}" aria-disabled="{{ mondayConnecting }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh signed webhook</button></sc-if><button type="button" onClick="{{ onMondayConnect }}" aria-disabled="{{ mondayConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayConnectLabel }}</button></div>
 </div>
 </sc-if>
 
@@ -3102,6 +3102,8 @@ const QUICKBOOKS_OAUTH_API = PORTAL_CONFIG.quickbooksOAuthUrl
   || SUPABASE_URL + '/functions/v1/quickbooks-oauth';
 const MONDAY_OAUTH_API = PORTAL_CONFIG.mondayOAuthUrl
   || SUPABASE_URL + '/functions/v1/monday-oauth';
+const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
+  || SUPABASE_URL + '/functions/v1/portal-product-content';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3365,7 +3367,7 @@ class Component extends DCLogic {
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
     quickBooksConnecting: false, quickBooksConnectionError: null,
-    mondayConnecting: false, mondayConnectionError: null,
+    mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -4462,6 +4464,31 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ mondayConnecting: false,
         mondayConnectionError: (error && error.message) || 'The signed Monday webhook could not be refreshed.' }));
+  }
+
+  syncMondayCatalog() {
+    const s = this.state;
+    if (s.mondayCatalogSyncing || s.impersonating || s.role !== 'internal' || !s.authUser
+      || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ mondayCatalogSyncing: true, mondayConnectionError: null });
+    return fetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify({ action: 'sync-monday' }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.summary) throw new Error((body && body.error) || ('Monday catalog service returned ' + status + '.'));
+        const summary = body.summary;
+        const skipped = Number(summary.missingCanixItemId || 0) + Number(summary.missingPublicationState || 0)
+          + Number(summary.invalidCanixItemId || 0) + Number((summary.duplicateCanixItemIds || []).length)
+          + Number((summary.missingFromCurrentCanix || []).length);
+        this.set({ mondayCatalogSyncing: false,
+          toast: Number(summary.synced || 0) + ' catalog record' + (Number(summary.synced || 0) === 1 ? '' : 's')
+            + ' synchronized; ' + skipped + ' board row' + (skipped === 1 ? '' : 's') + ' need mapping or publication review.',
+          toastKind: 'MONDAY CATALOG SCANNED' });
+        this.loadReadiness(true);
+      })
+      .catch(error => this.set({ mondayCatalogSyncing: false,
+        mondayConnectionError: (error && error.message) || 'Monday catalog content could not be synchronized.' }));
   }
 
   orderCall(method, payload) {
@@ -7848,6 +7875,10 @@ class Component extends DCLogic {
       mondayConnectLabel: s.mondayConnecting ? 'Opening Monday…'
         : (((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active') ? 'Reconnect Monday' : 'Connect Monday'),
       onMondayConnect: () => this.connectMonday(),
+      mondayConnected: ((((s.readinessData || {}).integrations || {}).monday || {}).connectionStatus === 'connected'),
+      mondayCatalogSyncing: s.mondayCatalogSyncing,
+      mondayCatalogSyncLabel: s.mondayCatalogSyncing ? 'Scanning catalog…' : 'Sync catalog content',
+      onMondayCatalogSync: () => this.syncMondayCatalog(),
       mondayWebhookActive: ((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active'),
       onMondayWebhookRefresh: () => this.refreshMondayWebhook(),
       readinessStatus: s.readinessData

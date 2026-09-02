@@ -1,10 +1,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MONDAY_PRODUCT_SECRET = Deno.env.get("MONDAY_PRODUCT_SECRET") ?? "";
+const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
+const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
+const MONDAY_TOKEN_ENCRYPTION_KEY =
+  Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
+const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
+  "9620649212";
+const MONDAY_PRODUCT_COLUMNS = Object.freeze({
+  canixItemId: "text_mm6shxmd",
+  publicationState: "color_mm6sxyjd",
+  shortDescription: "long_text_mm6srkee",
+  longDescription: "long_text_mm6s9nke",
+  sellingPoints: "long_text_mm6sf7mn",
+  ingredients: "long_text_mm6sj45t",
+  usageInformation: "long_text_mm6snz4t",
+  productProfile: "long_text_mm6s7859",
+  imageUrl: "link_mm6scxse",
+  keywords: "long_text_mm6svyb9",
+});
 const ASSET_HOSTS = new Set([
   ...String(Deno.env.get("PORTAL_EXTERNAL_ASSET_HOSTS") ?? "").split(",").map((
     host,
@@ -111,6 +130,178 @@ function iso(value: unknown): string | null {
   if (!raw) return null;
   const parsed = new Date(raw);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function splitLines(value: unknown): string[] {
+  return cleanList(
+    String(value ?? "").split(/\r?\n/).map((item) => item.trim()).filter(
+      Boolean,
+    ),
+    20,
+    300,
+  );
+}
+
+function splitKeywords(value: unknown): string[] {
+  return cleanList(
+    String(value ?? "").split(/[,\r\n]+/).map((item) => item.trim()).filter(
+      Boolean,
+    ),
+    50,
+    100,
+  );
+}
+
+async function mondayGraphql(
+  accessToken: string,
+  query: string,
+  variables: Row,
+): Promise<Row> {
+  const response = await fetch("https://api.monday.com/v2", {
+    method: "POST",
+    headers: {
+      authorization: accessToken,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const body = await response.json().catch(() => ({})) as Row;
+  if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    throw new ProductError(
+      response.status === 401 ? 409 : 502,
+      response.status === 401
+        ? "Reconnect Monday before synchronizing catalog content."
+        : "Monday did not return the catalog board.",
+    );
+  }
+  return body.data && typeof body.data === "object" ? body.data as Row : {};
+}
+
+function mondayColumnValues(item: Row): Map<string, Row> {
+  return new Map(
+    (Array.isArray(item.column_values) ? item.column_values as Row[] : [])
+      .map((value) => [String(value.id ?? ""), value]),
+  );
+}
+
+function mondayText(
+  columns: Map<string, Row>,
+  columnId: string,
+): string | null {
+  return clean(columns.get(columnId)?.text, 5000);
+}
+
+function mondayLink(
+  columns: Map<string, Row>,
+  columnId: string,
+): string | null {
+  const value = columns.get(columnId);
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(String(value.value ?? "{}")) as Row;
+    return clean(parsed.url, 2000) ?? clean(value.text, 2000);
+  } catch {
+    return clean(value.text, 2000);
+  }
+}
+
+function mondayPublicationState(value: unknown): string | null {
+  const state = String(value ?? "").trim().toLowerCase();
+  return new Set(["draft", "published", "archived"]).has(state) ? state : null;
+}
+
+async function mondayProductItems(accessToken: string): Promise<Row[]> {
+  const columnIds = Object.values(MONDAY_PRODUCT_COLUMNS);
+  const firstData = await mondayGraphql(
+    accessToken,
+    `query PortalCatalogBoard(
+      $boardIds: [ID!]!, $limit: Int!, $columnIds: [String!]
+    ) {
+      boards(ids: $boardIds) {
+        id
+        items_page(limit: $limit) {
+          cursor
+          items {
+            id name updated_at
+            column_values(ids: $columnIds) { id text value }
+          }
+        }
+      }
+    }`,
+    {
+      boardIds: [MONDAY_PRODUCT_BOARD_ID],
+      limit: 250,
+      columnIds,
+    },
+  );
+  const boards = Array.isArray(firstData.boards)
+    ? firstData.boards as Row[]
+    : [];
+  const board = boards[0];
+  if (!board || String(board.id ?? "") !== MONDAY_PRODUCT_BOARD_ID) {
+    throw new ProductError(
+      409,
+      "The configured Monday catalog board is unavailable.",
+    );
+  }
+  const firstPage = board.items_page && typeof board.items_page === "object"
+    ? board.items_page as Row
+    : {};
+  const items = Array.isArray(firstPage.items)
+    ? [...firstPage.items as Row[]]
+    : [];
+  let cursor = clean(firstPage.cursor, 2000);
+  let pageCount = 1;
+  while (cursor && pageCount < 40) {
+    const pageData = await mondayGraphql(
+      accessToken,
+      `query PortalCatalogBoardNext(
+        $cursor: String!, $limit: Int!, $columnIds: [String!]
+      ) {
+        next_items_page(cursor: $cursor, limit: $limit) {
+          cursor
+          items {
+            id name updated_at
+            column_values(ids: $columnIds) { id text value }
+          }
+        }
+      }`,
+      { cursor, limit: 250, columnIds },
+    );
+    const page = pageData.next_items_page &&
+        typeof pageData.next_items_page === "object"
+      ? pageData.next_items_page as Row
+      : {};
+    if (Array.isArray(page.items)) items.push(...page.items as Row[]);
+    cursor = clean(page.cursor, 2000);
+    pageCount += 1;
+  }
+  if (cursor) {
+    throw new ProductError(
+      502,
+      "Monday catalog pagination did not complete safely.",
+    );
+  }
+  return items;
+}
+
+async function currentCanixItemIds(itemIds: number[]): Promise<Set<number>> {
+  const { data: state, error: stateError } = await service.from(
+    "canix_sync_state",
+  ).select("last_successful_run_id").eq("id", 1).single();
+  if (stateError) throw stateError;
+  if (!state?.last_successful_run_id) return new Set();
+  const found = new Set<number>();
+  for (let index = 0; index < itemIds.length; index += 100) {
+    const batch = itemIds.slice(index, index + 100);
+    const { data, error } = await service.from("canix_package_current").select(
+      "item_id",
+    ).eq("sync_run_id", state.last_successful_run_id).in("item_id", batch);
+    if (error) throw error;
+    for (const row of data ?? []) found.add(Number(row.item_id));
+  }
+  return found;
 }
 
 async function callerFor(request: Request): Promise<Caller | null> {
@@ -330,6 +521,135 @@ async function upsertItems(
   return results;
 }
 
+async function syncMondayProductBoard(caller: Caller): Promise<Row> {
+  if (!/^\d+$/.test(MONDAY_PRODUCT_BOARD_ID)) {
+    throw new ProductError(503, "The Monday catalog board is not configured.");
+  }
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read"]);
+  if (!accessToken) {
+    throw new ProductError(
+      409,
+      "Connect Monday with board read access before synchronizing catalog content.",
+    );
+  }
+  const mondayItems = await mondayProductItems(accessToken);
+  const parsed: Array<{ itemId: number; record: Row }> = [];
+  let missingCanixItemId = 0;
+  let invalidCanixItemId = 0;
+  let missingPublicationState = 0;
+  for (const item of mondayItems) {
+    const columns = mondayColumnValues(item);
+    const rawItemId = mondayText(columns, MONDAY_PRODUCT_COLUMNS.canixItemId);
+    const publicationState = mondayPublicationState(
+      mondayText(columns, MONDAY_PRODUCT_COLUMNS.publicationState),
+    );
+    if (!rawItemId) {
+      missingCanixItemId += 1;
+      continue;
+    }
+    if (!/^\d+$/.test(rawItemId)) {
+      invalidCanixItemId += 1;
+      continue;
+    }
+    const canixItemId = Number(rawItemId);
+    if (!Number.isSafeInteger(canixItemId) || canixItemId <= 0) {
+      invalidCanixItemId += 1;
+      continue;
+    }
+    if (!publicationState) {
+      missingPublicationState += 1;
+      continue;
+    }
+    parsed.push({
+      itemId: canixItemId,
+      record: {
+        canixItemId,
+        mondayItemId: String(item.id ?? ""),
+        mondayBoardId: MONDAY_PRODUCT_BOARD_ID,
+        publicationState,
+        shortDescription: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.shortDescription,
+        ),
+        longDescription: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.longDescription,
+        ),
+        sellingPoints: splitLines(
+          mondayText(columns, MONDAY_PRODUCT_COLUMNS.sellingPoints),
+        ),
+        ingredients: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.ingredients,
+        ),
+        usageInformation: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.usageInformation,
+        ),
+        productProfile: mondayText(
+          columns,
+          MONDAY_PRODUCT_COLUMNS.productProfile,
+        ),
+        imageUrl: mondayLink(columns, MONDAY_PRODUCT_COLUMNS.imageUrl),
+        keywords: splitKeywords(
+          mondayText(columns, MONDAY_PRODUCT_COLUMNS.keywords),
+        ),
+        sourceUpdatedAt: iso(item.updated_at),
+      },
+    });
+  }
+  const occurrences = new Map<number, number>();
+  for (const entry of parsed) {
+    occurrences.set(entry.itemId, (occurrences.get(entry.itemId) ?? 0) + 1);
+  }
+  const duplicateCanixItemIds = Array.from(occurrences.entries()).filter(
+    ([, count]) => count > 1,
+  ).map(([itemId]) => itemId);
+  const duplicateSet = new Set(duplicateCanixItemIds);
+  const unique = parsed.filter((entry) => !duplicateSet.has(entry.itemId));
+  const currentIds = await currentCanixItemIds(
+    unique.map((entry) => entry.itemId),
+  );
+  const missingFromCanix = unique.filter((entry) =>
+    !currentIds.has(entry.itemId)
+  )
+    .map((entry) => entry.itemId);
+  const accepted = unique.filter((entry) => currentIds.has(entry.itemId));
+  let synced = 0;
+  for (let index = 0; index < accepted.length; index += 100) {
+    const batch = accepted.slice(index, index + 100).map((entry) =>
+      entry.record
+    );
+    const results = await upsertItems(batch, caller, "monday");
+    synced += results.length;
+  }
+  const summary = {
+    boardId: MONDAY_PRODUCT_BOARD_ID,
+    scanned: mondayItems.length,
+    eligible: parsed.length,
+    synced,
+    missingCanixItemId,
+    invalidCanixItemId,
+    missingPublicationState,
+    duplicateCanixItemIds,
+    missingFromCurrentCanix: missingFromCanix,
+  };
+  const { error: auditError } = await service.from("portal_admin_audit").insert(
+    {
+      actor_id: caller.profile.id,
+      actor_org: caller.profile.org,
+      action: "monday.product_content_synced",
+      detail: summary,
+    },
+  );
+  if (auditError) throw auditError;
+  return summary;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(request) });
@@ -359,6 +679,13 @@ Deno.serve(async (request) => {
       return json(request, { error: "Forbidden" }, 403);
     }
     const body = await request.json() as Row;
+    if (String(body.action ?? "").toLowerCase() === "sync-monday") {
+      if (!caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const summary = await syncMondayProductBoard(caller);
+      return json(request, { ok: true, summary }, 200);
+    }
     const items = Array.isArray(body.items)
       ? body.items.filter((item) => item && typeof item === "object") as Row[]
       : [body];
