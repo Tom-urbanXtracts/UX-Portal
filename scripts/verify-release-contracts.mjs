@@ -31,6 +31,7 @@ const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/2
 const economicPartnerMigration = await readFile(resolve(root, "supabase/migrations/20260901320000_canix_brand_economic_partners.sql"), "utf8");
 const wholesaleMigration = await readFile(resolve(root, "supabase/migrations/20260902010000_wholesale_default_pricing.sql"), "utf8");
 const quickbooksTraceMigration = await readFile(resolve(root, "supabase/migrations/20260902020000_quickbooks_intuit_trace_ids.sql"), "utf8");
+const quickbooksCronMigration = await readFile(resolve(root, "supabase/migrations/20260902030000_quickbooks_sync_cron.sql"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
@@ -91,6 +92,9 @@ assertContract(quickbooksOAuth.includes('headers.get("intuit_tid")') && quickboo
 assertContract(!quickbooksOAuth.includes("tokenBody,") && !quickbooksRetailers.includes("body,"), "QuickBooks support diagnostics do not persist or log raw Intuit response bodies");
 assertContract(quickbooksOAuth.includes("intuitOAuthEndpoints") && quickbooksRetailers.includes("intuitOAuthEndpoints") && quickbooksOAuthDiscovery.includes(".well-known/openid_configuration") && quickbooksOAuthDiscovery.includes('url.hostname !== expectedHost'), "QuickBooks OAuth uses Intuit discovery metadata with exact-host validation");
 assertContract(quickbooksRetailers.includes("transientAccountingStatus") && quickbooksRetailers.includes("attempt < 3") && quickbooksRetailers.includes("accountingGet(") && !quickbooksRetailers.includes("tokenPostWithRetry"), "read-only QuickBooks queries have a bounded transient retry policy without retrying token POSTs");
+assertContract(quickbooksCronMigration.includes("portal-quickbooks-sync-5m") && quickbooksCronMigration.includes("*/5 * * * *") && quickbooksCronMigration.includes("vault.decrypted_secrets") && quickbooksCronMigration.includes("portal_quickbooks_scheduler_state"), "QuickBooks read sync has a Vault-gated five-minute scheduler and protected readiness state");
+assertContract(!/[A-Fa-f0-9]{64}/.test(quickbooksCronMigration), "the QuickBooks scheduler migration contains no embedded high-entropy secret");
+assertContract(readiness.includes("qboSchedulerResult") && readiness.includes("Five-minute scheduler"), "live readiness reports QuickBooks scheduler and Vault-credential state");
 assertContract(quickbooksOAuthMigration.includes("pgp_sym_encrypt") && quickbooksOAuthMigration.includes("oauth_state_expires_at > now()") && quickbooksOAuthMigration.includes("refresh_token = null"), "QuickBooks refresh tokens are encrypted and OAuth state is expiring and one-time");
 assertContract(orderCronMigration.includes("portal-order-outbox-flush-5m") && orderCronMigration.includes("*/5 * * * *") && orderCronMigration.includes("vault.decrypted_secrets"), "order outbox retries every five minutes with a Vault-backed credential");
 assertContract(!/[A-Fa-f0-9]{64}/.test(orderCronMigration), "the order retry migration contains no embedded high-entropy secret");

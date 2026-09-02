@@ -4,7 +4,7 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 
 ## Deploy
 
-1. Apply `20260901210000_quickbooks_financials.sql` and `20260901290000_quickbooks_oauth_broker.sql`.
+1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, and `20260902030000_quickbooks_sync_cron.sql`.
 2. Deploy `quickbooks-oauth`, the updated `quickbooks-retailers`, `quickbooks-financials`, and `portal-readiness` Edge Functions.
 3. Register this exact Intuit redirect URI:
    - `https://cbhsavfbtcpdyxcvguay.supabase.co/functions/v1/quickbooks-oauth/callback`
@@ -17,7 +17,7 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
    - QBO_PORTAL_RETURN_URL (optional until the production domain is approved)
 5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Portal start/status routes require a valid Administrator token, the callback consumes a one-time OAuth state, and the sync POST additionally accepts the scheduler-only secret.
 6. Sign in as a portal Administrator, open Release readiness, and choose **Connect QuickBooks**. The callback stores the realm and encrypted refresh token server-side. Do not copy a refresh token manually.
-7. Schedule a POST to quickbooks-retailers at the accounting-approved cadence. A successful sync refreshes Customers, Invoices, and Payments together.
+7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Invoices, and Payments together.
 
 The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atomically. The refresh token is encrypted with the Edge-Function-only encryption key. The sync persists every rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
 

@@ -117,6 +117,7 @@ Deno.serve(async (request) => {
     const [
       canixResult,
       qboResult,
+      qboSchedulerResult,
       mondayResult,
       latestMondayEventResult,
       latestMondayRefreshResult,
@@ -143,6 +144,7 @@ Deno.serve(async (request) => {
       service.from("quickbooks_sync_state").select(
         "status,connection_status,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
       ).eq("id", 1).maybeSingle(),
+      service.rpc("portal_quickbooks_scheduler_state"),
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
       ).eq("id", 1).maybeSingle(),
@@ -212,6 +214,7 @@ Deno.serve(async (request) => {
     ]);
     if (canixResult.error) throw canixResult.error;
     if (qboResult.error) throw qboResult.error;
+    if (qboSchedulerResult.error) throw qboSchedulerResult.error;
     if (mondayResult.error) throw mondayResult.error;
     if (latestMondayEventResult.error) throw latestMondayEventResult.error;
     if (latestMondayRefreshResult.error) throw latestMondayRefreshResult.error;
@@ -221,6 +224,10 @@ Deno.serve(async (request) => {
 
     const canix = canixResult.data as Row | null;
     const qbo = qboResult.data as Row | null;
+    const qboScheduler = Array.isArray(qboSchedulerResult.data) &&
+        qboSchedulerResult.data.length
+      ? qboSchedulerResult.data[0] as Row
+      : null;
     const monday = mondayResult.data as Row | null;
     const latestMondayEvent = latestMondayEventResult.data as Row | null;
     const latestMondayRefresh = latestMondayRefreshResult.data as Row | null;
@@ -529,6 +536,19 @@ Deno.serve(async (request) => {
             detail: qbo?.last_successful_at
               ? `${qbo.customer_count ?? 0} customers; ${qboAge} minutes old.`
               : "No successful QuickBooks snapshot is recorded.",
+          },
+          {
+            state: qboScheduler?.secret_configured &&
+                qboScheduler?.job_scheduled
+              ? "pass"
+              : "warn",
+            label: "Five-minute scheduler",
+            detail: qboScheduler?.secret_configured &&
+                qboScheduler?.job_scheduled
+              ? "The Vault-authenticated read sync is scheduled every five minutes."
+              : qboScheduler?.secret_configured
+              ? "The scheduler credential exists, but the five-minute job still needs to be enabled."
+              : "The database Vault credential qbo_cron_secret is not configured; no failing job is scheduled.",
           },
         ],
       },

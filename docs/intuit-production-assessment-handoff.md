@@ -35,7 +35,7 @@ This document separates implementation evidence from company attestations. It is
 | Assessment topic | Supported answer | Evidence / qualification |
 | --- | --- | --- |
 | Accounting API categories | Customers, invoices, and payments | Each sync queries Customer, Invoice, and Payment, with pages of at most 1,000 records. |
-| Frequency | Target: every five minutes for one connected company | The scheduler must be enabled only after the production connection and its Vault credential are ready. |
+| Frequency | Every five minutes for one connected company after production authorization | The Vault-gated scheduler remains off, without issuing failed calls, until its matching Edge Function and database credentials are ready. |
 | Syntax and validation errors tested | Not yet | Complete the sandbox checklist before changing this answer to Yes. |
 | `intuit_tid` captured | Yes | OAuth and Accounting failures sanitize and retain the response header in server-only sync state and internal Release readiness. A later success clears it. |
 | Error detail retained for support | Yes, with data minimization | The connector retains a bounded error message and `intuit_tid`. It deliberately excludes raw response bodies, access tokens, refresh tokens, bank data, and full accounting payloads. |
