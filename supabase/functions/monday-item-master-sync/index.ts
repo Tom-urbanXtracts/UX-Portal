@@ -10,39 +10,50 @@ const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
 const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
 const MONDAY_TOKEN_ENCRYPTION_KEY =
   Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
-const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
-  "9620649212";
-const MONDAY_REVIEW_GROUP_ID = Deno.env.get("MONDAY_PRODUCT_REVIEW_GROUP_ID") ??
-  "group_mm2f8tsc";
+const MONDAY_ITEM_MASTER_BOARD_ID =
+  Deno.env.get("MONDAY_ITEM_MASTER_BOARD_ID") ??
+    "18429359264";
+const ITEM_MASTER_GROUP_IDS = Object.freeze(
+  {
+    "Completed": "group_mm6tbvby",
+    "Missing Brand": "group_mm6t1j7h",
+    "Missing SKU": "group_mm6tmcfk",
+    "Missing Type / Category": "group_mm6t9wvz",
+    "Missing Quantity Type": "group_mm6thbx3",
+    "Missing Facility": "group_mm6thgyw",
+    "Missing Multiple": "group_mm6tpz7d",
+    "Inactive / Reference": "group_mm6tmshj",
+    "Sandbox / Test": "group_mm6te1wm",
+  } as const,
+);
 const SANDBOX_FACILITY_ID = 4546;
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 100;
 
 const COLUMNS = Object.freeze({
-  curatedBrand: "short_textwtwb2vrw",
-  canixItemId: "text_mm6shxmd",
-  completeness: "color_mm6tkzj1",
-  sku: "text_mm6tcwt1",
-  brand: "text_mm6tg3y5",
-  productBrand: "text_mm6tjgf0",
-  itemType: "text_mm6tkp97",
-  category: "text_mm6tax74",
-  subtype: "text_mm6tsr9j",
-  quantityType: "text_mm6tpgg8",
-  facility: "text_mm6tae01",
-  active: "color_mm6tmv95",
-  inventoryClass: "text_mm6t57ne",
-  packageCount: "numeric_mm6tqkwf",
-  missingFields: "long_text_mm6tzakg",
-  sourceUpdated: "date_mm6tg037",
-  description: "long_text_mm6tgzyx",
-  notes: "long_text_mm6th7ze",
-  strain: "text_mm6tnyyq",
-  unitWeight: "numeric_mm6tm9w4",
-  unitWeightUnit: "text_mm6tqb6c",
-  caseQuantity: "text_mm6tvy11",
-  caseUnit: "text_mm6t4eft",
-  ingredients: "long_text_mm6tq8g3",
+  canixItemId: "text_mm6ttbmr",
+  completeness: "color_mm6tsg8f",
+  sku: "text_mm6t45z7",
+  brand: "text_mm6tm2gh",
+  productBrand: "text_mm6t5t6",
+  itemType: "text_mm6tvbhq",
+  category: "text_mm6tf57h",
+  subtype: "text_mm6t4nys",
+  quantityType: "text_mm6tqbw5",
+  facility: "text_mm6ts7h7",
+  active: "color_mm6tz8y1",
+  inventoryClass: "text_mm6tvgek",
+  packageCount: "numeric_mm6t335z",
+  missingFields: "long_text_mm6tedam",
+  sourceUpdated: "date_mm6t94gy",
+  description: "long_text_mm6txm7v",
+  notes: "long_text_mm6tetcj",
+  strain: "text_mm6tz7xs",
+  unitWeight: "numeric_mm6tdk6h",
+  unitWeightUnit: "text_mm6thwn2",
+  caseQuantity: "text_mm6trsx8",
+  caseUnit: "text_mm6t9yp9",
+  ingredients: "long_text_mm6t4ycc",
 });
 
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -54,11 +65,8 @@ type BoardItem = {
   id: string;
   name: string;
   updatedAt: string | null;
-  groupTitle: string;
+  groupId: string;
   canixItemId: number | null;
-  curatedBrand: string | null;
-  completeness: string | null;
-  missingFields: string | null;
 };
 type PreparedItem = {
   source: Row;
@@ -70,7 +78,8 @@ type PreparedItem = {
   columnValues: Row;
   sourceHash: string;
   boardItem: BoardItem | null;
-  mappingOrigin: "existing_id" | "exact_name_brand" | "created";
+  targetGroupId: string;
+  mappingOrigin: "existing_id" | "created";
 };
 
 class SyncError extends Error {
@@ -396,9 +405,6 @@ async function currentPackageCounts(): Promise<Map<number, number>> {
 async function mondayBoardItems(accessToken: string): Promise<BoardItem[]> {
   const columnIds = [
     COLUMNS.canixItemId,
-    COLUMNS.curatedBrand,
-    COLUMNS.completeness,
-    COLUMNS.missingFields,
   ];
   const first = await mondayGraphql(
     accessToken,
@@ -409,17 +415,17 @@ async function mondayBoardItems(accessToken: string): Promise<BoardItem[]> {
         columns { id }
         items_page(limit: $limit) {
           cursor
-          items { id name updated_at group { title } column_values(ids: $columnIds) { id text } }
+          items { id name updated_at group { id } column_values(ids: $columnIds) { id text } }
         }
       }
     }`,
-    { boardIds: [MONDAY_PRODUCT_BOARD_ID], limit: 250, columnIds },
+    { boardIds: [MONDAY_ITEM_MASTER_BOARD_ID], limit: 250, columnIds },
   );
   const board = Array.isArray(first.boards) ? asObject(first.boards[0]) : {};
-  if (String(board.id ?? "") !== MONDAY_PRODUCT_BOARD_ID) {
+  if (String(board.id ?? "") !== MONDAY_ITEM_MASTER_BOARD_ID) {
     throw new SyncError(
       409,
-      "The configured Monday product board is unavailable.",
+      "The configured Monday Item Master board is unavailable.",
     );
   }
   const boardColumns = new Set(
@@ -431,9 +437,10 @@ async function mondayBoardItems(accessToken: string): Promise<BoardItem[]> {
     !boardColumns.has(id)
   );
   const groups = Array.isArray(board.groups) ? board.groups as Row[] : [];
+  const boardGroupIds = new Set(groups.map((group) => String(group.id ?? "")));
   if (
     missingColumns.length ||
-    !groups.some((group) => String(group.id ?? "") === MONDAY_REVIEW_GROUP_ID)
+    Object.values(ITEM_MASTER_GROUP_IDS).some((id) => !boardGroupIds.has(id))
   ) {
     throw new SyncError(
       409,
@@ -451,11 +458,8 @@ async function mondayBoardItems(accessToken: string): Promise<BoardItem[]> {
       id: String(item.id ?? ""),
       name: clean(item.name, 600) ?? "",
       updatedAt: iso(item.updated_at),
-      groupTitle: clean(asObject(item.group).title, 240) ?? "",
+      groupId: clean(asObject(item.group).id, 240) ?? "",
       canixItemId: positiveInteger(rawId),
-      curatedBrand: mondayText(values.get(COLUMNS.curatedBrand)),
-      completeness: mondayText(values.get(COLUMNS.completeness)),
-      missingFields: mondayText(values.get(COLUMNS.missingFields)),
     };
   };
   const page = asObject(board.items_page);
@@ -470,7 +474,7 @@ async function mondayBoardItems(accessToken: string): Promise<BoardItem[]> {
       `query CanixItemMasterBoardNext($cursor: String!, $limit: Int!, $columnIds: [String!]) {
         next_items_page(cursor: $cursor, limit: $limit) {
           cursor
-          items { id name updated_at group { title } column_values(ids: $columnIds) { id text } }
+          items { id name updated_at group { id } column_values(ids: $columnIds) { id text } }
         }
       }`,
       { cursor, limit: 250, columnIds },
@@ -513,40 +517,6 @@ async function allLinks(): Promise<Map<number, Row>> {
     502,
     "The Monday Item Master ledger exceeded the safe limit.",
   );
-}
-
-function exactMatches(
-  canixRows: Row[],
-  mondayItems: BoardItem[],
-  alreadyLinked: Set<string>,
-): Map<number, BoardItem> {
-  const excludedGroups = new Set(["no longer valid", "non-cannabis"]);
-  const mondayByKey = new Map<string, BoardItem[]>();
-  for (const item of mondayItems) {
-    if (
-      item.canixItemId || alreadyLinked.has(item.id) ||
-      excludedGroups.has(exactKey(item.groupTitle))
-    ) continue;
-    const key = `${exactKey(item.name)}\u0000${exactKey(item.curatedBrand)}`;
-    if (!item.name || !item.curatedBrand) continue;
-    mondayByKey.set(key, [...(mondayByKey.get(key) ?? []), item]);
-  }
-  const canixByKey = new Map<string, Row[]>();
-  for (const row of canixRows) {
-    const brand = itemBrand(row);
-    const name = clean(row.name, 600);
-    if (!brand || !name) continue;
-    const key = `${exactKey(name)}\u0000${exactKey(brand)}`;
-    canixByKey.set(key, [...(canixByKey.get(key) ?? []), row]);
-  }
-  const matches = new Map<number, BoardItem>();
-  for (const [key, sourceRows] of canixByKey) {
-    const targets = mondayByKey.get(key) ?? [];
-    if (sourceRows.length !== 1 || targets.length !== 1) continue;
-    const itemId = positiveInteger(sourceRows[0].item_id);
-    if (itemId) matches.set(itemId, targets[0]);
-  }
-  return matches;
 }
 
 function columnValues(
@@ -610,20 +580,18 @@ async function prepareItems(
     Array.from(linkedLists.entries()).filter(([, values]) => values.length > 1)
       .map(([itemId]) => itemId),
   );
-  const alreadyLinked = new Set(
-    Array.from(linkedLists.values()).flat().map((item) => item.id),
-  );
-  const exact = exactMatches(canixRows, mondayItems, alreadyLinked);
   const prepared: PreparedItem[] = [];
   for (const source of canixRows) {
     const canixItemId = positiveInteger(source.item_id);
     if (!canixItemId || conflictIds.has(canixItemId)) continue;
     const linked = linkedLists.get(canixItemId) ?? [];
-    const exactItem = exact.get(canixItemId) ?? null;
-    const boardItem = linked.length === 1 ? linked[0] : exactItem;
+    const boardItem = linked.length === 1 ? linked[0] : null;
     const itemClass = inventoryClass(source);
     const fields = missingFields(source, itemClass);
     const completeness = completenessStatus(source, fields);
+    const targetGroupId = ITEM_MASTER_GROUP_IDS[
+      completeness as keyof typeof ITEM_MASTER_GROUP_IDS
+    ];
     const values = columnValues(
       source,
       packageCounts.get(canixItemId) ?? 0,
@@ -639,13 +607,10 @@ async function prepareItems(
       completenessStatus: completeness,
       missingFields: fields,
       columnValues: values,
-      sourceHash: await sha256(JSON.stringify(values)),
+      sourceHash: await sha256(JSON.stringify({ values, targetGroupId })),
       boardItem,
-      mappingOrigin: linked.length === 1
-        ? "existing_id"
-        : exactItem
-        ? "exact_name_brand"
-        : "created",
+      targetGroupId,
+      mappingOrigin: linked.length === 1 ? "existing_id" : "created",
     });
   }
   return { prepared, conflictIds };
@@ -664,27 +629,32 @@ async function mutateBatch(
     }
   >
 > {
-  const variables: Row = { boardId: MONDAY_PRODUCT_BOARD_ID };
+  const variables: Row = { boardId: MONDAY_ITEM_MASTER_BOARD_ID };
   const declarations = ["$boardId: ID!"];
-  if (items.some((item) => !item.boardItem)) {
-    variables.groupId = MONDAY_REVIEW_GROUP_ID;
-    declarations.push("$groupId: String!");
-  }
   const fields: string[] = [];
   items.forEach((item, index) => {
     variables[`values${index}`] = JSON.stringify(item.columnValues);
-    declarations.push(`$values${index}: JSON!`);
+    variables[`groupId${index}`] = item.targetGroupId;
+    declarations.push(
+      `$values${index}: JSON!`,
+      `$groupId${index}: String!`,
+    );
     if (item.boardItem) {
       variables[`itemId${index}`] = item.boardItem.id;
       declarations.push(`$itemId${index}: ID!`);
       fields.push(`m${index}: change_multiple_column_values(
         board_id: $boardId, item_id: $itemId${index}, column_values: $values${index}
       ) { id updated_at }`);
+      if (item.boardItem.groupId !== item.targetGroupId) {
+        fields.push(`g${index}: move_item_to_group(
+          item_id: $itemId${index}, group_id: $groupId${index}
+        ) { id updated_at }`);
+      }
     } else {
       variables[`name${index}`] = item.name;
       declarations.push(`$name${index}: String!`);
       fields.push(`m${index}: create_item(
-        board_id: $boardId, group_id: $groupId, item_name: $name${index},
+        board_id: $boardId, group_id: $groupId${index}, item_name: $name${index},
         column_values: $values${index}
       ) { id updated_at }`);
     }
@@ -697,7 +667,10 @@ async function mutateBatch(
     variables,
   );
   return items.map((prepared, index) => {
-    const result = asObject(data[`m${index}`]);
+    const moved = asObject(data[`g${index}`]);
+    const result = Object.keys(moved).length
+      ? moved
+      : asObject(data[`m${index}`]);
     const mondayItemId = clean(result.id, 100);
     if (!mondayItemId) {
       throw new SyncError(502, "Monday did not confirm an Item Master write.");
@@ -730,43 +703,6 @@ async function upsertLinks(
     onConflict: "canix_item_id",
   });
   if (error) throw error;
-}
-
-async function classifyBoardOnlyBatch(
-  accessToken: string,
-  items: BoardItem[],
-): Promise<number> {
-  if (!items.length) return 0;
-  const variables: Row = { boardId: MONDAY_PRODUCT_BOARD_ID };
-  const declarations = ["$boardId: ID!"];
-  const fields: string[] = [];
-  items.forEach((item, index) => {
-    variables[`itemId${index}`] = item.id;
-    variables[`values${index}`] = JSON.stringify({
-      [COLUMNS.completeness]: { label: "Missing Canix ID" },
-      [COLUMNS.missingFields]: "Canix Item ID",
-    });
-    declarations.push(`$itemId${index}: ID!`, `$values${index}: JSON!`);
-    fields.push(`m${index}: change_multiple_column_values(
-      board_id: $boardId, item_id: $itemId${index}, column_values: $values${index}
-    ) { id }`);
-  });
-  const data = await mondayGraphql(
-    accessToken,
-    `mutation ClassifyMondayOnlyItems(${declarations.join(", ")}) { ${
-      fields.join("\n")
-    } }`,
-    variables,
-  );
-  for (let index = 0; index < items.length; index += 1) {
-    if (String(asObject(data[`m${index}`]).id ?? "") !== items[index].id) {
-      throw new SyncError(
-        502,
-        "Monday did not confirm a missing-Canix-ID classification.",
-      );
-    }
-  }
-  return items.length;
 }
 
 async function runSync(limit: number): Promise<Row> {
@@ -809,7 +745,8 @@ async function runSync(limit: number): Promise<Row> {
       const link = links.get(item.canixItemId);
       if (
         !link || String(link.monday_item_id ?? "") !== item.boardItem?.id ||
-        link.source_hash !== item.sourceHash
+        link.source_hash !== item.sourceHash ||
+        item.boardItem?.groupId !== item.targetGroupId
       ) return false;
       const boardUpdated = item.boardItem?.updatedAt;
       const recordedUpdated = iso(link.last_monday_updated_at);
@@ -842,35 +779,8 @@ async function runSync(limit: number): Promise<Row> {
       updated += result.filter((entry) => !entry.created).length;
     }
     const sourceRemaining = Math.max(0, pending.length - selected.length);
-    let boardOnlyClassified = 0;
-    let boardOnlyRemaining = 0;
-    if (sourceRemaining === 0) {
-      const representedBoardIds = new Set(
-        prepared.map((item) => item.boardItem?.id).filter((id): id is string =>
-          !!id
-        ),
-      );
-      const boardOnly = mondayItems.filter((item) =>
-        !item.canixItemId && !representedBoardIds.has(item.id) &&
-        (item.completeness !== "Missing Canix ID" ||
-          item.missingFields !== "Canix Item ID")
-      );
-      const available = Math.max(0, limit - selected.length);
-      const boardOnlySelected = boardOnly.slice(0, available);
-      for (let index = 0; index < boardOnlySelected.length; index += 20) {
-        boardOnlyClassified += await classifyBoardOnlyBatch(
-          accessToken,
-          boardOnlySelected.slice(index, index + 20),
-        );
-      }
-      boardOnlyRemaining = Math.max(
-        0,
-        boardOnly.length - boardOnlyClassified,
-      );
-      updated += boardOnlyClassified;
-    }
-    const remaining = sourceRemaining + boardOnlyRemaining;
-    const processed = selected.length + boardOnlyClassified;
+    const remaining = sourceRemaining;
+    const processed = selected.length;
     const { data: finished, error: finishError } = await service.rpc(
       "portal_finish_monday_item_master_sync",
       {
@@ -891,7 +801,7 @@ async function runSync(limit: number): Promise<Row> {
     }
     return {
       runId,
-      boardId: MONDAY_PRODUCT_BOARD_ID,
+      boardId: MONDAY_ITEM_MASTER_BOARD_ID,
       sourceItems: canixRows.length,
       boardItems: mondayItems.length + created,
       processed,
@@ -900,11 +810,6 @@ async function runSync(limit: number): Promise<Row> {
       unchanged: unchanged.length,
       pending: remaining,
       conflicts: conflictIds.size,
-      boardOnlyClassified,
-      boardOnlyRemaining,
-      exactNameBrandMappings: selected.filter((item) =>
-        item.mappingOrigin === "exact_name_brand"
-      ).length,
     };
   } catch (error) {
     const message = error instanceof Error
@@ -966,7 +871,10 @@ Deno.serve(async (request) => {
         )
         .eq("id", 1).single();
       if (error) throw error;
-      return json(request, { boardId: MONDAY_PRODUCT_BOARD_ID, sync: data });
+      return json(request, {
+        boardId: MONDAY_ITEM_MASTER_BOARD_ID,
+        sync: data,
+      });
     }
 
     const suppliedSecret = request.headers.get("x-cron-secret") ?? "";

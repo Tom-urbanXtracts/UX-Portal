@@ -12,6 +12,7 @@ const MONDAY_TOKEN_ENCRYPTION_KEY = Deno.env.get(
 ) ?? "";
 const LOT_CRON_SECRET = Deno.env.get("PORTAL_LOT_CRON_SECRET") ?? "";
 const LOT_BOARD_ID = Deno.env.get("MONDAY_LOT_BOARD_ID") ?? "18429359264";
+const LOT_GROUP_ID = Deno.env.get("MONDAY_LOT_GROUP_ID") ?? "topics";
 
 const COLUMN_IDS = {
   lotId: Deno.env.get("MONDAY_LOT_ID_COLUMN_ID") ?? "text_mm6t4qyx",
@@ -201,6 +202,7 @@ async function fetchMondayItems(accessToken: string): Promise<Row[]> {
           cursor
           items {
             id name updated_at
+            group { id }
             column_values(ids: $columnIds) { id text value }
           }
         }
@@ -222,6 +224,7 @@ async function fetchMondayItems(accessToken: string): Promise<Row[]> {
           cursor
           items {
             id name updated_at
+            group { id }
             column_values(ids: $columnIds) { id text value }
           }
         }
@@ -234,7 +237,13 @@ async function fetchMondayItems(accessToken: string): Promise<Row[]> {
       throw new Error("Monday lot register exceeds the supported 10,000 rows.");
     }
   }
-  return items;
+  return items.filter((item) =>
+    String(
+      (item.group && typeof item.group === "object"
+        ? (item.group as Row).id
+        : "") ?? "",
+    ) === LOT_GROUP_ID
+  );
 }
 
 function normalizeItem(item: Row): Row {
@@ -376,16 +385,18 @@ async function createMondayReviewItem(
   const data = await mondayGraphql(
     accessToken,
     `mutation StageCanixLot(
-      $boardId: ID!, $itemName: String!, $columnValues: JSON!
+      $boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!
     ) {
       create_item(
         board_id: $boardId,
+        group_id: $groupId,
         item_name: $itemName,
         column_values: $columnValues
       ) { id }
     }`,
     {
       boardId: LOT_BOARD_ID,
+      groupId: LOT_GROUP_ID,
       itemName: candidate.lotId,
       columnValues: JSON.stringify({
         [COLUMN_IDS.lotId]: candidate.lotId,
