@@ -337,7 +337,7 @@ async function callback(request: Request): Promise<Response> {
     await recordCallbackFailure(
       `QuickBooks connection storage failed${
         storeError.code ? `: ${storeError.code}` : ""
-      }.`,
+      }. ${String(storeError.message || "")}`,
     );
     return safeHtml(
       "The secure accounting connection could not be stored. Return to Release readiness for the protected failure result.",
