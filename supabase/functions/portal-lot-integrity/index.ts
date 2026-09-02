@@ -316,6 +316,188 @@ async function syncRegister(caller: Caller | null): Promise<Row> {
   return data && typeof data === "object" ? data as Row : {};
 }
 
+async function unknownLotCandidates(): Promise<
+  Array<{ lotId: string; packageReferences: string }>
+> {
+  const controls: Row[] = [];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from("portal_package_lot_control")
+      .select("package_id,lot_id").eq("integrity_status", "unknown_lot")
+      .range(start, start + 999);
+    if (error) throw error;
+    controls.push(...(data ?? []) as Row[]);
+    if ((data ?? []).length < 1000) break;
+  }
+  const packageIds = controls.map((row) => Number(row.package_id)).filter(
+    Number.isSafeInteger,
+  );
+  const packages: Row[] = [];
+  for (let start = 0; start < packageIds.length; start += 250) {
+    const { data, error } = await service.from("canix_package_current").select(
+      "package_id,tag,item_id,item_name,brand_name,facility_id,facility_name",
+    ).in("package_id", packageIds.slice(start, start + 250));
+    if (error) throw error;
+    packages.push(...(data ?? []) as Row[]);
+  }
+  const packageById = new Map(
+    packages.map((row) => [String(row.package_id), row]),
+  );
+  const grouped = new Map<string, string[]>();
+  for (const control of controls) {
+    const lotId = clean(control.lot_id, 200);
+    if (!lotId || !/^[A-Z0-9-]{1,20}$/.test(lotId)) continue;
+    const packageRow = packageById.get(String(control.package_id)) ?? {};
+    if (Number(packageRow.facility_id) === 4546) continue;
+    const reference = [
+      clean(packageRow.tag, 120) ?? `Package ${control.package_id}`,
+      clean(packageRow.item_name, 180),
+      clean(packageRow.brand_name, 100),
+      clean(packageRow.facility_name, 120),
+    ].filter(Boolean).join(" · ");
+    const current = grouped.get(lotId) ?? [];
+    current.push(reference);
+    grouped.set(lotId, current);
+  }
+  return Array.from(grouped.entries()).sort(([left], [right]) =>
+    left.localeCompare(right)
+  ).map(([lotId, references]) => ({
+    lotId,
+    packageReferences: Array.from(new Set(references)).join("\n").slice(
+      0,
+      10_000,
+    ),
+  }));
+}
+
+async function createMondayReviewItem(
+  accessToken: string,
+  candidate: { lotId: string; packageReferences: string },
+): Promise<string> {
+  const data = await mondayGraphql(
+    accessToken,
+    `mutation StageCanixLot(
+      $boardId: ID!, $itemName: String!, $columnValues: JSON!
+    ) {
+      create_item(
+        board_id: $boardId,
+        item_name: $itemName,
+        column_values: $columnValues
+      ) { id }
+    }`,
+    {
+      boardId: LOT_BOARD_ID,
+      itemName: candidate.lotId,
+      columnValues: JSON.stringify({
+        [COLUMN_IDS.lotId]: candidate.lotId,
+        [COLUMN_IDS.canixPackageReferences]: candidate.packageReferences,
+        [COLUMN_IDS.approvalStatus]: { label: "Pending Review" },
+      }),
+    },
+  );
+  const created = data.create_item && typeof data.create_item === "object"
+    ? data.create_item as Row
+    : {};
+  const itemId = clean(created.id, 80);
+  if (!itemId) throw new Error("Monday did not confirm the staged lot row.");
+  return itemId;
+}
+
+async function markStaged(
+  lotId: string,
+  state: "created" | "error",
+  mondayItemId: string | null,
+  errorMessage: string | null,
+): Promise<void> {
+  const { error } = await service.rpc("portal_finish_lot_review_staging", {
+    p_lot_id: lotId,
+    p_state: state,
+    p_monday_item_id: mondayItemId,
+    p_error: errorMessage,
+  });
+  if (error) throw error;
+}
+
+async function stageUnknownLots(caller: Caller): Promise<Row> {
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read", "boards:write"]);
+  if (!accessToken) {
+    throw new Error("Monday must be connected with board read/write access.");
+  }
+  const [candidates, boardItems] = await Promise.all([
+    unknownLotCandidates(),
+    fetchMondayItems(accessToken),
+  ]);
+  const existing = new Map<string, string>();
+  for (const item of boardItems) {
+    const normalized = normalizeItem(item);
+    const lotId = clean(normalized.source_lot_id, 200);
+    const itemId = clean(normalized.monday_item_id, 80);
+    if (lotId && itemId && !existing.has(lotId)) existing.set(lotId, itemId);
+  }
+
+  const results: Row[] = [];
+  for (let start = 0; start < candidates.length; start += 5) {
+    const batch = candidates.slice(start, start + 5);
+    results.push(
+      ...await Promise.all(batch.map(async (candidate) => {
+        const existingItemId = existing.get(candidate.lotId);
+        if (existingItemId) {
+          const { error } = await service.from("portal_lot_review_staging")
+            .upsert({
+              lot_id: candidate.lotId,
+              state: "created",
+              monday_item_id: existingItemId,
+              last_error: null,
+              completed_at: new Date().toISOString(),
+              last_attempt_at: new Date().toISOString(),
+            }, { onConflict: "lot_id" });
+          if (error) throw error;
+          return { lotId: candidate.lotId, state: "already_present" };
+        }
+        const { data: claimed, error: claimError } = await service.rpc(
+          "portal_claim_lot_review_staging",
+          { p_lot_id: candidate.lotId },
+        );
+        if (claimError) throw claimError;
+        if (claimed !== true) {
+          return { lotId: candidate.lotId, state: "already_claimed" };
+        }
+        try {
+          const itemId = await createMondayReviewItem(accessToken, candidate);
+          await markStaged(candidate.lotId, "created", itemId, null);
+          return { lotId: candidate.lotId, state: "created", itemId };
+        } catch (error) {
+          const message = error instanceof Error
+            ? error.message
+            : "Monday lot staging failed.";
+          await markStaged(candidate.lotId, "error", null, message);
+          return { lotId: candidate.lotId, state: "error", error: message };
+        }
+      })),
+    );
+  }
+  const registerSync = await syncRegister(caller);
+  const summary = {
+    discovered: candidates.length,
+    created: results.filter((row) => row.state === "created").length,
+    alreadyPresent: results.filter((row) => row.state === "already_present")
+      .length,
+    alreadyClaimed: results.filter((row) => row.state === "already_claimed")
+      .length,
+    failed: results.filter((row) => row.state === "error").length,
+  };
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.id,
+    actor_org: caller.org,
+    action: "monday.lots_staged_for_review",
+    detail: { boardId: LOT_BOARD_ID, ...summary },
+  });
+  return { ...summary, registerSync };
+}
+
 async function snapshot(): Promise<Row> {
   const [stateResult, exceptionResult] = await Promise.all([
     service.from("portal_lot_integrity_state").select(
@@ -364,6 +546,8 @@ Deno.serve(async (request) => {
   }
   try {
     if (request.method === "POST") {
+      const body = await request.json().catch(() => ({})) as Row;
+      const action = clean(body.action, 80) ?? "sync";
       const suppliedSecret = request.headers.get("x-cron-secret") ?? "";
       const cronAuthorized = LOT_CRON_SECRET.length >= 32 &&
         constantTimeEqual(suppliedSecret, LOT_CRON_SECRET);
@@ -372,6 +556,16 @@ Deno.serve(async (request) => {
         : await callerFor(request, "inventory.sync");
       if (!cronAuthorized && !caller) {
         return json(request, { error: "Forbidden" }, 403);
+      }
+      if (action === "stage-unknown-lots") {
+        if (!caller) return json(request, { error: "Forbidden" }, 403);
+        return json(request, {
+          ok: true,
+          staging: await stageUnknownLots(caller),
+        });
+      }
+      if (action !== "sync") {
+        return json(request, { error: "Unsupported action" }, 400);
       }
       const result = await syncRegister(caller);
       return json(request, { ok: true, sync: result });

@@ -1152,6 +1152,14 @@ async function cachedPayload(): Promise<Json | null> {
         productionRows.filter((row) =>
           row.lot_control_status === "multiple_lots"
         ).length,
+      lot_unknown_pointer_packages:
+        productionRows.filter((row) => row.lot_control_status === "unknown_lot")
+          .length,
+      lot_unknown_pointer_lots: new Set(
+        productionRows.filter((row) =>
+          row.lot_control_status === "unknown_lot" && row.lot_id
+        ).map((row) => String(row.lot_id)),
+      ).size,
       lot_allocation_exception_packages:
         productionRows.filter((row) =>
           row.lot_control_status !== "valid" &&

@@ -40,6 +40,7 @@ const quickbooksSafeCacheMigration = await readFile(resolve(root, "supabase/migr
 const lotIntegrityMigration = await readFile(resolve(root, "supabase/migrations/20260902070000_inbound_lot_integrity.sql"), "utf8");
 const lotIntegrityCronMigration = await readFile(resolve(root, "supabase/migrations/20260902080000_lot_integrity_cron.sql"), "utf8");
 const canixCronMigration = await readFile(resolve(root, "supabase/migrations/20260902090000_canix_sync_cron_vault.sql"), "utf8");
+const lotReviewStagingMigration = await readFile(resolve(root, "supabase/migrations/20260902100000_lot_review_staging.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -85,6 +86,8 @@ assertContract(lotIntegrityCronMigration.includes("portal-lot-integrity-daily") 
 assertContract(!/[A-Fa-f0-9]{64}/.test(lotIntegrityCronMigration), "the lot-integrity scheduler migration contains no embedded high-entropy secret");
 assertContract(canixCronMigration.includes("canix-inventory-sync-5m") && canixCronMigration.includes("vault.decrypted_secrets") && canixCronMigration.includes("portal_canix_scheduler_state"), "Canix refresh uses a Vault-backed five-minute scheduler and protected readiness state");
 assertContract(!/[A-Fa-f0-9]{64}/.test(canixCronMigration) && !canixCronMigration.includes("sb_publishable_"), "the Canix scheduler migration contains no embedded cron secret or public API key");
+assertContract(lotReviewStagingMigration.includes("portal_claim_lot_review_staging") && lotReviewStagingMigration.includes("target.last_attempt_at < now() - interval '10 minutes'") && lotReviewStagingMigration.includes("portal_finish_lot_review_staging"), "unknown Canix Lot ID staging is retryable and idempotency-claimed before Monday creation");
+assertContract(lotIntegrity.includes('action === "stage-unknown-lots"') && lotIntegrity.includes('["boards:read", "boards:write"]') && lotIntegrity.includes('{ label: "Pending Review" }') && source.includes("stageUnknownLots()"), "authorized staff can stage unknown valid Canix lots as unapproved Monday review rows without inferring ownership");
 assertContract(inventory.includes('"canix_claim_sync_run"') && !inventory.includes("await syncInventory(true);"), "inventory reads are cache-only and sync claims are serialized");
 assertContract(inventory.includes('"canix_package_sync_stage"') && inventory.includes('"canix_publish_sync_run"') && securityMigration.includes("Canix sync ownership was lost before snapshot publication"), "Canix snapshots publish atomically from a private stage");
 assertContract(admin.includes("Store Owners may deactivate current Buyers and Budtenders only."), "Store Owners cannot mutate current Owner or internal roles");

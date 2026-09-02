@@ -59,6 +59,9 @@ Monitor mode:
 - leaves catalog quantities, order commitments, and pre-order release unchanged;
 - runs reconciliation after every successful Canix snapshot;
 - supports a daily protected Monday-register synchronization and an administrator-triggered sync.
+- lets an authorized inventory operator stage each distinct, correctly formatted unknown Canix Lot ID into Monday exactly once as **Pending Review**. This action copies package references but deliberately leaves ownership, partner, agreement, deal type, and approval facts blank.
+
+The initial production backlog was staged on 2 September 2026: 65 distinct Lot IDs are Pending Review, their 123 referenced production packages now resolve to `unapproved_lot`, and production has no remaining `unknown_lot` packages. The sandbox Lot ID is intentionally excluded. Monitor mode remains active.
 
 Block mode applies the same `allocation_eligible` decision in all three paths:
 
@@ -78,7 +81,7 @@ After sign-off, a service-role operator may call `portal_set_lot_integrity_mode(
 
 ## Operating procedure
 
-1. Create the inbound lot in Monday before receiving or allocating packages.
+1. Create the inbound lot in Monday before receiving or allocating packages. For historical valid pointers, use **Stage Canix lots** in Inventory to create Pending Review rows without inferred ownership.
 2. Record the agreement and economic-party facts. Do not put them in Canix Brand.
 3. Approve the lot only after required evidence is complete.
 4. Assign the approved Lot ID to each related Canix package through the supported Canix interface.

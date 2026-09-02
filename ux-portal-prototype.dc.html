@@ -1128,7 +1128,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <section aria-labelledby="lot-integrity-heading" style="margin:0 0 30px;border:1px solid rgba(23,14,11,.24);background:#fff;padding:17px 18px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
 <div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY LOT REGISTER · {{ invLotModeLabel }}</div><h2 id="lot-integrity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Package ownership integrity</h2><p style="font-size:12px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Canix carries only the Lot ID pointer. Economic ownership and approval resolve through the protected Monday register. {{ invLotModeNote }}</p></div>
-<sc-if value="{{ invCanSyncLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotSync }}" aria-disabled="{{ invLotSyncPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotSyncOpacity }}">{{ invLotSyncLabel }}</button></sc-if>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ invCanStageLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotStage }}" aria-disabled="{{ invLotStagePending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotStageOpacity }}">{{ invLotStageLabel }}</button></sc-if><sc-if value="{{ invCanSyncLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotSync }}" aria-disabled="{{ invLotSyncPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotSyncOpacity }}">{{ invLotSyncLabel }}</button></sc-if></div>
 </div>
 <div style="{{ invLotKpiStyle }}">
 <sc-for list="{{ invLotKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:12px 13px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 18px Archivo,sans-serif;{{ k.valueStyle }}">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for>
@@ -3230,7 +3230,8 @@ const CANIX_INVENTORY_SNAPSHOT = {
   checks: { active_inactive_conflicts: null, zero_quantity_packages: null, failed_lab_packages: null, not_submitted_packages: null, expired_packages: null,
     reservation_known_packages: null, reserved_available_count_packages: null, count_items_with_case_quantity: null,
     lot_valid_packages: null, lot_exception_packages: null, lot_missing_pointer_packages: null,
-    lot_multiple_value_packages: null, lot_allocation_exception_packages: null,
+    lot_multiple_value_packages: null, lot_unknown_pointer_packages: null, lot_unknown_pointer_lots: null,
+    lot_allocation_exception_packages: null,
     lot_register_rows: null, lot_register_approved_rows: null, lot_register_invalid_rows: null,
     lot_register_duplicate_rows: null },
   package_columns: INVENTORY_PACKAGE_COLUMNS, packages: []
@@ -3490,7 +3491,7 @@ class Component extends DCLogic {
     invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
-    lotSyncPending: false,
+    lotSyncPending: false, lotStagePending: false,
     economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
     economicOwnershipLoaded: false, economicOwnershipError: null,
     economicPartyOpen: false, economicPartyEditId: null, economicPartyCode: '', economicPartyName: '',
@@ -4018,7 +4019,7 @@ class Component extends DCLogic {
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
-      lotSyncPending: false,
+      lotSyncPending: false, lotStagePending: false,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
       pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })), pricingLoading: false, pricingLoaded: false, pricingError: null,
@@ -4308,6 +4309,27 @@ class Component extends DCLogic {
       })
       .catch(e => this.set({ lotSyncPending: false,
         inventoryError: (e && e.message) || 'The Monday lot register could not be synchronized.' }));
+  }
+
+  stageUnknownLots() {
+    if (!this.requirePermission('inventory.sync', 'stage unknown Canix lots for Monday review')) return;
+    if (this.state.lotStagePending) return;
+    this.set({ lotStagePending: true, inventoryError: null });
+    fetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + (this.state.token || '') },
+      body: JSON.stringify({ action: 'stage-unknown-lots' }) })
+      .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
+      .then(({ ok, status, payload }) => {
+        if (!ok) throw new Error((payload && payload.error) || ('Lot-review endpoint returned ' + status + '.'));
+        const staged = payload && payload.staging ? payload.staging : {};
+        this.set({ lotStagePending: false, toast: Number(staged.created || 0).toLocaleString('en-US')
+          + ' Canix lot(s) staged in Monday for review; ' + Number(staged.failed || 0).toLocaleString('en-US') + ' failed.',
+          toastKind: Number(staged.failed || 0) ? 'REVIEW REQUIRED' : 'REVIEW QUEUE READY' });
+        this.loadInventory();
+      })
+      .catch(e => this.set({ lotStagePending: false,
+        inventoryError: (e && e.message) || 'The Canix lot review queue could not be staged.' }));
   }
 
   economicOwnershipCall(method, body) {
@@ -7479,6 +7501,11 @@ class Component extends DCLogic {
         ? 'Blocking mode excludes non-valid packages from catalog availability, order commitments and pre-order release.'
         : 'Monitor mode reports exceptions without reducing orderable inventory.',
       invCanSyncLots: canStaff('inventory.sync'),
+      invCanStageLots: canStaff('inventory.sync') && Number(invData.checks.lot_unknown_pointer_lots || 0) > 0,
+      invLotStagePending: s.lotStagePending,
+      invLotStageOpacity: s.lotStagePending ? '.55' : '1',
+      invLotStageLabel: s.lotStagePending ? 'Staging lots\u2026' : 'Stage ' + invNumber(invData.checks.lot_unknown_pointer_lots) + ' Canix lots',
+      onInvLotStage: () => this.stageUnknownLots(),
       invLotSyncPending: s.lotSyncPending,
       invLotSyncOpacity: s.lotSyncPending ? '.55' : '1',
       invLotSyncLabel: s.lotSyncPending ? 'Synchronizing\u2026' : 'Sync lot register',
