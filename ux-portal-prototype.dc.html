@@ -423,8 +423,10 @@ button{font-family:inherit}
 <label style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:230px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SEARCH REVIEW QUEUE</span><input type="search" value="{{ catalogMappingQuery }}" onInput="{{ onCatalogMappingQuery }}" placeholder="Monday item, brand, group, Canix ID or reason" style="width:100%;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"></label>
 <label style="display:flex;flex-direction:column;gap:5px;min-width:210px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">REVIEW STATE</span><select value="{{ catalogMappingStatus }}" onChange="{{ onCatalogMappingStatus }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">All awaiting items</option><sc-for list="{{ catalogMappingStatusOptions }}" as="status" hint-placeholder-count="7"><option value="{{ status.value }}">{{ status.label }}</option></sc-for></select></label>
 <label style="display:flex;flex-direction:column;gap:5px;min-width:180px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SORT</span><select value="{{ catalogMappingSort }}" onChange="{{ onCatalogMappingSort }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="status">Review state</option><option value="name">Product name</option><option value="brand">Brand</option><option value="group">Monday group</option></select></label>
+<button type="button" onClick="{{ onCatalogMappingExport }}" aria-disabled="{{ catalogMappingExportDisabled }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Export filtered CSV</button>
 <div style="font:700 10px ui-monospace,monospace;letter-spacing:.04em;color:var(--ux-muted);padding:10px 2px">{{ catalogMappingFilteredCount }}</div>
 </div>
+<div style="font-size:10.5px;line-height:1.5;color:var(--ux-muted);margin:-2px 0 10px">Queue totals include eligible product rows only. Full-board synchronization totals also include rows excluded as No Longer Valid or Non-Cannabis.</div>
 <label style="display:flex;flex-direction:column;gap:5px;background:var(--ux-surface);padding:11px 12px;margin-bottom:10px"><span style="font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">MANUAL IDENTITY REVIEW NOTE · REQUIRED FOR EXCEPTIONS</span><input type="text" value="{{ catalogMappingManualNote }}" onInput="{{ onCatalogMappingManualNote }}" placeholder="Example: Confirmed against Canix item detail and current brand packaging" style="width:100%;background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"><span style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">Manual links recheck both systems, reject reused or stale IDs, remain Draft, and record this note with the reviewer.</span></label>
 <sc-if value="{{ catalogMappingHasFilteredRows }}" hint-placeholder-val="{{ true }}">
 <div role="table" aria-label="Monday to Canix identity review items" style="border-top:2px solid rgba(23,14,11,.4)">
@@ -4695,6 +4697,42 @@ class Component extends DCLogic {
         catalogMappingError: (error && error.message) || 'The catalog mapping review could not be loaded.' }));
   }
 
+  exportCatalogMappingReview(rows) {
+    const s = this.state;
+    if (!Array.isArray(rows) || !rows.length || s.catalogMappingLoading || s.catalogMappingPending
+      || s.impersonating || s.role !== 'internal' || !s.authUser || !this.hasPermission('catalog.manage')) return;
+    const csvCell = value => {
+      const raw = value === null || value === undefined ? '' : String(value);
+      const guarded = /^[\t\r\n ]*[=+\-@]/.test(raw) ? "'" + raw : raw;
+      return '"' + guarded.replace(/"/g, '""') + '"';
+    };
+    const headers = ['review_state', 'review_reason', 'monday_item_id', 'monday_product_name', 'monday_brand',
+      'monday_group', 'monday_product_type', 'monday_strain_flavor', 'suggested_canix_item_id',
+      'candidate_canix_item_ids', 'candidate_names', 'candidate_brands', 'active_package_counts',
+      'reviewed_canix_item_id', 'reviewer_note', 'monday_url'];
+    const records = rows.map(mapping => {
+      const candidates = Array.isArray(mapping.candidates) ? mapping.candidates : [];
+      return [mapping.reviewStatus, mapping.reviewReason, mapping.mondayItemId, mapping.mondayItemName,
+        mapping.mondayBrand, mapping.mondayGroup, mapping.mondayProductType, mapping.mondayStrainFlavor,
+        mapping.suggestedCanixItemId, candidates.map(item => item.canixItemId).join(' | '),
+        candidates.map(item => item.canixItemName).join(' | '), candidates.map(item => item.canixBrand).join(' | '),
+        candidates.map(item => Number(item.packageCount || 0)).join(' | '), '', '', mapping.mondayUrl];
+    });
+    const csv = '\ufeff' + [headers].concat(records).map(record => record.map(csvCell).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'monday-canix-review-' + new Date().toISOString().slice(0, 10) + '.csv';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.set({ toast: rows.length + ' filtered catalog review item' + (rows.length === 1 ? '' : 's')
+      + ' exported. Enter reviewed Canix IDs and notes without changing the source rows.',
+      toastKind: 'CATALOG REVIEW EXPORTED' });
+  }
+
   approveCatalogMapping(mapping) {
     const s = this.state;
     if (!mapping || s.catalogMappingPending || s.impersonating || s.role !== 'internal'
@@ -7635,6 +7673,8 @@ class Component extends DCLogic {
       onCatalogMappingManualNote: e => this.set({ catalogMappingManualNote: e.target.value }),
       catalogMappingStatusOptions,
       catalogMappingFilteredCount: catalogMappingRows.length + ' of ' + catalogMappingReviewItems.length + ' awaiting items',
+      catalogMappingExportDisabled: catalogMappingRows.length === 0 || !!s.catalogMappingLoading || !!s.catalogMappingPending,
+      onCatalogMappingExport: () => this.exportCatalogMappingReview(catalogMappingFiltered),
       catalogMappingHasReviewItems: catalogMappingReviewItems.length > 0,
       catalogMappingNoReviewItems: !!catalogMappingSummary && catalogMappingReviewItems.length === 0,
       catalogMappingHasFilteredRows: catalogMappingRows.length > 0,
