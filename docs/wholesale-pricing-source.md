@@ -11,6 +11,8 @@ The current wholesale source is the Google Sheet **Order Sheet (urbanXtracts + B
 - Against the current 559-item Canix catalog snapshot, only 8 rows produced a unique normalized product-name + Brand match. Three additional rows matched a product name without a verified Brand; 107 rows require a reviewed crosswalk.
 - Product images remain out of scope and are not imported from this sheet.
 
+The stricter production gate was run against the refreshed Canix snapshot on 2 September 2026. It found five unique **exact** product-name + Brand pairs. All five were verified and published as default prices; the other 113 rows remain review-required and unpublished.
+
 ## Staged portal workflow
 
 All 118 `ACTIVE CART` price rows are now copied into the protected `portal_wholesale_price_source` staging table with their source document, tab, row number, section-derived Brand, product details, case values, and unit price. The portal's internal **Wholesale list to Canix review queue** derives exact, normalized, collision, Brand-conflict, and no-match states against the latest CountBased Canix snapshot. The source spreadsheet remains unchanged.
@@ -26,4 +28,4 @@ Administrator, Operations, and Sales users can verify an exception only by suppl
 5. Store-specific approved prices continue to override the default list price. Retailer Owner or Buyer proposals remain store-scoped and require internal approval.
 6. Record source document ID, sheet tab, row number, import timestamp, reviewer, and publication event so every price is auditable and reversible.
 
-The source is staged. Bulk publication remains intentionally blocked for every unverified row until it receives a reviewed Canix Item ID or the source sheet adds an immutable Canix Item ID column. Only unique exact product-name + Brand pairs may use the protected batch-verification action; every other row requires an explicit reviewer note.
+The source is staged and the five deterministic exact matches are published. Bulk publication remains intentionally blocked for every unverified row until it receives a reviewed Canix Item ID or the source sheet adds an immutable Canix Item ID column. Only unique exact product-name + Brand pairs may use the protected batch-verification action; every other row requires an explicit reviewer note.
