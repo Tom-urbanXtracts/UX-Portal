@@ -195,20 +195,24 @@ async function mondayGraphql(
 }
 
 function webhookColumn(config: unknown): string {
+  if (config && typeof config === "object") {
+    return String((config as Row).columnId ?? "");
+  }
+  const raw = String(config ?? "");
   try {
-    const value = typeof config === "string" ? JSON.parse(config) : config;
+    const value = JSON.parse(raw);
     return value && typeof value === "object"
       ? String((value as Row).columnId ?? "")
       : "";
   } catch {
-    return "";
+    const rubyHashColumn = raw.match(
+      /["']?columnId["']?\s*(?:=>|:)\s*["']([^"']+)["']/,
+    );
+    return rubyHashColumn?.[1] ?? "";
   }
 }
 
-async function createOrReuseWebhook(
-  accessToken: string,
-  forceCreate = false,
-): Promise<string> {
+async function listAppWebhooks(accessToken: string): Promise<Row[]> {
   const existingData = await mondayGraphql(
     accessToken,
     `query PortalWebhooks($boardId: ID!) {
@@ -221,12 +225,51 @@ async function createOrReuseWebhook(
   const existing = Array.isArray(existingData.webhooks)
     ? existingData.webhooks as Row[]
     : [];
+  return existing;
+}
+
+function matchingOrderWebhooks(existing: Row[]): Row[] {
+  return existing.filter((row) =>
+    String(row.event) === "change_status_column_value" &&
+    String(row.board_id) === ORDER_BOARD_ID &&
+    webhookColumn(row.config) === ORDER_STATUS_COLUMN_ID
+  );
+}
+
+function webhookAuditSummary(existing: Row[]): Row[] {
+  return existing.map((row) => ({
+    id: String(row.id ?? ""),
+    event: String(row.event ?? ""),
+    boardId: String(row.board_id ?? ""),
+    columnId: webhookColumn(row.config),
+    config: row.config ?? null,
+  }));
+}
+
+async function deleteWebhook(accessToken: string, webhookId: string) {
+  const deletedData = await mondayGraphql(
+    accessToken,
+    `mutation DeletePortalOrderWebhook($webhookId: ID!) {
+      delete_webhook(id: $webhookId) { id board_id }
+    }`,
+    { webhookId },
+  );
+  const deleted = deletedData.delete_webhook as Row | undefined;
+  if (
+    String(deleted?.id ?? "") !== webhookId ||
+    String(deleted?.board_id ?? "") !== ORDER_BOARD_ID
+  ) {
+    throw new Error("Monday did not confirm the stale webhook deletion.");
+  }
+}
+
+async function createOrReuseWebhook(
+  accessToken: string,
+  forceCreate = false,
+): Promise<string> {
+  const existing = matchingOrderWebhooks(await listAppWebhooks(accessToken));
   if (!forceCreate) {
-    const matched = existing.find((row) =>
-      String(row.event) === "change_status_column_value" &&
-      String(row.board_id) === ORDER_BOARD_ID &&
-      webhookColumn(row.config) === ORDER_STATUS_COLUMN_ID
-    );
+    const matched = existing[0];
     if (matched?.id) return String(matched.id);
   }
 
@@ -267,13 +310,18 @@ async function refreshWebhook(
     { p_encryption_key: TOKEN_ENCRYPTION_KEY },
   );
   if (connectionError) throw connectionError;
-  const connection = Array.isArray(rows) ? rows[0] as Row | undefined : undefined;
+  const connection = Array.isArray(rows)
+    ? rows[0] as Row | undefined
+    : undefined;
   const accessToken = String(connection?.access_token ?? "");
   if (!accessToken || connection?.connection_status !== "connected") {
     return json(request, {
-      error: "Monday must be connected before its signed webhook can be refreshed.",
+      error:
+        "Monday must be connected before its signed webhook can be refreshed.",
     }, 409);
   }
+  const observedBefore = await listAppWebhooks(accessToken);
+  const previousWebhooks = matchingOrderWebhooks(observedBefore);
   const webhookId = await createOrReuseWebhook(accessToken, true);
   const { error: storeError } = await service.rpc(
     "portal_store_monday_webhook",
@@ -285,6 +333,24 @@ async function refreshWebhook(
     },
   );
   if (storeError) throw storeError;
+
+  const removedWebhookIds: string[] = [];
+  const failedWebhookIds: string[] = [];
+  for (const previous of previousWebhooks) {
+    const previousId = String(previous.id ?? "");
+    if (!previousId || previousId === webhookId) continue;
+    try {
+      await deleteWebhook(accessToken, previousId);
+      removedWebhookIds.push(previousId);
+    } catch {
+      failedWebhookIds.push(previousId);
+    }
+  }
+  const observedAfter = await listAppWebhooks(accessToken);
+  const remainingWebhookIds = matchingOrderWebhooks(observedAfter)
+    .map((row) => String(row.id ?? ""))
+    .filter(Boolean);
+
   await service.from("portal_admin_audit").insert({
     actor_id: caller.id,
     actor_org: caller.org,
@@ -294,13 +360,34 @@ async function refreshWebhook(
       columnId: ORDER_STATUS_COLUMN_ID,
       webhookId,
       signedWebhook: true,
+      removedWebhookIds,
+      failedWebhookIds,
+      remainingWebhookIds,
+      observedBefore: webhookAuditSummary(observedBefore),
+      observedAfter: webhookAuditSummary(observedAfter),
     },
   });
+  if (
+    failedWebhookIds.length > 0 ||
+    remainingWebhookIds.length !== 1 ||
+    remainingWebhookIds[0] !== webhookId
+  ) {
+    return json(request, {
+      error:
+        "The new signed webhook is active, but obsolete webhook cleanup was incomplete.",
+      webhookId,
+      removedWebhookIds,
+      failedWebhookIds,
+      remainingWebhookIds,
+    }, 502);
+  }
   return json(request, {
     ok: true,
     webhookId,
     boardId: ORDER_BOARD_ID,
     columnId: ORDER_STATUS_COLUMN_ID,
+    removedWebhookIds,
+    remainingWebhookIds,
   });
 }
 
