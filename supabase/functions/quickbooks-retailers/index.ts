@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { intuitOAuthEndpoints } from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -30,6 +31,40 @@ function intuitTraceId(response: Response): string | null {
     .replace(/[^A-Za-z0-9_.:-]/g, "")
     .slice(0, 160);
   return value || null;
+}
+
+function transientAccountingStatus(status: number): boolean {
+  return status === 429 || [500, 502, 503, 504].includes(status);
+}
+
+async function accountingGet(url: string, token: string): Promise<Response> {
+  let finalError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/json",
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!transientAccountingStatus(response.status) || attempt === 2) {
+        return response;
+      }
+      const retryAfter = Number(response.headers.get("retry-after") || 0);
+      const delay = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(retryAfter * 1000, 5_000)
+        : 300 * 2 ** attempt;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    } catch (error) {
+      finalError = error;
+      if (attempt === 2) break;
+      await new Promise((resolve) => setTimeout(resolve, 300 * 2 ** attempt));
+    }
+  }
+  throw finalError instanceof Error
+    ? finalError
+    : new Error("QuickBooks Accounting API request failed.");
 }
 
 function allowedOrigin(request: Request): string {
@@ -118,21 +153,19 @@ async function accessToken(): Promise<
   if (!QBO_CLIENT_ID || !QBO_CLIENT_SECRET || !realm || !refresh) {
     throw new Error("QuickBooks server credentials are not configured.");
   }
-  const response = await fetch(
-    "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-    {
-      method: "POST",
-      headers: {
-        authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,
-        "content-type": "application/x-www-form-urlencoded",
-        accept: "application/json",
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refresh,
-      }),
+  const endpoints = await intuitOAuthEndpoints();
+  const response = await fetch(endpoints.tokenEndpoint, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,
+      "content-type": "application/x-www-form-urlencoded",
+      accept: "application/json",
     },
-  );
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refresh,
+    }),
+  });
   const body = await response.json();
   if (!response.ok || !body.access_token) {
     throw new IntuitApiError(
@@ -163,16 +196,11 @@ async function qboQuery(
     const query = `select * from ${entity}${
       where ? ` ${where}` : ""
     } startposition ${start} maxresults 1000`;
-    const response = await fetch(
+    const response = await accountingGet(
       `https://quickbooks.api.intuit.com/v3/company/${
         encodeURIComponent(auth.realm)
       }/query?minorversion=75&query=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          authorization: `Bearer ${auth.token}`,
-          accept: "application/json",
-        },
-      },
+      auth.token,
     );
     const body = await response.json();
     if (!response.ok) {

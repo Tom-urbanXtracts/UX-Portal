@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { intuitOAuthEndpoints } from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -175,7 +176,8 @@ async function startAuthorization(
       mode: "read_only_portal",
     },
   });
-  const authorize = new URL("https://appcenter.intuit.com/connect/oauth2");
+  const endpoints = await intuitOAuthEndpoints();
+  const authorize = new URL(endpoints.authorizationEndpoint);
   authorize.search = new URLSearchParams({
     client_id: QBO_CLIENT_ID,
     response_type: "code",
@@ -228,22 +230,20 @@ async function callback(request: Request): Promise<Response> {
     );
   }
 
-  const tokenResponse = await fetch(
-    "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
-    {
-      method: "POST",
-      headers: {
-        authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,
-        "content-type": "application/x-www-form-urlencoded",
-        accept: "application/json",
-      },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: REDIRECT_URI,
-      }),
+  const endpoints = await intuitOAuthEndpoints();
+  const tokenResponse = await fetch(endpoints.tokenEndpoint, {
+    method: "POST",
+    headers: {
+      authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,
+      "content-type": "application/x-www-form-urlencoded",
+      accept: "application/json",
     },
-  );
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: REDIRECT_URI,
+    }),
+  });
   const tokenBody = await tokenResponse.json() as Row;
   const refreshToken = String(tokenBody.refresh_token || "");
   if (!tokenResponse.ok || !refreshToken) {

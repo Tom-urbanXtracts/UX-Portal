@@ -17,6 +17,7 @@ const productContent = await readFile(resolve(root, "supabase/functions/portal-p
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
 const quickbooksRetailers = await readFile(resolve(root, "supabase/functions/quickbooks-retailers/index.ts"), "utf8");
+const quickbooksOAuthDiscovery = await readFile(resolve(root, "supabase/functions/_shared/quickbooks-oauth.ts"), "utf8");
 const mondayOAuth = await readFile(resolve(root, "supabase/functions/monday-oauth/index.ts"), "utf8");
 const mondayConnection = await readFile(resolve(root, "supabase/functions/_shared/monday-connection.ts"), "utf8");
 const mondayWebhook = await readFile(resolve(root, "supabase/functions/monday-webhook/index.ts"), "utf8");
@@ -88,6 +89,8 @@ assertContract(readiness.includes("Latest signed callback") && readiness.include
 assertContract(quickbooksOAuth.includes('scope: "com.intuit.quickbooks.accounting"') && quickbooksOAuth.includes("portal_consume_quickbooks_oauth_state") && quickbooksOAuth.includes("portal_store_quickbooks_connection"), "QuickBooks authorization is administrator-started, state-bound, and server-custodied");
 assertContract(quickbooksOAuth.includes('headers.get("intuit_tid")') && quickbooksRetailers.includes('headers.get("intuit_tid")') && quickbooksRetailers.includes("error instanceof IntuitApiError") && quickbooksTraceMigration.includes("last_intuit_tid text"), "QuickBooks OAuth and data errors retain a sanitized Intuit support trace ID");
 assertContract(!quickbooksOAuth.includes("tokenBody,") && !quickbooksRetailers.includes("body,"), "QuickBooks support diagnostics do not persist or log raw Intuit response bodies");
+assertContract(quickbooksOAuth.includes("intuitOAuthEndpoints") && quickbooksRetailers.includes("intuitOAuthEndpoints") && quickbooksOAuthDiscovery.includes(".well-known/openid_configuration") && quickbooksOAuthDiscovery.includes('url.hostname !== expectedHost'), "QuickBooks OAuth uses Intuit discovery metadata with exact-host validation");
+assertContract(quickbooksRetailers.includes("transientAccountingStatus") && quickbooksRetailers.includes("attempt < 3") && quickbooksRetailers.includes("accountingGet(") && !quickbooksRetailers.includes("tokenPostWithRetry"), "read-only QuickBooks queries have a bounded transient retry policy without retrying token POSTs");
 assertContract(quickbooksOAuthMigration.includes("pgp_sym_encrypt") && quickbooksOAuthMigration.includes("oauth_state_expires_at > now()") && quickbooksOAuthMigration.includes("refresh_token = null"), "QuickBooks refresh tokens are encrypted and OAuth state is expiring and one-time");
 assertContract(orderCronMigration.includes("portal-order-outbox-flush-5m") && orderCronMigration.includes("*/5 * * * *") && orderCronMigration.includes("vault.decrypted_secrets"), "order outbox retries every five minutes with a Vault-backed credential");
 assertContract(!/[A-Fa-f0-9]{64}/.test(orderCronMigration), "the order retry migration contains no embedded high-entropy secret");

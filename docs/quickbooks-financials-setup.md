@@ -23,6 +23,8 @@ The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atom
 
 OAuth and Accounting API failures retain the sanitized `intuit_tid` response header in the protected QuickBooks sync state so an administrator can give Intuit Support the correlation ID. The portal does not persist or log the raw Intuit response body, access token, or refresh token as diagnostic data. A successful authorization or complete sync clears the prior support ID.
 
+The OAuth broker resolves the current authorization and bearer-token endpoints from Intuit's production discovery document, rejects non-HTTPS or unexpected endpoint hosts, and fails closed when discovery is unavailable. Read-only Accounting API `GET` queries retry transient network, 429, and 5xx failures at most three times with a short bounded backoff. Authorization-code and rotating refresh-token exchanges are not automatically replayed because those POST operations can consume one-time or rotating credentials; the portal records the failure and requires a fresh connection attempt when needed.
+
 The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
 
 ## Intuit production-key handoff
