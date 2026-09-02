@@ -94,6 +94,53 @@ function safeHtml(message: string, success: boolean): Response {
   });
 }
 
+function portalRedirect(result: "connected"): Response {
+  const fallback = new URL("https://portal.urbanxtracts.com/");
+  let target = fallback;
+  try {
+    const configuredTarget = new URL(PORTAL_URL);
+    if (
+      configuredTarget.protocol === "https:" &&
+      new Set([
+        "https://portal.urbanxtracts.com",
+        "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      ]).has(configuredTarget.origin)
+    ) {
+      target = configuredTarget;
+    }
+  } catch {
+    // A malformed return URL must never turn this callback into an open redirect.
+  }
+  target.searchParams.set("quickbooks", result);
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: target.toString(),
+      "cache-control": "no-store",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff",
+    },
+  });
+}
+
+async function recordCallbackFailure(category: string): Promise<void> {
+  const safeCategory = category.replace(/[^A-Za-z0-9 _.:-]/g, "").slice(
+    0,
+    180,
+  );
+  const { error } = await service.from("quickbooks_sync_state").update({
+    connection_status: "error",
+    last_error: safeCategory || "QuickBooks callback failed.",
+    updated_at: new Date().toISOString(),
+  }).eq("id", 1);
+  if (error) {
+    console.error(
+      "quickbooks-oauth callback diagnostic",
+      error.code || "update_failed",
+    );
+  }
+}
+
 function base64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const value of bytes) binary += String.fromCharCode(value);
@@ -286,7 +333,17 @@ async function callback(request: Request): Promise<Response> {
       p_environment: QBO_ENVIRONMENT,
     },
   );
-  if (storeError) throw storeError;
+  if (storeError) {
+    await recordCallbackFailure(
+      `QuickBooks connection storage failed${
+        storeError.code ? `: ${storeError.code}` : ""
+      }.`,
+    );
+    return safeHtml(
+      "The secure accounting connection could not be stored. Return to Release readiness for the protected failure result.",
+      false,
+    );
+  }
   const { error: clearTraceError } = await service.from(
     "quickbooks_sync_state",
   ).update({ last_intuit_tid: null }).eq("id", 1);
@@ -301,10 +358,7 @@ async function callback(request: Request): Promise<Response> {
       environment: QBO_ENVIRONMENT,
     },
   });
-  return safeHtml(
-    `The ${QBO_ENVIRONMENT} company is authorized for the portal's server-side read-only customer, invoice, and payment sync.`,
-    true,
-  );
+  return portalRedirect("connected");
 }
 
 Deno.serve(async (request) => {
@@ -317,6 +371,7 @@ Deno.serve(async (request) => {
     try {
       return await callback(request);
     } catch (error) {
+      await recordCallbackFailure("QuickBooks callback failed unexpectedly.");
       console.error(
         "quickbooks-oauth callback",
         error instanceof Error ? error.message : "Unexpected error",

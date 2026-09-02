@@ -546,6 +546,10 @@ Deno.serve(async (request) => {
                 qboConnectionStatus === "connected" && Boolean(qbo?.realm_id)
                 ? `The encrypted server-side customer, invoice, and payment connection is active in ${QBO_ENVIRONMENT}.`
                 : `An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.${
+                  qbo?.last_error
+                    ? ` Latest connection result: ${qbo.last_error}`
+                    : ""
+                }${
                   qbo?.last_intuit_tid
                     ? ` Latest Intuit support ID: ${qbo.last_intuit_tid}.`
                     : ""
