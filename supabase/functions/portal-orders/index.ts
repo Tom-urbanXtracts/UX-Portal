@@ -358,6 +358,21 @@ async function assertOrderAccess(caller: Caller, order: Row): Promise<void> {
   }
 }
 
+async function lotEligiblePackageIds(syncRunId: string): Promise<Set<string>> {
+  const packageIds = new Set<string>();
+  for (let from = 0;; from += 1000) {
+    const { data, error } = await service.from("portal_package_lot_control")
+      .select("package_id").eq("sync_run_id", syncRunId).eq(
+        "allocation_eligible",
+        true,
+      ).range(from, from + 999);
+    if (error) throw error;
+    for (const row of data ?? []) packageIds.add(String(row.package_id));
+    if ((data ?? []).length < 1000) break;
+  }
+  return packageIds;
+}
+
 async function releaseReady(orderId: string): Promise<boolean> {
   const { data: lines, error: lineError } = await service.from(
     "portal_order_line",
@@ -379,18 +394,31 @@ async function releaseReady(orderId: string): Promise<boolean> {
     "last_successful_run_id",
   ).eq("id", 1).maybeSingle();
   if (!sync?.last_successful_run_id) return false;
-  const { data: packages, error: packageError } = await service.from(
-    "canix_package_current",
-  )
-    .select(
-      "item_id,status_category,quantity_type,weight,orderable_units,lab_test_status,test_result_status,sales_order_id",
-    )
-    .eq("sync_run_id", sync.last_successful_run_id).in(
-      "status_category",
-      ["available", "allocated"],
-    )
-    .eq("quantity_type", "CountBased").in("item_id", itemIds);
+  const [packageResult, lotStateResult] = await Promise.all([
+    service.from("canix_package_current")
+      .select(
+        "package_id,item_id,status_category,quantity_type,weight,orderable_units,lab_test_status,test_result_status,sales_order_id",
+      )
+      .eq("sync_run_id", sync.last_successful_run_id).in(
+        "status_category",
+        ["available", "allocated"],
+      )
+      .eq("quantity_type", "CountBased").in("item_id", itemIds),
+    service.from("portal_lot_integrity_state").select("enforcement_mode").eq(
+      "id",
+      1,
+    ).maybeSingle(),
+  ]);
+  const { data: packages, error: packageError } = packageResult;
   if (packageError) throw packageError;
+  if (lotStateResult.error) throw lotStateResult.error;
+  const lotBlocking = lotStateResult.data?.enforcement_mode === "block";
+  const eligiblePackageIds = lotBlocking
+    ? await lotEligiblePackageIds(String(sync.last_successful_run_id))
+    : null;
+  const usablePackages = (packages ?? []).filter((row) =>
+    !eligiblePackageIds || eligiblePackageIds.has(String(row.package_id))
+  );
   const productIds = Array.from(
     new Set(lines.map((line) => String(line.product_id))),
   );
@@ -421,7 +449,7 @@ async function releaseReady(orderId: string): Promise<boolean> {
   );
   const currentCanixOrderId = canixOrderByPortalOrder.get(orderId) ?? null;
   const allocatedByOrderProduct = new Map<string, number>();
-  for (const row of packages ?? []) {
+  for (const row of usablePackages) {
     if (
       row.status_category !== "allocated" || !row.sales_order_id ||
       labFailed(row as unknown as Row)
@@ -435,7 +463,7 @@ async function releaseReady(orderId: string): Promise<boolean> {
   }
   const everyReleased = itemIds.every((itemId) => {
     const productId = `canix:item:${itemId}`;
-    const passingAvailable = (packages ?? []).filter((row) =>
+    const passingAvailable = usablePackages.filter((row) =>
       String(row.item_id) === itemId && row.status_category === "available" &&
       labPassed(row as unknown as Row)
     )
@@ -457,7 +485,7 @@ async function releaseReady(orderId: string): Promise<boolean> {
       return sum + Math.max(0, Number(row.quantity || 0) - covered);
     }, 0);
     const ownAllocatedPassing = currentCanixOrderId
-      ? (packages ?? []).filter((row) =>
+      ? usablePackages.filter((row) =>
         String(row.item_id) === itemId && row.status_category === "allocated" &&
         String(row.sales_order_id) === currentCanixOrderId &&
         labPassed(row as unknown as Row)

@@ -59,6 +59,8 @@ const STORED_PACKAGE_COLUMNS = [
   "case_quantity",
   "case_quantity_unit",
   "uom_code",
+  "lot_id",
+  "production_batch_number",
   "facility_id",
   "facility_name",
   "facility_license",
@@ -109,6 +111,10 @@ const PACKAGE_COLUMNS = [
   "economic_owner_source",
   "economic_owner_source_field",
   "ownership_scope",
+  "lot_control_status",
+  "lot_allocation_eligible",
+  "lot_control_detail",
+  "lot_checked_at",
 ] as const;
 
 type Json = Record<string, unknown>;
@@ -640,6 +646,9 @@ function normalizePackage(
     case_quantity_unit: stringOrNull(item.case_quantity_unit) ??
       stringOrNull(item.case_unit),
     uom_code: uomCode,
+    lot_id: stringOrNull(source.lot_id),
+    production_batch_number: stringOrNull(source.production_batch) ??
+      stringOrNull(source.production_batch_number),
     facility_id: facilityId,
     facility_name: stringOrNull(facility.name),
     facility_license: stringOrNull(facility.license_number),
@@ -760,18 +769,22 @@ async function syncInventory(force = false): Promise<Json> {
     if (asObject(published).published !== true) {
       throw new Error("Canix snapshot publication did not complete.");
     }
-    const { data: partnerSync, error: partnerSyncError } = await service.rpc(
-      "portal_sync_brand_economic_partners",
-    );
+    const [partnerSyncResult, lotIntegrityResult] = await Promise.all([
+      service.rpc("portal_sync_brand_economic_partners"),
+      service.rpc("portal_reconcile_lot_integrity"),
+    ]);
     return {
       run_id: runId,
       packages: packages.length,
       package_pages: packageResult.pages,
       sales_order_pages: salesOrderResult.pages,
       latest_source_updated_at: latest,
-      economic_partner_sync: partnerSyncError
+      economic_partner_sync: partnerSyncResult.error
         ? { synced: false, reason: "economic_partner_sync_failed" }
-        : asObject(partnerSync),
+        : asObject(partnerSyncResult.data),
+      lot_integrity: lotIntegrityResult.error
+        ? { checked: false, reason: "lot_integrity_reconciliation_failed" }
+        : asObject(lotIntegrityResult.data),
     };
   } catch (error) {
     const message = errorMessage(error);
@@ -830,6 +843,23 @@ async function allCurrentPackages(runId: string): Promise<Json[]> {
       .select(STORED_PACKAGE_COLUMNS.join(","))
       .eq("sync_run_id", runId)
       .order("source_updated_at", { ascending: false, nullsFirst: false })
+      .range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as Json[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+async function allLotControls(runId: string): Promise<Json[]> {
+  const rows: Json[] = [];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from("portal_package_lot_control")
+      .select(
+        "package_id,integrity_status,allocation_eligible,detail,checked_at",
+      )
+      .eq("sync_run_id", runId)
       .range(start, start + 999);
     if (error) throw error;
     const page = (data ?? []) as unknown as Json[];
@@ -962,12 +992,30 @@ async function cachedPayload(): Promise<Json | null> {
   if (error) throw error;
   const runId = stringOrNull(state.last_successful_run_id);
   if (!runId) return null;
-  const rows: Json[] =
-    (await withEconomicOwnership(await allCurrentPackages(runId)))
-      .map((row): Json => ({
-        ...row,
-        coa_url: httpsUrlOrNull(row.coa_url),
-      }));
+  const [ownedRows, lotControls, lotStateResult] = await Promise.all([
+    withEconomicOwnership(await allCurrentPackages(runId)),
+    allLotControls(runId),
+    service.from("portal_lot_integrity_state").select(
+      "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
+    ).eq("id", 1).maybeSingle(),
+  ]);
+  if (lotStateResult.error) throw lotStateResult.error;
+  const lotControlByPackage = new Map(
+    lotControls.map((control) => [String(control.package_id), control]),
+  );
+  const rows: Json[] = ownedRows.map((row): Json => {
+    const control = lotControlByPackage.get(String(row.package_id));
+    return {
+      ...row,
+      coa_url: httpsUrlOrNull(row.coa_url),
+      lot_control_status: control?.integrity_status ?? "not_checked",
+      lot_allocation_eligible: control?.allocation_eligible ?? false,
+      lot_control_detail: control?.detail ??
+        "Lot pointer has not been checked against the Monday register.",
+      lot_checked_at: control?.checked_at ?? null,
+    };
+  });
+  const lotState = lotStateResult.data as Json | null;
   const sandboxRows = rows.filter((row) =>
     numberOrNull(row.facility_id) === 4546
   );
@@ -1002,6 +1050,10 @@ async function cachedPayload(): Promise<Json | null> {
       connection_mode: "server_side_canix_api_cache",
       ownership_model: "portal_item_default_with_package_override",
       ownership_fallback: "none",
+      lot_register_system: "Monday UX Inbound Lot Register",
+      lot_register_board_id: lotState?.monday_board_id ?? null,
+      lot_register_last_sync_at: lotState?.last_register_sync_at ?? null,
+      lot_integrity_last_checked_at: lotState?.last_integrity_run_at ?? null,
       availability_rule:
         "active Canix package + status_category available; explicit reservations subtracted",
       catalog_grouping: "canix_item_id_v1",
@@ -1013,6 +1065,7 @@ async function cachedPayload(): Promise<Json | null> {
       status_categories: ["available", "in_progress", "allocated"],
       quantity_types: ["WeightBased", "CountBased"],
       volume_excluded: true,
+      lot_enforcement_mode: lotState?.enforcement_mode ?? "monitor",
     },
     summary: {
       packages: productionRows.length,
@@ -1085,6 +1138,33 @@ async function cachedPayload(): Promise<Json | null> {
           positiveIntegerOrNull(row.case_quantity) !== null
         ).map((row) => numberOrNull(row.item_id)).filter((id) => id !== null),
       ).size,
+      lot_valid_packages:
+        productionRows.filter((row) => row.lot_control_status === "valid")
+          .length,
+      lot_exception_packages:
+        productionRows.filter((row) => row.lot_control_status !== "valid")
+          .length,
+      lot_missing_pointer_packages:
+        productionRows.filter((row) =>
+          row.lot_control_status === "missing_pointer"
+        ).length,
+      lot_multiple_value_packages:
+        productionRows.filter((row) =>
+          row.lot_control_status === "multiple_lots"
+        ).length,
+      lot_allocation_exception_packages:
+        productionRows.filter((row) =>
+          row.lot_control_status !== "valid" &&
+          ["available", "allocated"].includes(String(row.status_category))
+        ).length,
+      lot_register_rows: numberOrNull(lotState?.register_rows),
+      lot_register_approved_rows: numberOrNull(
+        lotState?.approved_register_rows,
+      ),
+      lot_register_invalid_rows: numberOrNull(lotState?.invalid_register_rows),
+      lot_register_duplicate_rows: numberOrNull(
+        lotState?.duplicate_register_rows,
+      ),
     },
     package_columns: PACKAGE_COLUMNS,
     packages: productionRows.map((row) =>

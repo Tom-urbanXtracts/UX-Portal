@@ -99,7 +99,7 @@ async function currentRows(
 ): Promise<Row[]> {
   const rows: Row[] = [];
   const fields =
-    "package_id,tag,item_id,item_name,sku,item_category_name,item_sub_category_name,product_id,product_name,brand_name,strain_name,strain_type,quantity_type,status_category,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lab_test_status,test_result_status,has_coa,packaged_date,facility_name,room_name,source_package_ids,source_updated_at";
+    "package_id,tag,item_id,item_name,sku,item_category_name,item_sub_category_name,product_id,product_name,brand_name,strain_name,strain_type,quantity_type,status_category,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lot_id,production_batch_number,lab_test_status,test_result_status,has_coa,packaged_date,facility_name,room_name,source_package_ids,source_updated_at";
   for (let start = 0;; start += 1000) {
     let query = service.from("canix_package_current").select(fields).eq(
       "sync_run_id",
@@ -118,6 +118,22 @@ async function currentRows(
     if (page.length < 1000) break;
   }
   return rows;
+}
+
+async function lotEligiblePackageIds(runId: string): Promise<Set<number>> {
+  const packageIds = new Set<number>();
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from("portal_package_lot_control")
+      .select("package_id").eq("sync_run_id", runId).eq(
+        "allocation_eligible",
+        true,
+      ).range(start, start + 999);
+    if (error) throw error;
+    const page = data ?? [];
+    for (const row of page) packageIds.add(Number(row.package_id));
+    if (page.length < 1000) break;
+  }
+  return packageIds;
 }
 
 function orderableUnits(row: Row): number {
@@ -206,10 +222,22 @@ Deno.serve(async (request) => {
       }, 503);
     }
     const internal = profile.role === "internal";
-    const rows = await currentRows(
-      String(state.last_successful_run_id),
-      internal,
+    const runId = String(state.last_successful_run_id);
+    const [rawRows, lotStateResult] = await Promise.all([
+      currentRows(runId, internal),
+      service.from("portal_lot_integrity_state").select("enforcement_mode")
+        .eq("id", 1).maybeSingle(),
+    ]);
+    if (lotStateResult.error) throw lotStateResult.error;
+    const lotEnforcementMode = String(
+      lotStateResult.data?.enforcement_mode ?? "monitor",
     );
+    const eligiblePackages = lotEnforcementMode === "block"
+      ? await lotEligiblePackageIds(runId)
+      : null;
+    const rows = eligiblePackages
+      ? rawRows.filter((row) => eligiblePackages.has(Number(row.package_id)))
+      : rawRows;
     const groups = new Map<string, Row[]>();
     for (const row of rows) {
       if (labFailed(row)) continue;
@@ -287,6 +315,8 @@ Deno.serve(async (request) => {
           packaged: row.packaged_date || "Not recorded",
           facility: row.facility_name || "Not recorded",
           room: row.room_name || "Not recorded",
+          lotId: row.lot_id || null,
+          productionBatch: row.production_batch_number || null,
           lab: coa.result_status || row.test_result_status ||
             row.lab_test_status || "No structured result",
           hasCoa: Boolean(documentUrl) || row.has_coa === true ||
@@ -388,6 +418,7 @@ Deno.serve(async (request) => {
     return json(request, {
       source: "Canix",
       refreshedAt: state.last_successful_at,
+      lotEnforcementMode,
       groupingPolicy: "canix_item_id_v1",
       availabilityPolicy:
         "active available count-based packages; explicit reservations subtracted; allocated packages are internal-only and unavailable",

@@ -6,6 +6,8 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MONDAY_PRODUCT_BOARD_ID = Deno.env.get("MONDAY_PRODUCT_BOARD_ID") ??
   "9620649212";
+const MONDAY_LOT_BOARD_ID = Deno.env.get("MONDAY_LOT_BOARD_ID") ??
+  "18429359264";
 const QBO_ENVIRONMENT = (Deno.env.get("QBO_ENVIRONMENT") ?? "").trim()
   .toLowerCase();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
@@ -127,6 +129,8 @@ Deno.serve(async (request) => {
       qboResult,
       qboSchedulerResult,
       mondayResult,
+      lotIntegrityResult,
+      lotSchedulerResult,
       latestMondayEventResult,
       latestMondayRefreshResult,
       latestMondayProductSyncResult,
@@ -156,6 +160,10 @@ Deno.serve(async (request) => {
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
       ).eq("id", 1).maybeSingle(),
+      service.from("portal_lot_integrity_state").select(
+        "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
+      ).eq("id", 1).maybeSingle(),
+      service.rpc("portal_lot_integrity_scheduler_state"),
       service.from("monday_webhook_event").select(
         "subscription_id,board_id,item_id,status_label,processing_state,attempt_count,received_at,processed_at,response_status,last_error",
       ).order("received_at", { ascending: false }).limit(1).maybeSingle(),
@@ -224,6 +232,8 @@ Deno.serve(async (request) => {
     if (qboResult.error) throw qboResult.error;
     if (qboSchedulerResult.error) throw qboSchedulerResult.error;
     if (mondayResult.error) throw mondayResult.error;
+    if (lotIntegrityResult.error) throw lotIntegrityResult.error;
+    if (lotSchedulerResult.error) throw lotSchedulerResult.error;
     if (latestMondayEventResult.error) throw latestMondayEventResult.error;
     if (latestMondayRefreshResult.error) throw latestMondayRefreshResult.error;
     if (latestMondayProductSyncResult.error) {
@@ -237,6 +247,11 @@ Deno.serve(async (request) => {
       ? qboSchedulerResult.data[0] as Row
       : null;
     const monday = mondayResult.data as Row | null;
+    const lotIntegrity = lotIntegrityResult.data as Row | null;
+    const lotScheduler = Array.isArray(lotSchedulerResult.data) &&
+        lotSchedulerResult.data.length
+      ? lotSchedulerResult.data[0] as Row
+      : null;
     const latestMondayEvent = latestMondayEventResult.data as Row | null;
     const latestMondayRefresh = latestMondayRefreshResult.data as Row | null;
     const latestMondayProductSync = latestMondayProductSyncResult.data as
@@ -282,6 +297,10 @@ Deno.serve(async (request) => {
     const directMondayProductReady = mondayOAuthReady &&
       mondayScopes.includes("boards:read") &&
       /^\d+$/.test(MONDAY_PRODUCT_BOARD_ID);
+    const mondayLotRegisterReady = mondayOAuthReady &&
+      mondayScopes.includes("boards:read") &&
+      /^\d+$/.test(MONDAY_LOT_BOARD_ID) &&
+      String(lotIntegrity?.monday_board_id ?? "") === MONDAY_LOT_BOARD_ID;
     const makeIntakeReady = configured("MAKE_WEBHOOK_URL") &&
       configured("MAKE_INTAKE_SECRET");
     const signedMondayReady = mondayOAuthReady &&
@@ -332,6 +351,21 @@ Deno.serve(async (request) => {
                 String(canix.last_error ?? "Unknown error").slice(0, 240)
               }`
               : `State: ${canix?.status ?? "never"}.`,
+          },
+          {
+            state: lotIntegrity?.enforcement_mode === "block"
+              ? Number(lotIntegrity?.allocation_exception_rows ?? 0) === 0
+                ? "pass"
+                : "block"
+              : "warn",
+            label: "Economic-ownership allocation gate",
+            detail: lotIntegrity?.enforcement_mode === "block"
+              ? `${
+                lotIntegrity?.allocation_exception_rows ?? 0
+              } available or allocated packages fail the enforced lot-pointer control.`
+              : `${
+                lotIntegrity?.allocation_exception_rows ?? 0
+              } available or allocated packages currently fail the lot-pointer control. Monitor mode intentionally preserves ordering during historical reconciliation.`,
           },
         ],
       },
@@ -415,6 +449,45 @@ Deno.serve(async (request) => {
             label: "Inventory commitments",
             detail:
               `${activeCommitments} active portal item commitments protect accepted orders from concurrent oversell.`,
+          },
+          {
+            state: mondayLotRegisterReady ? "pass" : "block",
+            label: "Protected inbound-lot register",
+            detail: mondayLotRegisterReady
+              ? `Monday board ${MONDAY_LOT_BOARD_ID} is pinned and readable through the server-side app connection.`
+              : "The pinned private Monday inbound-lot register is not available through the server-side app connection.",
+          },
+          {
+            state: lotIntegrity?.register_sync_status === "success"
+              ? "pass"
+              : lotIntegrity?.register_sync_status === "error"
+              ? "block"
+              : "warn",
+            label: "Lot-register snapshot",
+            detail: lotIntegrity?.register_sync_status === "success"
+              ? `${lotIntegrity?.approved_register_rows ?? 0} of ${
+                lotIntegrity?.register_rows ?? 0
+              } register rows are approved; last synchronized ${
+                ageMinutes(lotIntegrity?.last_register_sync_at)
+              } minutes ago.`
+              : lotIntegrity?.last_error
+              ? `Latest lot-register sync failed: ${
+                String(lotIntegrity.last_error).slice(0, 240)
+              }`
+              : "No successful Monday lot-register snapshot is recorded.",
+          },
+          {
+            state:
+              lotScheduler?.secret_configured && lotScheduler?.job_scheduled
+                ? "pass"
+                : "warn",
+            label: "Daily lot-integrity scheduler",
+            detail:
+              lotScheduler?.secret_configured && lotScheduler?.job_scheduled
+                ? "The Vault-authenticated Monday register sync and integrity check runs daily."
+                : lotScheduler?.secret_configured
+                ? "The scheduler credential exists, but the daily job still needs to be enabled."
+                : "The database Vault credential lot_integrity_cron_secret is not configured; manual administrator sync remains available.",
           },
         ],
       },
@@ -666,6 +739,15 @@ Deno.serve(async (request) => {
           lastWebhookRefreshAt: latestMondayRefresh?.created_at ?? null,
           accessTokenExpiresAt: monday?.access_token_expires_at ?? null,
           productBoardId: MONDAY_PRODUCT_BOARD_ID,
+          lotBoardId: MONDAY_LOT_BOARD_ID,
+          lotRegisterSyncStatus: lotIntegrity?.register_sync_status ??
+            "never_run",
+          lotRegisterSyncAt: lotIntegrity?.last_register_sync_at ?? null,
+          lotIntegrityCheckAt: lotIntegrity?.last_integrity_run_at ?? null,
+          lotEnforcementMode: lotIntegrity?.enforcement_mode ?? "monitor",
+          lotRegisterRows: lotIntegrity?.register_rows ?? 0,
+          lotPackageExceptions: lotIntegrity?.exception_package_rows ?? 0,
+          lotAllocationExceptions: lotIntegrity?.allocation_exception_rows ?? 0,
           lastProductSyncAt: latestMondayProductSync?.created_at ?? null,
           lastProductSyncScanned: latestMondayProductDetail.scanned ?? null,
           lastProductSyncSynced: latestMondayProductDetail.synced ?? null,

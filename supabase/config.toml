@@ -33,3 +33,6 @@ verify_jwt = false
 
 [functions.monday-webhook]
 verify_jwt = false
+
+[functions.portal-lot-integrity]
+verify_jwt = false

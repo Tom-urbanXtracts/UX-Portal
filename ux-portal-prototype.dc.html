@@ -1125,6 +1125,17 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<section aria-labelledby="lot-integrity-heading" style="margin:0 0 30px;border:1px solid rgba(23,14,11,.24);background:#fff;padding:17px 18px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY LOT REGISTER · {{ invLotModeLabel }}</div><h2 id="lot-integrity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Package ownership integrity</h2><p style="font-size:12px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Canix carries only the Lot ID pointer. Economic ownership and approval resolve through the protected Monday register. {{ invLotModeNote }}</p></div>
+<sc-if value="{{ invCanSyncLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotSync }}" aria-disabled="{{ invLotSyncPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotSyncOpacity }}">{{ invLotSyncLabel }}</button></sc-if>
+</div>
+<div style="{{ invLotKpiStyle }}">
+<sc-for list="{{ invLotKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:12px 13px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 18px Archivo,sans-serif;{{ k.valueStyle }}">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for>
+</div>
+<div style="font-size:10.5px;color:var(--ux-muted);line-height:1.5;margin-top:10px">Last register sync: {{ invLotLastSync }} · Last integrity check: {{ invLotLastCheck }} · Board 18429359264</div>
+</section>
+
 <sc-if value="{{ invCanManageOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="economic-party-heading" style="margin-bottom:32px;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
@@ -1325,20 +1336,22 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 
 <div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:650px">
-<div role="table" aria-label="Canix package inventory" style="min-width:1720px">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
-<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="13">
+<div role="table" aria-label="Canix package inventory" style="min-width:1960px">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
+<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="15">
 <button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ invHasRows }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ invTableRows }}" as="r" hint-placeholder-count="8">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
 <div style="min-width:0"><div style="font:700 12.5px/1.35 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.skuTag }}</div></div>
 <div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.partner }}</div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.owner }}</div>
 <div style="font:700 10.5px ui-monospace,monospace">{{ r.uom }}</div>
+<div style="font:10.5px/1.4 ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.lotId }}</div>
+<div><span style="{{ r.lotStyle }}">{{ r.lotStatus }}</span></div>
 <div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div>
 <div><div style="font:700 11.5px ui-monospace,monospace">{{ r.quantity }}</div><div style="font-size:10px;color:var(--ux-muted)">{{ r.quantityType }}</div></div>
 <div><span style="{{ r.labStyle }}">{{ r.lab }}</span></div>
@@ -3158,6 +3171,7 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'canix_package_owner_id', 'canix_package_owner_name', 'strain_name', 'strain_type',
   'quantity_type', 'weight', 'weight_unit_name', 'c_weight_g', 'c_reserved_weight',
   'reservation_state', 'reservation_source_field', 'orderable_units', 'case_quantity', 'case_quantity_unit', 'uom_code',
+  'lot_id', 'production_batch_number',
   'facility_id', 'facility_name', 'facility_license', 'room_id', 'room_name',
   'status', 'status_category', 'compliance_submitted', 'lab_test_status', 'test_result_status', 'has_coa',
   'marked_available', 'coa_url', 'coa_document_id', 'lab_name', 'lab_tested_at', 'lab_batch_number',
@@ -3169,7 +3183,8 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'economic_partner_id', 'economic_partner_name', 'economic_partner_source',
   'economic_owner_id', 'economic_owner_name', 'commercial_model',
   'settlement_counterparty_id', 'settlement_counterparty_name',
-  'economic_owner_source', 'economic_owner_source_field', 'ownership_scope'
+  'economic_owner_source', 'economic_owner_source_field', 'ownership_scope',
+  'lot_control_status', 'lot_allocation_eligible', 'lot_control_detail', 'lot_checked_at'
 ];
 
 const CANIX_INVENTORY_API = PORTAL_CONFIG.canixInventoryUrl
@@ -3198,6 +3213,8 @@ const QUICKBOOKS_OAUTH_API = PORTAL_CONFIG.quickbooksOAuthUrl
   || SUPABASE_URL + '/functions/v1/quickbooks-oauth';
 const MONDAY_OAUTH_API = PORTAL_CONFIG.mondayOAuthUrl
   || SUPABASE_URL + '/functions/v1/monday-oauth';
+const PORTAL_LOT_INTEGRITY_API = PORTAL_CONFIG.lotIntegrityUrl
+  || SUPABASE_URL + '/functions/v1/portal-lot-integrity';
 const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
   || SUPABASE_URL + '/functions/v1/portal-product-content';
 const CANIX_INVENTORY_SNAPSHOT = {
@@ -3206,12 +3223,16 @@ const CANIX_INVENTORY_SNAPSHOT = {
     latest_updated_at: null, last_successful_sync_at: null, stale: true, connection_mode: 'not_loaded' },
   scope: { excluded_facility_ids: [4546], excluded_samples: true, active_only: true,
     status_categories: ['available', 'in_progress', 'allocated'],
-    quantity_types: ['WeightBased', 'CountBased'], volume_excluded: true },
+    quantity_types: ['WeightBased', 'CountBased'], volume_excluded: true, lot_enforcement_mode: 'monitor' },
   summary: { packages: null, weight_g: null, units: null, orderable_units: null },
   quantity_types: [], statuses: [], facilities: [],
   sandbox: { packages: null, weight_g: null, units: null, latest_updated_at: null },
   checks: { active_inactive_conflicts: null, zero_quantity_packages: null, failed_lab_packages: null, not_submitted_packages: null, expired_packages: null,
-    reservation_known_packages: null, reserved_available_count_packages: null, count_items_with_case_quantity: null },
+    reservation_known_packages: null, reserved_available_count_packages: null, count_items_with_case_quantity: null,
+    lot_valid_packages: null, lot_exception_packages: null, lot_missing_pointer_packages: null,
+    lot_multiple_value_packages: null, lot_allocation_exception_packages: null,
+    lot_register_rows: null, lot_register_approved_rows: null, lot_register_invalid_rows: null,
+    lot_register_duplicate_rows: null },
   package_columns: INVENTORY_PACKAGE_COLUMNS, packages: []
 };
 
@@ -3236,6 +3257,7 @@ function unpackInventory(data) {
 
 function buildCanixCatalog(data) {
   const groups = new Map();
+  const enforceLotIntegrity = !!(data && data.scope && data.scope.lot_enforcement_mode === 'block');
   unpackInventory(data).forEach(row => {
     if (String(row.status_category || '').toLowerCase() !== 'available') return;
     if (row.quantity_type !== 'CountBased') return;
@@ -3243,6 +3265,7 @@ function buildCanixCatalog(data) {
     if (rowOrderable <= 0) return;
     const lab = String(row.test_result_status || row.lab_test_status || '').toLowerCase();
     if (lab.includes('fail')) return;
+    if (enforceLotIntegrity && row.lot_allocation_eligible !== true) return;
     const key = String(row.item_id == null ? '' : row.item_id);
     if (!/^\d+$/.test(key)) return;
     if (!groups.has(key)) groups.set(key, []);
@@ -3467,6 +3490,7 @@ class Component extends DCLogic {
     invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
+    lotSyncPending: false,
     economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
     economicOwnershipLoaded: false, economicOwnershipError: null,
     economicPartyOpen: false, economicPartyEditId: null, economicPartyCode: '', economicPartyName: '',
@@ -3994,6 +4018,7 @@ class Component extends DCLogic {
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
+      lotSyncPending: false,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
       pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })), pricingLoading: false, pricingLoaded: false, pricingError: null,
@@ -4175,6 +4200,8 @@ class Component extends DCLogic {
       ['Canix package owner (operational)', 'canix_package_owner_name'], ['Strain', 'strain_name'],
       ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
       ['UX OS UOM', 'uom_code'], ['Cost Object', 'cost_object_id'],
+      ['Lot ID', 'lot_id'], ['Production batch', 'production_batch_number'], ['Lot control', 'lot_control_status'],
+      ['Lot allocation eligible', 'lot_allocation_eligible'], ['Lot control detail', 'lot_control_detail'], ['Lot checked at', 'lot_checked_at'],
       ['Facility', 'facility_name'], ['Room', 'room_name'], ['Status', 'status'], ['Status category', 'status_category'],
       ['Lab state', 'lab_test_status'], ['COA on file', 'has_coa'], ['Packaged date', 'packaged_date'],
       ['Age days', 'age_days'], ['Sales order', 'sales_order_name'], ['Order status', 'sales_order_status'], ['Updated at', 'source_updated_at']
@@ -4260,6 +4287,27 @@ class Component extends DCLogic {
       })
       .catch(e => this.set({ inventoryLoading: false, inventoryLoaded: false,
         inventoryError: (e && e.message) || 'The inventory endpoint could not be reached.' }));
+  }
+
+  syncLotRegister() {
+    if (!this.requirePermission('inventory.sync', 'synchronize the Monday lot register')) return;
+    if (this.state.lotSyncPending) return;
+    this.set({ lotSyncPending: true, inventoryError: null });
+    fetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + (this.state.token || '') } })
+      .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
+      .then(({ ok, status, payload }) => {
+        if (!ok) throw new Error((payload && payload.error) || ('Lot-register endpoint returned ' + status + '.'));
+        const sync = payload && payload.sync ? payload.sync : {};
+        this.set({ lotSyncPending: false, toast: 'Monday lot register synchronized: '
+          + Number(sync.publishedRows || 0).toLocaleString('en-US') + ' row(s), '
+          + Number(sync.allocationExceptionRows || 0).toLocaleString('en-US') + ' allocation exceptions.',
+          toastKind: 'SYNCED' });
+        this.loadInventory();
+      })
+      .catch(e => this.set({ lotSyncPending: false,
+        inventoryError: (e && e.message) || 'The Monday lot register could not be synchronized.' }));
   }
 
   economicOwnershipCall(method, body) {
@@ -6287,6 +6335,7 @@ class Component extends DCLogic {
       : view === 'aged' ? Number(row.age_days) > 90
       : view === 'ownership' ? !row.economic_owner_name
       : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
+      : view === 'lot' ? row.lot_control_status !== 'valid'
       : view === 'zero' ? Number(row._display_quantity) === 0
       : true;
     const invViewCounts = view => invScopedPackages.filter(row => invViewMatch(row, view)).length;
@@ -6314,7 +6363,8 @@ class Component extends DCLogic {
       if (!invNeedle) return true;
       return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name,
         row.economic_partner_name, row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
-        row.uom_code, row.cost_object_id, row.strain_name, row.room_name]
+        row.uom_code, row.cost_object_id, row.lot_id, row.production_batch_number, row.lot_control_status,
+        row.strain_name, row.room_name]
         .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
     });
     const invSortValue = (row, key) => key === 'quantity' ? row._display_quantity
@@ -7424,6 +7474,27 @@ class Component extends DCLogic {
           : 'Inventory loads only after the server confirms your inventory permission. No Canix package snapshot is packaged into the browser.',
       invSourceUpdated: invSource.latest_updated_at || '\u2014',
       invLastSync: invSource.last_successful_sync_at || (s.inventoryLoaded ? '\u2014' : 'Loads after sign-in'),
+      invLotModeLabel: invData.scope && invData.scope.lot_enforcement_mode === 'block' ? 'BLOCKING' : 'MONITOR ONLY',
+      invLotModeNote: invData.scope && invData.scope.lot_enforcement_mode === 'block'
+        ? 'Blocking mode excludes non-valid packages from catalog availability, order commitments and pre-order release.'
+        : 'Monitor mode reports exceptions without reducing orderable inventory.',
+      invCanSyncLots: canStaff('inventory.sync'),
+      invLotSyncPending: s.lotSyncPending,
+      invLotSyncOpacity: s.lotSyncPending ? '.55' : '1',
+      invLotSyncLabel: s.lotSyncPending ? 'Synchronizing\u2026' : 'Sync lot register',
+      onInvLotSync: () => this.syncLotRegister(),
+      invLotKpiStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4)
+        + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);margin-top:15px',
+      invLotKpis: [
+        { label: 'REGISTER ROWS', value: invNumber(invData.checks.lot_register_rows), note: invNumber(invData.checks.lot_register_approved_rows) + ' approved.', valueStyle: '' },
+        { label: 'VALID PACKAGES', value: invNumber(invData.checks.lot_valid_packages), note: 'Resolve to one approved, unchanged lot.', valueStyle: 'color:var(--ux-accent-text)' },
+        { label: 'PACKAGE EXCEPTIONS', value: invNumber(invData.checks.lot_exception_packages), note: invNumber(invData.checks.lot_missing_pointer_packages) + ' have no pointer.', valueStyle: 'color:var(--ux-signal-text)' },
+        { label: 'ALLOCATION IMPACT', value: invNumber(invData.checks.lot_allocation_exception_packages),
+          note: invData.scope && invData.scope.lot_enforcement_mode === 'block' ? 'Currently blocked from allocation.' : 'Reported now; blocked only after enforcement activation.',
+          valueStyle: 'color:var(--ux-signal-text)' }
+      ],
+      invLotLastSync: invSource.lot_register_last_sync_at || '\u2014',
+      invLotLastCheck: invSource.lot_integrity_last_checked_at || '\u2014',
       invRefreshLabel: s.inventoryLoading ? 'Refreshing\u2026' : 'Refresh from Canix cache',
       onInvRefresh: () => this.loadInventory(),
       invInventoryBuckets: [
@@ -7452,6 +7523,7 @@ class Component extends DCLogic {
         ['aged', 'Aged 90+ days', invViewCounts('aged')],
         ['ownership', 'Owner unclassified', invViewCounts('ownership')],
         ['mapping', 'Missing mapping', invViewCounts('mapping')],
+        ['lot', 'Lot exceptions', invViewCounts('lot')],
         ['zero', 'Zero on hand', invViewCounts('zero')]
       ].map(([id, label, count]) => ({ label, count: invNumber(count), pressed: s.invView === id ? 'true' : 'false',
         style: 'background:' + (s.invView === id ? 'var(--ux-ink)' : 'transparent') + ';color:' + (s.invView === id ? 'var(--ux-ground)' : 'var(--ux-ink)')
@@ -7554,7 +7626,8 @@ class Component extends DCLogic {
         onClassify: () => this.openOwnershipQueueItem(item) })),
       invQueueEmpty: invOwnershipQueue.length === 0,
       invColumns: [
-        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'], ['status_category', 'Status'],
+        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'],
+        ['lot_id', 'Lot ID'], ['lot_control_status', 'Lot control'], ['status_category', 'Status'],
         ['quantity', 'On hand'], ['lab_test_status', 'Lab'], ['age_days', 'Age'], ['allocation', 'Allocation'],
         ['cost_object_id', 'Cost object'], ['source_updated_at', 'Updated'], ['package_id', 'Detail']
       ].map(([key, label]) => ({ label, arrow: s.invSortKey === key ? (s.invSortDir === 'asc' ? '\u2191' : '\u2193') : '',
@@ -7576,6 +7649,10 @@ class Component extends DCLogic {
           partner: row.economic_partner_name || 'Not mapped',
           owner: row.economic_owner_name || 'Not classified',
           uom: row.uom_code || '\u2014',
+          lotId: row.lot_id || '\u2014',
+          lotStatus: invTitle(row.lot_control_status || 'not_checked'),
+          lotStyle: 'display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 9px ui-monospace,monospace;letter-spacing:.03em;padding:3px 6px;background:'
+            + (row.lot_control_status === 'valid' ? 'var(--ux-accent)' : 'var(--ux-signal)') + ';color:#fff',
           status: invTitle(row.status_category),
           statusStyle: 'display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:600 9.5px ui-monospace,monospace;letter-spacing:.04em;padding:3px 6px;background:'
             + (available ? 'var(--ux-accent)' : allocated ? 'var(--ux-ink)' : 'var(--ux-surface)') + ';color:' + (available || allocated ? '#fff' : 'var(--ux-muted-strong)'),
@@ -7636,6 +7713,10 @@ class Component extends DCLogic {
         ['Ownership scope / source', [invSelected.ownership_scope, invSelected.economic_owner_source,
           invSelected.economic_owner_source_field].filter(Boolean).map(invTitle).join(' · ') || 'No mapping'],
         ['Canix Package Owner', invSelected.canix_package_owner_name || 'Not supplied by API'], ['UX OS UOM', invSelected.uom_code || ''],
+        ['Lot ID', invSelected.lot_id || 'Not recorded'],
+        ['Production batch', invSelected.production_batch_number || 'Not recorded'],
+        ['Lot control', invTitle(invSelected.lot_control_status || 'not_checked')],
+        ['Lot-control detail', invSelected.lot_control_detail || 'Not checked'],
         ['Cost Object', invSelected.cost_object_id || ''], ['Raw Canix status', invSelected.status || ''],
         ['Facility / room', [invSelected.facility_name, invSelected.room_name].filter(Boolean).join(' · ') || 'Not recorded'],
         ['Workflow status', invTitle(invSelected.status_category)],
@@ -7679,6 +7760,7 @@ class Component extends DCLogic {
       invSandboxWeight: invWeight(invData.sandbox.weight_g),
       invSandboxUnits: invUnits(invData.sandbox.units),
       invIssues: [
+        { kind: 'LOT POINTER CONTROL', title: invNumber(invData.checks.lot_allocation_exception_packages) + ' available / allocated packages need reconciliation', detail: 'Monitor mode keeps these packages visible. Before blocking is activated, each must resolve to one approved Monday lot; missing, multi-value, malformed, unknown and post-approval edits remain explicit exceptions.' },
         { kind: 'SOURCE CONSISTENCY', title: invNumber(invData.checks.active_inactive_conflicts) + ' active / inactive conflicts', detail: 'These rows have is_active = 1 and status_category = inactive. The documented Canix rule excludes them because both clauses must pass.' },
         { kind: 'QUANTITY COVERAGE', title: invNumber(invData.checks.zero_quantity_packages) + ' usable packages carry zero quantity', detail: 'They remain package records and contribute nothing to the weight or count totals. The portal does not delete or impute them.' },
         { kind: 'RELEASE SEPARATION', title: invNumber(invData.checks.failed_lab_packages) + ' usable packages have a failed lab state', detail: 'Usable inventory is not the same as retailer release. The catalog still requires both an available package status and a passed lab result.' }

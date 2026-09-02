@@ -12,6 +12,7 @@ const admin = await readFile(resolve(root, "supabase/functions/portal-admin/inde
 const pricing = await readFile(resolve(root, "supabase/functions/portal-pricing/index.ts"), "utf8");
 const financials = await readFile(resolve(root, "supabase/functions/quickbooks-financials/index.ts"), "utf8");
 const orders = await readFile(resolve(root, "supabase/functions/portal-orders/index.ts"), "utf8");
+const lotIntegrity = await readFile(resolve(root, "supabase/functions/portal-lot-integrity/index.ts"), "utf8");
 const economicOwnership = await readFile(resolve(root, "supabase/functions/portal-economic-ownership/index.ts"), "utf8");
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
@@ -36,6 +37,8 @@ const quickbooksCronMigration = await readFile(resolve(root, "supabase/migration
 const mfaMigration = await readFile(resolve(root, "supabase/migrations/20260902040000_mfa_enforcement.sql"), "utf8");
 const quickbooksEnvironmentMigration = await readFile(resolve(root, "supabase/migrations/20260902050000_quickbooks_environment_isolation.sql"), "utf8");
 const quickbooksSafeCacheMigration = await readFile(resolve(root, "supabase/migrations/20260902060000_quickbooks_environment_safe_cache_clear.sql"), "utf8");
+const lotIntegrityMigration = await readFile(resolve(root, "supabase/migrations/20260902070000_inbound_lot_integrity.sql"), "utf8");
+const lotIntegrityCronMigration = await readFile(resolve(root, "supabase/migrations/20260902080000_lot_integrity_cron.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -72,6 +75,13 @@ assertContract(securityMigration.includes("pg_advisory_xact_lock") && securityMi
 assertContract(securityMigration.includes("canix_sales_order_id") && securityMigration.includes("coverage.allocated_units"), "portal commitments reconcile only to their explicitly linked Canix sales order");
 assertContract(securityMigration.includes("'exception'") && securityMigration.includes("orders.state not in ('delivered', 'declined', 'canceled', 'exception')"), "legacy exception orders cannot retain inventory commitments");
 assertContract(securityMigration.includes("portal_enforce_order_transition_graph"), "the database enforces the order transition graph");
+assertContract(lotIntegrityMigration.includes("enforcement_mode text not null default 'monitor'") && lotIntegrityMigration.includes("portal_set_lot_integrity_mode") && source.includes("MONITOR ONLY"), "lot-integrity rollout defaults to visible monitor mode and requires an explicit server-side activation");
+assertContract(lotIntegrityMigration.includes("lot_id_change_detected") && lotIntegrityMigration.includes("target.lot_id_locked_at is not null") && lotIntegrityMigration.includes("register_lock_violation"), "approved Monday Lot IDs lock in the protected portal mirror and later edits become exceptions");
+assertContract(lotIntegrityMigration.includes("missing_pointer") && lotIntegrityMigration.includes("multiple_lots") && lotIntegrityMigration.includes("unknown_lot") && lotIntegrityMigration.includes("duplicate_register_lot") && lotIntegrityMigration.includes("unapproved_lot"), "lot-pointer reconciliation preserves distinct actionable exception states");
+assertContract(catalog.includes('lotEnforcementMode === "block"') && orders.includes('enforcement_mode === "block"') && lotIntegrityMigration.includes("enforcement_mode_value <> 'block'"), "catalog, pre-order release, and atomic commitments share the same lot-allocation gate");
+assertContract(lotIntegrity.includes('const LOT_BOARD_ID = Deno.env.get("MONDAY_LOT_BOARD_ID")') && lotIntegrity.includes('String(boards[0].id ?? "") !== LOT_BOARD_ID') && lotIntegrity.includes('permission: string'), "Monday lot synchronization is board-pinned and capability-gated");
+assertContract(lotIntegrityCronMigration.includes("portal-lot-integrity-daily") && lotIntegrityCronMigration.includes("vault.decrypted_secrets") && lotIntegrityCronMigration.includes("portal_lot_integrity_scheduler_state"), "lot ownership has a Vault-gated daily synchronization and integrity scheduler");
+assertContract(!/[A-Fa-f0-9]{64}/.test(lotIntegrityCronMigration), "the lot-integrity scheduler migration contains no embedded high-entropy secret");
 assertContract(inventory.includes('"canix_claim_sync_run"') && !inventory.includes("await syncInventory(true);"), "inventory reads are cache-only and sync claims are serialized");
 assertContract(inventory.includes('"canix_package_sync_stage"') && inventory.includes('"canix_publish_sync_run"') && securityMigration.includes("Canix sync ownership was lost before snapshot publication"), "Canix snapshots publish atomically from a private stage");
 assertContract(admin.includes("Store Owners may deactivate current Buyers and Budtenders only."), "Store Owners cannot mutate current Owner or internal roles");
@@ -149,6 +159,7 @@ assertContract(source.includes("Export filtered CSV") && source.includes("export
 assertContract(productContent.includes("reviewItems: reviewItems.slice(0, 1000)") && source.includes("SEARCH REVIEW QUEUE") && source.includes("catalogMappingStatusOptions") && source.includes("catalogMappingFilteredCount"), "every awaiting Monday-to-Canix identity is returned in a searchable, filterable, sortable review table");
 assertContract(source.includes("syncMondayCatalog()") && source.includes("Sync catalog content"), "portal administrators can scan linked Monday catalog content from release readiness");
 assertContract(readiness.includes("Latest Monday catalog scan") && readiness.includes("lastProductSyncMissingCanixItemId"), "live readiness reports Monday catalog mapping and sync evidence");
+assertContract(readiness.includes("Economic-ownership allocation gate") && readiness.includes("Daily lot-integrity scheduler") && readiness.includes("lotAllocationExceptions"), "live readiness reports lot-register, scheduler, and allocation-control state");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");
