@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -21,12 +22,14 @@ class PortalError extends Error {
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
-    "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
-    "https://portal.urbanxtracts.com",
-    "https://tom-urbanxtracts.github.io",
-    "http://127.0.0.1:4173",
-    "http://localhost:4173",
-  ]).has(candidate) ? candidate : "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site";
+      "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site",
+      "https://portal.urbanxtracts.com",
+      "https://tom-urbanxtracts.github.io",
+      "http://127.0.0.1:4173",
+      "http://localhost:4173",
+    ]).has(candidate)
+    ? candidate
+    : "https://urbanxtracts-ux-os-inventory.tamem.chatgpt.site";
 }
 
 function cors(request: Request): HeadersInit {
@@ -58,13 +61,19 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
+  if (!verifiedTokenHasAal2(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile, error } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active")
     .eq("id", user.id).maybeSingle();
-  if (error || !profile || profile.active === false || profile.role !== "internal") return null;
-  const { data: grant } = await service.from("portal_role_permission").select("permission")
-    .eq("staff_role", profile.staff_role).eq("permission", "accounts.manage").maybeSingle();
+  if (
+    error || !profile || profile.active === false || profile.role !== "internal"
+  ) return null;
+  const { data: grant } = await service.from("portal_role_permission").select(
+    "permission",
+  )
+    .eq("staff_role", profile.staff_role).eq("permission", "accounts.manage")
+    .maybeSingle();
   return grant ? { user, profile: profile as Row } : null;
 }
 
@@ -106,7 +115,10 @@ function knownDatabaseError(error: Row): PortalError {
   ].find((candidate) => message.includes(candidate));
   return known
     ? new PortalError(message.includes("not found") ? 404 : 409, known)
-    : new PortalError(500, "The retailer account service could not save that change.");
+    : new PortalError(
+      500,
+      "The retailer account service could not save that change.",
+    );
 }
 
 async function rpc(name: string, parameters: Row): Promise<Row> {
@@ -119,14 +131,20 @@ async function rpc(name: string, parameters: Row): Promise<Row> {
 }
 
 async function accounts(): Promise<Row[]> {
-  const { data: accountRows, error: accountError } = await service.from("portal_retailer_account")
-    .select("id,quickbooks_customer_id,organization_name,display_name,portal_status,status_note,account_owner_email,created_at,updated_at")
+  const { data: accountRows, error: accountError } = await service.from(
+    "portal_retailer_account",
+  )
+    .select(
+      "id,quickbooks_customer_id,organization_name,display_name,portal_status,status_note,account_owner_email,created_at,updated_at",
+    )
     .order("display_name");
   if (accountError) throw accountError;
   const ids = (accountRows ?? []).map((account) => String(account.id));
   const { data: stores, error: storeError } = ids.length
     ? await service.from("portal_store")
-      .select("license_number,retailer_account_id,quickbooks_customer_id,display_name,address,active,license_status,ordering_status,ordering_hold_reason,license_expires_on,qualified_at,closed_at,updated_at")
+      .select(
+        "license_number,retailer_account_id,quickbooks_customer_id,display_name,address,active,license_status,ordering_status,ordering_hold_reason,license_expires_on,qualified_at,closed_at,updated_at",
+      )
       .in("retailer_account_id", ids).order("display_name")
     : { data: [], error: null };
   if (storeError) throw storeError;
@@ -140,7 +158,9 @@ async function accounts(): Promise<Row[]> {
     accountOwnerEmail: account.account_owner_email,
     createdAt: account.created_at,
     updatedAt: account.updated_at,
-    stores: (stores ?? []).filter((store) => store.retailer_account_id === account.id).map((store) => ({
+    stores: (stores ?? []).filter((store) =>
+      store.retailer_account_id === account.id
+    ).map((store) => ({
       licenseNumber: store.license_number,
       quickbooksCustomerId: store.quickbooks_customer_id,
       name: store.display_name,
@@ -159,26 +179,38 @@ async function accounts(): Promise<Row[]> {
 
 async function onboardingQueue(): Promise<Row[]> {
   const { data, error } = await service.from("portal_onboarding_request")
-    .select("id,client_request_id,retailer_account_id,quickbooks_customer_id,submission_type,legal_entity,dba,stage,workflow_state,workflow_error,monday_item_id,submitted_by_email,owner_name,owner_email,submitted_at,accepted_at,updated_at")
-    .not("stage", "in", "(closed,rejected)").order("submitted_at", { ascending: false }).limit(100);
+    .select(
+      "id,client_request_id,retailer_account_id,quickbooks_customer_id,submission_type,legal_entity,dba,stage,workflow_state,workflow_error,monday_item_id,submitted_by_email,owner_name,owner_email,submitted_at,accepted_at,updated_at",
+    )
+    .not("stage", "in", "(closed,rejected)").order("submitted_at", {
+      ascending: false,
+    }).limit(100);
   if (error) throw error;
   const requestIds = (data ?? []).map((request) => String(request.id));
   const { data: stores, error: storeError } = requestIds.length
     ? await service.from("portal_onboarding_store")
-      .select("onboarding_request_id,store_name,license_number,address,qualification_status,qualification_note")
+      .select(
+        "onboarding_request_id,store_name,license_number,address,qualification_status,qualification_note",
+      )
       .in("onboarding_request_id", requestIds).order("store_number")
     : { data: [], error: null };
   if (storeError) throw storeError;
   const { data: people, error: peopleError } = requestIds.length
     ? await service.from("portal_onboarding_person")
-      .select("id,onboarding_request_id,person_role,full_name,email,phone,store_license,portal_profile_id,access_status,invited_at")
+      .select(
+        "id,onboarding_request_id,person_role,full_name,email,phone,store_license,portal_profile_id,access_status,invited_at",
+      )
       .in("onboarding_request_id", requestIds).order("created_at")
     : { data: [], error: null };
   if (peopleError) throw peopleError;
   const { data: events, error: eventError } = requestIds.length
     ? await service.from("portal_onboarding_event")
-      .select("id,onboarding_request_id,source,from_stage,to_stage,actor_email,note,metadata,created_at")
-      .in("onboarding_request_id", requestIds).order("created_at", { ascending: false })
+      .select(
+        "id,onboarding_request_id,source,from_stage,to_stage,actor_email,note,metadata,created_at",
+      )
+      .in("onboarding_request_id", requestIds).order("created_at", {
+        ascending: false,
+      })
     : { data: [], error: null };
   if (eventError) throw eventError;
   return (data ?? []).map((request) => ({
@@ -199,14 +231,18 @@ async function onboardingQueue(): Promise<Row[]> {
     submittedAt: request.submitted_at,
     acceptedAt: request.accepted_at,
     updatedAt: request.updated_at,
-    stores: (stores ?? []).filter((store) => store.onboarding_request_id === request.id).map((store) => ({
+    stores: (stores ?? []).filter((store) =>
+      store.onboarding_request_id === request.id
+    ).map((store) => ({
       name: store.store_name,
       license: store.license_number,
       address: store.address,
       qualificationStatus: store.qualification_status,
       qualificationNote: store.qualification_note,
     })),
-    people: (people ?? []).filter((person) => person.onboarding_request_id === request.id).map((person) => ({
+    people: (people ?? []).filter((person) =>
+      person.onboarding_request_id === request.id
+    ).map((person) => ({
       id: person.id,
       role: person.person_role,
       name: person.full_name,
@@ -217,7 +253,9 @@ async function onboardingQueue(): Promise<Row[]> {
       accessStatus: person.access_status,
       invitedAt: person.invited_at,
     })),
-    events: (events ?? []).filter((event) => event.onboarding_request_id === request.id).slice(0, 20).map((event) => ({
+    events: (events ?? []).filter((event) =>
+      event.onboarding_request_id === request.id
+    ).slice(0, 20).map((event) => ({
       id: event.id,
       source: event.source,
       fromStage: event.from_stage,
@@ -231,15 +269,24 @@ async function onboardingQueue(): Promise<Row[]> {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request) });
-  if (!new Set(["GET", "POST"]).has(request.method)) return json(request, { error: "Method not allowed" }, 405);
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: cors(request) });
+  }
+  if (!new Set(["GET", "POST"]).has(request.method)) {
+    return json(request, { error: "Method not allowed" }, 405);
+  }
   const contentLength = Number(request.headers.get("content-length") || 0);
-  if (contentLength > 200_000) return json(request, { error: "Request is too large" }, 413);
+  if (contentLength > 200_000) {
+    return json(request, { error: "Request is too large" }, 413);
+  }
   try {
     const caller = await callerFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
     if (request.method === "GET") {
-      const [accountRows, onboarding] = await Promise.all([accounts(), onboardingQueue()]);
+      const [accountRows, onboarding] = await Promise.all([
+        accounts(),
+        onboardingQueue(),
+      ]);
       return json(request, { accounts: accountRows, onboarding });
     }
 
@@ -252,7 +299,8 @@ Deno.serve(async (request) => {
     let result: Row;
     if (action === "start-qualification") {
       result = await rpc("portal_create_or_link_retailer_account", {
-        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "").trim(),
+        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "")
+          .trim(),
         ...actor,
       });
     } else if (action === "set-account-status") {
@@ -268,12 +316,18 @@ Deno.serve(async (request) => {
         p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
         p_display_name: String(body.name || "").trim().slice(0, 200),
         p_address: String(body.address || "").trim().slice(0, 500),
-        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "").trim() || null,
+        p_quickbooks_customer_id:
+          String(body.quickbooksCustomerId || "").trim() || null,
         ...actor,
       });
     } else if (action === "set-store-status") {
       const expires = String(body.licenseExpiresOn || "").trim();
-      if (expires && !/^\d{4}-\d{2}-\d{2}$/.test(expires)) throw new PortalError(400, "Enter the license expiration as YYYY-MM-DD.");
+      if (expires && !/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+        throw new PortalError(
+          400,
+          "Enter the license expiration as YYYY-MM-DD.",
+        );
+      }
       result = await rpc("portal_set_retailer_store_status", {
         p_account_id: String(body.accountId || ""),
         p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
@@ -309,9 +363,13 @@ Deno.serve(async (request) => {
     }
     return json(request, { ok: true, result });
   } catch (error) {
-    if (!(error instanceof PortalError)) console.error("portal-retailers", error);
+    if (!(error instanceof PortalError)) {
+      console.error("portal-retailers", error);
+    }
     return json(request, {
-      error: error instanceof PortalError ? error.message : "The retailer account service is temporarily unavailable.",
+      error: error instanceof PortalError
+        ? error.message
+        : "The retailer account service is temporarily unavailable.",
     }, error instanceof PortalError ? error.status : 500);
   }
 });

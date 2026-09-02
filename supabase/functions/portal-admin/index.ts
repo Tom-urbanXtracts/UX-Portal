@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -64,6 +65,7 @@ async function actorFor(request: Request): Promise<Row | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
+  if (!verifiedTokenHasAal2(authorization)) return null;
   const user = await response.json();
   const { data: profile } = await service.from("portal_profile").select(
     "id,role,staff_role,active,org,locations",
@@ -110,7 +112,10 @@ async function listAuthUsers(): Promise<Row[]> {
     users.push(...(data.users as unknown as Row[]));
     if (data.users.length < 1000) break;
     if (page === 20) {
-      throw new AdminError(503, "The user directory is too large to review safely.");
+      throw new AdminError(
+        503,
+        "The user directory is too large to review safely.",
+      );
     }
   }
   return users;
@@ -172,6 +177,7 @@ async function portalUsers(actor: Row): Promise<Row[]> {
     const user = authById.get(String(profile.id)) ?? {};
     const email = text(user.email, 320).toLowerCase();
     const reason = testDemoReason(user, profile);
+    const factors = Array.isArray(user.factors) ? user.factors as Row[] : [];
     return {
       id: profile.id,
       email,
@@ -181,10 +187,55 @@ async function portalUsers(actor: Row): Promise<Row[]> {
       staffRole: profile.staff_role,
       locations: profile.locations,
       active: profile.active !== false && !user.deleted_at,
+      mfaEnrolled: factors.some((factor) =>
+        factor.factor_type === "totp" && factor.status === "verified"
+      ),
       testDemo: !!reason,
       testDemoReason: reason,
     };
   }).filter((user) => user.email);
+}
+
+async function resetUserMfa(
+  request: Request,
+  actor: Row,
+  email: string,
+): Promise<Response> {
+  if (
+    actor.role !== "internal" ||
+    !(await hasPermission(actor, "users.manage"))
+  ) {
+    return json(request, {
+      error: "Only an Administrator may reset multi-factor authentication.",
+    }, 403);
+  }
+  const target = await findAuthUser(email);
+  if (!target) return json(request, { error: "User not found" }, 404);
+  if (String(target.id) === String(actor.id)) {
+    return json(request, {
+      error:
+        "Another Administrator must reset your MFA. This prevents an active administrator from locking out their own account.",
+    }, 409);
+  }
+  const { data, error } = await service.auth.admin.mfa.listFactors({
+    userId: String(target.id),
+  });
+  if (error) throw error;
+  const factors = Array.isArray(data?.factors) ? data.factors : [];
+  for (const factor of factors) {
+    const { error: deleteError } = await service.auth.admin.mfa.deleteFactor({
+      userId: String(target.id),
+      id: factor.id,
+    });
+    if (deleteError) throw deleteError;
+  }
+  await audit(actor, "reset-user-mfa", target, {
+    org: target.user_metadata && typeof target.user_metadata === "object"
+      ? (target.user_metadata as Row).org ?? null
+      : null,
+    removedFactors: factors.length,
+  });
+  return json(request, { ok: true, removedFactors: factors.length });
 }
 
 async function removeTestDemoUser(
@@ -212,7 +263,9 @@ async function removeTestDemoUser(
     target.id,
   ).maybeSingle();
   if (profileError) throw profileError;
-  if (!profile) return json(request, { error: "Portal profile not found" }, 404);
+  if (!profile) {
+    return json(request, { error: "Portal profile not found" }, 404);
+  }
   const reason = testDemoReason(target, profile as Row);
   if (!reason) {
     return json(request, {
@@ -540,6 +593,12 @@ Deno.serve(async (request) => {
         return json(request, { error: "A valid user email is required." }, 400);
       }
       return await removeTestDemoUser(request, actor, email);
+    }
+    if (action === "reset-mfa") {
+      if (!email || !email.includes("@")) {
+        return json(request, { error: "A valid user email is required." }, 400);
+      }
+      return await resetUserMfa(request, actor, email);
     }
     const org = text(body.org, 200);
     const roleLabel = text(body.role, 40);

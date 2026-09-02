@@ -214,6 +214,34 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isMfa }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:440px;margin:{{ signInMargin }}">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;color:var(--ux-accent-text);margin-bottom:8px">ACCOUNT SECURITY</div>
+<h1 style="font:800 32px/1.08 Archivo,sans-serif;letter-spacing:-.025em;margin:0 0 9px">{{ mfaTitle }}</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 22px;line-height:1.55">{{ mfaIntro }}</p>
+<sc-if value="{{ mfaIsEnroll }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid rgba(23,14,11,.22);background:#fff;padding:18px;margin-bottom:18px">
+<img src="{{ mfaQr }}" alt="Authenticator setup QR code" style="display:block;width:190px;height:190px;max-width:100%;margin:0 auto 16px">
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Cannot scan it?</div>
+<div style="font:600 12px/1.55 ui-monospace,monospace;overflow-wrap:anywhere;background:var(--ux-surface);padding:10px 11px">{{ mfaSecret }}</div>
+</div>
+</sc-if>
+<form onSubmit="{{ onMfaSubmit }}" novalidate>
+<label for="mfa-code" style="display:block;font:600 10px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Six-digit code</label>
+<input id="mfa-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" value="{{ mfaCode }}" onInput="{{ onMfaCode }}" aria-invalid="{{ mfaInvalid }}" aria-describedby="mfa-help mfa-error" required style="{{ mfaCodeStyle }}">
+<div id="mfa-help" style="font-size:11.5px;color:var(--ux-muted);line-height:1.55;margin:-8px 0 16px">Open your authenticator app and enter the current code. If you lose that device, a portal administrator must reset your factor.</div>
+<button type="submit" aria-disabled="{{ mfaDisabled }}" style="{{ mfaSubmitStyle }}">{{ mfaButton }}</button>
+<sc-if value="{{ mfaHasError }}" hint-placeholder-val="{{ false }}">
+<div id="mfa-error" role="alert" aria-live="assertive" tabindex="-1" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-top:14px">
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">VERIFICATION FAILED</div>
+<div style="font-size:13px;line-height:1.55">{{ mfaError }}</div>
+</div>
+</sc-if>
+</form>
+<button type="button" onClick="{{ onMfaCancel }}" aria-disabled="{{ mfaDisabled }}" style="width:100%;background:transparent;border:0;padding:12px 4px;font:600 12px Archivo,sans-serif;color:var(--ux-accent-text);cursor:pointer;margin-top:7px;min-height:40px;text-decoration:underline;text-underline-offset:3px">Cancel and sign out</button>
+</div>
+</sc-if>
+
 <sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:420px;margin:{{ signInMargin }}">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.1em;color:var(--ux-accent-text);margin-bottom:8px">URBANXTRACTS PORTAL</div>
@@ -1582,7 +1610,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <sc-for list="{{ users }}" as="u" hint-placeholder-count="6">
 <div style="display:grid;grid-template-columns:1.4fr 1.1fr 1.15fr .85fr auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div><div style="font-weight:600"><span style="background:transparent">{{ u.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ u.email }}</div></div>
+<div><div style="font-weight:600"><span style="background:transparent">{{ u.name }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ u.email }}</div><div style="font:600 9px ui-monospace,monospace;letter-spacing:.05em;color:var(--ux-muted);margin-top:3px">{{ u.mfaLabel }}</div></div>
 <div>{{ u.org }}</div>
 <div><span style="{{ u.roleStyle }}">{{ u.role }}</span></div>
 <div style="color:var(--ux-muted)">{{ u.locs }}</div>
@@ -1599,12 +1627,15 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ u.canRemoveTest }}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{ u.onRemoveTest }}" aria-label="Remove test user {{ u.email }}" style="background:var(--ux-signal);color:#fff;border:1px solid var(--ux-signal);padding:7px 10px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Remove test user</button>
 </sc-if>
+<sc-if value="{{ u.canResetMfa }}" hint-placeholder-val="{{ false }}">
+<button type="button" onClick="{{ u.onResetMfa }}" aria-label="Reset MFA for {{ u.email }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text)">Reset MFA</button>
+</sc-if>
 </div>
 </div>
 </sc-for>
 </div>
 <sc-if value="{{ usersNoRows }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:18px;margin-top:10px;font-size:12.5px;color:var(--ux-muted)">No portal users are available in this scope.</div></sc-if>
-<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">This is the live portal directory. Deactivation ends access but preserves the account record. The stronger remove action is available only for identities that the server independently classifies as test or executive-demo accounts; it soft-deletes authentication data while retaining historical attribution.</div>
+<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">This is the live portal directory. Every account must complete authenticator-based MFA before protected data is available. Deactivation ends access but preserves the account record. Administrators may reset another user&rsquo;s factor after identity verification; that action ends the user&rsquo;s active sessions and is audited.</div>
 </div>
 </sc-if>
 
@@ -2380,7 +2411,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="border:1px solid rgba(23,14,11,.3);padding:12px 13px;font-size:13.5px;color:var(--ux-muted)">you@yourstore.com</div>
 <div style="border:1px solid rgba(23,14,11,.3);padding:12px 13px;font-size:13.5px;color:var(--ux-muted)">Password</div>
 <div style="background:var(--ux-accent);color:#fff;padding:12px 14px;font:700 13px Archivo,sans-serif">Sign in</div>
-<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Forgot password · Multi-factor authentication is not in phase one, recorded as an assumption rather than a decision.</div>
+<div style="font-size:12px;color:var(--ux-muted);line-height:1.55">Forgot password · Authenticator enrollment or challenge · Administrator-audited MFA reset.</div>
 </div>
 </div>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px">
@@ -2754,7 +2785,7 @@ const SEED_AUDIT = [
 ];
 
 const SESSION_STATES = [
-  { title: 'Sign in', kind: 'ENTRY', body: 'Email and password, then the role and organisation come from the account — never from a picker the user controls. No multi-factor step in phase one, recorded as an assumption.', action: 'Sign in' },
+  { title: 'Sign in', kind: 'ENTRY', body: 'Google Workspace or email and password establishes the first factor. Every account then completes an authenticator challenge before the role and organisation are loaded.', action: 'Sign in' },
   { title: 'Session timed out', kind: 'EXPIRED', body: 'You were signed out after a period of inactivity. Your draft order was saved and nothing was submitted. Signing back in returns you to where you were.', action: 'Sign in again' },
   { title: 'Access denied', kind: 'DENIED', body: 'Your account does not have access to this area. It never says whether the thing behind it exists, and the request was refused by the server, not hidden by the interface.', action: 'Back to dashboard' },
   { title: 'Link expired', kind: 'EXPIRED LINK', body: 'This link is no longer valid. Request a fresh one — the original never discloses what it pointed at, including on a public COA page.', action: 'Request a new link' },
@@ -2887,7 +2918,7 @@ const VALIDATION = [
     { severity: 'DECIDED', screen: 'Order builder · Store pricing', question: 'What order value triggers Store Owner approval?', detail: 'Resolved 1 Sep 2026: Administrator, Operations, or Sales sets the rule per licensed store. A blank rule disables value-based approval, zero requires approval for every Buyer order, and a positive threshold holds only Buyer orders above that value. Store Owner orders enter the queue directly.', blocks: 'Nothing — closed', owner: 'Sales leadership', evidence: 'Protected store policy, server-side order-value verification, and a Buyer/Owner approval test' },
     { severity: 'Record and continue', screen: 'Exceptions', question: 'Who owns each exception type, and against what clock?', detail: 'A store sees status only, never the owner or the clock, so this is an internal decision that does not change any external screen.', blocks: 'Exception queue routing', owner: 'Operations', evidence: 'An owner and a target per exception type' },
     { severity: 'Record and continue', screen: 'Dashboard \u00b7 Reorder', question: 'What is the reorder interval basis \u2014 the account\u2019s own average, or days since last order?', detail: 'With sell-through decided out of scope this is the only basis there will ever be, so the choice is permanent rather than provisional. The basis is stated on screen either way.', blocks: 'Nothing today; fixes the reorder signal permanently', owner: 'Sales leadership', evidence: 'A stated basis' },
-    { severity: 'Record and continue', screen: 'Sign-in', question: 'Multi-factor authentication was left open.', detail: 'This prototype assumes none in phase one, and no personal login at all on shared floor devices.', blocks: 'Nothing today', owner: 'Administration', evidence: 'A policy per role' },
+    { severity: 'Verified in build', screen: 'Sign-in', question: 'Is multi-factor authentication enforced?', detail: 'Every Google SSO and retailer password session must present an authenticator code and receive an aal2 token before profiles or protected APIs can be reached.', blocks: 'Production enrollment test', owner: 'Administration', evidence: 'aal2 browser, Edge Function, and RLS gates' },
     { severity: 'Record and continue', screen: 'Order builder · Approvals', question: 'May an urbanXtracts rep hold a store’s ordering approval, and on whose written authority?', detail: 'Rep-held approval is disabled. Store Owner approval remains the only supported retailer approval path, so this decision cannot weaken the production order flow while Legal and Sales leadership consider it.', blocks: 'Only the deferred rep-delegation feature', owner: 'Sales leadership, with the CCO and Legal', evidence: 'A written authority, or a decision not to offer it' },
     { severity: 'Record and continue', screen: 'Draft order', question: 'Does a draft hold inventory, for how long, and who wins when two accounts draft the last of a lot?', detail: 'Today a draft holds nothing, which is why the inventory-changed gate exists. The gate stays whichever way the policy lands; the policy has never been written.', blocks: 'Nothing today; the gate handles the symptom', owner: 'Operations with sales operations', evidence: 'A stated hold policy, or a stated refusal to hold' },
     { severity: 'Record and continue', screen: 'Approvals', question: 'How long may an approval sit, and where does it escalate?', detail: 'One named human holds approval with no clock and no delegate, so an owner on holiday stalls every order over the threshold.', blocks: 'Nothing today; approvals can stall silently', owner: 'Sales leadership', evidence: 'A period and an escalation path' },
@@ -2957,6 +2988,7 @@ const SUPABASE_KEY = PORTAL_CONFIG.supabaseKey || 'sb_publishable_aIrwn28FxjXNT-
 // Azure only after that provider has been configured and verified.
 const SSO_PROVIDER = PORTAL_CONFIG.ssoProvider === 'azure' ? 'azure' : 'google';
 const SSO_DOMAIN = String(PORTAL_CONFIG.ssoDomain || 'urbanxtracts.com').toLowerCase();
+const MFA_REQUIRED = PORTAL_CONFIG.mfaRequired !== false;
 const RECALL_NOTICE_ENABLED = PORTAL_CONFIG.recallNoticeEnabled === true;
 const TURNSTILE_REQUIRED = PORTAL_CONFIG.turnstileRequired === true;
 const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
@@ -3354,6 +3386,24 @@ function readSsoReturn() {
 }
 const SSO_RETURN = readSsoReturn();
 
+function portalJwtClaims(token) {
+  try {
+    const part = String(token || '').split('.')[1];
+    if (!part) return {};
+    const normalized = part.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '=');
+    return JSON.parse(atob(padded)) || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function totpQrSource(value) {
+  const qr = String(value || '');
+  if (!qr) return '';
+  return qr.startsWith('data:image/') ? qr : 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qr);
+}
+
 // Leaked-password rejection without Supabase Pro, against the same source its
 // paid feature uses. The browser hashes the password and sends only the first
 // five characters of the SHA-1. The password and its full hash never leave this
@@ -3389,6 +3439,8 @@ class Component extends DCLogic {
   state = {
     deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null, auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
     token: null, auLocs: [], auLocOpen: false, pwNotice: null,
+    mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '',
+    mfaCode: '', mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
     onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
@@ -3692,6 +3744,107 @@ class Component extends DCLogic {
     });
   }
 
+  authHeaders(token, json) {
+    return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token,
+      ...(json ? { 'Content-Type': 'application/json' } : {}) };
+  }
+
+  authenticatedUser(token) {
+    return fetch(SUPABASE_URL + '/auth/v1/user', { headers: this.authHeaders(token, false) })
+      .then(r => r.json().catch(() => ({})).then(user => ({ ok: r.ok, user: user || {} })))
+      .then(({ ok, user }) => {
+        if (!ok || !user.id || !user.email) throw new Error('rejected');
+        return user;
+      });
+  }
+
+  finishVerifiedLogin(token, emailHint, weak, sso) {
+    if (MFA_REQUIRED && portalJwtClaims(token).aal !== 'aal2') return Promise.reject(new Error('mfa required'));
+    return this.portalIdentity(token, emailHint, weak).then(identity => {
+      if (sso && (!identity.email.endsWith('@' + SSO_DOMAIN) || identity.me.role !== 'internal')) {
+        throw new Error('domain');
+      }
+      this.finishLoginIdentity(identity);
+      return identity;
+    });
+  }
+
+  beginAuthenticatedSession(token, emailHint, weak, sso) {
+    return this.authenticatedUser(token).then(user => {
+      const email = String(user.email || emailHint || '').trim().toLowerCase();
+      if (sso && !email.endsWith('@' + SSO_DOMAIN)) throw new Error('domain');
+      if (!MFA_REQUIRED || portalJwtClaims(token).aal === 'aal2') {
+        return this.finishVerifiedLogin(token, email, weak, sso);
+      }
+      const factors = Array.isArray(user.factors) ? user.factors : [];
+      const verified = factors.find(factor => factor && factor.factor_type === 'totp' && factor.status === 'verified');
+      if (verified && verified.id) {
+        this.set({ screen: 'mfa', loginBusy: false, ssoBusy: false, mfaToken: token,
+          mfaFactorId: verified.id, mfaStage: 'challenge', mfaQr: '', mfaSecret: '', mfaCode: '',
+          mfaError: null, mfaBusy: false, mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso });
+        return null;
+      }
+      const unverified = factors.filter(factor => factor && factor.factor_type === 'totp'
+        && factor.status !== 'verified' && factor.id);
+      return Promise.all(unverified.map(factor => fetch(SUPABASE_URL + '/auth/v1/factors/' + encodeURIComponent(factor.id), {
+        method: 'DELETE', headers: this.authHeaders(token, false)
+      }).catch(() => null))).then(() => fetch(SUPABASE_URL + '/auth/v1/factors', {
+        method: 'POST', headers: this.authHeaders(token, true),
+        body: JSON.stringify({ factor_type: 'totp', friendly_name: 'UX OS Portal' })
+      })).then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
+        .then(({ ok, body }) => {
+          if (!ok || !body.id || !body.totp || !body.totp.secret || !body.totp.qr_code) throw new Error('mfa enrollment');
+          this.set({ screen: 'mfa', loginBusy: false, ssoBusy: false, mfaToken: token,
+            mfaFactorId: body.id, mfaStage: 'enroll', mfaQr: totpQrSource(body.totp.qr_code),
+            mfaSecret: String(body.totp.secret), mfaCode: '', mfaError: null, mfaBusy: false,
+            mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso });
+          return null;
+        });
+    });
+  }
+
+  submitMfa(event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const s = this.state;
+    if (s.mfaBusy) return;
+    const code = String(s.mfaCode || '').replace(/\D/g, '').slice(0, 6);
+    if (!s.mfaToken || !s.mfaFactorId || !/^\d{6}$/.test(code)) {
+      this.setState({ mfaCode: code, mfaError: 'Enter the current six-digit code from your authenticator app.' },
+        () => this.focusLogin('mfa-code'));
+      return;
+    }
+    this.set({ mfaBusy: true, mfaError: null, mfaCode: code });
+    const base = SUPABASE_URL + '/auth/v1/factors/' + encodeURIComponent(s.mfaFactorId);
+    fetch(base + '/challenge', { method: 'POST', headers: this.authHeaders(s.mfaToken, true), body: '{}' })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
+      .then(({ ok, body }) => {
+        if (!ok || !body.id) throw new Error('challenge');
+        return fetch(base + '/verify', { method: 'POST', headers: this.authHeaders(s.mfaToken, true),
+          body: JSON.stringify({ challenge_id: body.id, code }) });
+      })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
+      .then(({ ok, body }) => {
+        const upgraded = body.access_token || (body.session && body.session.access_token);
+        if (!ok || !upgraded || portalJwtClaims(upgraded).aal !== 'aal2') throw new Error('verify');
+        return this.finishVerifiedLogin(upgraded, s.mfaEmail, s.mfaWeak, s.mfaSso);
+      })
+      .catch(error => this.setState({ mfaBusy: false, mfaCode: '',
+        mfaError: error && error.message === 'domain'
+          ? 'Use an approved @' + SSO_DOMAIN + ' account for workforce SSO.'
+          : error && error.message === 'mfa enrollment'
+            ? 'Authenticator setup could not start. Cancel and sign in again.'
+            : 'That code could not be verified. Wait for a new code and try again.'
+      }, () => this.focusLogin('mfa-error')));
+  }
+
+  cancelMfa() {
+    const token = this.state.mfaToken;
+    if (token) fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: this.authHeaders(token, false) }).catch(() => {});
+    this.set({ screen: 'signin', loginBusy: false, ssoBusy: false, mfaToken: null, mfaFactorId: null,
+      mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '', mfaError: null, mfaBusy: false,
+      mfaEmail: '', mfaWeak: null, mfaSso: false });
+  }
+
   portalIdentity(token, emailHint, weak) {
     return fetch(SUPABASE_URL + '/auth/v1/user', {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }
@@ -3730,7 +3883,9 @@ class Component extends DCLogic {
   finishLoginIdentity({ me, token, email, weak, permissions }) {
     const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
     this.set({ loginBusy: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
-      loginUser: '', loginPass: '', token: token, pwNotice: weak || null });
+      loginUser: '', loginPass: '', token: token, pwNotice: weak || null,
+      mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
+      mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false });
     this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
       staffRole: me.staff_role || null, permissions: Array.isArray(permissions) ? permissions : [] });
   }
@@ -3768,9 +3923,8 @@ class Component extends DCLogic {
       .then(({ ok, tok }) => {
         if (!ok || !tok.access_token) throw new Error(tok.error_code === 'weak_password' ? 'weak' : 'rejected');
         const weak = tok.weak_password ? (tok.weak_password.message || 'It no longer meets this portal\u2019s password rules.') : null;
-        return this.portalIdentity(tok.access_token, email, weak);
+        return this.beginAuthenticatedSession(tok.access_token, email, weak, false);
       })
-      .then(identity => this.finishLoginIdentity(identity))
       .catch(e => this.setState({ loginBusy: false, loginPass: '', loginInvalidField: null,
         loginErr: e && e.message === 'weak'
           ? 'That password is right, but it no longer meets this portal\u2019s password rules. Use the reset link below to set a new one.'
@@ -3782,8 +3936,10 @@ class Component extends DCLogic {
               ? 'Your password was accepted, but the portal could not load your access profile. Contact an administrator.'
               : e && e.message === 'access not assigned'
                 ? 'Your account is signed in, but it does not have a workforce access preset. Contact an administrator.'
-                : e && e.message === 'access unavailable'
+              : e && e.message === 'access unavailable'
                   ? 'Your account is signed in, but the access service is unavailable. Try again in a moment.'
+              : e && e.message === 'mfa enrollment'
+                ? 'Authenticator setup could not start. Try signing in again in a moment.'
               : e && e.message === 'rejected'
                 ? 'That email and password do not match an account.'
                 : 'The sign-in service could not be reached. Try again in a moment.' }, () => this.focusLogin('login-error')));
@@ -3833,6 +3989,8 @@ class Component extends DCLogic {
     this.set({
       authUser: null, token: null, screen: 'signin', order: null, confirmed: null, toast: null,
       loginErr: null, loginInvalidField: null, impersonating: null,
+      mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
+      mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
@@ -4552,6 +4710,24 @@ class Component extends DCLogic {
         toastKind: 'TEST USER REMOVED' }))
       .catch(error => this.set({ accessPending: null,
         toast: 'The test user was not removed: ' + error.message, toastKind: 'NOT REMOVED' }));
+  }
+
+  resetUserMfa(user) {
+    if (!user || !user.mfaEnrolled || this.state.accessPending || this.state.impersonating) return;
+    if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'reset multi-factor authentication')) return;
+    if (this.state.authUser && String(this.state.authUser.email || '').toLowerCase() === String(user.email || '').toLowerCase()) {
+      this.set({ toast: 'Another Administrator must reset your MFA so you cannot accidentally lock out your own active account.', toastKind: 'BLOCKED — SECURITY' });
+      return;
+    }
+    if (!window.confirm('Reset MFA for ' + user.name + '? Their active sessions will end and they must enroll an authenticator again at next sign-in.')) return;
+    this.set({ accessPending: user.email });
+    this.portalAdmin('reset-mfa', { email: user.email })
+      .then(body => this.loadUsers(true).then(() => body))
+      .then(body => this.set({ accessPending: null,
+        toast: 'MFA was reset for ' + user.name + '. ' + (body.removedFactors || 0) + ' factor(s) removed.',
+        toastKind: 'MFA RESET' }))
+      .catch(error => this.set({ accessPending: null,
+        toast: 'MFA was not reset: ' + error.message, toastKind: 'NOT RESET' }));
   }
 
   pricingCall(method, payload) {
@@ -5337,18 +5513,16 @@ class Component extends DCLogic {
     this.mountTurnstile();
     if (SSO_RETURN.token && !RECOVERY.active) {
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
-      this.portalIdentity(SSO_RETURN.token, null, null)
-        .then(identity => {
-          if (!identity.email.endsWith('@' + SSO_DOMAIN) || identity.me.role !== 'internal') throw new Error('domain');
-          this.finishLoginIdentity(identity);
-        })
+      this.beginAuthenticatedSession(SSO_RETURN.token, null, null, true)
         .catch(e => this.setState({ loginBusy: false, ssoBusy: false,
           ssoErr: e && e.message === 'domain'
             ? 'Use an approved @' + SSO_DOMAIN + ' account for workforce SSO.'
             : e && e.message === 'access not assigned'
               ? 'Your Google account is valid, but it does not have a workforce access preset.'
               : e && e.message === 'access unavailable'
-                ? 'Google sign-in succeeded, but the portal access service is unavailable. Try again in a moment.'
+              ? 'Google sign-in succeeded, but the portal access service is unavailable. Try again in a moment.'
+              : e && e.message === 'mfa enrollment'
+                ? 'Google sign-in succeeded, but authenticator setup could not start. Try again in a moment.'
             : 'Single sign-on could not complete. Use your email and password or contact an administrator.'
         }, () => this.focusLogin('sso-error')));
     }
@@ -6777,7 +6951,8 @@ class Component extends DCLogic {
       name: row.fullName || row.email || 'Unnamed user', email: row.email || '', org: row.org || '',
       role: row.role === 'internal' ? (STAFF_ROLE_LABELS[row.staffRole] || 'Workforce') : (userRoleLabel[row.role] || row.role || 'Not assigned'),
       locs: row.locations || (row.role === 'owner' ? 'All organization stores' : 'No store assigned'),
-      active: row.active !== false, testDemo: !!row.testDemo, testDemoReason: row.testDemoReason || '', sourceRole: row.role
+      active: row.active !== false, mfaEnrolled: row.mfaEnrolled === true,
+      testDemo: !!row.testDemo, testDemoReason: row.testDemoReason || '', sourceRole: row.role
     }));
     const userSource = actingOrg === DEMO_ORG
       ? USERS.concat(s.extraUsers).filter(u => isDemoOrganization(u.org))
@@ -6796,12 +6971,16 @@ class Component extends DCLogic {
         canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
         canDeactivate: (isInternal ? canStaff('users.manage') : role === 'owner') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
         canRemoveTest: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !!effective.testDemo,
+        canResetMfa: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !isDeactivated && !!effective.mfaEnrolled
+          && (!s.authUser || String(s.authUser.email || '').toLowerCase() !== String(effective.email || '').toLowerCase()),
+        mfaLabel: effective.mfaEnrolled ? 'MFA VERIFIED' : 'MFA ENROLLMENT REQUIRED',
         role: isDeactivated ? effective.role + testLabel + ' \u00b7 deactivated' : effective.role + testLabel,
         roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (effective.testDemo ? 'var(--ux-signal)' : effective.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (effective.testDemo || effective.role !== 'Kiosk device' ? 'var(--ux-ground)' : 'var(--ux-muted-strong)'),
         onDeactivate: () => this.deactivateUser(effective),
         onImpersonate: () => this.impersonate(effective),
         onRoleChange: () => this.changeUserRole(effective),
-        onRemoveTest: () => this.removeTestUser(effective)
+        onRemoveTest: () => this.removeTestUser(effective),
+        onResetMfa: () => this.resetUserMfa(effective)
       };
     });
 
@@ -7082,7 +7261,20 @@ class Component extends DCLogic {
       onbReceipt: s.onbReceipt || '', onOnbSubmit: () => this.onbSubmit(),
       pwNoticeShown: !!s.pwNotice && !!s.authUser, pwNotice: s.pwNotice || '',
       onPwFix: () => this.fixPassword(), onPwDismiss: () => this.set({ pwNotice: null }),
-      isSignIn: !s.authUser && s.screen !== 'onboard' && s.screen !== 'reset',
+      isSignIn: !s.authUser && s.screen !== 'onboard' && s.screen !== 'reset' && s.screen !== 'mfa',
+      isMfa: !s.authUser && s.screen === 'mfa',
+      mfaIsEnroll: s.mfaStage === 'enroll',
+      mfaTitle: s.mfaStage === 'enroll' ? 'Secure your account' : 'Verify it is you',
+      mfaIntro: s.mfaStage === 'enroll'
+        ? 'Scan this code with an authenticator app before entering its six-digit code. This is required once for every portal account.'
+        : 'Your password or Google sign-in was accepted. Enter the current code from your authenticator app to continue.',
+      mfaQr: s.mfaQr, mfaSecret: s.mfaSecret, mfaCode: s.mfaCode,
+      onMfaCode: e => this.set({ mfaCode: String(e.target.value || '').replace(/\D/g, '').slice(0, 6), mfaError: null }),
+      onMfaSubmit: e => this.submitMfa(e), onMfaCancel: () => this.cancelMfa(),
+      mfaInvalid: s.mfaError ? 'true' : 'false', mfaHasError: !!s.mfaError, mfaError: s.mfaError || '',
+      mfaDisabled: s.mfaBusy ? 'true' : 'false', mfaButton: s.mfaBusy ? 'Verifying\u2026' : (s.mfaStage === 'enroll' ? 'Enable and continue' : 'Verify and continue'),
+      mfaCodeStyle: 'width:100%;padding:12px 13px;border:1px solid ' + (s.mfaError ? 'var(--ux-signal)' : 'rgba(23,14,11,.3)') + ';background:#fff;font:600 18px ui-monospace,monospace;letter-spacing:.18em;margin-bottom:14px;min-height:46px',
+      mfaSubmitStyle: 'width:100%;background:var(--ux-accent);color:#fff;border:0;padding:13px 15px;font:700 13px Archivo,sans-serif;cursor:' + (s.mfaBusy ? 'wait' : 'pointer') + ';min-height:46px;opacity:' + (s.mfaBusy ? '.72' : '1'),
       isReset: !s.authUser && s.screen === 'reset', isSignedIn: !!s.authUser,
       signInMargin: narrow ? '0 auto' : '24px auto',
       loginUser: s.loginUser, onLoginUser: e => this.set({ loginUser: e.target.value, loginErr: null,

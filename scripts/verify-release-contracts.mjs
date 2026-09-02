@@ -33,6 +33,8 @@ const economicPartnerMigration = await readFile(resolve(root, "supabase/migratio
 const wholesaleMigration = await readFile(resolve(root, "supabase/migrations/20260902010000_wholesale_default_pricing.sql"), "utf8");
 const quickbooksTraceMigration = await readFile(resolve(root, "supabase/migrations/20260902020000_quickbooks_intuit_trace_ids.sql"), "utf8");
 const quickbooksCronMigration = await readFile(resolve(root, "supabase/migrations/20260902030000_quickbooks_sync_cron.sql"), "utf8");
+const mfaMigration = await readFile(resolve(root, "supabase/migrations/20260902040000_mfa_enforcement.sql"), "utf8");
+const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
@@ -85,6 +87,11 @@ assertContract(intake.includes("PUBLIC_INTAKE_RATE_SECRET") && intake.includes("
 assertContract(source.includes("TURNSTILE_SITE_KEY") && source.includes("action: 'retailer_onboarding'") && source.includes("antiAbuseToken:"), "public onboarding renders Turnstile and sends its single-use token");
 assertContract(intake.includes('result.action !== "retailer_onboarding"') && intake.includes('"https://portal.urbanxtracts.com"'), "Turnstile validation binds the onboarding action and production portal origin");
 assertContract(siteBuild.includes("UX_TURNSTILE_SITE_KEY") && siteBuild.includes("frame-src https://challenges.cloudflare.com") && siteBuild.includes("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com"), "the hosted worker injects Turnstile configuration and permits only its required script and frame origins");
+assertContract(source.includes("/auth/v1/factors") && source.includes("/challenge") && source.includes("/verify") && source.includes("portalJwtClaims(upgraded).aal !== 'aal2'"), "Google and password sessions complete TOTP enrollment or challenge before portal access");
+assertContract(source.includes("Reset MFA") && source.includes("resetUserMfa(user)") && admin.includes('action === "reset-mfa"') && admin.includes("deleteFactor"), "administrators have an audited factor recovery flow that prevents self-lockout");
+assertContract(siteBuild.includes("UX_MFA_REQUIRED") && siteBuild.includes('mfaRequired: env.UX_MFA_REQUIRED !== "false"'), "hosted MFA is on by default with an explicit emergency rollback switch");
+assertContract(mfaMigration.includes("as restrictive") && mfaMigration.includes("public.portal_mfa_verified()") && mfaMigration.includes("auth.jwt() ->> 'aal'"), "database profile and pending-profile access require an aal2 session");
+assertContract(mfaHelper.includes('?.aal === "aal2"'), "Edge Function assurance gate accepts only aal2 claims after Auth validation");
 assertContract(readiness.includes("pendingAssetReviews") && readiness.includes('Deno.env.get("TURNSTILE_REQUIRED")'), "live readiness reports private assets and public-onboarding protection state");
 assertContract(readiness.includes("directMondayIntakeReady") && readiness.includes("Direct, board-pinned Monday order intake is active"), "live readiness recognizes the direct Monday order path without depending on Make");
 assertContract(readiness.includes("Latest signed callback") && readiness.includes("lastRefreshHasOneWebhook") && readiness.includes("Exactly one matching signed webhook remains"), "live readiness reports signed callback health and stale-webhook cleanup evidence");
@@ -145,6 +152,7 @@ for (const name of functionNames) {
     assertContract(!text.includes("access-control-allow-origin"), "monday-webhook remains server-to-server and does not expose a browser CORS surface");
   } else {
     assertContract(text.includes('"https://portal.urbanxtracts.com"'), `${name} permits the production portal origin`);
+    assertContract(text.includes("verifiedTokenHasAal2"), `${name} rejects authenticated aal1 sessions`);
   }
 }
 

@@ -58,6 +58,7 @@ function configuredPortalHtml(env = {}) {
   const config = {
     ssoProvider: provider,
     ssoDomain: String(env.UX_SSO_DOMAIN || "urbanxtracts.com").toLowerCase(),
+    mfaRequired: env.UX_MFA_REQUIRED !== "false",
     recallNoticeEnabled: env.UX_RECALL_NOTICE_ENABLED === "true",
     turnstileRequired: env.UX_TURNSTILE_REQUIRED === "true",
     turnstileSiteKey: String(env.UX_TURNSTILE_SITE_KEY || ""),

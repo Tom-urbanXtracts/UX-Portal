@@ -3,6 +3,7 @@ import {
   intuitFetch,
   intuitOAuthEndpoints,
 } from "../_shared/quickbooks-oauth.ts";
+import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -113,6 +114,7 @@ async function authenticate(request: Request): Promise<boolean> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return false;
+  if (!verifiedTokenHasAal2(authorization)) return false;
   const user = await response.json();
   const { data: profile } = await service.from("portal_profile").select(
     "role,staff_role,active",

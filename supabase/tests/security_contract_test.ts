@@ -7,6 +7,7 @@ import {
   orderTransitionAllowed,
   verifyHs256Jwt,
 } from "../functions/_shared/security-contract.ts";
+import { verifiedTokenHasAal2 } from "../functions/_shared/mfa.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -36,6 +37,25 @@ Deno.test("Canix lab release accepts only exact TestPassed status", () => {
     labFailed({ lab_test_status: "TestFailed" }),
     "TestFailed should be excluded",
   );
+});
+
+function unsignedTestJwt(payload: Record<string, unknown>): string {
+  const encode = (value: Record<string, unknown>) =>
+    btoa(JSON.stringify(value)).replaceAll("+", "-").replaceAll("/", "_")
+      .replace(/=+$/, "");
+  return `${encode({ alg: "none", typ: "JWT" })}.${encode(payload)}.`;
+}
+
+Deno.test("portal API assurance gate accepts only aal2 claims", () => {
+  assert(
+    verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal2" })}`),
+    "aal2 should pass after upstream JWT validation",
+  );
+  assert(
+    !verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal1" })}`),
+    "aal1 must fail",
+  );
+  assert(!verifiedTokenHasAal2("Bearer malformed"), "malformed JWT must fail");
 });
 
 Deno.test("order transitions are adjacent and terminal", () => {

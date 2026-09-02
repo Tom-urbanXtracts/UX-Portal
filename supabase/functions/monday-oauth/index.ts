@@ -3,6 +3,7 @@ import {
   mondayAccessToken,
   mondayTokenExpiry,
 } from "../_shared/monday-connection.ts";
+import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -140,6 +141,7 @@ async function administratorFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
+  if (!verifiedTokenHasAal2(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",

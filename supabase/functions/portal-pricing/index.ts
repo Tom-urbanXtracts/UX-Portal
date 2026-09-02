@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { canonicalCanixProductId } from "../_shared/security-contract.ts";
+import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -100,6 +101,7 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
+  if (!verifiedTokenHasAal2(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active,locations")
@@ -250,7 +252,10 @@ async function currentCanixPriceItems(): Promise<CanixPriceItem[]> {
   return Array.from(grouped.values());
 }
 
-function groupBy<T>(values: T[], keyFor: (value: T) => string): Map<string, T[]> {
+function groupBy<T>(
+  values: T[],
+  keyFor: (value: T) => string,
+): Map<string, T[]> {
   const grouped = new Map<string, T[]>();
   for (const value of values) {
     const key = keyFor(value);
@@ -260,7 +265,9 @@ function groupBy<T>(values: T[], keyFor: (value: T) => string): Map<string, T[]>
   return grouped;
 }
 
-async function wholesalePriceSnapshot(includeReviewQueue: boolean): Promise<Row> {
+async function wholesalePriceSnapshot(
+  includeReviewQueue: boolean,
+): Promise<Row> {
   const [defaultResult, sourceResult, canixItems] = await Promise.all([
     service.from("portal_default_price").select("*").eq("active", true).order(
       "product_name",
@@ -281,7 +288,9 @@ async function wholesalePriceSnapshot(includeReviewQueue: boolean): Promise<Row>
     (item) => normalizedIdentityKey(item.itemName),
   );
   const reviewableSource = sourceRows.filter((row) =>
-    !new Set(["verified", "published", "rejected"]).has(String(row.review_state))
+    !new Set(["verified", "published", "rejected"]).has(
+      String(row.review_state),
+    )
   );
   const strictSource = groupBy(
     reviewableSource,
@@ -311,38 +320,52 @@ async function wholesalePriceSnapshot(includeReviewQueue: boolean): Promise<Row>
       const normalizedKey = normalizedIdentityKey(row.product_name);
       const strictCandidates = strictCanix.get(strictKey) ?? [];
       const normalizedCandidates = normalizedCanix.get(normalizedKey) ?? [];
-      candidates = strictCandidates.length ? strictCandidates : normalizedCandidates;
+      candidates = strictCandidates.length
+        ? strictCandidates
+        : normalizedCandidates;
       const sourceCollision = (strictSource.get(strictKey) ?? []).length > 1 ||
         (normalizedSource.get(normalizedKey) ?? []).length > 1;
       const canixCollision = strictCandidates.length > 1 ||
         normalizedCandidates.length > 1;
       const sourceBrand = brandKey(row.brand);
       const matchingBrand = candidates.filter((candidate) => {
-        const candidateBrands = new Set(candidate.brands.map(brandKey).filter(Boolean));
-        return sourceBrand && candidateBrands.size === 1 && candidateBrands.has(sourceBrand);
+        const candidateBrands = new Set(
+          candidate.brands.map(brandKey).filter(Boolean),
+        );
+        return sourceBrand && candidateBrands.size === 1 &&
+          candidateBrands.has(sourceBrand);
       });
       if (!candidates.length) {
         reviewState = "no_match";
-        reviewReason = "No current CountBased Canix item has this normalized product name.";
+        reviewReason =
+          "No current CountBased Canix item has this normalized product name.";
       } else if (sourceCollision || canixCollision) {
         reviewState = "name_collision";
-        reviewReason = "The normalized name is not unique in the source list or current Canix items.";
-      } else if (candidates.some((candidate) => claimedIds.has(candidate.itemId))) {
+        reviewReason =
+          "The normalized name is not unique in the source list or current Canix items.";
+      } else if (
+        candidates.some((candidate) => claimedIds.has(candidate.itemId))
+      ) {
         reviewState = "linked_conflict";
-        reviewReason = "The candidate Canix Item ID is already verified for another wholesale source row.";
+        reviewReason =
+          "The candidate Canix Item ID is already verified for another wholesale source row.";
       } else if (!sourceBrand) {
         reviewState = "missing_brand";
-        reviewReason = "The source row needs a Brand before identity can be verified.";
+        reviewReason =
+          "The source row needs a Brand before identity can be verified.";
       } else if (matchingBrand.length !== 1) {
         reviewState = "brand_conflict";
-        reviewReason = "The source and Canix product names align, but their Brands do not.";
+        reviewReason =
+          "The source and Canix product names align, but their Brands do not.";
       } else if (strictCandidates.length === 1) {
         reviewState = "exact_ready";
-        reviewReason = "One current Canix item has the exact product name and Brand.";
+        reviewReason =
+          "One current Canix item has the exact product name and Brand.";
         candidates = matchingBrand;
       } else {
         reviewState = "normalized_review";
-        reviewReason = "One normalized product-name and Brand candidate requires review.";
+        reviewReason =
+          "One normalized product-name and Brand candidate requires review.";
         candidates = matchingBrand;
       }
     }
@@ -494,7 +517,10 @@ async function publishWholesaleSource(
   sourcePriceId: string,
 ): Promise<Row> {
   if (!/^[0-9a-f-]{36}$/i.test(sourcePriceId)) {
-    throw new PricingError(400, "Choose a valid verified wholesale source row.");
+    throw new PricingError(
+      400,
+      "Choose a valid verified wholesale source row.",
+    );
   }
   const { data, error } = await service.rpc(
     "portal_publish_wholesale_price_source",
@@ -509,9 +535,10 @@ async function publishWholesaleSource(
 
 async function verifyExactWholesaleSources(caller: Caller): Promise<Row> {
   const snapshot = await wholesalePriceSnapshot(true);
-  const rows = (Array.isArray(snapshot.wholesaleSources)
-    ? snapshot.wholesaleSources as Row[]
-    : []).filter((row) => row.reviewState === "exact_ready");
+  const rows =
+    (Array.isArray(snapshot.wholesaleSources)
+      ? snapshot.wholesaleSources as Row[]
+      : []).filter((row) => row.reviewState === "exact_ready");
   const verified: Row[] = [];
   const failures: Row[] = [];
   for (let index = 0; index < rows.length; index += 5) {
@@ -544,9 +571,10 @@ async function verifyExactWholesaleSources(caller: Caller): Promise<Row> {
 
 async function publishVerifiedWholesaleSources(caller: Caller): Promise<Row> {
   const snapshot = await wholesalePriceSnapshot(true);
-  const rows = (Array.isArray(snapshot.wholesaleSources)
-    ? snapshot.wholesaleSources as Row[]
-    : []).filter((row) => row.reviewState === "verified");
+  const rows =
+    (Array.isArray(snapshot.wholesaleSources)
+      ? snapshot.wholesaleSources as Row[]
+      : []).filter((row) => row.reviewState === "verified");
   const published: Row[] = [];
   const failures: Row[] = [];
   for (let index = 0; index < rows.length; index += 5) {
