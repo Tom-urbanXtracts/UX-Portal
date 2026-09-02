@@ -565,6 +565,12 @@ Deno.serve(async (request) => {
               "portal.urbanxtracts.com is active with Wix DNS and SSL. The outer hosting gate is removed; the portal's Supabase session and server-side permissions remain the authorization boundary.",
           },
           {
+            state: "pass",
+            label: "Multi-factor assurance",
+            detail:
+              "This diagnostics request arrived with an aal2 session. Browser sign-in, authenticated Edge Functions, and restrictive profile policies require the same MFA assurance level.",
+          },
+          {
             state: "deferred",
             label: "Payment collection",
             detail:

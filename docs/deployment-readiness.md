@@ -46,7 +46,7 @@ SSO configuration and cutover requirements:
 - Workforce users receive an active internal Viewer profile on first SSO sign-in. Administrator, Operations, Sales, and Quality elevation remains an explicit administrator action.
 - Test sign-in, authenticator enrollment, returning-user challenge, sign-out, administrator recovery, deactivated users, missing profiles, and an account outside the approved domain.
 
-Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. On 2 September 2026 the production origin became the Site URL and an allowed redirect. The database-side Viewer provisioning repair is deployed and both existing workforce profiles are configured.
+Live verification on 1 September 2026 found email/password and Google enabled in Supabase Auth. The dedicated Google client uses the Supabase callback, and Tom completed the full consent-and-return flow while retaining the existing Administrator preset. On 2 September 2026 the production origin became the Site URL and an allowed redirect. Tom then completed production TOTP enrollment and reached the permission-gated dashboard with an `aal2` session. The database-side Viewer provisioning repair is deployed.
 
 Keep both portal origins in the redirect allow-list during cutover:
 
