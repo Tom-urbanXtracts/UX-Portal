@@ -48,9 +48,24 @@ This document separates implementation evidence from company attestations. It is
 | Client ID and secret stored securely | Yes | Secrets are held in Supabase Edge Function secrets; the browser bundle contains no QuickBooks client secret or Intuit token. Refresh tokens are encrypted with an Edge-only key. |
 | Least data retained | Yes | The cache stores normalized customer, invoice summary, and payment summary fields. It excludes invoice line items, bank/deposit accounts, card/check details, tax IDs, and raw Invoice/Payment payloads. |
 | Access control | Yes | Financial rows are re-scoped on each request. Internal access requires `financials.read`; Owners see their organization; Buyers see directly assigned stores; Budtenders, Quality, and Viewer receive no financial access. |
-| CAPTCHA | Yes for public onboarding; not login | Cloudflare Turnstile protects the public onboarding path. Authentication is handled by Supabase and Google Workspace SSO. |
+| MFA | No in the current production portal | Google Workspace may enforce MFA for employee SSO accounts, but the portal does not yet enroll, challenge, verify, or require a second factor for all users. Retailer email/password accounts currently authenticate at assurance level 1. Change the assessment answer to Yes only after MFA is enforced and tested across every applicable sign-in path. |
+| CAPTCHA for authentication | No | Cloudflare Turnstile protects public retailer onboarding, not the login flow. Authentication is handled by Supabase and Google Workspace SSO. |
 | WebSocket use | No | The QuickBooks connector uses HTTPS request/response APIs only. |
 | Intuit data visible beyond the connected customer | Company review required | Data belongs to URBANXTRACTS INC's connected company and is displayed to authorized urbanXtracts staff and scoped retailer Owner/Buyer accounts. The authorized representative should confirm Intuit's intended interpretation before answering. |
+
+## Company-supplied questionnaire answers (2026-09-02)
+
+These responses were supplied by urbanXtracts. Engineering evidence supports the technical answers noted below, but the company representative remains responsible for the organizational attestations and final submission.
+
+| Question | Current answer | Qualification |
+| --- | --- | --- |
+| Prior breach requiring customer or government notification | No | Company-supplied organizational attestation; Engineering cannot independently verify company history. |
+| Security team regularly assesses application vulnerabilities and risks | Yes | Company-supplied organizational attestation. Retain evidence of the recurring review cadence and remediation process. |
+| Client ID and client secret stored securely | Yes | Supported by the server-only Supabase secret and encrypted-token design. |
+| Application uses multi-factor authentication | No | The screenshot selected Yes, but that would overstate the current implementation. Change to Yes only after the portal enforces and verifies MFA for all applicable employee and retailer sign-in paths. |
+| CAPTCHA used for authentication | No | Correct for the current design. Turnstile protects public onboarding, not authentication. |
+| Application uses WebSocket | No | Supported by the implementation; the connector uses HTTPS request/response APIs. |
+| Intuit data used by or shown to anyone other than the original customer | Provisional: No | The selected answer requires authorized-representative review because scoped QuickBooks-derived data is shown to retailer Owners and Buyers. Confirm Intuit treats this as use solely for URBANXTRACTS INC's benefit before submitting No. |
 
 ## Authorized-representative answers
 
@@ -60,9 +75,8 @@ Engineering cannot answer or submit these on behalf of urbanXtracts:
 - Whether legal counsel has reviewed applicable regulatory and user-data obligations.
 - Confirmation that the company accepts and complies with Intuit's current security policies.
 - Sanctions and embargo attestations.
-- Prior notifiable security breaches.
-- Whether the company's security team performs the assessment cadence described by Intuit.
-- MFA coverage across the organization. Google Workspace SSO may enforce MFA, but the representative must confirm the actual policy and any password-account exceptions.
+
+The breach-history and security-team responses above remain company attestations even though the answers have now been recorded.
 
 ## Required sandbox evidence
 
@@ -77,15 +91,6 @@ Before submission, use an Intuit sandbox company and record the date and tester 
 7. Verify that a Budtender and Viewer receive no financial data; verify Owner and Buyer store scoping.
 8. Confirm there is no QuickBooks write, payment, delete, or invoice-creation control anywhere in the portal.
 
-## Hosting decision still required
+## Production hosting
 
-The current Supabase Edge Function path does not provide a stable outbound IP for Intuit's production-hosting declaration. Keep the portal and database on their current services, and route only outbound Intuit discovery, OAuth, and Accounting API calls through a small US-hosted egress proxy with one reserved public IP. The proxy must:
-
-- accept traffic only from the connector's authenticated server path;
-- allow only the exact Intuit HTTPS hosts used by discovery, OAuth, and Accounting APIs;
-- never log authorization headers, tokens, query responses, or financial payloads;
-- enforce TLS certificate validation, request-size limits, and short timeouts;
-- return Intuit response headers, including `intuit_tid`, unchanged;
-- have monitoring, patching, and a documented owner.
-
-Provisioning the proxy creates cost and a new production trust boundary. Select the cloud provider, US region, operational owner, and monthly spend limit before Engineering creates it or enters its IP in Intuit.
+The static-egress deployment is complete. Intuit traffic is routed through `qbo-egress.urbanxtracts.com` at the reserved United States IP `34.45.103.119`. The full infrastructure, security, verification, and billing-alert record is maintained in [QuickBooks US static-egress deployment](qbo-static-egress-deployment.md). The hosting details have not been submitted to Intuit.
