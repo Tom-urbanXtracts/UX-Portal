@@ -141,7 +141,7 @@ Deno.serve(async (request) => {
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
       ).eq("id", 1).maybeSingle(),
       service.from("quickbooks_sync_state").select(
-        "status,connection_status,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,customer_count",
+        "status,connection_status,connected_at,realm_id,oauth_state_expires_at,last_successful_at,last_error,last_intuit_tid,customer_count",
       ).eq("id", 1).maybeSingle(),
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
@@ -517,7 +517,11 @@ Deno.serve(async (request) => {
                 configured("QBO_TOKEN_ENCRYPTION_KEY") &&
                 qboConnectionStatus === "connected" && Boolean(qbo?.realm_id)
                 ? "The encrypted server-side customer, invoice, and payment connection is active."
-                : "An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.",
+                : `An administrator must finish the dedicated QuickBooks connection; financials remain read-only with last-snapshot fallback.${
+                  qbo?.last_intuit_tid
+                    ? ` Latest Intuit support ID: ${qbo.last_intuit_tid}.`
+                    : ""
+                }`,
           },
           {
             state: qbo?.last_successful_at ? "pass" : "warn",

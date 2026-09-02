@@ -21,6 +21,8 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
 
 The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atomically. The refresh token is encrypted with the Edge-Function-only encryption key. The sync persists every rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
 
+OAuth and Accounting API failures retain the sanitized `intuit_tid` response header in the protected QuickBooks sync state so an administrator can give Intuit Support the correlation ID. The portal does not persist or log the raw Intuit response body, access token, or refresh token as diagnostic data. A successful authorization or complete sync clears the prior support ID.
+
 The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
 
 ## Intuit production-key handoff
@@ -78,3 +80,4 @@ These labels never create or clear an ordering hold. Order intake continues to r
 - Confirm filters and sorting do not change the server-authorized customer scope.
 - Confirm the page offers no payment action and no API call writes to QuickBooks.
 - Confirm a past-due display state does not change portal_store.ordering_status or block an order unless an explicit portal hold already exists.
+- Force an Intuit API error and confirm its `intuit_tid` appears only in internal Release readiness, then clears after the next successful connection or sync.

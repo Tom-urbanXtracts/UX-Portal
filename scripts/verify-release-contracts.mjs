@@ -16,6 +16,7 @@ const economicOwnership = await readFile(resolve(root, "supabase/functions/porta
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
+const quickbooksRetailers = await readFile(resolve(root, "supabase/functions/quickbooks-retailers/index.ts"), "utf8");
 const mondayOAuth = await readFile(resolve(root, "supabase/functions/monday-oauth/index.ts"), "utf8");
 const mondayConnection = await readFile(resolve(root, "supabase/functions/_shared/monday-connection.ts"), "utf8");
 const mondayWebhook = await readFile(resolve(root, "supabase/functions/monday-webhook/index.ts"), "utf8");
@@ -28,6 +29,7 @@ const orderCronMigration = await readFile(resolve(root, "supabase/migrations/202
 const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
 const economicPartnerMigration = await readFile(resolve(root, "supabase/migrations/20260901320000_canix_brand_economic_partners.sql"), "utf8");
 const wholesaleMigration = await readFile(resolve(root, "supabase/migrations/20260902010000_wholesale_default_pricing.sql"), "utf8");
+const quickbooksTraceMigration = await readFile(resolve(root, "supabase/migrations/20260902020000_quickbooks_intuit_trace_ids.sql"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
@@ -84,6 +86,8 @@ assertContract(readiness.includes("pendingAssetReviews") && readiness.includes('
 assertContract(readiness.includes("directMondayIntakeReady") && readiness.includes("Direct, board-pinned Monday order intake is active"), "live readiness recognizes the direct Monday order path without depending on Make");
 assertContract(readiness.includes("Latest signed callback") && readiness.includes("lastRefreshHasOneWebhook") && readiness.includes("Exactly one matching signed webhook remains"), "live readiness reports signed callback health and stale-webhook cleanup evidence");
 assertContract(quickbooksOAuth.includes('scope: "com.intuit.quickbooks.accounting"') && quickbooksOAuth.includes("portal_consume_quickbooks_oauth_state") && quickbooksOAuth.includes("portal_store_quickbooks_connection"), "QuickBooks authorization is administrator-started, state-bound, and server-custodied");
+assertContract(quickbooksOAuth.includes('headers.get("intuit_tid")') && quickbooksRetailers.includes('headers.get("intuit_tid")') && quickbooksRetailers.includes("error instanceof IntuitApiError") && quickbooksTraceMigration.includes("last_intuit_tid text"), "QuickBooks OAuth and data errors retain a sanitized Intuit support trace ID");
+assertContract(!quickbooksOAuth.includes("tokenBody,") && !quickbooksRetailers.includes("body,"), "QuickBooks support diagnostics do not persist or log raw Intuit response bodies");
 assertContract(quickbooksOAuthMigration.includes("pgp_sym_encrypt") && quickbooksOAuthMigration.includes("oauth_state_expires_at > now()") && quickbooksOAuthMigration.includes("refresh_token = null"), "QuickBooks refresh tokens are encrypted and OAuth state is expiring and one-time");
 assertContract(orderCronMigration.includes("portal-order-outbox-flush-5m") && orderCronMigration.includes("*/5 * * * *") && orderCronMigration.includes("vault.decrypted_secrets"), "order outbox retries every five minutes with a Vault-backed credential");
 assertContract(!/[A-Fa-f0-9]{64}/.test(orderCronMigration), "the order retry migration contains no embedded high-entropy secret");

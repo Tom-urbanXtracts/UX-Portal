@@ -15,6 +15,23 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 type Row = Record<string, unknown>;
 
+class IntuitApiError extends Error {
+  intuitTid: string | null;
+
+  constructor(message: string, intuitTid: string | null) {
+    super(message);
+    this.name = "IntuitApiError";
+    this.intuitTid = intuitTid;
+  }
+}
+
+function intuitTraceId(response: Response): string | null {
+  const value = (response.headers.get("intuit_tid") ?? "")
+    .replace(/[^A-Za-z0-9_.:-]/g, "")
+    .slice(0, 160);
+  return value || null;
+}
+
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
@@ -118,9 +135,10 @@ async function accessToken(): Promise<
   );
   const body = await response.json();
   if (!response.ok || !body.access_token) {
-    throw new Error(
+    throw new IntuitApiError(
       body.error_description || body.error ||
         `QuickBooks token refresh returned ${response.status}.`,
+      intuitTraceId(response),
     );
   }
   const refreshSeconds = Number(body.x_refresh_token_expires_in || 0);
@@ -158,9 +176,10 @@ async function qboQuery(
     );
     const body = await response.json();
     if (!response.ok) {
-      throw new Error(
+      throw new IntuitApiError(
         body?.Fault?.Error?.[0]?.Message ||
           `QuickBooks ${entity} query returned ${response.status}.`,
+        intuitTraceId(response),
       );
     }
     const page = Array.isArray(body?.QueryResponse?.[entity])
@@ -221,6 +240,7 @@ async function syncQuickBooks(): Promise<
     status: "running",
     last_started_at: new Date().toISOString(),
     last_error: null,
+    last_intuit_tid: null,
     updated_at: new Date().toISOString(),
   }).eq("id", 1);
   let pendingRunId: string | null = null;
@@ -341,6 +361,7 @@ async function syncQuickBooks(): Promise<
         invoice_count: invoiceRows.length,
         payment_count: paymentRows.length,
         updated_at: now,
+        last_intuit_tid: null,
       }).eq("id", 1);
     if (stateError) throw stateError;
 
@@ -365,6 +386,7 @@ async function syncQuickBooks(): Promise<
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const traceId = error instanceof IntuitApiError ? error.intuitTid : null;
     if (pendingRunId) {
       await Promise.all([
         service.from("quickbooks_invoice_cache").delete().eq(
@@ -381,8 +403,13 @@ async function syncQuickBooks(): Promise<
       status: "error",
       connection_status: "error",
       last_error: message.slice(0, 2000),
+      last_intuit_tid: traceId,
       updated_at: new Date().toISOString(),
     }).eq("id", 1);
+    console.error("quickbooks-retailers", {
+      message: message.slice(0, 2000),
+      intuitTid: traceId,
+    });
     throw error;
   }
 }

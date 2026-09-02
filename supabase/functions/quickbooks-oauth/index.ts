@@ -17,6 +17,13 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 type Row = Record<string, unknown>;
 type Caller = { id: string; name: string; org: string };
 
+function intuitTraceId(response: Response): string | null {
+  const value = (response.headers.get("intuit_tid") ?? "")
+    .replace(/[^A-Za-z0-9_.:-]/g, "")
+    .slice(0, 160);
+  return value || null;
+}
+
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
   return new Set([
@@ -243,6 +250,7 @@ async function callback(request: Request): Promise<Response> {
     await service.from("quickbooks_sync_state").update({
       connection_status: "error",
       last_error: "QuickBooks authorization-code exchange failed.",
+      last_intuit_tid: intuitTraceId(tokenResponse),
       updated_at: new Date().toISOString(),
     }).eq("id", 1);
     return safeHtml(
@@ -265,6 +273,10 @@ async function callback(request: Request): Promise<Response> {
     },
   );
   if (storeError) throw storeError;
+  const { error: clearTraceError } = await service.from(
+    "quickbooks_sync_state",
+  ).update({ last_intuit_tid: null }).eq("id", 1);
+  if (clearTraceError) throw clearTraceError;
   await service.from("portal_admin_audit").insert({
     actor_id: actorId,
     actor_org: "urbanXtracts",
