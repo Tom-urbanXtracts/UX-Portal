@@ -63,6 +63,8 @@ The locked-down QuickBooks egress path is deployed with the following production
 
 The public health check returned HTTP 200 with `{"ok":true}` after the production secret rotation and VM restart. Google Cloud Free Tier eligibility is account-dependent and is not guaranteed. No Intuit production questionnaire or hosting-information submission was performed as part of this deployment.
 
+On 2 September 2026, the proxy source was advanced to commit `8fc058c4140e1f53e7f5313f6ed030a6cb61da81` to add exact, separate sandbox and production Accounting routes. The pinned startup metadata now restarts `ux-qbo-egress.service` after replacing its source so a reboot cannot leave the prior Node process in memory. Post-restart probes returned HTTP 401 from Intuit for deliberately invalid bearer tokens on both explicit environments, proving that both allowlisted routes reached their intended Intuit hosts; an environment-less route and an arbitrary destination returned HTTP 400 from the proxy. No valid Intuit token or accounting data was used by these probes.
+
 ## Verification and rollback
 
 - Run the proxy unit tests with `node --test services/qbo-egress-proxy/server.test.mjs`.
