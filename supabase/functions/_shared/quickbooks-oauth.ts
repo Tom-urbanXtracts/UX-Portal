@@ -1,5 +1,8 @@
 const DISCOVERY_URL =
   "https://developer.api.intuit.com/.well-known/openid_configuration";
+const EGRESS_PROXY_URL = (Deno.env.get("QBO_EGRESS_PROXY_URL") ?? "").trim();
+const EGRESS_PROXY_SECRET = (Deno.env.get("QBO_EGRESS_PROXY_SECRET") ?? "")
+  .trim();
 
 export type IntuitOAuthEndpoints = {
   authorizationEndpoint: string;
@@ -7,6 +10,57 @@ export type IntuitOAuthEndpoints = {
 };
 
 let endpointRequest: Promise<IntuitOAuthEndpoints> | null = null;
+
+function proxyTarget(upstream: URL): URL {
+  if (upstream.protocol !== "https:") {
+    throw new Error("QuickBooks upstream URL must use HTTPS.");
+  }
+  const base = new URL(EGRESS_PROXY_URL);
+  if (
+    base.protocol !== "https:" || base.username || base.password ||
+    (base.pathname !== "/" && base.pathname !== "") || base.search ||
+    base.hash
+  ) {
+    throw new Error("QuickBooks egress proxy URL is invalid.");
+  }
+  if (upstream.toString() === DISCOVERY_URL) {
+    return new URL("/v1/discovery", base);
+  }
+  if (
+    upstream.hostname === "oauth.platform.intuit.com" &&
+    upstream.pathname === "/oauth2/v1/tokens/bearer" && !upstream.search
+  ) {
+    return new URL("/v1/token", base);
+  }
+  const accounting = upstream.pathname.match(
+    /^\/v3\/company\/([A-Za-z0-9_-]{1,64})\/query$/,
+  );
+  if (upstream.hostname === "quickbooks.api.intuit.com" && accounting) {
+    const target = new URL(`/v1/accounting/${accounting[1]}/query`, base);
+    target.search = upstream.search;
+    return target;
+  }
+  throw new Error("QuickBooks request is outside the egress proxy allowlist.");
+}
+
+export async function intuitFetch(
+  upstreamUrl: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  if (Boolean(EGRESS_PROXY_URL) !== Boolean(EGRESS_PROXY_SECRET)) {
+    throw new Error("QuickBooks egress proxy configuration is incomplete.");
+  }
+  if (!EGRESS_PROXY_URL) return await fetch(upstreamUrl, init);
+  if (EGRESS_PROXY_SECRET.length < 32) {
+    throw new Error("QuickBooks egress proxy credential is invalid.");
+  }
+  const headers = new Headers(init.headers);
+  headers.set("x-ux-egress-secret", EGRESS_PROXY_SECRET);
+  return await fetch(proxyTarget(new URL(upstreamUrl)), {
+    ...init,
+    headers,
+  });
+}
 
 function validatedEndpoint(
   value: unknown,
@@ -26,7 +80,7 @@ function validatedEndpoint(
 }
 
 async function discover(): Promise<IntuitOAuthEndpoints> {
-  const response = await fetch(DISCOVERY_URL, {
+  const response = await intuitFetch(DISCOVERY_URL, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(5_000),
   });

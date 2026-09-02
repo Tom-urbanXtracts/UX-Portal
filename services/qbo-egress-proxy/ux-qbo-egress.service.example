@@ -1,0 +1,30 @@
+[Unit]
+Description=urbanXtracts QuickBooks static-egress proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ux-qbo-egress
+Group=ux-qbo-egress
+EnvironmentFile=/etc/ux-qbo-egress.env
+Environment=HOST=127.0.0.1
+Environment=PORT=8788
+ExecStart=/usr/bin/node /opt/ux-qbo-egress/server.mjs
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictRealtime=true
+SystemCallArchitectures=native
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

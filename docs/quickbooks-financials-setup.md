@@ -15,6 +15,8 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
    - QBO_CRON_SECRET
    - QBO_REDIRECT_URI (optional when using the exact default above)
    - QBO_PORTAL_RETURN_URL (optional until the production domain is approved)
+   - QBO_EGRESS_PROXY_URL (required for production after the US static-egress proxy is deployed)
+   - QBO_EGRESS_PROXY_SECRET (the same strong credential held only by the proxy and Edge Functions)
 5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Portal start/status routes require a valid Administrator token, the callback consumes a one-time OAuth state, and the sync POST additionally accepts the scheduler-only secret.
 6. Sign in as a portal Administrator, open Release readiness, and choose **Connect QuickBooks**. The callback stores the realm and encrypted refresh token server-side. Do not copy a refresh token manually.
 7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Invoices, and Payments together.
@@ -26,6 +28,8 @@ The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atom
 OAuth and Accounting API failures retain the sanitized `intuit_tid` response header in the protected QuickBooks sync state so an administrator can give Intuit Support the correlation ID. The portal does not persist or log the raw Intuit response body, access token, or refresh token as diagnostic data. A successful authorization or complete sync clears the prior support ID.
 
 The OAuth broker resolves the current authorization and bearer-token endpoints from Intuit's production discovery document, rejects non-HTTPS or unexpected endpoint hosts, and fails closed when discovery is unavailable. Read-only Accounting API `GET` queries retry transient network, 429, and 5xx failures at most three times with a short bounded backoff. Authorization-code and rotating refresh-token exchanges are not automatically replayed because those POST operations can consume one-time or rotating credentials; the portal records the failure and requires a fresh connection attempt when needed.
+
+When both egress variables are configured, all Intuit discovery, token, and Accounting requests route through the static-egress service. Partial proxy configuration fails closed. Development remains direct when both variables are absent. The proxy accepts no arbitrary target URL: it maps only the fixed discovery and token routes plus a validated company-query route to exact Intuit HTTPS hosts.
 
 The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
 

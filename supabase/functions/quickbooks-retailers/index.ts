@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { intuitOAuthEndpoints } from "../_shared/quickbooks-oauth.ts";
+import {
+  intuitFetch,
+  intuitOAuthEndpoints,
+} from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -41,7 +44,7 @@ async function accountingGet(url: string, token: string): Promise<Response> {
   let finalError: unknown = null;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const response = await fetch(url, {
+      const response = await intuitFetch(url, {
         headers: {
           authorization: `Bearer ${token}`,
           accept: "application/json",
@@ -154,7 +157,7 @@ async function accessToken(): Promise<
     throw new Error("QuickBooks server credentials are not configured.");
   }
   const endpoints = await intuitOAuthEndpoints();
-  const response = await fetch(endpoints.tokenEndpoint, {
+  const response = await intuitFetch(endpoints.tokenEndpoint, {
     method: "POST",
     headers: {
       authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,

@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { intuitOAuthEndpoints } from "../_shared/quickbooks-oauth.ts";
+import {
+  intuitFetch,
+  intuitOAuthEndpoints,
+} from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -231,7 +234,7 @@ async function callback(request: Request): Promise<Response> {
   }
 
   const endpoints = await intuitOAuthEndpoints();
-  const tokenResponse = await fetch(endpoints.tokenEndpoint, {
+  const tokenResponse = await intuitFetch(endpoints.tokenEndpoint, {
     method: "POST",
     headers: {
       authorization: `Basic ${btoa(`${QBO_CLIENT_ID}:${QBO_CLIENT_SECRET}`)}`,
