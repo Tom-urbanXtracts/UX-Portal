@@ -118,6 +118,15 @@ Deno.serve(async (request) => {
     boardId !== ORDER_BOARD_ID || columnId !== ORDER_STATUS_COLUMN_ID ||
     !itemId || !subscriptionId || !statusLabel
   ) {
+    console.error("monday-webhook scope rejected", JSON.stringify({
+      boardId,
+      columnId,
+      itemId,
+      subscriptionId,
+      statusLabel,
+      expectedBoardId: ORDER_BOARD_ID,
+      expectedColumnId: ORDER_STATUS_COLUMN_ID,
+    }));
     return json({
       error: "Webhook event is outside the configured order status scope",
     }, 403);
@@ -129,17 +138,25 @@ Deno.serve(async (request) => {
   if (connectionError) {
     return json({ error: "Webhook state is temporarily unavailable" }, 503);
   }
-  if (
-    !connection || connection.webhook_status !== "active" ||
-    String(connection.webhook_id ?? "") !== subscriptionId
-  ) {
+  if (!connection || connection.webhook_status !== "active") {
+    console.error("monday-webhook connection rejected", JSON.stringify({
+      webhookStatus: String(connection?.webhook_status ?? "missing"),
+    }));
     return json({ error: "Unknown webhook subscription" }, 403);
   }
+  // monday's event.subscriptionId identifies the integration event
+  // subscription and is not the same ID returned by create_webhook. The
+  // signed account plus the exact active board and column are the binding;
+  // the event subscription ID remains useful for audit and replay records.
   const signedAccountId = accountClaim(claims);
   if (
     signedAccountId && connection.account_id &&
     signedAccountId !== String(connection.account_id)
   ) {
+    console.error("monday-webhook account rejected", JSON.stringify({
+      signedAccountId,
+      expectedAccountId: String(connection.account_id),
+    }));
     return json(
       { error: "Webhook account does not match the installed app" },
       403,
