@@ -205,7 +205,10 @@ function webhookColumn(config: unknown): string {
   }
 }
 
-async function createOrReuseWebhook(accessToken: string): Promise<string> {
+async function createOrReuseWebhook(
+  accessToken: string,
+  forceCreate = false,
+): Promise<string> {
   const existingData = await mondayGraphql(
     accessToken,
     `query PortalWebhooks($boardId: ID!) {
@@ -218,12 +221,14 @@ async function createOrReuseWebhook(accessToken: string): Promise<string> {
   const existing = Array.isArray(existingData.webhooks)
     ? existingData.webhooks as Row[]
     : [];
-  const matched = existing.find((row) =>
-    String(row.event) === "change_status_column_value" &&
-    String(row.board_id) === ORDER_BOARD_ID &&
-    webhookColumn(row.config) === ORDER_STATUS_COLUMN_ID
-  );
-  if (matched?.id) return String(matched.id);
+  if (!forceCreate) {
+    const matched = existing.find((row) =>
+      String(row.event) === "change_status_column_value" &&
+      String(row.board_id) === ORDER_BOARD_ID &&
+      webhookColumn(row.config) === ORDER_STATUS_COLUMN_ID
+    );
+    if (matched?.id) return String(matched.id);
+  }
 
   const createdData = await mondayGraphql(
     accessToken,
@@ -251,6 +256,52 @@ async function createOrReuseWebhook(accessToken: string): Promise<string> {
     throw new Error("Monday did not return the expected order webhook.");
   }
   return String(webhook.id);
+}
+
+async function refreshWebhook(
+  request: Request,
+  caller: Caller,
+): Promise<Response> {
+  const { data: rows, error: connectionError } = await service.rpc(
+    "portal_get_monday_connection",
+    { p_encryption_key: TOKEN_ENCRYPTION_KEY },
+  );
+  if (connectionError) throw connectionError;
+  const connection = Array.isArray(rows) ? rows[0] as Row | undefined : undefined;
+  const accessToken = String(connection?.access_token ?? "");
+  if (!accessToken || connection?.connection_status !== "connected") {
+    return json(request, {
+      error: "Monday must be connected before its signed webhook can be refreshed.",
+    }, 409);
+  }
+  const webhookId = await createOrReuseWebhook(accessToken, true);
+  const { error: storeError } = await service.rpc(
+    "portal_store_monday_webhook",
+    {
+      p_webhook_id: webhookId,
+      p_board_id: ORDER_BOARD_ID,
+      p_column_id: ORDER_STATUS_COLUMN_ID,
+      p_webhook_url: WEBHOOK_URL,
+    },
+  );
+  if (storeError) throw storeError;
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.id,
+    actor_org: caller.org,
+    action: "monday.webhook_refreshed",
+    detail: {
+      boardId: ORDER_BOARD_ID,
+      columnId: ORDER_STATUS_COLUMN_ID,
+      webhookId,
+      signedWebhook: true,
+    },
+  });
+  return json(request, {
+    ok: true,
+    webhookId,
+    boardId: ORDER_BOARD_ID,
+    columnId: ORDER_STATUS_COLUMN_ID,
+  });
 }
 
 async function startAuthorization(
@@ -482,6 +533,10 @@ Deno.serve(async (request) => {
     const caller = await administratorFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
     if (request.method === "POST") {
+      const body = await request.json().catch(() => ({})) as Row;
+      if (String(body.action ?? "").toLowerCase() === "refresh-webhook") {
+        return await refreshWebhook(request, caller);
+      }
       return await startAuthorization(request, caller);
     }
     const { data, error } = await service.from("monday_connection_state")

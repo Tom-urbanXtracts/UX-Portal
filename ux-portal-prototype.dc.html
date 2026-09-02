@@ -1425,8 +1425,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ canConnectMonday }}" hint-placeholder-val="{{ false }}">
 <div style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:16px 18px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
-<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY · {{ mondayConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only installation for the order board. The dedicated app can read the board and manage its own signed webhook; it cannot edit board items.</div><sc-if value="{{ mondayConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ mondayConnectionError }}</div></sc-if></div>
-<button type="button" onClick="{{ onMondayConnect }}" aria-disabled="{{ mondayConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayConnectLabel }}</button>
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY · {{ mondayConnectionLabel }}</div><div style="font-size:12.5px;line-height:1.55;max-width:70ch;color:var(--ux-muted-strong)">Administrator-only installation for the order board. The dedicated app can read order data, update linked order status, and manage its own signed webhook.</div><sc-if value="{{ mondayConnectionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="font-size:12px;color:var(--ux-signal);margin-top:7px">{{ mondayConnectionError }}</div></sc-if></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ mondayWebhookActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onMondayWebhookRefresh }}" aria-disabled="{{ mondayConnecting }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh signed webhook</button></sc-if><button type="button" onClick="{{ onMondayConnect }}" aria-disabled="{{ mondayConnecting }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ mondayConnectLabel }}</button></div>
 </div>
 </sc-if>
 
@@ -4444,6 +4444,24 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ mondayConnecting: false,
         mondayConnectionError: (error && error.message) || 'Monday authorization could not start.' }));
+  }
+
+  refreshMondayWebhook() {
+    const s = this.state;
+    if (s.mondayConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (s.token) headers.Authorization = 'Bearer ' + s.token;
+    this.set({ mondayConnecting: true, mondayConnectionError: null });
+    return fetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: JSON.stringify({ action: 'refresh-webhook' }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok || !body.webhookId) throw new Error((body && body.error) || ('Monday webhook service returned ' + status + '.'));
+        this.set({ mondayConnecting: false, toast: 'A fresh signed Monday order-status webhook is active.',
+          toastKind: 'MONDAY WEBHOOK REFRESHED' });
+        this.loadReadiness(true);
+      })
+      .catch(error => this.set({ mondayConnecting: false,
+        mondayConnectionError: (error && error.message) || 'The signed Monday webhook could not be refreshed.' }));
   }
 
   orderCall(method, payload) {
@@ -7830,6 +7848,8 @@ class Component extends DCLogic {
       mondayConnectLabel: s.mondayConnecting ? 'Opening Monday…'
         : (((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active') ? 'Reconnect Monday' : 'Connect Monday'),
       onMondayConnect: () => this.connectMonday(),
+      mondayWebhookActive: ((((s.readinessData || {}).integrations || {}).monday || {}).webhookStatus === 'active'),
+      onMondayWebhookRefresh: () => this.refreshMondayWebhook(),
       readinessStatus: s.readinessData
         ? String(s.readinessData.status || 'unknown').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
           + ' · ' + Number(s.readinessData.blocking || 0) + ' blocking · ' + Number(s.readinessData.warnings || 0) + ' warnings'
