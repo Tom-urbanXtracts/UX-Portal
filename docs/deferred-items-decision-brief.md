@@ -1,6 +1,6 @@
 # UX OS deferred-items decision brief
 
-Updated 1 September 2026 after the connected Canix reporting audit.
+Updated 2 September 2026 after the signed Monday order integration test.
 
 These items do not block the current inventory, retailer onboarding, catalog, pricing, ordering, access, kiosk, COA/lineage, financial-display, or executive-demo scope. Each related capability stays off or blank until the named owner records a decision.
 
@@ -19,6 +19,7 @@ These items do not block the current inventory, retailer onboarding, catalog, pr
 | Canix snapshot publication | Stage each full fetch privately and publish packages, COAs, and the successful-run pointer in one PostgreSQL transaction | A failed or partial run cannot mutate the last successful inventory snapshot |
 | Lab release quantity | Only exact `TestPassed` package units count as released; a mixed line exceeding passing units is entirely pre-order | Connected Canix snapshot status domain and fail-closed order workflow |
 | Workforce SSO provider | Google Workspace through a dedicated Google Web OAuth client brokered by Supabase; first-time `@urbanxtracts.com` users receive Viewer | Google and email providers are enabled, the current callback/redirect flow was completed with Tom's Workspace account, and the deterministic provisioning trigger is deployed |
+| Monday order delivery and status return | Use the dedicated Monday app for idempotent, board-pinned order creation and status writes. Receive status changes through one app-signed webhook; retain Make only as a compatibility path | The TEST order was reconciled to Monday, `Ordered` and `Approved` callbacks each processed once with HTTP 200, eight obsolete subscriptions were removed, and one signed webhook remained active on 2 September 2026 |
 
 ## Controlled deferrals
 
@@ -27,7 +28,6 @@ These items do not block the current inventory, retailer onboarding, catalog, pr
 | P0 before production deployment | Final hostname and Auth redirect list | Current Sites URL remains unchanged | Administration / IT | Approve hostname and cutover window |
 | P0 before production deployment | Public onboarding anti-abuse | Turnstile verification and atomic HMAC-scoped daily limits are implemented but dormant on the owner-only preview. The implementation deliberately does not store or forward visitor IP addresses | Administration / IT / Security | Create the production Turnstile keys, approve exact hostnames and the daily threshold, render the widget, and enable the fail-closed server flag |
 | P0 before production deployment | Product-image and COA review policy | Private portal storage, MIME/size validation, approval states, atomic activation, and five-minute signed catalog URLs are implemented. Monday's `protected_static` links remain prohibited | IT / Quality | Decide automated scanner requirement, reviewer separation, quarantine/archive retention, and then begin controlled uploads |
-| P0 before live orders | Monday/Make execution capacity and scenarios | Portal order persistence is deployed and the Monday board now has stable request/order ID columns. Make scenario `6043707` exists, but the free organization has consumed 1,004/1,000 operations, is paused, its webhook is detached, and the scenario lacks the complete response/callback contract | Operations / IT | Upgrade Make or wait for its 14 September allowance reset, then repair and test deduplication, callbacks, and retry before deliberate activation |
 | P0 before live QuickBooks views | QuickBooks portal OAuth and customer identity mapping | The correct QuickBooks company is connected in the operator tool, but the portal has no server OAuth values. All 628 Monday retailers currently lack immutable QuickBooks Customer IDs and match status; two license values are duplicated | Finance / IT / Sales Operations | Create the portal OAuth app, resolve duplicate licenses, populate verified customer IDs, approve refresh cadence, and mark reviewed rows Ready to Sync |
 | P0 during production-domain cutover | Final-host Google Workspace redirect test | Google SSO is enabled and verified against the current/local callback paths; the future hostname is intentionally absent | Administration / IT | Add the approved final hostname, deploy the Google hosting flags, then retest domain restriction, sign-out, and deactivation before invitations |
 | P1 | Minimum order and lead time | Fields remain blank; no fabricated enforcement | Sales operations | Identify authoritative source and policy |

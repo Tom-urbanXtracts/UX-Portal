@@ -106,6 +106,8 @@ Deno.serve(async (request) => {
       canixResult,
       qboResult,
       mondayResult,
+      latestMondayEventResult,
+      latestMondayRefreshResult,
       pendingOutbox,
       failedOutbox,
       activeCommitments,
@@ -128,6 +130,13 @@ Deno.serve(async (request) => {
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
       ).eq("id", 1).maybeSingle(),
+      service.from("monday_webhook_event").select(
+        "subscription_id,board_id,item_id,status_label,processing_state,attempt_count,received_at,processed_at,response_status,last_error",
+      ).order("received_at", { ascending: false }).limit(1).maybeSingle(),
+      service.from("portal_admin_audit").select("created_at,detail").eq(
+        "action",
+        "monday.webhook_refreshed",
+      ).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       exactCount(
         "portal_order_sync_outbox",
         (query) => query.eq("state", "pending"),
@@ -175,12 +184,57 @@ Deno.serve(async (request) => {
     if (canixResult.error) throw canixResult.error;
     if (qboResult.error) throw qboResult.error;
     if (mondayResult.error) throw mondayResult.error;
+    if (latestMondayEventResult.error) throw latestMondayEventResult.error;
+    if (latestMondayRefreshResult.error) throw latestMondayRefreshResult.error;
 
     const canix = canixResult.data as Row | null;
     const qbo = qboResult.data as Row | null;
     const monday = mondayResult.data as Row | null;
+    const latestMondayEvent = latestMondayEventResult.data as Row | null;
+    const latestMondayRefresh = latestMondayRefreshResult.data as Row | null;
+    const latestMondayRefreshDetail = latestMondayRefresh?.detail &&
+        typeof latestMondayRefresh.detail === "object"
+      ? latestMondayRefresh.detail as Row
+      : {};
+    const remainingWebhookIds = Array.isArray(
+        latestMondayRefreshDetail.remainingWebhookIds,
+      )
+      ? latestMondayRefreshDetail.remainingWebhookIds.map(String)
+      : [];
+    const failedWebhookIds = Array.isArray(
+        latestMondayRefreshDetail.failedWebhookIds,
+      )
+      ? latestMondayRefreshDetail.failedWebhookIds.map(String)
+      : [];
+    const removedWebhookIds = Array.isArray(
+        latestMondayRefreshDetail.removedWebhookIds,
+      )
+      ? latestMondayRefreshDetail.removedWebhookIds.map(String)
+      : [];
     const canixAge = ageMinutes(canix?.last_successful_at);
     const qboAge = ageMinutes(qbo?.last_successful_at);
+    const mondayCallbackAge = ageMinutes(latestMondayEvent?.received_at);
+    const mondayOAuthReady = configured("MONDAY_CLIENT_ID") &&
+      configured("MONDAY_CLIENT_SECRET") &&
+      configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
+      monday?.connection_status === "connected";
+    const directMondayIntakeReady = mondayOAuthReady &&
+      configured("MONDAY_ORDER_BOARD_ID") &&
+      configured("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID");
+    const makeIntakeReady = configured("MAKE_WEBHOOK_URL") &&
+      configured("MAKE_INTAKE_SECRET");
+    const signedMondayReady = mondayOAuthReady &&
+      configured("MONDAY_SIGNING_SECRET") &&
+      monday?.webhook_status === "active" && Boolean(monday?.webhook_id);
+    const latestMondayCallbackOk = Boolean(latestMondayEvent) &&
+      latestMondayEvent?.processing_state === "processed" &&
+      Number(latestMondayEvent?.response_status) === 200 &&
+      !latestMondayEvent?.last_error &&
+      String(latestMondayEvent?.board_id ?? "") ===
+        String(monday?.webhook_board_id ?? "");
+    const lastRefreshHasOneWebhook = Boolean(latestMondayRefresh) &&
+      failedWebhookIds.length === 0 && remainingWebhookIds.length === 1 &&
+      remainingWebhookIds[0] === String(monday?.webhook_id ?? "");
     const checks: Array<{ key: string; label: string; checks: Check[] }> = [
       {
         key: "canix",
@@ -225,38 +279,59 @@ Deno.serve(async (request) => {
         label: "Orders and Monday",
         checks: [
           {
-            state:
-              configured("MAKE_WEBHOOK_URL") && configured("MAKE_INTAKE_SECRET")
-                ? "pass"
-                : "block",
-            label: "Order intake",
-            detail:
-              configured("MAKE_WEBHOOK_URL") && configured("MAKE_INTAKE_SECRET")
-                ? "Authenticated Monday/Make intake is configured."
-                : "MAKE_WEBHOOK_URL and MAKE_INTAKE_SECRET are required for live orders.",
-          },
-          {
-            state: configured("MONDAY_STATUS_SECRET") &&
-                configured("MONDAY_CLIENT_ID") &&
-                configured("MONDAY_CLIENT_SECRET") &&
-                configured("MONDAY_SIGNING_SECRET") &&
-                configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
-                monday?.connection_status === "connected" &&
-                monday?.webhook_status === "active" &&
-                Boolean(monday?.webhook_id)
+            state: directMondayIntakeReady || makeIntakeReady
               ? "pass"
               : "block",
+            label: "Order intake",
+            detail: directMondayIntakeReady
+              ? "Direct, board-pinned Monday order intake is active; Make remains a compatibility path."
+              : makeIntakeReady
+              ? "Authenticated Make intake is configured as the compatibility path."
+              : "Neither the direct Monday app path nor the authenticated Make compatibility path is ready.",
+          },
+          {
+            state: signedMondayReady ? "pass" : "block",
             label: "Signed status return",
-            detail: configured("MONDAY_STATUS_SECRET") &&
-                configured("MONDAY_CLIENT_ID") &&
-                configured("MONDAY_CLIENT_SECRET") &&
-                configured("MONDAY_SIGNING_SECRET") &&
-                configured("MONDAY_TOKEN_ENCRYPTION_KEY") &&
-                monday?.connection_status === "connected" &&
-                monday?.webhook_status === "active" &&
-                Boolean(monday?.webhook_id)
+            detail: signedMondayReady
               ? `App OAuth is connected; signed webhook ${monday.webhook_id} is active for the order board.`
               : "An administrator must install the dedicated Monday app and create its signed order-status webhook.",
+          },
+          {
+            state: !latestMondayEvent
+              ? "warn"
+              : latestMondayCallbackOk
+              ? "pass"
+              : "block",
+            label: "Latest signed callback",
+            detail: !latestMondayEvent
+              ? "No signed Monday callback has been recorded yet."
+              : latestMondayCallbackOk
+              ? `${
+                latestMondayEvent.status_label ?? "Status change"
+              } processed ${mondayCallbackAge} minutes ago on attempt ${
+                latestMondayEvent.attempt_count ?? 1
+              }; HTTP 200.`
+              : `Latest callback did not complete cleanly: ${
+                String(
+                  latestMondayEvent.last_error ??
+                    latestMondayEvent.processing_state ?? "unknown state",
+                ).slice(0, 240)
+              }`,
+          },
+          {
+            state: !latestMondayRefresh
+              ? "warn"
+              : lastRefreshHasOneWebhook
+              ? "pass"
+              : "block",
+            label: "Last webhook refresh",
+            detail: !latestMondayRefresh
+              ? "No administrator webhook-refresh audit is recorded."
+              : lastRefreshHasOneWebhook
+              ? `Exactly one matching signed webhook remains; ${removedWebhookIds.length} obsolete subscription${
+                removedWebhookIds.length === 1 ? " was" : "s were"
+              } removed during the last refresh.`
+              : `${remainingWebhookIds.length} matching webhooks remain and ${failedWebhookIds.length} deletions failed; refresh the signed webhook again.`,
           },
           {
             state: configured("ORDER_SYNC_CRON_SECRET") ? "pass" : "block",
@@ -443,6 +518,14 @@ Deno.serve(async (request) => {
           webhookBoardId: monday?.webhook_board_id ?? null,
           webhookColumnId: monday?.webhook_column_id ?? null,
           webhookCreatedAt: monday?.webhook_created_at ?? null,
+          latestCallbackAt: latestMondayEvent?.received_at ?? null,
+          latestCallbackStatus: latestMondayEvent?.status_label ?? null,
+          latestCallbackResponseStatus: latestMondayEvent?.response_status ??
+            null,
+          latestCallbackSubscriptionId: latestMondayEvent?.subscription_id ??
+            null,
+          matchingWebhookCount: remainingWebhookIds.length || null,
+          lastWebhookRefreshAt: latestMondayRefresh?.created_at ?? null,
         },
         quickbooks: {
           connectionStatus: qbo?.connection_status ?? "disconnected",

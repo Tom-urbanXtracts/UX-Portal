@@ -1,8 +1,8 @@
 # Make order automation remediation
 
-Audit date: 1 September 2026
+Audit date: 2 September 2026
 
-This is the production-readiness plan for Make scenario `6043707`, **UX Portal intake to monday**. It records no webhook addresses or shared secrets.
+This is the compatibility-path remediation plan for Make scenario `6043707`, **UX Portal intake to monday**. It records no webhook addresses or shared secrets. Direct portal order creation, portal-to-Monday status writes, and signed Monday-to-portal order callbacks now use the dedicated Monday app and do not depend on this paused scenario.
 
 ## Current state
 
@@ -13,8 +13,8 @@ This is the production-readiness plan for Make scenario `6043707`, **UX Portal i
 - The saved order route now searches **Portal request ID** before creation, stores both portal identifiers on new items, and returns `orderNumber`, `mondayItemId`, `mondayBoardId`, and `status` for both found and created branches.
 - The saved scenario now includes an authenticated `order-status` route and returns a complete onboarding receipt.
 - Make's blueprint validator and the Monday module validators accepted the saved structure with no warnings. Runtime execution is not verified because the paused organization has no remaining operation allowance.
-- There is still no verified Monday-to-portal status callback or five-minute portal-outbox flush.
-- Portal order persistence is already durable and fail-closed. These Make gaps block live forwarding, not the Canix inventory reader or executive demo.
+- The direct Monday app path passed idempotent TEST order reconciliation and signed `Ordered` / `Approved` callback tests on 2 September 2026. The independent five-minute portal-outbox flush is active.
+- Portal order persistence is durable and fail-closed. These Make gaps affect only the compatibility and Make-only intake paths, including onboarding; they do not block the direct order path, Canix inventory reader, or executive demo.
 
 ## Safe repair sequence
 
@@ -36,7 +36,7 @@ This is the production-readiness plan for Make scenario `6043707`, **UX Portal i
    ```
 
 6. Add a `kind = order-status` route to the same scenario so the current two-scenario plan limit is not exceeded. It must update the identified Monday item from the portal outbox payload and return HTTP 2xx only after the update succeeds. **Saved and structurally validated 1 September 2026; runtime test pending.**
-7. Add a Monday status-change automation that calls the Supabase `portal-orders` endpoint with `action = monday-status`, one stable order identifier, the exact status label, and the numeric Canix sales-order ID once operations creates it. Authenticate using the server-only callback header.
+7. If the legacy Make callback is deliberately retained, add a Monday status-change automation that calls the Supabase `portal-orders` endpoint with `action = monday-status`, one stable order identifier, the exact status label, and the numeric Canix sales-order ID once operations creates it. Authenticate using the server-only callback header. The dedicated app's signed callback remains the primary path.
 8. Configure an independent five-minute scheduler to call `portal-orders` with `action = flush-outbox`. Do not reuse the callback secret for this scheduler. **Completed 1 September 2026:** the active Supabase cron reads its independent credential from Vault; a controlled empty-queue request returned HTTP 200 with zero failures.
 9. Validate the complete scenario blueprint, run the test matrix below while it remains inactive for general traffic, and activate it only as a separate deliberate release action.
 
@@ -64,4 +64,4 @@ The values themselves belong in Supabase/Make secret storage and must never be c
 | Canix sales-order link | Positive numeric ID links to one portal order only and prevents double inventory subtraction |
 | Onboarding route | One-to-ten stores stay durable and the response includes the Monday item identifier |
 
-Live ordering is ready only when every row passes with execution IDs retained in the deployment record and the scenario finishes attached, unpaused, and deliberately active.
+The Make compatibility path is ready only when every applicable row passes with execution IDs retained in the deployment record and the scenario finishes attached, unpaused, and deliberately active. This requirement does not replace the already verified dedicated-app acceptance evidence for the direct order path.
