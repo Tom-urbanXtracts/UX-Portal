@@ -488,15 +488,29 @@ async function verifyOrder(
       "Every order line must include its catalog product identifier.",
     );
   }
-  const { data: prices, error: priceError } = await service.from(
-    "portal_store_price",
-  )
-    .select("product_id,product_name,sku,price_cents,published_at")
-    .eq("location_license", license).in("product_id", productIds);
-  if (priceError) throw priceError;
-  const priceByProduct = new Map(
-    (prices ?? []).map((row) => [String(row.product_id), row]),
+  const [storePriceResult, defaultPriceResult] = await Promise.all([
+    service.from("portal_store_price")
+      .select("product_id,product_name,sku,price_cents,published_at")
+      .eq("location_license", license).in("product_id", productIds),
+    service.from("portal_default_price")
+      .select("product_id,product_name,sku,unit_price_cents,published_at")
+      .eq("active", true).in("product_id", productIds),
+  ]);
+  if (storePriceResult.error) throw storePriceResult.error;
+  if (defaultPriceResult.error) throw defaultPriceResult.error;
+  const priceByProduct = new Map<string, Row>(
+    (defaultPriceResult.data ?? []).map((row) => [String(row.product_id), {
+      ...row,
+      price_cents: row.unit_price_cents,
+      price_source: "default_wholesale",
+    }]),
   );
+  for (const row of storePriceResult.data ?? []) {
+    priceByProduct.set(String(row.product_id), {
+      ...row,
+      price_source: "approved_store_override",
+    });
+  }
   const missingPrice = productIds.find((productId) =>
     !priceByProduct.has(productId)
   );

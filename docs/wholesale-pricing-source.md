@@ -11,6 +11,12 @@ The current wholesale source is the Google Sheet **Order Sheet (urbanXtracts + B
 - Against the current 559-item Canix catalog snapshot, only 8 rows produced a unique normalized product-name + Brand match. Three additional rows matched a product name without a verified Brand; 107 rows require a reviewed crosswalk.
 - Product images remain out of scope and are not imported from this sheet.
 
+## Staged portal workflow
+
+All 118 `ACTIVE CART` price rows are now copied into the protected `portal_wholesale_price_source` staging table with their source document, tab, row number, section-derived Brand, product details, case values, and unit price. The portal's internal **Wholesale list to Canix review queue** derives exact, normalized, collision, Brand-conflict, and no-match states against the latest CountBased Canix snapshot. The source spreadsheet remains unchanged.
+
+Administrator, Operations, and Sales users can verify an exception only by supplying a current unused Canix Item ID and a review note. The server rechecks the latest Canix snapshot and records the reviewer. Verification does not publish a price. A separate publication action creates the active default wholesale price; an approved store-specific price still takes precedence in Catalog and order intake.
+
 ## Publication rule
 
 1. Stage every source row with its sheet row number, section-derived Brand, case size, unit price, and case price.
@@ -20,4 +26,4 @@ The current wholesale source is the Google Sheet **Order Sheet (urbanXtracts + B
 5. Store-specific approved prices continue to override the default list price. Retailer Owner or Buyer proposals remain store-scoped and require internal approval.
 6. Record source document ID, sheet tab, row number, import timestamp, reviewer, and publication event so every price is auditable and reversible.
 
-The source is ready for staged ingestion. Bulk publication is intentionally blocked until the 107 review-required rows receive Canix item IDs or the source sheet adds an immutable Canix Item ID column.
+The source is staged. Bulk publication remains intentionally blocked for every unverified row until it receives a reviewed Canix Item ID or the source sheet adds an immutable Canix Item ID column. Only unique exact product-name + Brand pairs may use the protected batch-verification action; every other row requires an explicit reviewer note.

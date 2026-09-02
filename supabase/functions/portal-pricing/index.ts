@@ -58,6 +58,41 @@ function clean(value: unknown, max = 300): string {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function identityKey(value: unknown): string {
+  return clean(value, 600).toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizedIdentityKey(value: unknown): string {
+  return clean(value, 600).normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function brandKey(value: unknown): string {
+  const normalized = normalizedIdentityKey(value);
+  return ({
+    "urban xtracts": "urbanxtracts",
+    "ux": "urbanxtracts",
+    "cannaprints": "cannaprint",
+    "cannaprint": "cannaprint",
+    "royale genetics": "royal genetics",
+    "honey pot": "honeypot",
+  } as Record<string, string>)[normalized] ?? normalized;
+}
+
+type CanixPriceItem = {
+  itemId: number;
+  itemName: string;
+  sku: string | null;
+  brands: string[];
+  category: string | null;
+  packageCount: number;
+};
+
 async function callerFor(request: Request): Promise<Caller | null> {
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.startsWith("Bearer ")) return null;
@@ -153,10 +188,219 @@ function serializePrice(row: Row): Row {
   };
 }
 
+function serializeDefaultPrice(row: Row): Row {
+  return {
+    canixItemId: row.canix_item_id,
+    productId: row.product_id,
+    productName: row.product_name,
+    brand: row.brand,
+    sku: row.sku,
+    unitPriceCents: row.unit_price_cents,
+    caseSize: row.case_size,
+    casePriceCents: row.case_price_cents,
+    sourcePriceId: row.source_price_id,
+    publishedAt: row.published_at,
+  };
+}
+
+async function currentCanixPriceItems(): Promise<CanixPriceItem[]> {
+  const { data: state, error: stateError } = await service.from(
+    "canix_sync_state",
+  ).select("last_successful_run_id").eq("id", 1).maybeSingle();
+  if (stateError) throw stateError;
+  if (!state?.last_successful_run_id) return [];
+  const rows: Row[] = [];
+  for (let start = 0; start < 20000; start += 1000) {
+    const { data, error } = await service.from("canix_package_current").select(
+      "item_id,item_name,product_name,sku,brand_name,item_category_name,quantity_type",
+    ).eq("sync_run_id", state.last_successful_run_id).eq(
+      "quantity_type",
+      "CountBased",
+    ).order("package_id", { ascending: true }).range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as Row[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+    if (start === 19000) {
+      throw new PricingError(
+        502,
+        "The current Canix snapshot is too large to review safely in one request.",
+      );
+    }
+  }
+  const grouped = new Map<number, CanixPriceItem>();
+  for (const row of rows) {
+    const itemId = Number(row.item_id);
+    if (!Number.isSafeInteger(itemId) || itemId <= 0) continue;
+    const itemName = clean(row.product_name || row.item_name, 600);
+    if (!itemName) continue;
+    const current = grouped.get(itemId) ?? {
+      itemId,
+      itemName,
+      sku: clean(row.sku, 160) || null,
+      brands: [],
+      category: clean(row.item_category_name, 240) || null,
+      packageCount: 0,
+    };
+    const brand = clean(row.brand_name, 240);
+    if (brand && !current.brands.includes(brand)) current.brands.push(brand);
+    current.packageCount += 1;
+    grouped.set(itemId, current);
+  }
+  return Array.from(grouped.values());
+}
+
+function groupBy<T>(values: T[], keyFor: (value: T) => string): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const value of values) {
+    const key = keyFor(value);
+    if (!key) continue;
+    grouped.set(key, [...(grouped.get(key) ?? []), value]);
+  }
+  return grouped;
+}
+
+async function wholesalePriceSnapshot(includeReviewQueue: boolean): Promise<Row> {
+  const [defaultResult, sourceResult, canixItems] = await Promise.all([
+    service.from("portal_default_price").select("*").eq("active", true).order(
+      "product_name",
+    ),
+    includeReviewQueue
+      ? service.from("portal_wholesale_price_source").select("*").order(
+        "source_row",
+      )
+      : Promise.resolve({ data: [], error: null }),
+    includeReviewQueue ? currentCanixPriceItems() : Promise.resolve([]),
+  ]);
+  if (defaultResult.error) throw defaultResult.error;
+  if (sourceResult.error) throw sourceResult.error;
+  const sourceRows = (sourceResult.data ?? []) as Row[];
+  const strictCanix = groupBy(canixItems, (item) => identityKey(item.itemName));
+  const normalizedCanix = groupBy(
+    canixItems,
+    (item) => normalizedIdentityKey(item.itemName),
+  );
+  const reviewableSource = sourceRows.filter((row) =>
+    !new Set(["verified", "published", "rejected"]).has(String(row.review_state))
+  );
+  const strictSource = groupBy(
+    reviewableSource,
+    (row) => identityKey(row.product_name),
+  );
+  const normalizedSource = groupBy(
+    reviewableSource,
+    (row) => normalizedIdentityKey(row.product_name),
+  );
+  const claimedIds = new Set(
+    sourceRows.filter((row) =>
+      new Set(["verified", "published"]).has(String(row.review_state)) &&
+      Number.isSafeInteger(Number(row.canix_item_id))
+    ).map((row) => Number(row.canix_item_id)),
+  );
+  const canixById = new Map(canixItems.map((item) => [item.itemId, item]));
+  const reviewRows = sourceRows.map((row) => {
+    const persistedState = String(row.review_state ?? "unreviewed");
+    let reviewState = persistedState;
+    let reviewReason = clean(row.review_reason, 1200) || null;
+    let candidates: CanixPriceItem[] = [];
+    if (new Set(["verified", "published"]).has(persistedState)) {
+      const linked = canixById.get(Number(row.canix_item_id));
+      if (linked) candidates = [linked];
+    } else if (persistedState !== "rejected") {
+      const strictKey = identityKey(row.product_name);
+      const normalizedKey = normalizedIdentityKey(row.product_name);
+      const strictCandidates = strictCanix.get(strictKey) ?? [];
+      const normalizedCandidates = normalizedCanix.get(normalizedKey) ?? [];
+      candidates = strictCandidates.length ? strictCandidates : normalizedCandidates;
+      const sourceCollision = (strictSource.get(strictKey) ?? []).length > 1 ||
+        (normalizedSource.get(normalizedKey) ?? []).length > 1;
+      const canixCollision = strictCandidates.length > 1 ||
+        normalizedCandidates.length > 1;
+      const sourceBrand = brandKey(row.brand);
+      const matchingBrand = candidates.filter((candidate) => {
+        const candidateBrands = new Set(candidate.brands.map(brandKey).filter(Boolean));
+        return sourceBrand && candidateBrands.size === 1 && candidateBrands.has(sourceBrand);
+      });
+      if (!candidates.length) {
+        reviewState = "no_match";
+        reviewReason = "No current CountBased Canix item has this normalized product name.";
+      } else if (sourceCollision || canixCollision) {
+        reviewState = "name_collision";
+        reviewReason = "The normalized name is not unique in the source list or current Canix items.";
+      } else if (candidates.some((candidate) => claimedIds.has(candidate.itemId))) {
+        reviewState = "linked_conflict";
+        reviewReason = "The candidate Canix Item ID is already verified for another wholesale source row.";
+      } else if (!sourceBrand) {
+        reviewState = "missing_brand";
+        reviewReason = "The source row needs a Brand before identity can be verified.";
+      } else if (matchingBrand.length !== 1) {
+        reviewState = "brand_conflict";
+        reviewReason = "The source and Canix product names align, but their Brands do not.";
+      } else if (strictCandidates.length === 1) {
+        reviewState = "exact_ready";
+        reviewReason = "One current Canix item has the exact product name and Brand.";
+        candidates = matchingBrand;
+      } else {
+        reviewState = "normalized_review";
+        reviewReason = "One normalized product-name and Brand candidate requires review.";
+        candidates = matchingBrand;
+      }
+    }
+    return {
+      id: row.id,
+      sourceDocumentId: row.source_document_id,
+      sourceSheetId: row.source_sheet_id,
+      sourceTab: row.source_tab,
+      sourceRow: row.source_row,
+      brand: row.brand,
+      productName: row.product_name,
+      productProfile: row.product_profile,
+      terpenes: row.terpenes,
+      thc: row.thc,
+      caseSize: row.case_size,
+      unitPriceCents: row.unit_price_cents,
+      casePriceCents: row.case_price_cents,
+      canixItemId: row.canix_item_id,
+      reviewState,
+      reviewReason,
+      reviewNote: row.review_note,
+      reviewedAt: row.reviewed_at,
+      publishedAt: row.published_at,
+      candidates: candidates.slice(0, 5).map((candidate) => ({
+        canixItemId: candidate.itemId,
+        productName: candidate.itemName,
+        brand: candidate.brands.join(" / ") || null,
+        sku: candidate.sku,
+        category: candidate.category,
+        packageCount: candidate.packageCount,
+      })),
+    };
+  });
+  const summary = reviewRows.reduce((counts, row) => {
+    counts.total = Number(counts.total || 0) + 1;
+    counts[row.reviewState] = Number(counts[row.reviewState] || 0) + 1;
+    return counts;
+  }, {} as Row);
+  return {
+    defaults: (defaultResult.data ?? []).map((row) =>
+      serializeDefaultPrice(row as unknown as Row)
+    ),
+    wholesaleSources: includeReviewQueue ? reviewRows : [],
+    wholesaleSummary: includeReviewQueue ? summary : {},
+  };
+}
+
 async function pricingSnapshot(caller: Caller): Promise<Row> {
-  const stores = await accessibleStores(caller);
+  const [stores, wholesale] = await Promise.all([
+    accessibleStores(caller),
+    wholesalePriceSnapshot(
+      caller.profile.role === "internal" && caller.canManagePricing,
+    ),
+  ]);
   const licenses = stores.map((store) => String(store.license_number));
-  if (!licenses.length) return { stores: [], proposals: [], prices: [] };
+  if (!licenses.length) {
+    return { stores: [], proposals: [], prices: [], ...wholesale };
+  }
   const storeName = new Map(
     stores.map((store) => [String(store.license_number), store.display_name]),
   );
@@ -192,6 +436,7 @@ async function pricingSnapshot(caller: Caller): Promise<Row> {
     })),
     proposals,
     prices,
+    ...wholesale,
   };
 }
 
@@ -211,6 +456,117 @@ async function audit(
     detail,
   });
   if (error) throw error;
+}
+
+async function verifyWholesaleSource(
+  caller: Caller,
+  sourcePriceId: string,
+  canixItemId: number,
+  reviewNote: string,
+): Promise<Row> {
+  if (!/^[0-9a-f-]{36}$/i.test(sourcePriceId)) {
+    throw new PricingError(400, "Choose a valid wholesale source row.");
+  }
+  if (!Number.isSafeInteger(canixItemId) || canixItemId <= 0) {
+    throw new PricingError(400, "Enter a valid numeric Canix Item ID.");
+  }
+  if (reviewNote.length < 8) {
+    throw new PricingError(
+      400,
+      "Add a short note explaining the wholesale identity decision.",
+    );
+  }
+  const { data, error } = await service.rpc(
+    "portal_verify_wholesale_price_source",
+    {
+      p_source_price_id: sourcePriceId,
+      p_canix_item_id: canixItemId,
+      p_actor_id: caller.profile.id,
+      p_review_note: reviewNote,
+    },
+  );
+  if (error) throw new PricingError(409, error.message);
+  return data as Row;
+}
+
+async function publishWholesaleSource(
+  caller: Caller,
+  sourcePriceId: string,
+): Promise<Row> {
+  if (!/^[0-9a-f-]{36}$/i.test(sourcePriceId)) {
+    throw new PricingError(400, "Choose a valid verified wholesale source row.");
+  }
+  const { data, error } = await service.rpc(
+    "portal_publish_wholesale_price_source",
+    {
+      p_source_price_id: sourcePriceId,
+      p_actor_id: caller.profile.id,
+    },
+  );
+  if (error) throw new PricingError(409, error.message);
+  return data as Row;
+}
+
+async function verifyExactWholesaleSources(caller: Caller): Promise<Row> {
+  const snapshot = await wholesalePriceSnapshot(true);
+  const rows = (Array.isArray(snapshot.wholesaleSources)
+    ? snapshot.wholesaleSources as Row[]
+    : []).filter((row) => row.reviewState === "exact_ready");
+  const verified: Row[] = [];
+  const failures: Row[] = [];
+  for (let index = 0; index < rows.length; index += 5) {
+    const batch = rows.slice(index, index + 5);
+    const results = await Promise.allSettled(batch.map((row) => {
+      const candidates = Array.isArray(row.candidates)
+        ? row.candidates as Row[]
+        : [];
+      return verifyWholesaleSource(
+        caller,
+        String(row.id),
+        Number(candidates[0]?.canixItemId),
+        "Automatically verified from one unique exact product-name and Brand match.",
+      );
+    }));
+    results.forEach((result, resultIndex) => {
+      if (result.status === "fulfilled") verified.push(result.value);
+      else {
+        failures.push({
+          sourcePriceId: batch[resultIndex].id,
+          reason: result.reason instanceof Error
+            ? clean(result.reason.message, 300)
+            : "Verification failed.",
+        });
+      }
+    });
+  }
+  return { candidates: rows.length, verified, failures };
+}
+
+async function publishVerifiedWholesaleSources(caller: Caller): Promise<Row> {
+  const snapshot = await wholesalePriceSnapshot(true);
+  const rows = (Array.isArray(snapshot.wholesaleSources)
+    ? snapshot.wholesaleSources as Row[]
+    : []).filter((row) => row.reviewState === "verified");
+  const published: Row[] = [];
+  const failures: Row[] = [];
+  for (let index = 0; index < rows.length; index += 5) {
+    const batch = rows.slice(index, index + 5);
+    const results = await Promise.allSettled(
+      batch.map((row) => publishWholesaleSource(caller, String(row.id))),
+    );
+    results.forEach((result, resultIndex) => {
+      if (result.status === "fulfilled") published.push(result.value);
+      else {
+        failures.push({
+          sourcePriceId: batch[resultIndex].id,
+          reason: result.reason instanceof Error
+            ? clean(result.reason.message, 300)
+            : "Publication failed.",
+        });
+      }
+    });
+  }
+  return { candidates: rows.length, published, failures };
 }
 
 async function canonicalProduct(
@@ -301,6 +657,47 @@ Deno.serve(async (request) => {
 
     const body = await request.json() as Row;
     const action = clean(body.action, 30).toLowerCase();
+    if (
+      new Set([
+        "verify-wholesale-source",
+        "verify-exact-wholesale",
+        "publish-wholesale-source",
+        "publish-verified-wholesale",
+      ]).has(action)
+    ) {
+      if (caller.profile.role !== "internal" || !caller.canManagePricing) {
+        return json(request, {
+          error:
+            "Wholesale list-price review requires Administrator, Operations, or Sales access.",
+        }, 403);
+      }
+      if (action === "verify-wholesale-source") {
+        const result = await verifyWholesaleSource(
+          caller,
+          clean(body.sourcePriceId, 80),
+          Number(body.canixItemId),
+          clean(body.reviewNote, 1200),
+        );
+        return json(request, { ok: true, result }, 200);
+      }
+      if (action === "verify-exact-wholesale") {
+        return json(request, {
+          ok: true,
+          result: await verifyExactWholesaleSources(caller),
+        }, 200);
+      }
+      if (action === "publish-wholesale-source") {
+        const result = await publishWholesaleSource(
+          caller,
+          clean(body.sourcePriceId, 80),
+        );
+        return json(request, { ok: true, result }, 200);
+      }
+      return json(request, {
+        ok: true,
+        result: await publishVerifiedWholesaleSources(caller),
+      }, 200);
+    }
     if (action === "propose") {
       if (!new Set(["owner", "buyer"]).has(String(caller.profile.role))) {
         return json(request, {

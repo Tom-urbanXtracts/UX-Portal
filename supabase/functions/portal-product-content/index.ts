@@ -949,6 +949,124 @@ async function approveCatalogMapping(
   return { mapping: detail, product: products[0] ?? null };
 }
 
+async function approveManualCatalogMapping(
+  caller: Caller,
+  body: Row,
+): Promise<Row> {
+  const mondayItemId = clean(body.mondayItemId, 160) ?? "";
+  const canixItemId = Number(body.canixItemId);
+  const reviewNote = clean(body.reviewNote, 1200) ?? "";
+  if (
+    !/^\d+$/.test(mondayItemId) || !Number.isSafeInteger(canixItemId) ||
+    canixItemId <= 0
+  ) {
+    throw new ProductError(400, "Enter a valid current Canix Item ID.");
+  }
+  if (reviewNote.length < 8) {
+    throw new ProductError(
+      400,
+      "Add a short review note explaining the manual identity decision.",
+    );
+  }
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read", "boards:write"]);
+  if (!accessToken) {
+    throw new ProductError(
+      409,
+      "Reconnect Monday with board read and write access before approving product mappings.",
+    );
+  }
+  const [mondayItems, canixItems] = await Promise.all([
+    mondayProductItems(accessToken),
+    currentCanixCatalogItems(),
+  ]);
+  const mondayItem = mondayItems.find((item) =>
+    String(item.id ?? "") === mondayItemId
+  );
+  if (!mondayItem || !mondayMappingEligible(mondayItem)) {
+    throw new ProductError(
+      409,
+      "That Monday product row is unavailable or excluded from catalog mapping.",
+    );
+  }
+  const mondayColumns = mondayColumnValues(mondayItem);
+  const currentMondayCanixId = mondayText(
+    mondayColumns,
+    MONDAY_PRODUCT_COLUMNS.canixItemId,
+  );
+  if (currentMondayCanixId) {
+    throw new ProductError(
+      409,
+      "That Monday product already has a Canix Item ID. Refresh the review queue.",
+    );
+  }
+  const canixItem = canixItems.find((item) => item.itemId === canixItemId);
+  if (!canixItem) {
+    throw new ProductError(
+      409,
+      "That Canix Item ID is not present in the latest successful inventory snapshot.",
+    );
+  }
+  const mondayConflict = mondayItems.find((item) => {
+    if (String(item.id ?? "") === mondayItemId) return false;
+    const linked = mondayText(
+      mondayColumnValues(item),
+      MONDAY_PRODUCT_COLUMNS.canixItemId,
+    );
+    return linked === String(canixItemId);
+  });
+  if (mondayConflict) {
+    throw new ProductError(
+      409,
+      "That Canix Item ID is already linked to another Monday product row.",
+    );
+  }
+  const { data: existingSource, error: existingSourceError } = await service
+    .from("portal_product_content").select("canix_item_id,monday_item_id")
+    .eq("canix_item_id", canixItemId).maybeSingle();
+  if (existingSourceError) throw existingSourceError;
+  if (
+    existingSource?.monday_item_id &&
+    String(existingSource.monday_item_id) !== mondayItemId
+  ) {
+    throw new ProductError(
+      409,
+      "That Canix item is already linked to a different catalog-content record.",
+    );
+  }
+  await writeMondayMapping(accessToken, mondayItemId, canixItemId);
+  const products = await upsertItems(
+    [mondayProductRecord(mondayItem, canixItemId, "draft")],
+    caller,
+    "monday",
+  );
+  const detail = {
+    mondayItemId,
+    mondayItemName: clean(mondayItem.name, 600) ?? "Unnamed Monday item",
+    mondayBrand: mondayText(
+      mondayColumns,
+      MONDAY_PRODUCT_COLUMNS.brandName,
+    ),
+    canixItemId,
+    canixItemName: canixItem.itemName,
+    canixBrand: canixItem.brands.join(" / ") || null,
+    reviewNote,
+    publicationState: "draft",
+  };
+  const { error: auditError } = await service.from("portal_admin_audit")
+    .insert({
+      actor_id: caller.profile.id,
+      actor_org: caller.profile.org,
+      action: "monday.product_mapping_manually_approved",
+      detail,
+    });
+  if (auditError) throw auditError;
+  return { mapping: detail, product: products[0] ?? null };
+}
+
 async function currentCanixItemIds(itemIds: number[]): Promise<Set<number>> {
   const { data: state, error: stateError } = await service.from(
     "canix_sync_state",
@@ -1429,6 +1547,13 @@ Deno.serve(async (request) => {
         return json(request, { error: "Forbidden" }, 403);
       }
       const result = await approveCatalogMapping(caller, body);
+      return json(request, { ok: true, ...result }, 200);
+    }
+    if (action === "approve-manual-mapping") {
+      if (mondayAuthorized || !caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const result = await approveManualCatalogMapping(caller, body);
       return json(request, { ok: true, ...result }, 200);
     }
     if (action === "approve-exact-mappings") {

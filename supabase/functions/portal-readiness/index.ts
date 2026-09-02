@@ -121,6 +121,9 @@ Deno.serve(async (request) => {
       readyStores,
       activeProfiles,
       pendingPrices,
+      wholesaleSourceRows,
+      verifiedWholesaleRows,
+      publishedDefaultPrices,
       pendingAssetReviews,
       activeAssets,
       quarantinedAssets,
@@ -178,6 +181,15 @@ Deno.serve(async (request) => {
       exactCount(
         "portal_price_proposal",
         (query) => query.eq("state", "pending"),
+      ),
+      exactCount("portal_wholesale_price_source"),
+      exactCount(
+        "portal_wholesale_price_source",
+        (query) => query.eq("review_state", "verified"),
+      ),
+      exactCount(
+        "portal_default_price",
+        (query) => query.eq("active", true),
       ),
       exactCount(
         "portal_asset",
@@ -402,6 +414,15 @@ Deno.serve(async (request) => {
             label: "Pricing approvals",
             detail:
               `${pendingPrices} store-price proposals awaiting internal decision.`,
+          },
+          {
+            state: wholesaleSourceRows > 0
+              ? (publishedDefaultPrices > 0 ? "pass" : "warn")
+              : "warn",
+            label: "Default wholesale list",
+            detail: wholesaleSourceRows > 0
+              ? `${wholesaleSourceRows} approved source rows staged; ${verifiedWholesaleRows} verified but unpublished; ${publishedDefaultPrices} active default prices.`
+              : "The approved wholesale source has not been staged.",
           },
         ],
       },

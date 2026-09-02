@@ -321,6 +321,17 @@ button{font-family:inherit}
 <div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:20px;font-size:13px;line-height:1.55"><strong>Pricing service unavailable.</strong> {{ pricingError }} The last loaded rate card remains visible and no proposal was lost.</div>
 </sc-if>
 
+<sc-if value="{{ canReviewPricing }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="wholesale-source-heading" style="border:1px solid rgba(23,14,11,.22);background:var(--ux-surface);padding:18px 20px;margin-bottom:24px">
+<div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap"><div><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL · DEFAULT WHOLESALE CONTROL</div><h2 id="wholesale-source-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 6px">Wholesale list to Canix review queue</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted-strong);max-width:74ch;margin:0">The approved ACTIVE CART source is staged independently from store overrides. A row cannot affect Catalog or ordering until its Canix Item ID is verified and its price is deliberately published.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ wholesaleCanVerifyExact }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onWholesaleVerifyExact }}" aria-disabled="{{ wholesaleBusy }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ wholesaleVerifyExactLabel }}</button></sc-if><sc-if value="{{ wholesaleCanPublishVerified }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onWholesalePublishVerified }}" aria-disabled="{{ wholesaleBusy }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ wholesalePublishVerifiedLabel }}</button></sc-if></div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px;margin-top:16px"><sc-for list="{{ wholesaleMetrics }}" as="metric" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.16);padding:10px 11px"><div style="font:800 18px/1 Archivo,sans-serif;margin-bottom:5px">{{ metric.value }}</div><div style="font:600 8.5px/1.4 ui-monospace,monospace;letter-spacing:.055em;color:var(--ux-muted)">{{ metric.label }}</div></div></sc-for></div>
+<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:#fff;border:1px solid rgba(23,14,11,.16);padding:12px;margin:12px 0 10px"><label style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:220px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SEARCH PRICE SOURCE</span><input type="search" value="{{ wholesaleQuery }}" onInput="{{ onWholesaleQuery }}" placeholder="Product, brand, source row, Canix ID or reason" style="width:100%;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"></label><label style="display:flex;flex-direction:column;gap:5px;min-width:190px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">REVIEW STATE</span><select value="{{ wholesaleStatus }}" onChange="{{ onWholesaleStatus }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="all">All source rows</option><sc-for list="{{ wholesaleStatusOptions }}" as="status" hint-placeholder-count="8"><option value="{{ status.value }}">{{ status.label }}</option></sc-for></select></label><label style="display:flex;flex-direction:column;gap:5px;min-width:150px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SORT</span><select value="{{ wholesaleSort }}" onChange="{{ onWholesaleSort }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="state">Review state</option><option value="row">Source row</option><option value="name">Product name</option><option value="brand">Brand</option><option value="price">Unit price</option></select></label><div style="font:700 10px ui-monospace,monospace;color:var(--ux-muted);padding:10px 2px">{{ wholesaleResultCount }}</div></div>
+<label style="display:flex;flex-direction:column;gap:5px;background:#fff;padding:11px 12px;margin-bottom:10px"><span style="font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">MANUAL PRICE IDENTITY NOTE · REQUIRED FOR EXCEPTIONS</span><input type="text" value="{{ wholesaleReviewNote }}" onInput="{{ onWholesaleReviewNote }}" placeholder="Example: Confirmed product format and Brand against current Canix item detail" style="width:100%;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"></label>
+<sc-if value="{{ wholesaleHasRows }}" hint-placeholder-val="{{ true }}"><div role="table" aria-label="Wholesale list to Canix review rows" style="border-top:2px solid rgba(23,14,11,.4)"><div role="row" style="display:grid;grid-template-columns:minmax(210px,1.2fr) minmax(190px,1fr) minmax(180px,.9fr) minmax(130px,.6fr);gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.24);font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);{{ pricingRowGridStyle }}"><div role="columnheader">SOURCE PRODUCT</div><div role="columnheader">CANIX CANDIDATE</div><div role="columnheader">REVIEW STATE</div><div role="columnheader">ACTION</div></div><sc-for list="{{ wholesaleRows }}" as="price" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:minmax(210px,1.2fr) minmax(190px,1fr) minmax(180px,.9fr) minmax(130px,.6fr);gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start;{{ pricingRowGridStyle }}"><div role="cell"><div style="font:700 13px/1.4 Archivo,sans-serif">{{ price.productName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">{{ price.sourceLabel }} · {{ price.brand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ price.profile }} · {{ price.caseDetail }}</div><div style="font:800 14px Archivo,sans-serif;margin-top:5px">{{ price.unitPrice }} / unit</div></div><div role="cell"><div style="font:700 12px/1.4 Archivo,sans-serif">{{ price.candidateName }}</div><div style="font:10px/1.5 ui-monospace,monospace;color:var(--ux-muted)">{{ price.candidateMeta }}</div><sc-if value="{{ price.hasCandidateList }}" hint-placeholder-val="{{ false }}"><div style="font-size:9.5px;line-height:1.45;color:var(--ux-muted);margin-top:5px">{{ price.candidateList }}</div></sc-if></div><div role="cell"><span style="{{ price.reviewStyle }}">{{ price.reviewLabel }}</span><div style="font-size:10.5px;line-height:1.5;color:var(--ux-muted-strong);margin-top:6px">{{ price.reviewReason }}</div></div><div role="cell"><sc-if value="{{ price.canManual }}" hint-placeholder-val="{{ true }}"><input type="text" inputmode="numeric" value="{{ price.manualValue }}" onInput="{{ price.onManualId }}" placeholder="Canix Item ID" style="width:100%;background:#fff;border:1px solid rgba(23,14,11,.3);padding:8px 9px;font:11px ui-monospace,monospace;margin-bottom:6px"><button type="button" onClick="{{ price.onVerify }}" aria-disabled="{{ wholesaleBusy }}" style="width:100%;background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ price.actionLabel }}</button></sc-if><sc-if value="{{ price.canPublish }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ price.onPublish }}" aria-disabled="{{ wholesaleBusy }}" style="width:100%;background:var(--ux-accent);color:#fff;border:0;padding:9px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ price.actionLabel }}</button></sc-if><sc-if value="{{ price.isPublished }}" hint-placeholder-val="{{ false }}"><span style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text)">ACTIVE DEFAULT</span></sc-if></div></div></sc-for></div></sc-if>
+<sc-if value="{{ wholesaleNoRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No wholesale source rows match the current filters.</div></sc-if>
+</section>
+</sc-if>
+
 <div style="border:1px solid rgba(23,14,11,.22);background:var(--ux-surface);padding:20px 22px;margin-bottom:28px">
 <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap">
 <div style="flex:1;min-width:260px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Buyer order approval · {{ orderPolicyStore }}</div><div style="font:800 18px/1.25 Archivo,sans-serif;margin-bottom:7px">{{ orderPolicySummary }}</div><div style="font-size:12.5px;line-height:1.55;color:var(--ux-muted-strong)">{{ orderPolicyExplanation }}</div></div>
@@ -414,10 +425,11 @@ button{font-family:inherit}
 <label style="display:flex;flex-direction:column;gap:5px;min-width:180px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">SORT</span><select value="{{ catalogMappingSort }}" onChange="{{ onCatalogMappingSort }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)"><option value="status">Review state</option><option value="name">Product name</option><option value="brand">Brand</option><option value="group">Monday group</option></select></label>
 <div style="font:700 10px ui-monospace,monospace;letter-spacing:.04em;color:var(--ux-muted);padding:10px 2px">{{ catalogMappingFilteredCount }}</div>
 </div>
+<label style="display:flex;flex-direction:column;gap:5px;background:var(--ux-surface);padding:11px 12px;margin-bottom:10px"><span style="font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">MANUAL IDENTITY REVIEW NOTE · REQUIRED FOR EXCEPTIONS</span><input type="text" value="{{ catalogMappingManualNote }}" onInput="{{ onCatalogMappingManualNote }}" placeholder="Example: Confirmed against Canix item detail and current brand packaging" style="width:100%;background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif"><span style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">Manual links recheck both systems, reject reused or stale IDs, remain Draft, and record this note with the reviewer.</span></label>
 <sc-if value="{{ catalogMappingHasFilteredRows }}" hint-placeholder-val="{{ true }}">
 <div role="table" aria-label="Monday to Canix identity review items" style="border-top:2px solid rgba(23,14,11,.4)">
 <div role="row" style="display:grid;grid-template-columns:minmax(210px,1.15fr) minmax(210px,1.15fr) minmax(190px,1fr) minmax(120px,.55fr);gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.24);font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);{{ catalogMappingRowStyle }}"><div role="columnheader">MONDAY PRODUCT</div><div role="columnheader">CANIX CANDIDATE</div><div role="columnheader">REVIEW STATE</div><div role="columnheader">ACTION</div></div>
-<sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:minmax(210px,1.15fr) minmax(210px,1.15fr) minmax(190px,1fr) minmax(120px,.55fr);gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start;{{ catalogMappingRowStyle }}"><div role="cell"><a href="{{ mapping.mondayUrl }}" target="_blank" rel="noopener noreferrer" style="font:700 13px/1.4 Archivo,sans-serif;color:var(--ux-ink)">{{ mapping.mondayName }}</a><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.mondayGroup }} · {{ mapping.mondayMeta }}</div></div><div role="cell"><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div><sc-if value="{{ mapping.hasMoreCandidates }}" hint-placeholder-val="{{ false }}"><div style="font:700 9px/1.4 ui-monospace,monospace;color:var(--ux-signal-text);margin-top:5px">+ {{ mapping.candidateMoreLabel }}</div></sc-if></div><div role="cell"><span style="{{ mapping.matchStyle }}">{{ mapping.matchLabel }}</span><div style="font-size:11px;line-height:1.5;color:var(--ux-muted-strong);margin-top:7px">{{ mapping.matchReason }}</div></div><div role="cell"><sc-if value="{{ mapping.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="width:100%;background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></sc-if><sc-if value="{{ mapping.cannotApprove }}" hint-placeholder-val="{{ true }}"><span style="display:block;font:700 8.5px/1.45 ui-monospace,monospace;letter-spacing:.045em;color:var(--ux-muted)">{{ mapping.actionLabel }}</span></sc-if></div></div></sc-for>
+<sc-for list="{{ catalogMappingRows }}" as="mapping" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:minmax(210px,1.15fr) minmax(210px,1.15fr) minmax(190px,1fr) minmax(120px,.55fr);gap:14px;padding:14px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start;{{ catalogMappingRowStyle }}"><div role="cell"><a href="{{ mapping.mondayUrl }}" target="_blank" rel="noopener noreferrer" style="font:700 13px/1.4 Archivo,sans-serif;color:var(--ux-ink)">{{ mapping.mondayName }}</a><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">MONDAY {{ mapping.mondayId }} · {{ mapping.mondayBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.mondayGroup }} · {{ mapping.mondayMeta }}</div></div><div role="cell"><div style="font:700 13px/1.4 Archivo,sans-serif">{{ mapping.canixName }}</div><div style="font:10.5px/1.5 ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ mapping.canixId }} · {{ mapping.canixBrand }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted)">{{ mapping.canixCategory }} · {{ mapping.packageCount }}</div><sc-if value="{{ mapping.hasMoreCandidates }}" hint-placeholder-val="{{ false }}"><div style="font:700 9px/1.4 ui-monospace,monospace;color:var(--ux-signal-text);margin-top:5px">{{ mapping.candidateMoreLabel }}</div><div style="font-size:9.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ mapping.candidateListLabel }}</div></sc-if></div><div role="cell"><span style="{{ mapping.matchStyle }}">{{ mapping.matchLabel }}</span><div style="font-size:11px;line-height:1.5;color:var(--ux-muted-strong);margin-top:7px">{{ mapping.matchReason }}</div></div><div role="cell"><sc-if value="{{ mapping.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ mapping.onApprove }}" aria-disabled="{{ mapping.pending }}" style="width:100%;background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ mapping.buttonLabel }}</button></sc-if><sc-if value="{{ mapping.cannotApprove }}" hint-placeholder-val="{{ true }}"><label style="display:block;font:700 8.5px/1.45 ui-monospace,monospace;letter-spacing:.045em;color:var(--ux-muted);margin-bottom:5px">REVIEWED CANIX ITEM ID</label><input type="text" inputmode="numeric" value="{{ mapping.manualValue }}" onInput="{{ mapping.onManualId }}" placeholder="Item ID" style="width:100%;background:#fff;border:1px solid rgba(23,14,11,.3);padding:8px 9px;font:11px ui-monospace,monospace;margin-bottom:6px"><button type="button" onClick="{{ mapping.onManualApprove }}" aria-disabled="{{ mapping.pending }}" style="width:100%;background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:8px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ mapping.manualButtonLabel }}</button></sc-if></div></div></sc-for>
 </div>
 </sc-if>
 <sc-if value="{{ catalogMappingNoFilteredRows }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0 4px;font-size:12.5px;color:var(--ux-muted)">No awaiting items match the current search and review-state filter.</div></sc-if>
@@ -3406,6 +3418,8 @@ class Component extends DCLogic {
     invQueueSettlementDraft: '', invQueueNote: '', invQueuePending: false,
     catalogLoading: false, catalogLoaded: false, catalogError: null,
     pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })), pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })),
+    pricingDefaults: [], wholesaleSources: [], wholesaleSummary: {}, wholesaleQuery: '', wholesaleStatus: 'all',
+    wholesaleSort: 'state', wholesaleReviewNote: '', wholesaleManualIds: {}, wholesalePending: null,
     pricingLoading: false, pricingLoaded: false, pricingError: null, pricingPending: null,
     pricingProduct: 'p1', pricingAmount: '', pricingNote: '', pricingReviewNote: '',
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
@@ -3415,6 +3429,7 @@ class Component extends DCLogic {
     mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
     catalogMappingData: null, catalogMappingLoading: false, catalogMappingError: null, catalogMappingPending: null,
     catalogMappingQuery: '', catalogMappingStatus: 'all', catalogMappingSort: 'status',
+    catalogMappingManualIds: {}, catalogMappingManualNote: '',
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -4670,6 +4685,39 @@ class Component extends DCLogic {
         catalogMappingError: (error && error.message) || 'The catalog identity link was not saved.' }));
   }
 
+  approveManualCatalogMapping(mapping) {
+    const s = this.state;
+    if (!mapping || s.catalogMappingPending || s.impersonating || s.role !== 'internal'
+      || !s.authUser || !this.hasPermission('catalog.manage')) return;
+    const mondayItemId = String(mapping.mondayItemId || '');
+    const canixItemId = String(s.catalogMappingManualIds[mondayItemId] || '').trim();
+    const reviewNote = String(s.catalogMappingManualNote || '').trim();
+    if (!/^\d+$/.test(canixItemId)) {
+      this.set({ catalogMappingError: 'Enter the authoritative numeric Canix Item ID for ' + mapping.mondayItemName + '.' });
+      return;
+    }
+    if (reviewNote.length < 8) {
+      this.set({ catalogMappingError: 'Add a short manual-review note before linking an exception.' });
+      return;
+    }
+    this.set({ catalogMappingPending: mondayItemId, catalogMappingError: null });
+    this.catalogMappingCall({ action: 'approve-manual-mapping', mondayItemId,
+      canixItemId: Number(canixItemId), reviewNote })
+      .then(body => {
+        if (!body.mapping) throw new Error('Catalog mapping service did not confirm the manual link.');
+        this.setState(state => ({ catalogMappingPending: null,
+          catalogMappingManualIds: { ...state.catalogMappingManualIds, [mondayItemId]: '' },
+          toast: mapping.mondayItemName + ' is linked to Canix Item ' + canixItemId + ' as a reviewed Draft.',
+          toastKind: 'MANUAL ID VERIFIED' }), () => {
+          this.loadCatalogMappings();
+          this.loadCatalog();
+          this.loadReadiness(true);
+        });
+      })
+      .catch(error => this.set({ catalogMappingPending: null,
+        catalogMappingError: (error && error.message) || 'The manual catalog identity link was not saved.' }));
+  }
+
   approveExactCatalogMappings() {
     const s = this.state;
     const exactCount = Number(s.catalogMappingData && s.catalogMappingData.summary
@@ -4978,10 +5026,89 @@ class Component extends DCLogic {
       .then(body => this.set({
         pricingProposals: this.withDemoPricing(body.proposals, DEMO_PRICE_PROPOSALS),
         pricingPrices: this.withDemoPricing(body.prices, DEMO_STORE_PRICES),
+        pricingDefaults: Array.isArray(body.defaults) ? body.defaults : [],
+        wholesaleSources: Array.isArray(body.wholesaleSources) ? body.wholesaleSources : [],
+        wholesaleSummary: body.wholesaleSummary || {},
         pricingLoading: false, pricingLoaded: true, pricingError: null
       }))
       .catch(error => this.set({ pricingLoading: false, pricingLoaded: true,
         pricingError: (error && error.message) || 'The pricing service could not be reached.' }));
+  }
+
+  verifyWholesaleSource(row) {
+    const s = this.state;
+    if (!row || s.wholesalePending || !this.hasPermission('pricing.manage') || s.impersonating) return;
+    const sourcePriceId = String(row.id || '');
+    const canixItemId = String(s.wholesaleManualIds[sourcePriceId] || '').trim();
+    const reviewNote = String(s.wholesaleReviewNote || '').trim();
+    if (!/^\d+$/.test(canixItemId)) {
+      this.set({ pricingError: 'Enter the authoritative numeric Canix Item ID for ' + row.productName + '.' });
+      return;
+    }
+    if (reviewNote.length < 8) {
+      this.set({ pricingError: 'Add a short wholesale identity review note before verifying an exception.' });
+      return;
+    }
+    this.set({ wholesalePending: sourcePriceId, pricingError: null });
+    this.pricingCall('POST', { action: 'verify-wholesale-source', sourcePriceId,
+      canixItemId: Number(canixItemId), reviewNote })
+      .then(() => this.setState(state => ({ wholesalePending: null,
+        wholesaleManualIds: { ...state.wholesaleManualIds, [sourcePriceId]: '' },
+        toast: row.productName + ' is verified against Canix Item ' + canixItemId + ' and remains unpublished.',
+        toastKind: 'WHOLESALE ID VERIFIED' }), () => this.loadPricing(true)))
+      .catch(error => this.set({ wholesalePending: null,
+        pricingError: (error && error.message) || 'The wholesale source identity was not verified.' }));
+  }
+
+  verifyExactWholesaleSources() {
+    const s = this.state;
+    if (s.wholesalePending || !this.hasPermission('pricing.manage') || s.impersonating) return;
+    this.set({ wholesalePending: 'exact-batch', pricingError: null });
+    this.pricingCall('POST', { action: 'verify-exact-wholesale' })
+      .then(body => {
+        const result = body.result || {};
+        const verified = Array.isArray(result.verified) ? result.verified.length : 0;
+        const failed = Array.isArray(result.failures) ? result.failures.length : 0;
+        this.set({ wholesalePending: null,
+          toast: verified + ' exact wholesale identit' + (verified === 1 ? 'y' : 'ies') + ' verified.'
+            + (failed ? ' ' + failed + ' protected exception' + (failed === 1 ? ' remains.' : 's remain.') : ''),
+          toastKind: 'EXACT WHOLESALE MATCHES VERIFIED' });
+        this.loadPricing(true);
+      })
+      .catch(error => this.set({ wholesalePending: null,
+        pricingError: (error && error.message) || 'Exact wholesale identities could not be verified.' }));
+  }
+
+  publishWholesaleSource(row) {
+    const s = this.state;
+    if (!row || s.wholesalePending || row.reviewState !== 'verified'
+      || !this.hasPermission('pricing.manage') || s.impersonating) return;
+    this.set({ wholesalePending: String(row.id), pricingError: null });
+    this.pricingCall('POST', { action: 'publish-wholesale-source', sourcePriceId: row.id })
+      .then(() => this.setState({ wholesalePending: null,
+        toast: row.productName + ' is now the published default wholesale price.',
+        toastKind: 'WHOLESALE PRICE PUBLISHED' }, () => this.loadPricing(true)))
+      .catch(error => this.set({ wholesalePending: null,
+        pricingError: (error && error.message) || 'The wholesale price was not published.' }));
+  }
+
+  publishVerifiedWholesaleSources() {
+    const s = this.state;
+    if (s.wholesalePending || !this.hasPermission('pricing.manage') || s.impersonating) return;
+    this.set({ wholesalePending: 'publish-batch', pricingError: null });
+    this.pricingCall('POST', { action: 'publish-verified-wholesale' })
+      .then(body => {
+        const result = body.result || {};
+        const published = Array.isArray(result.published) ? result.published.length : 0;
+        const failed = Array.isArray(result.failures) ? result.failures.length : 0;
+        this.set({ wholesalePending: null,
+          toast: published + ' verified wholesale price' + (published === 1 ? '' : 's') + ' published.'
+            + (failed ? ' ' + failed + ' protected exception' + (failed === 1 ? ' remains.' : 's remain.') : ''),
+          toastKind: 'DEFAULT RATE CARD UPDATED' });
+        this.loadPricing(true);
+      })
+      .catch(error => this.set({ wholesalePending: null,
+        pricingError: (error && error.message) || 'Verified wholesale prices could not be published.' }));
   }
 
   priceEntry(p, location) {
@@ -4990,10 +5117,17 @@ class Component extends DCLogic {
     return this.state.pricingPrices.find(row => row.locationLicense === loc.license && ids.has(String(row.productId))) || null;
   }
 
+  defaultPriceEntry(p) {
+    const ids = new Set([p && p.id, p && p.sourceId].filter(Boolean).map(String));
+    return this.state.pricingDefaults.find(row => ids.has(String(row.productId))) || null;
+  }
+
   priceFor(p, location) {
     const loc = location || this.loc();
     const entry = this.priceEntry(p, loc);
     if (entry) return Number(entry.priceCents);
+    const defaultEntry = this.defaultPriceEntry(p);
+    if (defaultEntry) return Number(defaultEntry.unitPriceCents);
     if (p && p.priceDemo && !loc.demo) return null;
     return p && p.price !== null && p.price !== undefined ? Number(p.price) : null;
   }
@@ -5001,6 +5135,8 @@ class Component extends DCLogic {
   priceSource(p, location) {
     const entry = this.priceEntry(p, location);
     if (entry) return 'Approved ' + (entry.locationName || (location || this.loc()).name) + ' store rate';
+    const defaultEntry = this.defaultPriceEntry(p);
+    if (defaultEntry) return 'Published urbanXtracts wholesale list';
     if (p && p.priceFrom) return p.priceFrom;
     return 'No published store price';
   }
@@ -6086,6 +6222,9 @@ class Component extends DCLogic {
       const approvePayload = candidate ? { ...mapping, canixItemId: candidate.canixItemId,
         canixItemName: candidate.canixItemName } : null;
       const canApprove = !!mapping.canApprove && !!approvePayload;
+      const hasManualValue = Object.prototype.hasOwnProperty.call(s.catalogMappingManualIds, String(mapping.mondayItemId));
+      const manualValue = hasManualValue ? s.catalogMappingManualIds[String(mapping.mondayItemId)]
+        : candidates.length === 1 ? String(candidates[0].canixItemId) : '';
       const statusIsReady = mapping.reviewStatus === 'exact_ready' || mapping.reviewStatus === 'normalized_review';
       return {
         mondayId: mapping.mondayItemId,
@@ -6102,6 +6241,7 @@ class Component extends DCLogic {
         candidateMore: Math.max(0, Number(mapping.candidateCount || candidates.length) - 1),
         candidateMoreLabel: Math.max(0, Number(mapping.candidateCount || candidates.length) - 1) + ' additional candidate' + (Math.max(0, Number(mapping.candidateCount || candidates.length) - 1) === 1 ? '' : 's'),
         hasMoreCandidates: Number(mapping.candidateCount || candidates.length) > 1,
+        candidateListLabel: candidates.slice(0, 5).map(item => 'Canix ' + item.canixItemId + ' · ' + item.canixItemName).join(' | '),
         matchLabel: mapping.reviewLabel || 'Awaiting review',
         matchReason: mapping.reviewReason || 'Review the Monday and Canix product identities before linking.',
         matchStyle: 'display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;padding:4px 6px;background:'
@@ -6111,8 +6251,13 @@ class Component extends DCLogic {
         cannotApprove: !canApprove,
         pending: !!s.catalogMappingPending,
         buttonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Verify & link',
-        actionLabel: mapping.reviewStatus === 'no_match' ? 'ADD CANIX ID IN MONDAY' : 'RESOLVE SOURCE DATA',
-        onApprove: () => this.approveCatalogMapping(approvePayload)
+        manualValue,
+        manualButtonLabel: String(s.catalogMappingPending || '') === String(mapping.mondayItemId) ? 'Linking…' : 'Link reviewed ID',
+        onManualId: e => this.setState(state => ({ catalogMappingManualIds: {
+          ...state.catalogMappingManualIds, [String(mapping.mondayItemId)]: e.target.value.replace(/[^0-9]/g, '').slice(0, 18)
+        } })),
+        onApprove: () => this.approveCatalogMapping(approvePayload),
+        onManualApprove: () => this.approveManualCatalogMapping(mapping)
       };
     });
     const product = catalogPool.find(item => item.id === s.product) || catalogPool[0] || PRODUCTS[0];
@@ -6199,11 +6344,86 @@ class Component extends DCLogic {
       onApprove: () => this.decidePriceProposal(row, 'approve'),
       onReject: () => this.decidePriceProposal(row, 'reject')
     }));
+    const pricingOverrideProductIds = new Set(pricingScopedPrices.map(row => String(row.productId)));
+    const pricingDefaultRows = s.pricingDefaults.filter(row => isInternal || !pricingOverrideProductIds.has(String(row.productId)));
     const pricingPrices = pricingScopedPrices.map(row => ({
       product: row.productName || 'Unnamed product', sku: row.sku || row.productId || 'SKU not recorded',
       store: (row.locationName || row.locationLicense) + (isInternal && row.organization ? ' · ' + row.organization : ''),
       amount: MONEY(Number(row.priceCents) || 0), when: 'Published ' + pricingDate(row.publishedAt)
+    })).concat(pricingDefaultRows.map(row => ({
+      product: row.productName || 'Unnamed product', sku: row.sku || row.productId || 'SKU not recorded',
+      store: 'Default wholesale list', amount: MONEY(Number(row.unitPriceCents) || 0),
+      when: 'Published ' + pricingDate(row.publishedAt)
+    })));
+    const wholesaleStatusLabels = {
+      exact_ready: 'Exact match ready', normalized_review: 'Normalized review', missing_brand: 'Brand missing',
+      brand_conflict: 'Brand conflict', name_collision: 'Name collision', linked_conflict: 'Already linked',
+      no_match: 'No Canix match', unreviewed: 'Unreviewed', verified: 'Verified, unpublished',
+      published: 'Published', rejected: 'Rejected'
+    };
+    const wholesaleStatusOrder = {
+      exact_ready: 0, normalized_review: 1, verified: 2, missing_brand: 3, brand_conflict: 4,
+      name_collision: 5, linked_conflict: 6, no_match: 7, unreviewed: 8, published: 9, rejected: 10
+    };
+    const wholesaleStatusOptions = Object.keys(wholesaleStatusLabels).map(value => ({
+      value, label: wholesaleStatusLabels[value] + ' (' + Number(s.wholesaleSources.filter(row => row.reviewState === value).length) + ')'
     }));
+    const wholesaleQuery = String(s.wholesaleQuery || '').trim().toLowerCase();
+    const wholesaleFiltered = s.wholesaleSources.filter(row => {
+      if (s.wholesaleStatus !== 'all' && row.reviewState !== s.wholesaleStatus) return false;
+      if (!wholesaleQuery) return true;
+      const candidates = Array.isArray(row.candidates) ? row.candidates : [];
+      return [row.sourceRow, row.brand, row.productName, row.productProfile, row.reviewState, row.reviewReason, row.canixItemId]
+        .concat(candidates.flatMap(candidate => [candidate.canixItemId, candidate.productName, candidate.brand, candidate.sku,
+          candidate.category])).filter(value => value !== null && value !== undefined).join(' ').toLowerCase().includes(wholesaleQuery);
+    }).sort((left, right) => {
+      if (s.wholesaleSort === 'name') return String(left.productName || '').localeCompare(String(right.productName || ''));
+      if (s.wholesaleSort === 'brand') return String(left.brand || '').localeCompare(String(right.brand || ''))
+        || String(left.productName || '').localeCompare(String(right.productName || ''));
+      if (s.wholesaleSort === 'price') return Number(left.unitPriceCents || 0) - Number(right.unitPriceCents || 0);
+      if (s.wholesaleSort === 'row') return Number(left.sourceRow || 0) - Number(right.sourceRow || 0);
+      return Number(wholesaleStatusOrder[left.reviewState] ?? 99) - Number(wholesaleStatusOrder[right.reviewState] ?? 99)
+        || Number(left.sourceRow || 0) - Number(right.sourceRow || 0);
+    });
+    const wholesaleRows = wholesaleFiltered.map(row => {
+      const candidates = Array.isArray(row.candidates) ? row.candidates : [];
+      const candidate = candidates[0] || null;
+      const hasManualValue = Object.prototype.hasOwnProperty.call(s.wholesaleManualIds, String(row.id));
+      const manualValue = hasManualValue ? s.wholesaleManualIds[String(row.id)]
+        : candidates.length === 1 ? String(candidate.canixItemId) : row.canixItemId ? String(row.canixItemId) : '';
+      const isReady = row.reviewState === 'exact_ready' || row.reviewState === 'verified' || row.reviewState === 'published';
+      const canPublish = row.reviewState === 'verified' && !s.wholesalePending;
+      const canManual = !new Set(['verified', 'published', 'rejected']).has(row.reviewState);
+      return {
+        ...row,
+        brand: row.brand || 'Brand not recorded',
+        profile: row.productProfile || 'Profile not recorded',
+        unitPrice: MONEY(Number(row.unitPriceCents) || 0),
+        caseDetail: row.caseSize ? String(row.caseSize) + ' / case · ' + (row.casePriceCents ? MONEY(Number(row.casePriceCents)) : 'case total not recorded') : 'Case size not recorded',
+        sourceLabel: 'ACTIVE CART row ' + row.sourceRow,
+        candidateName: candidate ? candidate.productName : 'No current Canix candidate',
+        candidateMeta: candidate ? 'CANIX ' + candidate.canixItemId + ' · ' + (candidate.brand || 'Brand not recorded')
+          + ' · ' + (candidate.sku || 'SKU not recorded') : 'Enter a reviewed Canix Item ID',
+        candidateList: candidates.length > 1 ? candidates.map(item => 'Canix ' + item.canixItemId + ' · ' + item.productName).join(' | ') : '',
+        hasCandidateList: candidates.length > 1,
+        reviewLabel: wholesaleStatusLabels[row.reviewState] || String(row.reviewState || 'Unreviewed'),
+        reviewStyle: 'display:inline-block;font:700 8.5px/1.4 ui-monospace,monospace;letter-spacing:.05em;padding:4px 6px;background:'
+          + (isReady ? 'var(--ux-accent)' : row.reviewState === 'no_match' ? 'var(--ux-surface)' : 'var(--ux-signal-tint)')
+          + ';color:' + (isReady ? '#fff' : row.reviewState === 'no_match' ? 'var(--ux-muted-strong)' : 'var(--ux-signal-text)'),
+        canPublish,
+        canManual,
+        isPublished: row.reviewState === 'published',
+        isVerified: row.reviewState === 'verified',
+        manualValue,
+        actionBusy: String(s.wholesalePending || '') === String(row.id),
+        actionLabel: String(s.wholesalePending || '') === String(row.id) ? 'Saving…' : canPublish ? 'Publish default' : 'Verify identity',
+        onManualId: e => this.setState(state => ({ wholesaleManualIds: {
+          ...state.wholesaleManualIds, [String(row.id)]: e.target.value.replace(/[^0-9]/g, '').slice(0, 18)
+        } })),
+        onVerify: () => this.verifyWholesaleSource(row),
+        onPublish: () => this.publishWholesaleSource(row)
+      };
+    });
 
     const currentOrderPolicy = this.approvalPolicyFor(loc);
     const caseQuantityEnforced = currentOrderPolicy.enforceCaseQuantity === true;
@@ -7234,10 +7454,41 @@ class Component extends DCLogic {
         : 'Propose prices for the selected store. A proposal never changes catalog or ordering until Administrator, Operations, or Sales approves it.',
       pricingStats: [
         { label: 'Pending review', value: String(pricingScopedProposals.filter(row => row.state === 'pending').length), note: canReviewPricing ? 'Across stores in the approval queue' : 'For ' + loc.name },
-        { label: 'Published prices', value: String(pricingScopedPrices.length), note: canReviewPricing ? 'Store-specific rate-card entries' : 'Approved for this store' },
+        { label: 'Published prices', value: String(pricingScopedPrices.length + s.pricingDefaults.length), note: canReviewPricing ? 'Default list plus store-specific entries' : 'Available to this store' },
         { label: 'Publication gate', value: 'Internal', note: 'Administrator · Operations · Sales' }
       ].map((stat, index) => ({ ...stat, style: index ? 'border-left:1px solid rgba(250,247,243,.22);padding-left:20px' : '' })),
       canProposePricing, canReviewPricing,
+      wholesaleMetrics: [
+        { value: String(s.wholesaleSources.length), label: 'SOURCE ROWS STAGED' },
+        { value: String(Number(s.wholesaleSummary.exact_ready || 0)), label: 'EXACT MATCHES READY' },
+        { value: String(Number(s.wholesaleSummary.normalized_review || 0) + Number(s.wholesaleSummary.no_match || 0)
+          + Number(s.wholesaleSummary.brand_conflict || 0) + Number(s.wholesaleSummary.name_collision || 0)
+          + Number(s.wholesaleSummary.missing_brand || 0) + Number(s.wholesaleSummary.linked_conflict || 0)), label: 'REVIEW REQUIRED' },
+        { value: String(Number(s.wholesaleSummary.verified || 0)), label: 'VERIFIED · UNPUBLISHED' },
+        { value: String(Number(s.wholesaleSummary.published || 0)), label: 'DEFAULTS PUBLISHED' }
+      ],
+      wholesaleRows,
+      wholesaleHasRows: wholesaleRows.length > 0,
+      wholesaleNoRows: s.wholesaleSources.length > 0 && wholesaleRows.length === 0,
+      wholesaleQuery: s.wholesaleQuery,
+      onWholesaleQuery: e => this.set({ wholesaleQuery: e.target.value }),
+      wholesaleStatus: s.wholesaleStatus,
+      onWholesaleStatus: e => this.set({ wholesaleStatus: e.target.value }),
+      wholesaleSort: s.wholesaleSort,
+      onWholesaleSort: e => this.set({ wholesaleSort: e.target.value }),
+      wholesaleStatusOptions,
+      wholesaleReviewNote: s.wholesaleReviewNote,
+      onWholesaleReviewNote: e => this.set({ wholesaleReviewNote: e.target.value }),
+      wholesaleResultCount: wholesaleRows.length + ' of ' + s.wholesaleSources.length + ' source rows',
+      wholesaleBusy: !!s.wholesalePending,
+      wholesaleCanVerifyExact: Number(s.wholesaleSummary.exact_ready || 0) > 0,
+      wholesaleVerifyExactLabel: s.wholesalePending === 'exact-batch' ? 'Verifying exact matches…'
+        : 'Verify ' + Number(s.wholesaleSummary.exact_ready || 0) + ' exact matches',
+      onWholesaleVerifyExact: () => this.verifyExactWholesaleSources(),
+      wholesaleCanPublishVerified: Number(s.wholesaleSummary.verified || 0) > 0,
+      wholesalePublishVerifiedLabel: s.wholesalePending === 'publish-batch' ? 'Publishing verified…'
+        : 'Publish ' + Number(s.wholesaleSummary.verified || 0) + ' verified prices',
+      onWholesalePublishVerified: () => this.publishVerifiedWholesaleSources(),
       pricingStoreName: loc.name + ' · ' + loc.license,
       pricingProduct: pricingProduct ? pricingProduct.id : '',
       pricingProducts: catalogPool.map(item => ({ value: item.id, label: item.name + ' · ' + item.sku })),
@@ -7325,6 +7576,8 @@ class Component extends DCLogic {
       onCatalogMappingStatus: e => this.set({ catalogMappingStatus: e.target.value }),
       catalogMappingSort: s.catalogMappingSort,
       onCatalogMappingSort: e => this.set({ catalogMappingSort: e.target.value }),
+      catalogMappingManualNote: s.catalogMappingManualNote,
+      onCatalogMappingManualNote: e => this.set({ catalogMappingManualNote: e.target.value }),
       catalogMappingStatusOptions,
       catalogMappingFilteredCount: catalogMappingRows.length + ' of ' + catalogMappingReviewItems.length + ' awaiting items',
       catalogMappingHasReviewItems: catalogMappingReviewItems.length > 0,
