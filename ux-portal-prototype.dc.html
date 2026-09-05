@@ -1993,7 +1993,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Email</div>
 <input type="email" value="{{ onbBuyerEmail }}" onInput="{{ onOnbBuyerEmail }}" aria-label="Buyer email" autocomplete="email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Location they buy for</div>
-<input type="text" value="{{ onbBuyerLoc }}" onInput="{{ onOnbBuyerLoc }}" aria-label="Buyer location" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px">
+<select value="{{ onbBuyerLoc }}" onChange="{{ onOnbBuyerLoc }}" aria-label="Buyer store access" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:14px"><option value="">All qualified stores</option><sc-for list="{{ onbLocationOptions }}" as="ol" hint-placeholder-count="3"><option value="{{ ol.value }}">{{ ol.label }}</option></sc-for></select>
 <div style="border-top:2px solid rgba(23,14,11,.4);padding-top:16px;margin-bottom:6px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted)">Budtenders &mdash; {{ onbCount }}</div></div>
 <sc-for list="{{ onbBuds }}" as="bd" hint-placeholder-count="1">
 <div style="border:1px solid rgba(23,14,11,.2);padding:14px;margin-bottom:10px">
@@ -2003,7 +2003,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <input type="text" value="{{ bd.name }}" onInput="{{ bd.onName }}" aria-label="Budtender name" placeholder="Name" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:8px">
 <input type="email" value="{{ bd.email }}" onInput="{{ bd.onEmail }}" aria-label="Budtender email" autocomplete="email" placeholder="Email" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:8px">
-<input type="text" value="{{ bd.loc }}" onInput="{{ bd.onLoc }}" aria-label="Budtender location" placeholder="Location" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif">
+<select value="{{ bd.loc }}" onChange="{{ bd.onLoc }}" aria-label="Budtender store" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif"><option value="">Choose exactly one store</option><sc-for list="{{ onbLocationOptions }}" as="ol" hint-placeholder-count="3"><option value="{{ ol.value }}">{{ ol.label }}</option></sc-for></select>
 </div>
 </sc-for>
 <sc-if value="{{ onbUnderCap }}" hint-placeholder-val="{{ true }}">
@@ -2327,6 +2327,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;flex-wrap:wrap;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:26px">
 <div style="flex:1;min-width:120px;padding:12px 14px 12px 0;font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">01</div>Intake</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">02</div>Qualification</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">03</div>Commercial terms</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">04</div>Account creation</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">05</div>Access</div><div style="flex:1;min-width:120px;padding:12px 0 12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">06</div>Ready to order</div>
 </div>
+<div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,.55fr) auto;gap:10px;align-items:end;margin-bottom:16px"><label><span style="display:block;font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">SEARCH REQUESTS</span><input type="search" value="{{ onboardingSearch }}" onInput="{{ onOnboardingSearch }}" placeholder="Organisation, owner, license, email, Monday ID" style="width:100%;padding:9px 10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label><label><span style="display:block;font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">STAGE</span><select value="{{ onboardingStageFilter }}" onChange="{{ onOnboardingStageFilter }}" style="width:100%;padding:9px 10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><sc-for list="{{ onboardingStageOptions }}" as="sf" hint-placeholder-count="7"><option value="{{ sf.value }}">{{ sf.label }}</option></sc-for></select></label><div style="font:700 11px ui-monospace,monospace;color:var(--ux-muted);padding-bottom:9px">{{ onboardingResultCount }}</div></div>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.6fr auto;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Organisation</div><div>Licenses</div><div>Stage and what is holding it</div><div></div>
@@ -2339,7 +2340,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div><sc-if value="{{ o.canOpen }}" hint-placeholder-val="false"><button type="button" onClick="{{ o.onOpen }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:700 11px Archivo,sans-serif;cursor:pointer">Review</button></sc-if></div>
 </div>
 </sc-for>
-<sc-if value="{{ onboardingEmpty }}" hint-placeholder-val="false"><div style="padding:18px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;color:var(--ux-muted)">No open onboarding requests.</div></sc-if>
+<sc-if value="{{ onboardingEmpty }}" hint-placeholder-val="false"><div style="padding:18px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;color:var(--ux-muted)">{{ onboardingEmptyText }}</div></sc-if>
 </div>
 <sc-if value="{{ onboardingHasError }}" hint-placeholder-val="false"><div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-top:16px;font-size:12.5px;line-height:1.55">{{ onboardingError }}</div></sc-if>
 <sc-if value="{{ onboardingHasSelection }}" hint-placeholder-val="false">
@@ -2348,7 +2349,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:grid;grid-template-columns:minmax(230px,1fr) auto;gap:10px;align-items:end;margin-bottom:18px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">QUICKBOOKS-BACKED RETAILER ACCOUNT</div><select value="{{ onboardingAccountValue }}" onChange="{{ onOnboardingAccount }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 12px Archivo,sans-serif"><option value="">Choose a qualified portal account</option><sc-for list="{{ onboardingAccountOptions }}" as="oa" hint-placeholder-count="3"><option value="{{ oa.id }}">{{ oa.label }}</option></sc-for></select></div><sc-if value="{{ onboardingCanLinkAccount }}" hint-placeholder-val="true"><button type="button" onClick="{{ onLinkOnboardingAccount }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:11px 13px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ onboardingLinkLabel }}</button></sc-if></div>
 <sc-if value="{{ onboardingHasLinkedAccount }}" hint-placeholder-val="false"><button type="button" onClick="{{ onOpenOnboardingRetailer }}" style="background:transparent;border:0;padding:0 0 16px;font:700 11.5px Archivo,sans-serif;color:var(--ux-accent-text);cursor:pointer">Open linked retailer account &rarr;</button></sc-if>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:7px">LICENSE REVIEW</div>
-<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px"><sc-for list="{{ onboardingDetailStores }}" as="os" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div><div style="font-weight:700">{{ os.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ os.address }}</div></div><div style="font:500 11px ui-monospace,monospace">{{ os.license }}</div><span style="{{ os.statusStyle }}">{{ os.statusLabel }}</span><div style="display:flex;gap:6px"><sc-if value="{{ os.canReview }}" hint-placeholder-val="false"><button type="button" onClick="{{ os.onQualify }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Qualify</button><button type="button" onClick="{{ os.onReject }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Reject</button></sc-if></div></div></sc-for></div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px;overflow:auto"><div style="min-width:940px"><sc-for list="{{ onboardingDetailStores }}" as="os" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.15fr .75fr 1.7fr auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div><div style="font-weight:700">{{ os.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ os.address }}</div></div><div><div style="font:500 11px ui-monospace,monospace">{{ os.license }}</div><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">QBO {{ os.qboLabel }}</div></div><div><sc-if value="{{ os.canSetup }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 128px auto;gap:6px"><select value="{{ os.qboValue }}" onChange="{{ os.onQbo }}" aria-label="QuickBooks customer for {{ os.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ os.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select><input type="date" value="{{ os.expiresValue }}" onInput="{{ os.onExpires }}" aria-label="License expiration for {{ os.name }}" style="padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><button type="button" onClick="{{ os.onSaveSetup }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ os.setupLabel }}</button></div></sc-if><sc-if value="{{ os.setupReadOnly }}" hint-placeholder-val="true"><div style="font-size:10.5px;color:var(--ux-muted)">License expires {{ os.expiresLabel }}</div></sc-if></div><span style="{{ os.statusStyle }}">{{ os.statusLabel }}</span><div style="display:flex;gap:6px"><sc-if value="{{ os.canReview }}" hint-placeholder-val="false"><button type="button" onClick="{{ os.onQualify }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Qualify</button><button type="button" onClick="{{ os.onReject }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Reject</button></sc-if></div></div></sc-for></div></div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:7px">PEOPLE REQUESTED</div>
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px"><sc-for list="{{ onboardingDetailPeople }}" as="op" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:.7fr 1fr 1.3fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font-weight:700;text-transform:capitalize">{{ op.role }}</div><div>{{ op.name }}</div><div style="color:var(--ux-muted)">{{ op.email }}{{ op.store }}</div><span style="{{ op.statusStyle }}">{{ op.statusLabel }}</span><div><sc-if value="{{ op.canInvite }}" hint-placeholder-val="false"><button type="button" onClick="{{ op.onInvite }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ op.inviteLabel }}</button></sc-if></div></div></sc-for></div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">REVIEW NOTE</div><input type="text" value="{{ onboardingNote }}" onInput="{{ onOnboardingNote }}" placeholder="Evidence, terms decision, rejection reason, or handoff note" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 12px Archivo,sans-serif;margin-bottom:12px">
@@ -2358,7 +2359,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 <div style="margin-top:22px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:76ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">WHAT THE ONBOARDING RECORD HOLDS, AND KEEPS</div>
-<div style="font-size:13px;line-height:1.62">License numbers, banking, remittance and signatory details are captured here and stay here. They are not surfaced on the account screen, in the store records surface, through the store API, or in any export. The account key the rest of the system uses is the license number; everything else in this sentence has no second home by design. At qualification we record what the state record says and never assert on our own authority that a license is valid.</div>
+<div style="font-size:13px;line-height:1.62">License numbers, expiration dates, store addresses, contacts, role requests, and explicit QuickBooks IDs remain in the protected onboarding record. Banking, remittance, and signatory details are not collected by this portal. At qualification we record the reviewer&rsquo;s evidence and what the state record says; a valid-looking submission never qualifies itself.</div>
 </div>
 </sc-if>
 
@@ -2535,6 +2536,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-size:13px;line-height:1.6;max-width:78ch;margin-bottom:12px">This QuickBooks customer has no portal retailer account yet. Starting qualification creates the portal-owned readiness record; it does not change QuickBooks or make any store orderable.</div>
 <button type="button" onClick="{{ onStartQualification }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 12px Archivo,sans-serif;cursor:pointer">{{ qualificationButtonLabel }}</button>
 </sc-if>
+<sc-if value="{{ acctIsQboChild }}" hint-placeholder-val="false"><div style="font-size:13px;line-height:1.6;max-width:78ch">This is a QuickBooks child customer. Start qualification from its top-level customer, then map this child to the licensed store. A child customer cannot become a second retailer organisation.</div></sc-if>
 <sc-if value="{{ acctIsQualifiedRecord }}" hint-placeholder-val="false">
 <div style="display:grid;grid-template-columns:minmax(190px,.7fr) minmax(240px,1.3fr) auto;gap:10px;align-items:end">
 <div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">ACCOUNT STATUS</div><select value="{{ acctStatusValue }}" onChange="{{ onAcctStatus }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 12px Archivo,sans-serif"><option value="qualification">Qualification</option><option value="terms_pending">Terms pending</option><option value="setup_pending">Setup pending</option><option value="ready_to_order">Ready to order</option><option value="ordering_paused">Ordering paused</option><option value="inactive">Inactive</option><option value="rejected">Rejected</option></select></div>
@@ -2543,13 +2545,14 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="border-top:1px solid rgba(23,14,11,.18);margin-top:17px;padding-top:15px">
 <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:8px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">ADD A LICENSED STORE</div><div style="font-size:11.5px;color:var(--ux-muted)">{{ acctStoreCapacity }}</div></div>
-<div style="display:grid;grid-template-columns:1fr 1fr 1.4fr auto;gap:8px;align-items:end">
+<div style="display:grid;grid-template-columns:1fr 1fr 1.25fr 1.3fr auto;gap:8px;align-items:end">
 <input type="text" value="{{ acctStoreName }}" onInput="{{ onAcctStoreName }}" placeholder="Store name" aria-label="New store name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 12px Archivo,sans-serif">
 <input type="text" value="{{ acctStoreLicense }}" onInput="{{ onAcctStoreLicense }}" placeholder="License number" aria-label="New store license number" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 11px ui-monospace,monospace">
 <input type="text" value="{{ acctStoreAddress }}" onInput="{{ onAcctStoreAddress }}" placeholder="Address (optional)" aria-label="New store address" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 12px Archivo,sans-serif">
+<select value="{{ acctStoreQbo }}" onChange="{{ onAcctStoreQbo }}" aria-label="Store QuickBooks customer" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 11px Archivo,sans-serif"><option value="">QuickBooks customer</option><sc-for list="{{ acctStoreQboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select>
 <button type="button" onClick="{{ onAddAcctStore }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ acctStoreButtonLabel }}</button>
 </div>
-<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-top:7px">A new store begins pending. Qualifying its license and enabling ordering are separate actions.</div>
+<div style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin-top:7px">The accounting identity must be this retailer or one of its direct QuickBooks children. A new store begins pending; license qualification and ordering are separate actions.</div>
 </div>
 </sc-if>
 </div>
@@ -2558,16 +2561,17 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start">
 <div style="flex:1;min-width:300px">
 <h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Locations</h2>
-<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px;overflow:auto"><div style="min-width:840px">
 <sc-for list="{{ acctLocations }}" as="l" hint-placeholder-count="3">
-<div style="display:grid;grid-template-columns:1fr 1.2fr auto auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div style="font-weight:600"><span style="background:transparent">{{ l.name }}</span></div>
-<div style="font-family:ui-monospace,monospace;font-size:11.5px">{{ l.license }}</div>
+<div style="display:grid;grid-template-columns:1.15fr 1.25fr 145px auto auto;gap:10px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
+<div><div style="font-weight:600"><span style="background:transparent">{{ l.name }}</span></div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ l.license }}</div></div>
+<select value="{{ l.qboValue }}" onChange="{{ l.onQbo }}" aria-label="QuickBooks customer for {{ l.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ l.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select>
+<input type="date" value="{{ l.expiryDraft }}" onInput="{{ l.onExpiry }}" aria-label="License expiration for {{ l.name }}" style="width:100%;padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11px Archivo,sans-serif">
 <div><span style="{{ l.style }}">{{ l.status }}</span></div>
-<div><sc-if value="{{ l.canAct }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onAction }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.actionLabel }}</button></sc-if></div>
+<div style="display:flex;gap:6px"><sc-if value="{{ l.canAct }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onSaveDetails }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 9px;font:700 10px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.detailsLabel }}</button></sc-if><sc-if value="{{ l.canStatusAction }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onAction }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.actionLabel }}</button></sc-if></div>
 </div>
 </sc-for>
-</div>
+</div></div>
 
 <h2 style="font:800 15px/1.2 Archivo,sans-serif;margin:0 0 10px">Contacts and assigned users</h2>
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:26px">
@@ -3582,8 +3586,10 @@ class Component extends DCLogic {
     financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
     retailerOnboarding: [], retailerOnboardingError: null,
     retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
-    accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '',
+    accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
+    accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
     onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
+    onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
     kioskMode: 'counter', kioskSearch: '', lineagePackage: null, lineageSearch: '', lineageCoa: 'all',
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
     metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
@@ -4167,8 +4173,10 @@ class Component extends DCLogic {
       liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
       retailerOnboarding: [], retailerOnboardingError: null,
       retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
-      accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '',
+      accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
+      accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
       onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
+      onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
       outbox: [], requests: [], account: null
     });
@@ -4798,8 +4806,9 @@ class Component extends DCLogic {
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('QuickBooks account endpoint returned ' + status + '.'));
         if (!Array.isArray(body.accounts)) throw new Error('QuickBooks account endpoint returned an incomplete response.');
-        return body.accounts;
-      });
+        return { rows: body.accounts, error: null };
+      })
+      .catch(error => ({ rows: [], error: error.message || 'QuickBooks is not connected.' }));
     const portalRequest = this.portalFetch(PORTAL_RETAILERS_API, { method: 'GET', headers })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
@@ -4809,8 +4818,8 @@ class Component extends DCLogic {
       .catch(error => ({ rows: [], error: error.message || 'Onboarding queue is unavailable.' }));
     return Promise.all([qboRequest, portalRequest])
       .then(([accounts, onboarding]) => {
-        this.set({ retailerAccounts: accounts.concat(QUICKBOOKS_DEMO_ACCOUNTS), retailerOnboarding: onboarding.rows,
-          retailerAccountsLoading: false, retailerAccountsLoaded: true, retailerAccountsError: null,
+        this.set({ retailerAccounts: accounts.rows.concat(QUICKBOOKS_DEMO_ACCOUNTS), retailerOnboarding: onboarding.rows,
+          retailerAccountsLoading: false, retailerAccountsLoaded: true, retailerAccountsError: accounts.error,
           retailerOnboardingError: onboarding.error });
       })
       .catch(error => this.set({ retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false,
@@ -4882,15 +4891,16 @@ class Component extends DCLogic {
     if (!account || account.demo || !account.portalAccountId || !this.requirePermission('accounts.manage', 'add retailer stores')) return;
     const name = this.state.accountStoreName.trim();
     const licenseNumber = this.state.accountStoreLicense.trim();
-    if (!name || !licenseNumber) {
-      this.set({ toast: 'Enter both a store name and license number.', toastKind: 'STORE NOT ADDED' });
+    const quickbooksCustomerId = this.state.accountStoreQbo.trim() || String(account.quickbooksCustomerId || '').trim();
+    if (!name || !licenseNumber || !quickbooksCustomerId) {
+      this.set({ toast: 'Enter a store name and license number, then choose its QuickBooks customer.', toastKind: 'STORE NOT ADDED' });
       return;
     }
     this.set({ retailerActionPending: 'store' });
     this.retailerCall('add-store', { accountId: account.portalAccountId, name, licenseNumber,
-      address: this.state.accountStoreAddress.trim(), quickbooksCustomerId: null })
+      address: this.state.accountStoreAddress.trim(), quickbooksCustomerId })
       .then(() => this.loadRetailerAccounts(false))
-      .then(() => this.set({ retailerActionPending: null, accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '',
+      .then(() => this.set({ retailerActionPending: null, accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
         toast: 'Store added with qualification and ordering still pending.', toastKind: 'STORE ADDED' }))
       .catch(error => this.set({ retailerActionPending: null, toast: error.message, toastKind: 'STORE NOT ADDED' }));
   }
@@ -4899,14 +4909,53 @@ class Component extends DCLogic {
     if (!account || !store || account.demo || !account.portalAccountId || !this.requirePermission('accounts.manage', 'change store readiness')) return;
     const licenseStatus = store.licenseStatus !== 'active' ? 'active' : 'active';
     const orderingStatus = store.licenseStatus !== 'active' ? 'pending' : store.orderingStatus === 'ready' ? 'paused' : 'ready';
+    const expiresOn = String((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '').trim();
+    if (store.licenseStatus !== 'active' && !/^\d{4}-\d{2}-\d{2}$/.test(expiresOn)) {
+      this.set({ toast: 'Record the current license expiration date before qualifying this store.', toastKind: 'LICENSE DATE REQUIRED' });
+      return;
+    }
     const label = store.licenseStatus !== 'active' ? 'License qualified; ordering is still pending.'
       : orderingStatus === 'ready' ? 'Ordering enabled for this store.' : 'Ordering paused for this store.';
     this.set({ retailerActionPending: 'store:' + store.license });
     this.retailerCall('set-store-status', { accountId: account.portalAccountId, licenseNumber: store.license,
-      licenseStatus, orderingStatus, holdReason: orderingStatus === 'paused' ? 'Paused by account administrator.' : '', licenseExpiresOn: store.licenseExpiresOn || null })
+      licenseStatus, orderingStatus, holdReason: orderingStatus === 'paused' ? 'Paused by account administrator.' : '', licenseExpiresOn: expiresOn || null })
       .then(() => this.loadRetailerAccounts(false))
       .then(() => this.set({ retailerActionPending: null, toast: label, toastKind: 'STORE UPDATED' }))
       .catch(error => this.set({ retailerActionPending: null, toast: error.message, toastKind: 'NOT SAVED' }));
+  }
+
+  saveRetailerStoreDetails(account, store) {
+    if (!account || !store || account.demo || !account.portalAccountId || !this.requirePermission('accounts.manage', 'record store source evidence')) return;
+    const quickbooksCustomerId = String((this.state.accountStoreQboDrafts || {})[store.license] || store.quickbooksCustomerId || '').trim();
+    const licenseExpiresOn = String((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '').trim();
+    if (!quickbooksCustomerId || !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiresOn)) {
+      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration.', toastKind: 'SOURCE EVIDENCE REQUIRED' });
+      return;
+    }
+    this.set({ retailerActionPending: 'details:' + store.license });
+    this.retailerCall('set-store-details', { accountId: account.portalAccountId, licenseNumber: store.license,
+      quickbooksCustomerId, licenseExpiresOn })
+      .then(() => this.loadRetailerAccounts(false))
+      .then(() => this.set({ retailerActionPending: null,
+        toast: 'Store QuickBooks identity and license expiration saved.', toastKind: 'STORE EVIDENCE SAVED' }))
+      .catch(error => this.set({ retailerActionPending: null, toast: error.message, toastKind: 'NOT SAVED' }));
+  }
+
+  saveOnboardingStoreDetails(request, store) {
+    if (!request || !store) return;
+    const draft = (this.state.onboardingStoreDetailsDrafts || {})[store.license] || {};
+    const quickbooksCustomerId = String(draft.quickbooksCustomerId || store.quickbooksCustomerId || '').trim();
+    const licenseExpiresOn = String(draft.licenseExpiresOn || store.licenseExpiresOn || '').trim();
+    if (!quickbooksCustomerId || !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiresOn)) {
+      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration.', toastKind: 'STORE SETUP INCOMPLETE' });
+      return;
+    }
+    this.onboardingAction('set-onboarding-store-details', {
+      requestId: request.id,
+      licenseNumber: store.license,
+      quickbooksCustomerId,
+      licenseExpiresOn
+    }, store.name + ' now has an explicit QuickBooks identity and license date.');
   }
 
   onboardingAction(action, payload, successMessage) {
@@ -4931,6 +4980,10 @@ class Component extends DCLogic {
 
   qualifyOnboardingStore(request, store, status) {
     if (!request || !store) return;
+    if (!this.state.onboardingNote.trim()) {
+      this.set({ toast: 'Enter the license-review evidence before qualifying or rejecting a store.', toastKind: 'REVIEW NOTE REQUIRED' });
+      return;
+    }
     this.onboardingAction('set-onboarding-store', { requestId: request.id, licenseNumber: store.license,
       status, note: this.state.onboardingNote },
     store.name + ' was marked ' + status + '.');
@@ -4938,6 +4991,10 @@ class Component extends DCLogic {
 
   advanceOnboarding(request, targetStage) {
     if (!request || !targetStage) return;
+    if ((targetStage === 'account_creation' || targetStage === 'rejected') && !this.state.onboardingNote.trim()) {
+      this.set({ toast: targetStage === 'rejected' ? 'Enter the rejection reason first.' : 'Record the commercial-terms decision before account creation.', toastKind: 'REVIEW NOTE REQUIRED' });
+      return;
+    }
     this.onboardingAction('advance-onboarding', { requestId: request.id, targetStage,
       note: this.state.onboardingNote },
     'Onboarding advanced to ' + String(targetStage).replace(/_/g, ' ') + '.');
@@ -4951,7 +5008,7 @@ class Component extends DCLogic {
       return;
     }
     this.set({ screen: 'account', account: account.id, accountStatusDraft: account.portalStatus || 'qualification',
-      accountStatusNote: account.portalStatusNote || '' });
+      accountStatusNote: account.portalStatusNote || '', accountStoreQbo: String(account.quickbooksCustomerId || '') });
   }
 
   inviteOnboardingPerson(request, person) {
@@ -6017,7 +6074,15 @@ class Component extends DCLogic {
   }
 
   onbSetStore(i, field, value) {
-    this.setState(st => ({ onbStores: st.onbStores.map((store, j) => j === i ? { ...store, [field]: value } : store) }));
+    this.setState(st => {
+      const prior = st.onbStores[i] || {};
+      const patch = { onbStores: st.onbStores.map((store, j) => j === i ? { ...store, [field]: value } : store) };
+      if (field === 'license' && prior.license && prior.license !== value) {
+        patch.onbBuyerLoc = st.onbBuyerLoc === prior.license ? value : st.onbBuyerLoc;
+        patch.onbBud = st.onbBud.map(person => person.loc === prior.license ? { ...person, loc: value } : person);
+      }
+      return patch;
+    });
   }
   onbAddStore() {
     this.setState(st => st.onbStores.length >= 10
@@ -6025,7 +6090,15 @@ class Component extends DCLogic {
       : { onbStores: st.onbStores.concat([{ name: '', license: '', address: '' }]) });
   }
   onbRemoveStore(i) {
-    this.setState(st => ({ onbStores: st.onbStores.length <= 1 ? st.onbStores : st.onbStores.filter((_, j) => j !== i) }));
+    this.setState(st => {
+      if (st.onbStores.length <= 1) return {};
+      const removed = st.onbStores[i] || {};
+      return {
+        onbStores: st.onbStores.filter((_, j) => j !== i),
+        onbBuyerLoc: st.onbBuyerLoc === removed.license ? '' : st.onbBuyerLoc,
+        onbBud: st.onbBud.map(person => person.loc === removed.license ? { ...person, loc: '' } : person)
+      };
+    });
   }
 
   onbSetBud(i, field, v) {
@@ -6060,9 +6133,11 @@ class Component extends DCLogic {
     if (stores.some(store => !store.name.trim() || !store.license.trim())) miss.push('a name and licence number for every store');
     if (!s.onbOwnerName.trim() || !s.onbOwnerEmail.trim()) miss.push('the owner\u2019s name and email');
     if ((s.onbBuyerName.trim() && !s.onbBuyerEmail.trim()) || (!s.onbBuyerName.trim() && s.onbBuyerEmail.trim())) miss.push('both the buyer name and email, or neither');
+    const submittedLicenses = new Set(stores.map(store => store.license.trim().toUpperCase()).filter(Boolean));
+    if (s.onbBuyerLoc && !submittedLicenses.has(s.onbBuyerLoc.trim().toUpperCase())) miss.push('a valid store for the buyer, or All qualified stores');
     if (miss.length) { this.set({ onbErr: 'Still needed: ' + miss.join(', ') + '. Each store is qualified separately, so one missing licence never hides inside an organisation-wide record.' }); return; }
     const buds = s.onbBud.filter(b => b.name.trim() || b.email.trim());
-    if (buds.some(b => !b.name.trim() || !b.email.trim() || !b.loc.trim())) { this.set({ onbErr: 'Every budtender row needs a name, email, and exactly one store.' }); return; }
+    if (buds.some(b => !b.name.trim() || !b.email.trim() || !b.loc.trim() || !submittedLicenses.has(b.loc.trim().toUpperCase()))) { this.set({ onbErr: 'Every budtender row needs a name, email, and exactly one store from this request.' }); return; }
     const locations = stores.map(store => ({ name: store.name.trim(), license: store.license.trim(), address: store.address.trim() }));
     const clientRequestId = s.onbClientRequestId || this.newClientRequestId();
     this.set({ onbSubmitting: true, onbClientRequestId: clientRequestId, onbSent: false, onbErr: null });
@@ -7419,7 +7494,8 @@ class Component extends DCLogic {
         tagStyle: 'background:' + (flagged ? 'var(--ux-signal)' : 'var(--ux-surface)') + ';color:' + (flagged ? '#fff' : 'var(--ux-muted-strong)'),
         onOpen: () => {
           if (!account.demo) { this.set({ screen: 'account', account: account.id || account.Id,
-            accountStatusDraft: account.portalStatus || 'not_qualified', accountStatusNote: account.portalStatusNote || '' }); return; }
+            accountStatusDraft: account.portalStatus || 'not_qualified', accountStatusNote: account.portalStatusNote || '',
+            accountStoreQbo: String(account.quickbooksCustomerId || '').trim() }); return; }
           this.set({ loc: 'l-demo', account: account.id });
           if (s.demoTourCompleted) this.set({ screen: 'account' });
           else this.showDemoTourStep(0);
@@ -7428,18 +7504,34 @@ class Component extends DCLogic {
     });
     const selectedRetailer = s.retailerAccounts.find(account => String(account.id || account.Id) === String(s.account));
     const selectedIsDemo = !!(selectedRetailer && selectedRetailer.demo);
+    const selectedRetailerQboId = selectedRetailer ? String(selectedRetailer.quickbooksCustomerId || '').trim() : '';
+    const selectedRetailerQboOptions = selectedRetailerQboId ? s.retailerAccounts.filter(account => !account.demo && (
+      String(account.quickbooksCustomerId || '') === selectedRetailerQboId
+      || String(account.parentCustomerId || '') === selectedRetailerQboId
+    )).map(account => ({
+      value: String(account.quickbooksCustomerId || ''),
+      label: (account.name || account.company || 'Unnamed QuickBooks customer')
+        + (String(account.quickbooksCustomerId || '') === selectedRetailerQboId ? ' · account' : ' · child')
+    })) : [];
     const defaultAccount = ACCOUNTS_DETAIL['OCM-RETL-24-000412'];
     const selectedAccountLocations = selectedIsDemo
       ? LOCATIONS.filter(location => location.demo).map(location => ({ name: location.name, license: location.license, status: 'Demo · ' + location.demoScenario }))
       : selectedRetailer
         ? (Array.isArray(selectedRetailer.stores) && selectedRetailer.stores.length
-          ? selectedRetailer.stores.map(store => ({
-            ...store,
-            name: store.name || 'Unnamed store',
-            license: store.license || 'License not recorded',
-            status: String(store.licenseStatus || 'pending_qualification').replace(/_/g, ' ').toUpperCase()
-              + ' / ' + String(store.orderingStatus || 'pending').replace(/_/g, ' ').toUpperCase()
-          }))
+          ? selectedRetailer.stores.map(store => {
+            const expiresOn = String(store.licenseExpiresOn || '');
+            const evidenceReady = !!store.quickbooksCustomerId && !!expiresOn && expiresOn > new Date().toISOString().slice(0, 10);
+            return {
+              ...store,
+              name: store.name || 'Unnamed store',
+              license: store.license || 'License not recorded',
+              evidenceReady,
+              status: !store.quickbooksCustomerId || !expiresOn ? 'SOURCE EVIDENCE REQUIRED'
+                : expiresOn <= new Date().toISOString().slice(0, 10) ? 'EXPIRED'
+                : String(store.licenseStatus || 'pending_qualification').replace(/_/g, ' ').toUpperCase()
+                  + ' / ' + String(store.orderingStatus || 'pending').replace(/_/g, ' ').toUpperCase()
+            };
+          })
           : [{ name: 'No portal store linked', license: 'Use the form above to add one', status: 'UNMAPPED' }])
         : defaultAccount.locations;
     const selectedAccountContacts = selectedIsDemo
@@ -7458,18 +7550,40 @@ class Component extends DCLogic {
         org: request.dba || request.legalEntity || 'Unnamed retailer',
         licenses: stores.length + ' ' + (stores.length === 1 ? 'location' : 'locations') + (stores.length ? ' · ' + stores.map(store => store.license).join(', ') : ''),
         stage,
+        stageKey: request.stage,
+        searchText: [request.dba, request.legalEntity, request.ownerName, request.ownerEmail,
+          request.mondayItemId, request.submittedByEmail].concat(stores.map(store => [store.name, store.license].join(' '))).join(' ').toLowerCase(),
         note: request.workflowError ? 'Workflow reconciliation required: ' + request.workflowError
           : 'Monday workflow ' + workflow + (request.mondayItemId ? ' · item ' + request.mondayItemId : '') + '. Owner: ' + (request.ownerName || request.ownerEmail || 'not recorded')
       };
     });
-    const onboardingSource = loc.demo
+    const onboardingSourceAll = loc.demo
       ? ONBOARDING.filter(item => isDemoOrganization(item.org))
       : liveOnboarding;
+    const onboardingNeedle = String(s.onboardingSearch || '').trim().toLowerCase();
+    const onboardingSource = onboardingSourceAll.filter(item => {
+      const stageKey = item.stageKey || Object.keys(onboardingStageNumber).find(key => onboardingStageNumber[key] === item.stage) || '';
+      const stageMatch = s.onboardingStageFilter === 'all' || stageKey === s.onboardingStageFilter;
+      const searchText = item.searchText || [item.org, item.licenses, item.note].join(' ').toLowerCase();
+      return stageMatch && (!onboardingNeedle || searchText.includes(onboardingNeedle));
+    });
     const selectedOnboarding = !loc.demo
       ? s.retailerOnboarding.find(request => request.id === s.onboardingSelectedId) || null
       : null;
     const onboardingNextStage = selectedOnboarding ? ({ intake: 'qualification', qualification: 'terms', terms: 'account_creation', account_creation: 'access', access: 'ready' }[selectedOnboarding.stage] || null) : null;
     const onboardingStageLabel = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+    const selectedOnboardingAccount = selectedOnboarding
+      ? s.retailerAccounts.find(account => String(account.portalAccountId || '') === String(selectedOnboarding.retailerAccountId || '')) || null
+      : null;
+    const selectedOnboardingRootQboId = selectedOnboardingAccount ? String(selectedOnboardingAccount.quickbooksCustomerId || '') : '';
+    const onboardingQboOptions = selectedOnboardingRootQboId ? s.retailerAccounts.filter(account => !account.demo && (
+      String(account.quickbooksCustomerId || '') === selectedOnboardingRootQboId
+      || String(account.parentCustomerId || '') === selectedOnboardingRootQboId
+    )).map(account => ({
+      value: String(account.quickbooksCustomerId || ''),
+      label: (account.name || account.company || 'Unnamed QuickBooks customer')
+        + (String(account.quickbooksCustomerId || '') === selectedOnboardingRootQboId ? ' · account' : ' · child')
+    })) : [];
 
     const validationGroups = VALIDATION.map(g => ({
       cls: g.cls, closedBy: g.closedBy,
@@ -7559,6 +7673,9 @@ class Component extends DCLogic {
         onLicense: e => this.onbSetStore(i, 'license', e.target.value),
         onAddress: e => this.onbSetStore(i, 'address', e.target.value),
         canRemove: s.onbStores.length > 1, onRemove: () => this.onbRemoveStore(i)
+      })),
+      onbLocationOptions: s.onbStores.filter(store => store.name.trim() && store.license.trim()).map(store => ({
+        value: store.license.trim(), label: store.name.trim() + ' · ' + store.license.trim().toUpperCase()
       })),
       onbStoreCount: s.onbStores.length + ' of 10', onbCanAddStore: s.onbStores.length < 10,
       onAddStore: () => this.onbAddStore(),
@@ -8573,7 +8690,9 @@ class Component extends DCLogic {
       ownerProfileName: this.actingOrg(),
       ownerProfileScope: visibleLocations.length + (visibleLocations.length === 1 ? ' store' : ' stores') + ' on this owner profile · owners can reach every qualified store',
       onAddProfileStore: () => this.set({ screen: 'onboard', onbType: 'Existing store, new location',
-        onbEntity: this.actingOrg(), onbStores: [{ name: '', license: '', address: '' }], onbSent: false, onbErr: null }),
+        onbEntity: this.actingOrg(), onbStores: [{ name: '', license: '', address: '' }],
+        onbOwnerName: s.authUser ? s.authUser.name || '' : '', onbOwnerEmail: s.authUser ? s.authUser.email || '' : '',
+        onbSent: false, onbErr: null }),
       acctLocs: visibleLocations.map(l => {
         const d = s.deliverySettings[l.id] || { window: '', instructions: '', contact: '' };
         const chip = 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;';
@@ -8890,16 +9009,27 @@ class Component extends DCLogic {
         canOpen: !loc.demo && !!o.id,
         onOpen: () => {
           const request = s.retailerOnboarding.find(item => item.id === o.id);
-          this.set({ onboardingSelectedId: o.id, onboardingAccountDraft: request && request.retailerAccountId ? request.retailerAccountId : '', onboardingNote: '' });
+          this.set({ onboardingSelectedId: o.id, onboardingAccountDraft: request && request.retailerAccountId ? request.retailerAccountId : '', onboardingNote: '', onboardingStoreDetailsDrafts: {} });
         } })),
+      onboardingSearch: s.onboardingSearch,
+      onOnboardingSearch: e => this.set({ onboardingSearch: e.target.value }),
+      onboardingStageFilter: s.onboardingStageFilter,
+      onOnboardingStageFilter: e => this.set({ onboardingStageFilter: e.target.value }),
+      onboardingStageOptions: [
+        ['all', 'All open stages'], ['intake', '01 · Intake'], ['qualification', '02 · Qualification'],
+        ['terms', '03 · Commercial terms'], ['account_creation', '04 · Account creation'],
+        ['access', '05 · Access'], ['ready', '06 · Ready to order']
+      ].map(([value, label]) => ({ value, label })),
+      onboardingResultCount: onboardingSource.length + ' of ' + onboardingSourceAll.length,
       onboardingEmpty: !s.retailerAccountsLoading && onboardingSource.length === 0,
+      onboardingEmptyText: onboardingSourceAll.length ? 'No onboarding requests match these filters.' : 'No open onboarding requests.',
       onboardingHasError: !loc.demo && !!s.retailerOnboardingError,
       onboardingError: s.retailerOnboardingError || '',
       onboardingHasSelection: !!selectedOnboarding,
       onboardingDetailId: selectedOnboarding ? selectedOnboarding.id : '',
       onboardingDetailName: selectedOnboarding ? (selectedOnboarding.dba || selectedOnboarding.legalEntity || 'Unnamed retailer') : '',
       onboardingDetailMeta: selectedOnboarding ? onboardingStageLabel(selectedOnboarding.stage) + ' · Monday ' + String(selectedOnboarding.workflowState || 'pending').replace(/_/g, ' ') + ' · submitted ' + this.orderEventDate(selectedOnboarding.submittedAt) : '',
-      onCloseOnboardingDetail: () => this.set({ onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '' }),
+      onCloseOnboardingDetail: () => this.set({ onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingStoreDetailsDrafts: {} }),
       onboardingAccountValue: s.onboardingAccountDraft || (selectedOnboarding && selectedOnboarding.retailerAccountId) || '',
       onOnboardingAccount: e => this.set({ onboardingAccountDraft: e.target.value }),
       onboardingAccountOptions: s.retailerAccounts.filter(account => !account.demo && account.portalAccountId).map(account => ({
@@ -8914,6 +9044,21 @@ class Component extends DCLogic {
       onboardingDetailStores: selectedOnboarding && Array.isArray(selectedOnboarding.stores) ? selectedOnboarding.stores.map(store => ({
         ...store,
         address: store.address || 'Address not recorded',
+        qboLabel: store.quickbooksCustomerId || 'not mapped',
+        expiresLabel: store.licenseExpiresOn || 'not recorded',
+        qboValue: String((((s.onboardingStoreDetailsDrafts || {})[store.license] || {}).quickbooksCustomerId) || store.quickbooksCustomerId || ''),
+        expiresValue: String((((s.onboardingStoreDetailsDrafts || {})[store.license] || {}).licenseExpiresOn) || store.licenseExpiresOn || ''),
+        qboOptions: onboardingQboOptions,
+        canSetup: !!selectedOnboarding.retailerAccountId && selectedOnboarding.workflowState === 'accepted'
+          && ['qualification', 'terms', 'account_creation'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
+        setupReadOnly: !selectedOnboarding.retailerAccountId || selectedOnboarding.workflowState !== 'accepted'
+          || !['qualification', 'terms', 'account_creation'].includes(selectedOnboarding.stage) || !!s.onboardingActionPending,
+        onQbo: e => this.set({ onboardingStoreDetailsDrafts: { ...(s.onboardingStoreDetailsDrafts || {}),
+          [store.license]: { ...((s.onboardingStoreDetailsDrafts || {})[store.license] || {}), quickbooksCustomerId: e.target.value } } }),
+        onExpires: e => this.set({ onboardingStoreDetailsDrafts: { ...(s.onboardingStoreDetailsDrafts || {}),
+          [store.license]: { ...((s.onboardingStoreDetailsDrafts || {})[store.license] || {}), licenseExpiresOn: e.target.value } } }),
+        setupLabel: s.onboardingActionPending === 'set-onboarding-store-details' ? 'Saving…' : 'Save setup',
+        onSaveSetup: () => this.saveOnboardingStoreDetails(selectedOnboarding, store),
         statusLabel: String(store.qualificationStatus || 'pending').toUpperCase(),
         statusStyle: 'font:600 9.5px ui-monospace,monospace;padding:3px 7px;background:' + (store.qualificationStatus === 'qualified' ? 'var(--ux-accent)' : store.qualificationStatus === 'rejected' ? 'var(--ux-signal)' : 'var(--ux-surface)') + ';color:' + (store.qualificationStatus === 'pending' ? 'var(--ux-muted-strong)' : '#fff'),
         canReview: selectedOnboarding.stage === 'qualification' && selectedOnboarding.workflowState === 'accepted' && !s.onboardingActionPending,
@@ -9031,7 +9176,8 @@ class Component extends DCLogic {
         ? (selectedRetailer.id || selectedRetailer.Id) + ' · ' + (selectedRetailer.active === false ? 'Inactive in QuickBooks' : 'Active in QuickBooks') + ' · ' + String(selectedRetailer.portalStatus || selectedRetailer.portal_status || 'not_qualified').replace(/_/g, ' ') + (selectedIsDemo ? ' · EXECUTIVE DEMO' : '')
         : 'License OCM-RETL-24-000412 · 3 locations · ' + defaultAccount.since + ' · assigned to Toni Alvarez',
       acctIsLiveQbo: !!selectedRetailer && !selectedIsDemo,
-      acctNeedsQualification: !!selectedRetailer && !selectedIsDemo && !selectedRetailer.portalAccountId,
+      acctNeedsQualification: !!selectedRetailer && !selectedIsDemo && !selectedRetailer.portalAccountId && !selectedRetailer.parentCustomerId,
+      acctIsQboChild: !!selectedRetailer && !selectedIsDemo && !selectedRetailer.portalAccountId && !!selectedRetailer.parentCustomerId,
       acctIsQualifiedRecord: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId,
       qualificationButtonLabel: s.retailerActionPending === 'qualification' ? 'Starting\u2026' : 'Start qualification',
       onStartQualification: () => this.startRetailerQualification(selectedRetailer),
@@ -9045,6 +9191,9 @@ class Component extends DCLogic {
       acctStoreName: s.accountStoreName, onAcctStoreName: e => this.set({ accountStoreName: e.target.value }),
       acctStoreLicense: s.accountStoreLicense, onAcctStoreLicense: e => this.set({ accountStoreLicense: e.target.value }),
       acctStoreAddress: s.accountStoreAddress, onAcctStoreAddress: e => this.set({ accountStoreAddress: e.target.value }),
+      acctStoreQbo: s.accountStoreQbo || selectedRetailerQboId,
+      onAcctStoreQbo: e => this.set({ accountStoreQbo: e.target.value }),
+      acctStoreQboOptions: selectedRetailerQboOptions,
       acctStoreButtonLabel: s.retailerActionPending === 'store' ? 'Adding\u2026' : 'Add store',
       onAddAcctStore: () => this.addRetailerStore(selectedRetailer),
       isAccount: s.screen === 'account' && isInternal, isLocations: s.screen === 'locations',
@@ -9069,12 +9218,20 @@ class Component extends DCLogic {
       accountDetail: selectedRetailer || defaultAccount,
       acctLocations: selectedAccountLocations.map(l => ({
         ...l,
+        qboValue: String((s.accountStoreQboDrafts || {})[l.license] || l.quickbooksCustomerId || ''),
+        qboOptions: selectedRetailerQboOptions,
+        onQbo: e => this.set({ accountStoreQboDrafts: { ...(s.accountStoreQboDrafts || {}), [l.license]: e.target.value } }),
+        expiryDraft: String((s.accountStoreExpiryDrafts || {})[l.license] || l.licenseExpiresOn || ''),
+        onExpiry: e => this.set({ accountStoreExpiryDrafts: { ...(s.accountStoreExpiryDrafts || {}), [l.license]: e.target.value } }),
         canAct: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId && !!l.licenseStatus,
+        canStatusAction: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId && !!l.licenseStatus && l.evidenceReady,
+        detailsLabel: s.retailerActionPending === 'details:' + l.license ? 'Saving…' : 'Save evidence',
+        onSaveDetails: () => this.saveRetailerStoreDetails(selectedRetailer, l),
         actionLabel: s.retailerActionPending === 'store:' + l.license ? 'Saving\u2026'
           : l.licenseStatus !== 'active' ? 'Qualify license' : l.orderingStatus === 'ready' ? 'Pause ordering' : 'Enable ordering',
         onAction: () => this.advanceRetailerStore(selectedRetailer, l),
         style: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;display:inline-block;white-space:nowrap;background:' +
-          ((l.licenseStatus === 'active' && l.orderingStatus === 'ready') || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-surface)' : 'var(--ux-signal)') + ';color:' + ((l.licenseStatus === 'active' && l.orderingStatus === 'ready') || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-muted-strong)' : '#fff')
+          ((l.licenseStatus === 'active' && l.orderingStatus === 'ready' && l.evidenceReady) || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-surface)' : 'var(--ux-signal)') + ';color:' + ((l.licenseStatus === 'active' && l.orderingStatus === 'ready' && l.evidenceReady) || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-muted-strong)' : '#fff')
       })),
       acctContacts: selectedAccountContacts,
       acctMix: (selectedRetailer ? [] : defaultAccount.mix).map(m => ({

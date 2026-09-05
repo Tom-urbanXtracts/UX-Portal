@@ -84,9 +84,16 @@ function knownDatabaseError(error: Row): PortalError {
     "already linked to another QuickBooks customer",
     "Retailer account not found",
     "inactive QuickBooks customer cannot be ready",
+    "active QuickBooks customer is required",
     "At least one qualified store",
+    "At least one current, QuickBooks-mapped store",
     "Unsupported retailer status",
     "Store name and license number are required",
+    "Store QuickBooks customer not found",
+    "Link the retailer account to QuickBooks before mapping a store",
+    "Store QuickBooks customer must be the retailer account or its direct child",
+    "current license expiration date is required",
+    "Store QuickBooks customer is required before qualification",
     "no more than ten stores",
     "license is already attached",
     "Retailer store not found",
@@ -100,6 +107,11 @@ function knownDatabaseError(error: Row): PortalError {
     "Monday must accept the onboarding request",
     "License review is available only",
     "Onboarding store not found",
+    "Store accounting setup is closed",
+    "Choose a QuickBooks customer for this store",
+    "Record the store QuickBooks customer",
+    "commercial terms decision note is required",
+    "qualified store needs a compatible QuickBooks customer",
     "Unsupported onboarding stage",
     "onboarding request is already complete",
     "Onboarding stages must advance one step",
@@ -182,7 +194,7 @@ async function onboardingQueue(): Promise<Row[]> {
     .select(
       "id,client_request_id,retailer_account_id,quickbooks_customer_id,submission_type,legal_entity,dba,stage,workflow_state,workflow_error,monday_item_id,submitted_by_email,owner_name,owner_email,submitted_at,accepted_at,updated_at",
     )
-    .not("stage", "in", "(closed,rejected)").order("submitted_at", {
+    .not("stage", "in", "(ready,closed,rejected)").order("submitted_at", {
       ascending: false,
     }).limit(100);
   if (error) throw error;
@@ -190,7 +202,7 @@ async function onboardingQueue(): Promise<Row[]> {
   const { data: stores, error: storeError } = requestIds.length
     ? await service.from("portal_onboarding_store")
       .select(
-        "onboarding_request_id,store_name,license_number,address,qualification_status,qualification_note",
+        "onboarding_request_id,store_name,license_number,address,qualification_status,qualification_note,quickbooks_customer_id,license_expires_on",
       )
       .in("onboarding_request_id", requestIds).order("store_number")
     : { data: [], error: null };
@@ -239,6 +251,8 @@ async function onboardingQueue(): Promise<Row[]> {
       address: store.address,
       qualificationStatus: store.qualification_status,
       qualificationNote: store.qualification_note,
+      quickbooksCustomerId: store.quickbooks_customer_id,
+      licenseExpiresOn: store.license_expires_on,
     })),
     people: (people ?? []).filter((person) =>
       person.onboarding_request_id === request.id
@@ -298,9 +312,23 @@ Deno.serve(async (request) => {
     };
     let result: Row;
     if (action === "start-qualification") {
+      const quickbooksCustomerId = String(body.quickbooksCustomerId || "")
+        .trim();
+      const { data: sourceCustomer, error: sourceCustomerError } = await service
+        .from("quickbooks_customer_cache")
+        .select("parent_customer_id").eq(
+          "quickbooks_customer_id",
+          quickbooksCustomerId,
+        ).maybeSingle();
+      if (sourceCustomerError) throw sourceCustomerError;
+      if (sourceCustomer?.parent_customer_id) {
+        throw new PortalError(
+          409,
+          "Start the retailer account from the top-level QuickBooks customer; map this child customer to its store.",
+        );
+      }
       result = await rpc("portal_create_or_link_retailer_account", {
-        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "")
-          .trim(),
+        p_quickbooks_customer_id: quickbooksCustomerId,
         ...actor,
       });
     } else if (action === "set-account-status") {
@@ -337,6 +365,22 @@ Deno.serve(async (request) => {
         p_license_expires_on: expires || null,
         ...actor,
       });
+    } else if (action === "set-store-details") {
+      const expires = String(body.licenseExpiresOn || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+        throw new PortalError(
+          400,
+          "Enter the license expiration as YYYY-MM-DD.",
+        );
+      }
+      result = await rpc("portal_set_retailer_store_details", {
+        p_account_id: String(body.accountId || ""),
+        p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
+        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "")
+          .trim().slice(0, 120),
+        p_license_expires_on: expires,
+        ...actor,
+      });
     } else if (action === "link-onboarding-account") {
       result = await rpc("portal_link_onboarding_account", {
         p_request_id: String(body.requestId || ""),
@@ -349,6 +393,22 @@ Deno.serve(async (request) => {
         p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
         p_status: String(body.status || ""),
         p_note: String(body.note || "").trim().slice(0, 2000),
+        ...actor,
+      });
+    } else if (action === "set-onboarding-store-details") {
+      const expires = String(body.licenseExpiresOn || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+        throw new PortalError(
+          400,
+          "Enter the license expiration as YYYY-MM-DD.",
+        );
+      }
+      result = await rpc("portal_set_onboarding_store_details", {
+        p_request_id: String(body.requestId || ""),
+        p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
+        p_quickbooks_customer_id: String(body.quickbooksCustomerId || "")
+          .trim().slice(0, 120),
+        p_license_expires_on: expires,
         ...actor,
       });
     } else if (action === "advance-onboarding") {

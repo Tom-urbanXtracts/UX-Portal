@@ -125,6 +125,7 @@ Deno.serve(async (request) => {
   try {
     const caller = await callerFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
+    const today = new Date().toISOString().slice(0, 10);
 
     const [
       canixResult,
@@ -146,6 +147,9 @@ Deno.serve(async (request) => {
       coaCount,
       readyRetailers,
       readyStores,
+      openOnboardingRequests,
+      onboardingReconciliationRequests,
+      activeStoresMissingSourceEvidence,
       activeProfiles,
       pendingPrices,
       wholesaleSourceRows,
@@ -212,7 +216,24 @@ Deno.serve(async (request) => {
           query.eq("active", true).eq("license_status", "active").eq(
             "ordering_status",
             "ready",
+          ).not("quickbooks_customer_id", "is", null).gt(
+            "license_expires_on",
+            today,
           ),
+      ),
+      exactCount(
+        "portal_onboarding_request",
+        (query) => query.not("stage", "in", "(ready,closed,rejected)"),
+      ),
+      exactCount(
+        "portal_onboarding_request",
+        (query) => query.eq("workflow_state", "needs_reconciliation"),
+      ),
+      exactCount(
+        "portal_store",
+        (query) => query.eq("active", true).or(
+          `quickbooks_customer_id.is.null,license_expires_on.is.null,license_expires_on.lte.${today}`,
+        ),
       ),
       exactCount("portal_profile", (query) => query.eq("active", true)),
       exactCount(
@@ -565,6 +586,18 @@ Deno.serve(async (request) => {
             label: "Active users",
             detail:
               `${activeProfiles} active portal profiles. Deactivation is checked on every protected request.`,
+          },
+          {
+            state: onboardingReconciliationRequests > 0 ? "warn" : "pass",
+            label: "Store onboarding queue",
+            detail: `${openOnboardingRequests} open requests; ${onboardingReconciliationRequests} require workflow reconciliation. The queue remains readable when QuickBooks is unavailable.`,
+          },
+          {
+            state: activeStoresMissingSourceEvidence > 0 ? "warn" : "pass",
+            label: "Store source evidence",
+            detail: activeStoresMissingSourceEvidence > 0
+              ? `${activeStoresMissingSourceEvidence} active legacy stores still need an explicit QuickBooks customer and/or license expiration. Newly qualified stores cannot pass without both.`
+              : "Every active store has an explicit QuickBooks customer and recorded license expiration.",
           },
           {
             state: pendingPrices > 0 ? "warn" : "pass",

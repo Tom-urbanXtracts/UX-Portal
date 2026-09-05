@@ -41,6 +41,8 @@ Retailer account statuses are portal-owned:
 
 Each store has an independent `license_status` and `ordering_status`. A license must be `active` before ordering can become `ready`. The database rejects an eleventh open store, including concurrent attempts from separate administrators.
 
+Every store also has an explicit QuickBooks identity. The selected customer must be either the retailer account's top-level QuickBooks customer or one of its direct child customers; a name match is never accepted. QuickBooks child customers cannot create duplicate retailer organizations. A current license expiration date and reviewer evidence are required before a new location can be qualified. Existing legacy locations missing either source field remain visible as a remediation warning and cannot place a new order until corrected.
+
 Order intake accepts a request only when all of these are true:
 
 - QuickBooks-backed retailer account status is `ready_to_order`.
@@ -78,7 +80,9 @@ The internal **Store onboarding** queue is operational, not just a report:
 
 1. **Intake → Qualification** only after Monday has accepted the durable request.
 2. **Qualification → Commercial terms** only after every submitted license has been reviewed and at least one has qualified.
+   Before a store can be qualified, staff records its compatible QuickBooks customer, current license expiration, and a review note.
 3. **Commercial terms → Account creation** records the internal commercial decision and cannot skip a stage.
+   Moving into Account creation requires a written commercial-terms decision note.
 4. Link the request to a QuickBooks-backed portal retailer account before leaving Account creation.
 5. **Account creation → Access** materializes qualified locations as portal stores. Their licenses become active, but ordering remains pending until staff explicitly enables it on the retailer account.
 6. During **Access**, invite each requested person from the onboarding record. Owners receive every qualified store, Buyers receive their requested store or the qualified group, and Budtenders receive exactly one qualified store.
@@ -86,10 +90,14 @@ The internal **Store onboarding** queue is operational, not just a report:
 
 Requests cannot skip or move backward through stages. Rejection requires a note. Once store creation begins, the request cannot be relinked to a different retailer account.
 
+The operations queue loads independently from the QuickBooks customer list. A QuickBooks outage can prevent account linking, but it does not hide durable onboarding requests or their reconciliation state. Operators can search the queue and filter it by stage.
+
 ## Verification
 
 - Link an active QuickBooks customer and confirm the customer record itself is unchanged.
 - Add ten stores and confirm the eleventh is rejected; edit an existing store at the cap and confirm the edit succeeds.
+- Attempt to map a store to an unrelated QuickBooks customer and confirm it is rejected; confirm the parent account and a direct child are accepted.
+- Attempt to qualify a location without a current expiration date or reviewer note and confirm it is rejected.
 - Confirm a new store cannot order while either its license or ordering gate is pending.
 - Confirm an account cannot become `ready_to_order` until at least one store is active and ready.
 - Confirm an inactive QuickBooks customer cannot become `ready_to_order`.
@@ -100,3 +108,4 @@ Requests cannot skip or move backward through stages. Rejection requires a note.
 - Reject one license and qualify another; confirm only the qualified location becomes a portal store when the request enters Access.
 - Invite the requested Owner, Buyer, and Budtender from the Access stage. Confirm the Owner receives all qualified stores, the Buyer receives the intended scope, and the Budtender receives exactly one store.
 - Verify Owner access spans all stores, Buyer access includes only assigned stores, and each Budtender is assigned to exactly one store before invitation.
+- Disconnect QuickBooks temporarily and confirm the internal onboarding queue remains visible while account-linking actions remain unavailable.

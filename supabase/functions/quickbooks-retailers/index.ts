@@ -491,6 +491,8 @@ async function cachedAccounts(): Promise<Row[]> {
       active: row.active,
       balance: row.balance,
       balanceWithJobs: row.balance_with_jobs,
+      parentCustomerId: row.parent_customer_id,
+      isProject: row.is_project,
       currency: row.currency || "USD",
       portalAccountId: account?.id ?? null,
       portalStatus: account?.portal_status ?? "not_qualified",

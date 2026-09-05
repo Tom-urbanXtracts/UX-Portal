@@ -20,6 +20,7 @@ const productContent = await readFile(resolve(root, "supabase/functions/portal-p
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
 const quickbooksRetailers = await readFile(resolve(root, "supabase/functions/quickbooks-retailers/index.ts"), "utf8");
+const portalRetailers = await readFile(resolve(root, "supabase/functions/portal-retailers/index.ts"), "utf8");
 const quickbooksOAuthDiscovery = await readFile(resolve(root, "supabase/functions/_shared/quickbooks-oauth.ts"), "utf8");
 const quickbooksEgressProxy = await readFile(resolve(root, "services/qbo-egress-proxy/server.mjs"), "utf8");
 const mondayOAuth = await readFile(resolve(root, "supabase/functions/monday-oauth/index.ts"), "utf8");
@@ -40,6 +41,7 @@ const quickbooksCronMigration = await readFile(resolve(root, "supabase/migration
 const mfaMigration = await readFile(resolve(root, "supabase/migrations/20260902040000_mfa_enforcement.sql"), "utf8");
 const quickbooksEnvironmentMigration = await readFile(resolve(root, "supabase/migrations/20260902050000_quickbooks_environment_isolation.sql"), "utf8");
 const quickbooksSafeCacheMigration = await readFile(resolve(root, "supabase/migrations/20260902060000_quickbooks_environment_safe_cache_clear.sql"), "utf8");
+const retailerStoreControlsMigration = await readFile(resolve(root, "supabase/migrations/20260905130000_retailer_store_accounting_controls.sql"), "utf8");
 const lotIntegrityMigration = await readFile(resolve(root, "supabase/migrations/20260902070000_inbound_lot_integrity.sql"), "utf8");
 const lotIntegrityCronMigration = await readFile(resolve(root, "supabase/migrations/20260902080000_lot_integrity_cron.sql"), "utf8");
 const canixCronMigration = await readFile(resolve(root, "supabase/migrations/20260902090000_canix_sync_cron_vault.sql"), "utf8");
@@ -122,6 +124,12 @@ assertContract(admin.includes("Store Owners may deactivate current Buyers and Bu
 assertContract(admin.includes('action === "list-users"') && admin.includes("service.auth.admin.listUsers") && source.includes("loadUsers(force)"), "user access renders the protected live portal directory instead of production fixture rows");
 assertContract(admin.includes('action === "remove-test-user"') && admin.includes("testDemoReason") && admin.includes("deleteUser(") && admin.includes("dana@downtownprovisions.com") && admin.includes("toni@urbanxtracts.com") && source.includes("Remove test user"), "test-user removal is administrator-only, server-classified, includes the exact legacy fixture allowlist, soft-deleted, and separately exposed");
 assertContract(admin.includes("selected store must have a qualified license") && admin.includes('.eq("license_status", "active")'), "all retailer assignments bind to active qualified licenses");
+assertContract(quickbooksRetailers.includes("parentCustomerId: row.parent_customer_id") && retailerStoreControlsMigration.includes("Store QuickBooks customer must be the retailer account or its direct child"), "store accounting identity is an explicit QuickBooks parent-or-child relationship");
+assertContract(portalRetailers.includes("Start the retailer account from the top-level QuickBooks customer") && source.includes("A child customer cannot become a second retailer organisation"), "QuickBooks child customers map to stores rather than duplicate retailer organizations");
+assertContract(retailerStoreControlsMigration.includes("portal_set_onboarding_store_details") && retailerStoreControlsMigration.includes("license_expires_on <= current_date") && retailerStoreControlsMigration.includes("A license review note is required"), "store onboarding records QuickBooks identity, current license expiration, and review evidence before qualification");
+assertContract(intake.includes('if (!store.license_expires_on)') && intake.includes('if (!store.quickbooks_customer_id)'), "stores fail closed on missing license dates or accounting identity at order intake");
+assertContract(source.includes("onbLocationOptions") && source.includes("All qualified stores") && source.includes("Choose exactly one store"), "onboarding binds buyer and Budtender scope to submitted stores instead of free text");
+assertContract(source.includes("accounts.rows.concat(QUICKBOOKS_DEMO_ACCOUNTS)") && source.includes("retailerOnboarding: onboarding.rows"), "the onboarding queue remains available when QuickBooks is temporarily unavailable");
 assertContract(pricing.includes("canonicalProduct(productId)") && pricing.includes("currentStorePrice") && pricing.includes("canonicalCanixProductId(productId)"), "pricing proposals use authoritative normalized Canix identity and current price");
 assertContract(financials.includes("const allStores = storeMappings") && financials.includes("for (const store of collisionStores") && financials.includes("parentCustomerOutsideOrganization"), "QuickBooks shared-customer checks include historical stores and organization parent mappings");
 assertContract(catalog.includes("PORTAL_EXTERNAL_ASSET_HOSTS") && productContent.includes("PORTAL_EXTERNAL_ASSET_HOSTS"), "external catalog assets use an exact-host allowlist");

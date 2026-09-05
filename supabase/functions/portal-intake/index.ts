@@ -400,7 +400,7 @@ async function verifyOrder(
   if (!license) throw new IntakeError(400, "A licensed store is required.");
   const { data: store, error: storeError } = await service.from("portal_store")
     .select(
-      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,retailer_account_id,license_status,ordering_status",
+      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,retailer_account_id,quickbooks_customer_id,license_status,license_expires_on,qualified_at,ordering_status",
     )
     .eq("license_number", license).maybeSingle();
   if (storeError) throw storeError;
@@ -411,6 +411,22 @@ async function verifyOrder(
     throw new IntakeError(
       403,
       "That store license has not been qualified for portal ordering.",
+    );
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  if (store.license_expires_on && String(store.license_expires_on) <= today) {
+    throw new IntakeError(403, "That store license is expired.");
+  }
+  if (!store.license_expires_on) {
+    throw new IntakeError(
+      403,
+      "That store needs a current license expiration before ordering.",
+    );
+  }
+  if (!store.quickbooks_customer_id) {
+    throw new IntakeError(
+      403,
+      "That store needs an explicit QuickBooks customer before ordering.",
     );
   }
   if (store.ordering_status !== "ready") {
