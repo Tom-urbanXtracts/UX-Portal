@@ -112,11 +112,16 @@ function portalRedirect(result: "connected"): Response {
     // A malformed return URL must never turn this callback into an open redirect.
   }
   target.searchParams.set("quickbooks", result);
-  return new Response(null, {
-    status: 303,
+  const portalOrigin = JSON.stringify(target.origin);
+  const targetUrl = JSON.stringify(target.toString());
+  const body = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>QuickBooks connected</title></head><body style="margin:0;background:#f5f1ec;color:#170e0b;font:16px/1.55 system-ui,sans-serif"><main style="max-width:680px;margin:12vh auto;padding:32px;border:1px solid #cfc4ba;background:#fff"><div style="font:700 12px ui-monospace,monospace;letter-spacing:.08em;color:#257653;margin-bottom:12px">CONNECTED</div><h1 style="margin:0 0 12px;font-size:30px">QuickBooks connected</h1><p>The production accounting connection is ready. This window will close automatically.</p><button id="return" style="margin-top:12px;background:#170e0b;color:#fff;border:0;padding:11px 15px;font-weight:700;cursor:pointer">Close window</button></main><script>(function(){var target=${targetUrl};var origin=${portalOrigin};function finish(){if(window.opener&&!window.opener.closed){window.opener.postMessage({type:'ux-portal.oauth',provider:'quickbooks',status:'connected'},origin);window.close();return;}location.assign(target);}document.getElementById('return').addEventListener('click',finish);setTimeout(finish,700);}());</script></body></html>`;
+  return new Response(body, {
+    status: 200,
     headers: {
-      location: target.toString(),
+      "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
+      "content-security-policy":
+        "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
       "referrer-policy": "no-referrer",
       "x-content-type-options": "nosniff",
     },

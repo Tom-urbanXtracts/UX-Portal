@@ -5118,6 +5118,7 @@ class Component extends DCLogic {
   connectQuickBooks() {
     const s = this.state;
     if (s.quickBooksConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const authWindow = window.open('', 'ux-portal-quickbooks-oauth', 'popup,width=720,height=780');
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ quickBooksConnecting: true, quickBooksConnectionError: null });
@@ -5125,15 +5126,26 @@ class Component extends DCLogic {
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('QuickBooks connection service returned ' + status + '.'));
-        window.location.assign(body.authorizationUrl);
+        const authorizationUrl = new URL(body.authorizationUrl);
+        if (authorizationUrl.origin !== 'https://appcenter.intuit.com') throw new Error('QuickBooks returned an unexpected authorization address.');
+        if (!authWindow) {
+          window.location.assign(authorizationUrl.toString());
+          return;
+        }
+        this.watchConnectorWindow(authWindow, 'quickbooks', QUICKBOOKS_OAUTH_API);
+        authWindow.location.assign(authorizationUrl.toString());
       })
-      .catch(error => this.set({ quickBooksConnecting: false,
-        quickBooksConnectionError: (error && error.message) || 'QuickBooks authorization could not start.' }));
+      .catch(error => {
+        if (authWindow && !authWindow.closed) authWindow.close();
+        this.set({ quickBooksConnecting: false,
+          quickBooksConnectionError: (error && error.message) || 'QuickBooks authorization could not start.' });
+      });
   }
 
   connectMonday() {
     const s = this.state;
     if (s.mondayConnecting || s.impersonating || s.role !== 'internal' || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const authWindow = window.open('', 'ux-portal-monday-oauth', 'popup,width=720,height=780');
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ mondayConnecting: true, mondayConnectionError: null });
@@ -5141,10 +5153,53 @@ class Component extends DCLogic {
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('Monday connection service returned ' + status + '.'));
-        window.location.assign(body.authorizationUrl);
+        const authorizationUrl = new URL(body.authorizationUrl);
+        if (authorizationUrl.origin !== 'https://auth.monday.com') throw new Error('Monday returned an unexpected authorization address.');
+        if (!authWindow) {
+          window.location.assign(authorizationUrl.toString());
+          return;
+        }
+        this.watchConnectorWindow(authWindow, 'monday', MONDAY_OAUTH_API);
+        authWindow.location.assign(authorizationUrl.toString());
       })
-      .catch(error => this.set({ mondayConnecting: false,
-        mondayConnectionError: (error && error.message) || 'Monday authorization could not start.' }));
+      .catch(error => {
+        if (authWindow && !authWindow.closed) authWindow.close();
+        this.set({ mondayConnecting: false,
+          mondayConnectionError: (error && error.message) || 'Monday authorization could not start.' });
+      });
+  }
+
+  watchConnectorWindow(authWindow, provider, apiUrl) {
+    const expectedOrigin = new URL(apiUrl).origin;
+    let finished = false;
+    let interval = null;
+    let timeout = null;
+    const complete = () => {
+      if (finished) return;
+      finished = true;
+      window.removeEventListener('message', onMessage);
+      if (interval) window.clearInterval(interval);
+      if (timeout) window.clearTimeout(timeout);
+      if (provider === 'quickbooks') this.set({ quickBooksConnecting: false, quickBooksConnectionError: null });
+      if (provider === 'monday') this.set({ mondayConnecting: false, mondayConnectionError: null });
+      window.setTimeout(() => this.loadReadiness(true), 500);
+    };
+    const onMessage = event => {
+      const data = event && event.data;
+      if (event.origin !== expectedOrigin || !data || data.type !== 'ux-portal.oauth' || data.provider !== provider || data.status !== 'connected') return;
+      complete();
+    };
+    window.addEventListener('message', onMessage);
+    interval = window.setInterval(() => {
+      if (authWindow.closed) complete();
+    }, 500);
+    timeout = window.setTimeout(() => {
+      if (!finished) {
+        complete();
+        const key = provider === 'quickbooks' ? 'quickBooksConnectionError' : 'mondayConnectionError';
+        this.set({ [key]: 'Authorization timed out. Start the connection again.' });
+      }
+    }, 10 * 60 * 1000);
   }
 
   refreshMondayWebhook() {
