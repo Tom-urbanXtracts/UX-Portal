@@ -1074,20 +1074,25 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:inline-block;margin:16px 0 18px;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px">{{ accountsSourceLabel }}</div>
 <sc-if value="{{ accountsHasError }}" hint-placeholder-val="{{ false }}"><div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:18px;font-size:12.5px;line-height:1.55">{{ accountsError }} Executive-demo customers remain available so the workflow can still be demonstrated.</div></sc-if>
 <sc-if value="{{ accountsLoading }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0;font-size:13px;color:var(--ux-muted)">Loading QuickBooks customers…</div></sc-if>
-<div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:1.45fr 1.15fr .6fr .9fr .75fr .8fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
-<div>QuickBooks customer</div><div>Source ID</div><div>QBO</div><div>Portal status</div><div>Balance</div><div>Stores</div>
+<div role="tablist" aria-label="Retailer account work queues" style="display:flex;overflow-x:auto;border:1px solid rgba(23,14,11,.22);background:var(--ux-ground);margin:0 0 10px">
+<sc-for list="{{ accountQueueTabs }}" as="tab" hint-placeholder-count="6"><button type="button" role="tab" onClick="{{ tab.onPick }}" aria-selected="{{ tab.pressed }}" style="{{ tab.style }}">{{ tab.label }} <span style="opacity:.58;margin-left:4px">{{ tab.count }}</span></button></sc-for>
 </div>
-<sc-for list="{{ accounts }}" as="a" hint-placeholder-count="5">
-<button type="button" onClick="{{ a.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:13px 0;cursor:pointer;display:grid;grid-template-columns:1.45fr 1.15fr .6fr .9fr .75fr .8fr;gap:12px;font-size:13px;align-items:center" style-hover="background:var(--ux-surface)">
+<div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin:0 0 12px"><label style="flex:1;min-width:230px"><span style="display:block;font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SEARCH CUSTOMERS</span><input type="search" value="{{ accountsSearch }}" onInput="{{ onAccountsSearch }}" placeholder="Customer, QuickBooks ID, portal status, or next action" aria-label="Search retailer accounts" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px 10px;font:12px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SORT</span><select value="{{ accountsSort }}" onChange="{{ onAccountsSort }}" aria-label="Sort retailer accounts" style="border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px 10px;font:12px Archivo,sans-serif"><option value="priority">Setup priority</option><option value="name">Customer name</option><option value="balance">Highest balance</option><option value="stores">Most stores</option></select></label><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted);padding-bottom:9px">{{ accountsResultCount }}</span></div>
+<div role="region" aria-label="Retailer account queue" style="max-height:540px;overflow:auto;border-top:2px solid rgba(23,14,11,.4)"><div style="min-width:1040px">
+<div style="position:sticky;top:0;z-index:1;background:var(--ux-ground);display:grid;grid-template-columns:1.35fr 1fr .55fr .85fr .65fr .55fr 1.25fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>QuickBooks customer</div><div>Source ID</div><div>QBO</div><div>Portal status</div><div>Balance</div><div>Stores</div><div>Next action</div>
+</div>
+<sc-for list="{{ accounts }}" as="a" hint-placeholder-count="8">
+<button type="button" onClick="{{ a.onOpen }}" style="width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid rgba(23,14,11,.14);padding:13px 0;cursor:pointer;display:grid;grid-template-columns:1.35fr 1fr .55fr .85fr .65fr .55fr 1.25fr;gap:12px;font-size:13px;align-items:center" style-hover="background:var(--ux-surface)">
 <span style="font-weight:600">{{ a.name }}</span>
 <span style="font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ux-muted)">{{ a.sourceId }}</span>
 <span style="font:600 10px ui-monospace,monospace">{{ a.qboStatus }}</span>
 <span style="display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ a.tagStyle }}">{{ a.status }}</span>
-<span>{{ a.balance }}</span><span>{{ a.locations }}</span>
+<span>{{ a.balance }}</span><span>{{ a.locations }}</span><span style="font-size:11.5px;line-height:1.45;color:var(--ux-muted-strong)">{{ a.nextAction }}</span>
 </button>
 </sc-for>
-</div>
+</div></div>
+<sc-if value="{{ accountsEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 0;border-bottom:1px solid rgba(23,14,11,.16);font-size:13px;color:var(--ux-muted)">No QuickBooks customers match this queue and search.</div></sc-if>
 <div style="margin-top:22px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">QuickBooks owns the customer identity, active flag and accounting balance. Store licences, ordering gates, assigned users and portal readiness remain portal records linked by namespaced source IDs.</div>
 </div>
 </sc-if>
@@ -3645,7 +3650,7 @@ class Component extends DCLogic {
     audit: SEED_AUDIT.slice(), impersonating: null, notifRead: false, compare: [],
     vw: 1280, favs: ['p1'], view: 'grid', onlyFavs: false,
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
-    account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
+    account: null, accountsSearch: '', accountsFilter: 'all', accountsSort: 'priority', loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
     invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     inventoryPanel: 'packages', inventorySyncDetailsOpen: false, invFiltersOpen: false,
@@ -4312,7 +4317,7 @@ class Component extends DCLogic {
       onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
       onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
-      outbox: [], requests: [], account: null
+      outbox: [], requests: [], account: null, accountsSearch: '', accountsFilter: 'all', accountsSort: 'priority'
     });
   }
 
@@ -7694,10 +7699,21 @@ class Component extends DCLogic {
     const retailerAccountPool = loc.demo
       ? s.retailerAccounts.filter(account => account.demo)
       : s.retailerAccounts.filter(account => !account.demo);
-    const accountsRows = retailerAccountPool.map(account => {
+    const accountQueueAllRows = retailerAccountPool.map(account => {
       const active = account.active !== false && account.Active !== false;
       const balance = Number(account.balance !== undefined ? account.balance : account.Balance) || 0;
-      const portalStatus = String(account.portalStatus || account.portal_status || (active ? 'not_qualified' : 'inactive')).replace(/_/g, ' ').toUpperCase();
+      const portalStatusRaw = String(account.portalStatus || account.portal_status || (active ? 'not_qualified' : 'inactive')).toLowerCase();
+      const portalStatus = portalStatusRaw.replace(/_/g, ' ').toUpperCase();
+      const isChild = !!account.parentCustomerId && !account.portalAccountId;
+      const hasPortalSetup = !!account.portalAccountId || !['not_qualified', 'inactive'].includes(portalStatusRaw);
+      const queueKey = !active ? 'inactive' : isChild ? 'children'
+        : portalStatusRaw === 'ready_to_order' ? 'ready'
+          : !hasPortalSetup ? 'qualification' : 'setup';
+      const nextAction = queueKey === 'inactive' ? 'Reactivate or replace this QuickBooks customer.'
+        : queueKey === 'children' ? 'Map this child customer to a licensed store under its parent.'
+          : queueKey === 'qualification' ? 'Start portal qualification from this parent customer.'
+            : queueKey === 'ready' ? 'Confirm scoped users, then run the authorized order test.'
+              : Number(account.locations || 0) > 0 ? 'Open the account and complete its remaining readiness gate.' : 'Add and qualify the first licensed store.';
       const flagged = !active || portalStatus !== 'READY TO ORDER';
       return {
         name: account.name || account.displayName || account.DisplayName || account.company || 'Unnamed QuickBooks customer',
@@ -7705,7 +7721,10 @@ class Component extends DCLogic {
         qboStatus: active ? 'ACTIVE' : 'INACTIVE',
         status: portalStatus,
         balance: balance.toLocaleString('en-US', { style: 'currency', currency: account.currency || 'USD' }),
-        locations: String(account.locations || 0),
+        balanceValue: balance, locationCount: Number(account.locations || 0), locations: String(account.locations || 0),
+        queueKey, nextAction,
+        searchText: [account.name, account.displayName, account.DisplayName, account.company, account.id, account.customerId,
+          account.Id, portalStatus, nextAction].filter(Boolean).join(' ').toLowerCase(),
         source: account.source || 'QuickBooks customer', demo: !!account.demo,
         tagStyle: 'background:' + (flagged ? 'var(--ux-signal)' : 'var(--ux-surface)') + ';color:' + (flagged ? '#fff' : 'var(--ux-muted-strong)'),
         onOpen: () => {
@@ -7717,6 +7736,25 @@ class Component extends DCLogic {
           else this.showDemoTourStep(0);
         }
       };
+    });
+    const accountQueueRank = { qualification: 0, setup: 1, children: 2, inactive: 3, ready: 4 };
+    const accountSearchNeedle = String(s.accountsSearch || '').trim().toLowerCase();
+    const accountsRows = accountQueueAllRows.filter(row =>
+      (s.accountsFilter === 'all' || row.queueKey === s.accountsFilter)
+      && (!accountSearchNeedle || row.searchText.includes(accountSearchNeedle)))
+      .sort((a, b) => s.accountsSort === 'name' ? a.name.localeCompare(b.name)
+        : s.accountsSort === 'balance' ? b.balanceValue - a.balanceValue || a.name.localeCompare(b.name)
+          : s.accountsSort === 'stores' ? b.locationCount - a.locationCount || a.name.localeCompare(b.name)
+            : (accountQueueRank[a.queueKey] || 0) - (accountQueueRank[b.queueKey] || 0) || a.name.localeCompare(b.name));
+    const accountQueueTabs = [
+      ['all', 'All'], ['qualification', 'Needs qualification'], ['setup', 'Setup incomplete'],
+      ['ready', 'Pilot ready'], ['inactive', 'Inactive'], ['children', 'QuickBooks children']
+    ].map(([id, label]) => {
+      const pressed = s.accountsFilter === id;
+      return { id, label, pressed, count: id === 'all' ? accountQueueAllRows.length : accountQueueAllRows.filter(row => row.queueKey === id).length,
+        style: 'flex:0 0 auto;background:' + (pressed ? 'var(--ux-ink)' : 'transparent') + ';color:' + (pressed ? 'var(--ux-ground)' : 'var(--ux-ink)')
+          + ';border:0;border-right:1px solid rgba(23,14,11,.18);padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap',
+        onPick: () => this.set({ accountsFilter: id }) };
     });
     const selectedRetailer = s.retailerAccounts.find(account => String(account.id || account.Id) === String(s.account));
     const selectedIsDemo = !!(selectedRetailer && selectedRetailer.demo);
@@ -9784,6 +9822,11 @@ class Component extends DCLogic {
       })(),
       onPrint: () => window.print(),
       econRows, accounts: accountsRows,
+      accountQueueTabs,
+      accountsSearch: s.accountsSearch, onAccountsSearch: e => this.set({ accountsSearch: e.target.value }),
+      accountsSort: s.accountsSort, onAccountsSort: e => this.set({ accountsSort: e.target.value }),
+      accountsResultCount: accountsRows.length + ' of ' + accountQueueAllRows.length,
+      accountsEmpty: !s.retailerAccountsLoading && accountsRows.length === 0,
       accountsLoading: s.retailerAccountsLoading,
       accountsHasError: !!s.retailerAccountsError,
       accountsError: s.retailerAccountsError || '',

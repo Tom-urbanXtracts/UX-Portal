@@ -108,6 +108,8 @@ Cannabis Store (DEMO) includes a complete read-only three-store onboarding recor
 
 Each live QuickBooks retailer detail includes a pilot-readiness checklist. It reports the accounting identity, portal account link, licensed-store count, per-store source evidence, store ordering readiness, and account ordering status as independent gates. It also gives the operator one next action and explains the missing requirement beside each store, reducing failed attempts without weakening any server check.
 
+The Retailer accounts list is an operational queue rather than a raw QuickBooks dump. Staff can search and sort it, or switch between Needs qualification, Setup incomplete, Pilot ready, Inactive, and QuickBooks children. Child customers remain supporting store identities and are never offered as separate retailer organizations. Every row names the next safe action without changing QuickBooks or starting qualification automatically.
+
 ## Verification
 
 - Link an active QuickBooks customer and confirm the customer record itself is unchanged.
