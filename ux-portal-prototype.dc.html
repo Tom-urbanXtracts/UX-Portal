@@ -2557,10 +2557,17 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ acctIsLiveQbo }}" hint-placeholder-val="false">
 <div style="border:1px solid rgba(23,14,11,.22);background:var(--ux-surface);padding:18px 20px;margin:0 0 26px">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-muted);margin-bottom:8px">PORTAL QUALIFICATION &middot; QUICKBOOKS IDENTITY REMAINS READ ONLY</div>
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px"><div><div style="font:800 16px/1.25 Archivo,sans-serif">{{ acctPilotHeadline }}</div><div style="font-size:12px;color:var(--ux-muted);line-height:1.5;margin-top:4px;max-width:68ch">{{ acctPilotSummary }}</div></div><span style="{{ acctPilotChipStyle }}">{{ acctPilotState }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px;margin:0 0 16px">
+<sc-for list="{{ acctPilotChecks }}" as="gate" hint-placeholder-count="6">
+<div style="background:#fff;border:1px solid rgba(23,14,11,.16);padding:10px 11px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:5px"><strong style="font:700 11.5px Archivo,sans-serif">{{ gate.label }}</strong><span style="{{ gate.style }}">{{ gate.state }}</span></div><div style="font-size:10.5px;color:var(--ux-muted);line-height:1.45">{{ gate.detail }}</div></div>
+</sc-for>
+</div>
 <sc-if value="{{ acctNeedsQualification }}" hint-placeholder-val="true">
 <div style="font-size:13px;line-height:1.6;max-width:78ch;margin-bottom:12px">This QuickBooks customer has no portal retailer account yet. Starting qualification creates the portal-owned readiness record; it does not change QuickBooks or make any store orderable.</div>
 <button type="button" onClick="{{ onStartQualification }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 12px Archivo,sans-serif;cursor:pointer">{{ qualificationButtonLabel }}</button>
 </sc-if>
+<sc-if value="{{ acctQualificationBlocked }}" hint-placeholder-val="false"><div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;font-size:13px;line-height:1.55">This customer is inactive in QuickBooks. Reactivate or replace the accounting record before starting portal qualification.</div></sc-if>
 <sc-if value="{{ acctIsQboChild }}" hint-placeholder-val="false"><div style="font-size:13px;line-height:1.6;max-width:78ch">This is a QuickBooks child customer. Start qualification from its top-level customer, then map this child to the licensed store. A child customer cannot become a second retailer organisation.</div></sc-if>
 <sc-if value="{{ acctIsQualifiedRecord }}" hint-placeholder-val="false">
 <div style="display:grid;grid-template-columns:minmax(190px,.7fr) minmax(240px,1.3fr) auto;gap:10px;align-items:end">
@@ -2592,7 +2599,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div><div style="font-weight:600"><span style="background:transparent">{{ l.name }}</span></div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ l.license }}</div></div>
 <select value="{{ l.qboValue }}" onChange="{{ l.onQbo }}" aria-label="QuickBooks customer for {{ l.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ l.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select>
 <input type="date" value="{{ l.expiryDraft }}" onInput="{{ l.onExpiry }}" aria-label="License expiration for {{ l.name }}" style="width:100%;padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11px Archivo,sans-serif">
-<div><span style="{{ l.style }}">{{ l.status }}</span></div>
+<div><span style="{{ l.style }}">{{ l.status }}</span><div style="font-size:10.5px;color:var(--ux-muted);line-height:1.4;margin-top:5px">{{ l.gateNote }}</div></div>
 <div style="display:flex;gap:6px"><sc-if value="{{ l.canAct }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onSaveDetails }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 9px;font:700 10px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.detailsLabel }}</button></sc-if><sc-if value="{{ l.canStatusAction }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onAction }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.actionLabel }}</button></sc-if></div>
 </div>
 </sc-for>
@@ -7749,6 +7756,43 @@ class Component extends DCLogic {
     const selectedAccountNotes = selectedIsDemo
       ? [{ when: '31 Aug 2026', who: 'Executive demo', text: 'Synthetic account prepared to demonstrate multi-store access, Canix catalog ordering, kiosk mode and traceability.' }]
       : selectedRetailer ? [] : defaultAccount.notes;
+    const selectedRetailerActive = !!selectedRetailer && selectedRetailer.active !== false && selectedRetailer.Active !== false;
+    const selectedRetailerStores = selectedRetailer && Array.isArray(selectedRetailer.stores) ? selectedRetailer.stores : [];
+    const currentDateIso = new Date().toISOString().slice(0, 10);
+    const selectedEvidenceReadyStores = selectedRetailerStores.filter(store =>
+      !!store.quickbooksCustomerId && !!store.licenseExpiresOn && String(store.licenseExpiresOn) > currentDateIso).length;
+    const selectedOrderReadyStores = selectedRetailerStores.filter(store =>
+      store.licenseStatus === 'active' && store.orderingStatus === 'ready'
+      && !!store.quickbooksCustomerId && !!store.licenseExpiresOn && String(store.licenseExpiresOn) > currentDateIso).length;
+    const selectedRetailerLinked = !!(selectedRetailer && selectedRetailer.portalAccountId);
+    const selectedRetailerReady = !!(selectedRetailerLinked && selectedRetailer.portalStatus === 'ready_to_order' && selectedOrderReadyStores > 0);
+    const accountPilotCheck = (pass, blocked, label, detail) => ({
+      state: pass ? 'READY' : blocked ? 'BLOCKED' : 'WAITING', label, detail,
+      style: 'font:700 8px ui-monospace,monospace;letter-spacing:.05em;padding:3px 5px;white-space:nowrap;background:'
+        + (pass ? 'var(--ux-accent)' : blocked ? 'var(--ux-signal)' : 'var(--ux-signal-tint)')
+        + ';color:' + (pass || blocked ? '#fff' : 'var(--ux-signal-text)')
+    });
+    const accountPilotChecks = selectedRetailer && !selectedIsDemo ? [
+      accountPilotCheck(selectedRetailerActive, !selectedRetailerActive, 'QuickBooks customer',
+        selectedRetailerActive ? 'Active customer identity returned by QuickBooks.' : 'Inactive accounting identities cannot be made orderable.'),
+      accountPilotCheck(selectedRetailerLinked, false, 'Portal retailer account',
+        selectedRetailerLinked ? 'Qualification record linked to the QuickBooks parent.' : 'Start qualification from this parent customer.'),
+      accountPilotCheck(selectedRetailerStores.length > 0, false, 'Licensed stores',
+        selectedRetailerStores.length ? selectedRetailerStores.length + ' of 10 store records created.' : 'Add the first licensed store after qualification starts.'),
+      accountPilotCheck(selectedRetailerStores.length > 0 && selectedEvidenceReadyStores === selectedRetailerStores.length, false, 'Source evidence',
+        selectedRetailerStores.length ? selectedEvidenceReadyStores + ' of ' + selectedRetailerStores.length + ' stores have a compatible QuickBooks identity and current expiration.' : 'Waiting for a store record.'),
+      accountPilotCheck(selectedOrderReadyStores > 0, false, 'Store ordering',
+        selectedOrderReadyStores + ' store' + (selectedOrderReadyStores === 1 ? '' : 's') + ' qualified and enabled for ordering.'),
+      accountPilotCheck(selectedRetailerReady, false, 'Account ordering',
+        selectedRetailerReady ? 'Account and at least one store are ready for an authorized order.' : 'The account remains blocked until every preceding server gate is satisfied.')
+    ] : [];
+    const accountPilotHeadline = !selectedRetailerActive ? 'QuickBooks identity must be active'
+      : !selectedRetailerLinked ? 'Start portal qualification'
+        : !selectedRetailerStores.length ? 'Add the first licensed store'
+          : selectedEvidenceReadyStores < selectedRetailerStores.length ? 'Complete store source evidence'
+            : !selectedOrderReadyStores ? 'Qualify a license, then enable ordering'
+              : !selectedRetailerReady ? 'Set the retailer account to Ready to order'
+                : 'Ready for scoped access and an order test';
     const onboardingStageNumber = { intake: 1, qualification: 2, terms: 3, account_creation: 4, access: 5, ready: 6 };
     const liveOnboarding = s.retailerOnboarding.map(request => {
       const stores = Array.isArray(request.stores) ? request.stores : [];
@@ -9502,9 +9546,19 @@ class Component extends DCLogic {
         ? (selectedRetailer.id || selectedRetailer.Id) + ' · ' + (selectedRetailer.active === false ? 'Inactive in QuickBooks' : 'Active in QuickBooks') + ' · ' + String(selectedRetailer.portalStatus || selectedRetailer.portal_status || 'not_qualified').replace(/_/g, ' ') + (selectedIsDemo ? ' · EXECUTIVE DEMO' : '')
         : 'License OCM-RETL-24-000412 · 3 locations · ' + defaultAccount.since + ' · assigned to Toni Alvarez',
       acctIsLiveQbo: !!selectedRetailer && !selectedIsDemo,
-      acctNeedsQualification: !!selectedRetailer && !selectedIsDemo && !selectedRetailer.portalAccountId && !selectedRetailer.parentCustomerId,
+      acctNeedsQualification: !!selectedRetailer && !selectedIsDemo && selectedRetailerActive && !selectedRetailer.portalAccountId && !selectedRetailer.parentCustomerId,
+      acctQualificationBlocked: !!selectedRetailer && !selectedIsDemo && !selectedRetailerActive && !selectedRetailer.portalAccountId && !selectedRetailer.parentCustomerId,
       acctIsQboChild: !!selectedRetailer && !selectedIsDemo && !selectedRetailer.portalAccountId && !!selectedRetailer.parentCustomerId,
       acctIsQualifiedRecord: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId,
+      acctPilotHeadline: accountPilotHeadline,
+      acctPilotSummary: selectedRetailerReady
+        ? 'The accounting identity, store evidence, license, ordering status, and retailer status are aligned. Confirm user scope in Users and access before the first live order.'
+        : 'These are independent server gates. Completing one never silently clears another, and QuickBooks itself remains unchanged.',
+      acctPilotState: selectedRetailerReady ? 'PILOT READY' : !selectedRetailerActive ? 'BLOCKED' : 'SETUP INCOMPLETE',
+      acctPilotChipStyle: 'font:700 9px ui-monospace,monospace;letter-spacing:.06em;padding:4px 7px;white-space:nowrap;background:'
+        + (selectedRetailerReady ? 'var(--ux-accent)' : !selectedRetailerActive ? 'var(--ux-signal)' : 'var(--ux-signal-tint)')
+        + ';color:' + (selectedRetailerReady || !selectedRetailerActive ? '#fff' : 'var(--ux-signal-text)'),
+      acctPilotChecks: accountPilotChecks,
       qualificationButtonLabel: s.retailerActionPending === 'qualification' ? 'Starting\u2026' : 'Start qualification',
       onStartQualification: () => this.startRetailerQualification(selectedRetailer),
       acctStatusValue: s.accountStatusDraft || (selectedRetailer && selectedRetailer.portalStatus) || 'qualification',
@@ -9556,6 +9610,15 @@ class Component extends DCLogic {
         actionLabel: s.retailerActionPending === 'store:' + l.license ? 'Saving\u2026'
           : l.licenseStatus !== 'active' ? 'Qualify license' : l.orderingStatus === 'ready' ? 'Pause ordering' : 'Enable ordering',
         onAction: () => this.advanceRetailerStore(selectedRetailer, l),
+        gateNote: !selectedRetailer ? ''
+          : selectedIsDemo ? 'Synthetic location-specific scenario.'
+            : !selectedRetailerLinked ? 'Start portal qualification before adding stores.'
+          : !l.quickbooksCustomerId ? 'Choose a compatible QuickBooks customer.'
+            : !l.licenseExpiresOn ? 'Enter the current license expiration.'
+              : String(l.licenseExpiresOn) <= currentDateIso ? 'Renewal is required before ordering.'
+                : l.licenseStatus !== 'active' ? 'Evidence is saved; qualify the license next.'
+                  : l.orderingStatus !== 'ready' ? 'License is active; enable ordering when approved.'
+                    : 'Store can accept orders when the retailer account is ready.',
         style: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;display:inline-block;white-space:nowrap;background:' +
           ((l.licenseStatus === 'active' && l.orderingStatus === 'ready' && l.evidenceReady) || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-surface)' : 'var(--ux-signal)') + ';color:' + ((l.licenseStatus === 'active' && l.orderingStatus === 'ready' && l.evidenceReady) || l.status === 'Active' || String(l.status).indexOf('clear') !== -1 ? 'var(--ux-muted-strong)' : '#fff')
       })),

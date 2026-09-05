@@ -104,7 +104,9 @@ The Store onboarding screen separates the operator workload into five switchable
 
 Selecting a request opens Workflow first. Returning to Requests clears the selected record, and detail sections cannot be opened without a selected request. Summary counts expose open requests, requested locations, requested users, and Monday reconciliation exceptions without requiring operators to open each record.
 
-Cannabis Store (DEMO) includes a complete read-only three-store onboarding record with a synthetic QuickBooks parent, three qualified store identities, Owner/Buyer/Budtender scope, and six-stage event history. It can be used to demonstrate and inspect the end state without creating a retailer, sending an invitation, changing QuickBooks, or writing to Monday.
+Cannabis Store (DEMO) includes a complete read-only three-store onboarding record with a synthetic QuickBooks parent, two current qualified locations, one expired location-specific hold, Owner/Buyer/Budtender scope, and six-stage event history. It can be used to demonstrate and inspect the end state without creating a retailer, sending an invitation, changing QuickBooks, or writing to Monday.
+
+Each live QuickBooks retailer detail includes a pilot-readiness checklist. It reports the accounting identity, portal account link, licensed-store count, per-store source evidence, store ordering readiness, and account ordering status as independent gates. It also gives the operator one next action and explains the missing requirement beside each store, reducing failed attempts without weakening any server check.
 
 ## Verification
 
