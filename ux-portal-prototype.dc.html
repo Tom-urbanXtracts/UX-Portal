@@ -2333,14 +2333,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 
 <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:72ch">Six stages from intake to ready-to-order. Internal only &mdash; a store does not onboard itself, because two stages are ours to decide and one is a compliance qualification. Every account short of stage six shows exactly which stage it is sitting in.</p>
-<div style="display:flex;flex-wrap:wrap;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:26px">
-<div style="flex:1;min-width:120px;padding:12px 14px 12px 0;font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">01</div>Intake</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">02</div>Qualification</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">03</div>Commercial terms</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">04</div>Account creation</div><div style="flex:1;min-width:120px;padding:12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">05</div>Access</div><div style="flex:1;min-width:120px;padding:12px 0 12px 14px;border-left:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">06</div>Ready to order</div>
-</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px"><div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1><p style="font-size:13px;color:var(--ux-muted);margin:0;max-width:78ch">Move a QuickBooks-backed retailer through six controlled stages. Each section shows only the decisions needed now; licensing, accounting identity, access, and ordering remain separate gates.</p></div><button type="button" onClick="{{ onAccountsRefresh }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Refresh</button></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:1px;background:rgba(23,14,11,.16);margin-bottom:14px"><sc-for list="{{ onboardingKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:11px 13px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">{{ k.label }}</div><div style="font:800 18px Archivo,sans-serif">{{ k.value }}</div><div style="font-size:10px;line-height:1.4;color:var(--ux-muted);margin-top:3px">{{ k.note }}</div></div></sc-for></div>
+<nav aria-label="Store onboarding sections" style="display:flex;overflow:auto;border:1px solid rgba(23,14,11,.22);margin-bottom:18px"><sc-for list="{{ onboardingPanels }}" as="p" hint-placeholder-count="5"><button type="button" onClick="{{ p.onPick }}" aria-pressed="{{ p.pressed }}" aria-disabled="{{ p.disabled }}" style="{{ p.style }}">{{ p.label }} <span style="opacity:.62">{{ p.count }}</span></button></sc-for></nav>
+<sc-if value="{{ onboardingViewQueue }}" hint-placeholder-val="true">
 <div style="display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,.55fr) auto;gap:10px;align-items:end;margin-bottom:16px"><label><span style="display:block;font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">SEARCH REQUESTS</span><input type="search" value="{{ onboardingSearch }}" onInput="{{ onOnboardingSearch }}" placeholder="Organisation, owner, license, email, Monday ID" style="width:100%;padding:9px 10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label><label><span style="display:block;font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">STAGE</span><select value="{{ onboardingStageFilter }}" onChange="{{ onOnboardingStageFilter }}" style="width:100%;padding:9px 10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><sc-for list="{{ onboardingStageOptions }}" as="sf" hint-placeholder-count="7"><option value="{{ sf.value }}">{{ sf.label }}</option></sc-for></select></label><div style="font:700 11px ui-monospace,monospace;color:var(--ux-muted);padding-bottom:9px">{{ onboardingResultCount }}</div></div>
-<div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.6fr auto;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div role="region" aria-label="Store onboarding request queue" tabindex="0" style="border-top:2px solid rgba(23,14,11,.4);max-height:430px;overflow:auto">
+<div style="display:grid;grid-template-columns:1.3fr 1.3fr 1.6fr auto;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);position:sticky;top:0;background:var(--ux-ground);z-index:1">
 <div>Organisation</div><div>Licenses</div><div>Stage and what is holding it</div><div></div>
 </div>
 <sc-for list="{{ onboarding }}" as="o" hint-placeholder-count="4">
@@ -2354,24 +2353,39 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ onboardingEmpty }}" hint-placeholder-val="false"><div style="padding:18px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;color:var(--ux-muted)">{{ onboardingEmptyText }}</div></sc-if>
 </div>
 <sc-if value="{{ onboardingHasError }}" hint-placeholder-val="false"><div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-top:16px;font-size:12.5px;line-height:1.55">{{ onboardingError }}</div></sc-if>
+</sc-if>
 <sc-if value="{{ onboardingHasSelection }}" hint-placeholder-val="false">
-<div style="margin-top:26px;border:1px solid rgba(23,14,11,.22);background:#fff;padding:20px 22px">
-<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:6px">ONBOARDING REQUEST {{ onboardingDetailId }}</div><h2 style="font:800 19px/1.25 Archivo,sans-serif;margin:0 0 5px">{{ onboardingDetailName }}</h2><div style="font-size:12.5px;color:var(--ux-muted)">{{ onboardingDetailMeta }}</div></div><button type="button" onClick="{{ onCloseOnboardingDetail }}" style="background:transparent;border:0;padding:4px;font:600 11px ui-monospace,monospace;color:var(--ux-muted);cursor:pointer">CLOSE</button></div>
+<div style="border:1px solid rgba(23,14,11,.22);background:#fff;padding:16px 18px">
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px"><div><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">ONBOARDING REQUEST {{ onboardingDetailId }}</div><h2 style="font:800 18px/1.25 Archivo,sans-serif;margin:0 0 4px">{{ onboardingDetailName }}</h2><div style="font-size:11.5px;color:var(--ux-muted)">{{ onboardingDetailMeta }}</div></div><button type="button" onClick="{{ onCloseOnboardingDetail }}" style="background:transparent;border:1px solid rgba(23,14,11,.25);padding:6px 9px;font:600 10px Archivo,sans-serif;color:var(--ux-muted-strong);cursor:pointer">Back to requests</button></div>
+<sc-if value="{{ onboardingViewWorkflow }}" hint-placeholder-val="false">
+<div style="display:grid;grid-template-columns:repeat(6,minmax(105px,1fr));overflow:auto;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.2);margin-bottom:15px"><sc-for list="{{ onboardingStageRail }}" as="st" hint-placeholder-count="6"><div style="{{ st.style }}"><div style="font:700 9px ui-monospace,monospace;letter-spacing:.06em;margin-bottom:3px">{{ st.number }}</div><div style="font-size:10.5px;line-height:1.35">{{ st.label }}</div></div></sc-for></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;align-items:start;margin-bottom:16px"><div>
 <div style="display:grid;grid-template-columns:minmax(230px,1fr) auto;gap:10px;align-items:end;margin-bottom:18px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">QUICKBOOKS-BACKED RETAILER ACCOUNT</div><select value="{{ onboardingAccountValue }}" onChange="{{ onOnboardingAccount }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 12px Archivo,sans-serif"><option value="">Choose a qualified portal account</option><sc-for list="{{ onboardingAccountOptions }}" as="oa" hint-placeholder-count="3"><option value="{{ oa.id }}">{{ oa.label }}</option></sc-for></select></div><sc-if value="{{ onboardingCanLinkAccount }}" hint-placeholder-val="true"><button type="button" onClick="{{ onLinkOnboardingAccount }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:11px 13px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ onboardingLinkLabel }}</button></sc-if></div>
 <sc-if value="{{ onboardingHasLinkedAccount }}" hint-placeholder-val="false"><button type="button" onClick="{{ onOpenOnboardingRetailer }}" style="background:transparent;border:0;padding:0 0 16px;font:700 11.5px Archivo,sans-serif;color:var(--ux-accent-text);cursor:pointer">Open linked retailer account &rarr;</button></sc-if>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:7px">LICENSE REVIEW</div>
+</div><div style="border-top:2px solid rgba(23,14,11,.4)"><sc-for list="{{ onboardingReadinessChecks }}" as="c" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:auto minmax(120px,.75fr) 1.5fr;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:11px"><span style="{{ c.style }}">{{ c.state }}</span><strong>{{ c.label }}</strong><span style="color:var(--ux-muted);line-height:1.4">{{ c.detail }}</span></div></sc-for></div></div>
+</sc-if>
+<sc-if value="{{ onboardingViewStores }}" hint-placeholder-val="false">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:7px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">STORES AND LICENSE REVIEW</div><div style="font:700 10.5px ui-monospace,monospace;color:var(--ux-muted)">{{ onboardingStoreSummary }}</div></div>
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px;overflow:auto"><div style="min-width:940px"><sc-for list="{{ onboardingDetailStores }}" as="os" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.15fr .75fr 1.7fr auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div><div style="font-weight:700">{{ os.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ os.address }}</div></div><div><div style="font:500 11px ui-monospace,monospace">{{ os.license }}</div><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">QBO {{ os.qboLabel }}</div></div><div><sc-if value="{{ os.canSetup }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 128px auto;gap:6px"><select value="{{ os.qboValue }}" onChange="{{ os.onQbo }}" aria-label="QuickBooks customer for {{ os.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ os.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select><input type="date" value="{{ os.expiresValue }}" onInput="{{ os.onExpires }}" aria-label="License expiration for {{ os.name }}" style="padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><button type="button" onClick="{{ os.onSaveSetup }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ os.setupLabel }}</button></div></sc-if><sc-if value="{{ os.setupReadOnly }}" hint-placeholder-val="true"><div style="font-size:10.5px;color:var(--ux-muted)">License expires {{ os.expiresLabel }}</div></sc-if></div><span style="{{ os.statusStyle }}">{{ os.statusLabel }}</span><div style="display:flex;gap:6px"><sc-if value="{{ os.canReview }}" hint-placeholder-val="false"><button type="button" onClick="{{ os.onQualify }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Qualify</button><button type="button" onClick="{{ os.onReject }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Reject</button></sc-if></div></div></sc-for></div></div>
+</sc-if>
+<sc-if value="{{ onboardingViewAccess }}" hint-placeholder-val="false">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:rgba(23,14,11,.16);margin-bottom:14px"><sc-for list="{{ onboardingRoleRules }}" as="r" hint-placeholder-count="3"><div style="background:var(--ux-ground);padding:11px 12px"><div style="font:700 11px Archivo,sans-serif;margin-bottom:3px">{{ r.role }}</div><div style="font-size:10.5px;line-height:1.4;color:var(--ux-muted)">{{ r.scope }}</div></div></sc-for></div>
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:7px">PEOPLE REQUESTED</div>
 <div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px"><sc-for list="{{ onboardingDetailPeople }}" as="op" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:.7fr 1fr 1.3fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px"><div style="font-weight:700;text-transform:capitalize">{{ op.role }}</div><div>{{ op.name }}</div><div style="color:var(--ux-muted)">{{ op.email }}{{ op.store }}</div><span style="{{ op.statusStyle }}">{{ op.statusLabel }}</span><div><sc-if value="{{ op.canInvite }}" hint-placeholder-val="false"><button type="button" onClick="{{ op.onInvite }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ op.inviteLabel }}</button></sc-if></div></div></sc-for></div>
+</sc-if>
+<sc-if value="{{ onboardingViewWorkflow }}" hint-placeholder-val="false">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted);margin-bottom:5px">REVIEW NOTE</div><input type="text" value="{{ onboardingNote }}" onInput="{{ onOnboardingNote }}" placeholder="Evidence, terms decision, rejection reason, or handoff note" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 12px Archivo,sans-serif;margin-bottom:12px">
 <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ onboardingCanAdvance }}" hint-placeholder-val="false"><button type="button" onClick="{{ onAdvanceOnboarding }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 13px;font:700 12px Archivo,sans-serif;cursor:pointer">{{ onboardingAdvanceLabel }}</button></sc-if><sc-if value="{{ onboardingCanReject }}" hint-placeholder-val="false"><button type="button" onClick="{{ onRejectOnboarding }}" style="background:transparent;color:var(--ux-signal-text);border:1px solid rgba(163,49,22,.5);padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Reject request</button></sc-if></div>
+</sc-if>
+<sc-if value="{{ onboardingViewHistory }}" hint-placeholder-val="false">
 <div style="margin-top:18px;font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">RECENT HISTORY</div><div style="border-top:1px solid rgba(23,14,11,.25);margin-top:6px"><sc-for list="{{ onboardingDetailEvents }}" as="oe" hint-placeholder-count="4"><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:11.5px;line-height:1.5"><strong>{{ oe.stage }}</strong> &middot; {{ oe.when }}<div style="color:var(--ux-muted)">{{ oe.note }}</div></div></sc-for></div>
+</sc-if>
 </div>
 </sc-if>
-<div style="margin-top:22px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:76ch">
+<sc-if value="{{ onboardingViewHistory }}" hint-placeholder-val="false"><div style="margin-top:16px;border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;max-width:76ch">
 <div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">WHAT THE ONBOARDING RECORD HOLDS, AND KEEPS</div>
-<div style="font-size:13px;line-height:1.62">License numbers, expiration dates, store addresses, contacts, role requests, and explicit QuickBooks IDs remain in the protected onboarding record. Banking, remittance, and signatory details are not collected by this portal. At qualification we record the reviewer&rsquo;s evidence and what the state record says; a valid-looking submission never qualifies itself.</div>
-</div>
+<div style="font-size:12px;line-height:1.55">License numbers, expiration dates, store addresses, contacts, role requests, and explicit QuickBooks IDs remain in the protected onboarding record. Banking, remittance, and signatory details are not collected by this portal.</div>
+</div></sc-if>
 </sc-if>
 
 <sc-if value="{{ isTraining }}" hint-placeholder-val="{{ false }}">
@@ -3008,7 +3022,29 @@ const DEMO_DOCS = [
 ];
 
 const ONBOARDING = [
-  { org: DEMO_ORG, licenses: '3 demo stores · DEMO-NY-EXEC-001 through 003', stage: 6, note: 'Synthetic end-to-end record: QuickBooks-linked organization, three qualified stores, owner profile, scoped buyer, store-assigned budtender and paired kiosk.' },
+  { id: 'demo-onboarding-complete', org: DEMO_ORG, dba: DEMO_ORG, legalEntity: 'Cannabis Store Demo LLC',
+    licenses: '3 demo stores · DEMO-NY-EXEC-001 through 003', stage: 6, stageKey: 'ready', workflowState: 'accepted',
+    retailerAccountId: 'demo-retailer-001', mondayItemId: 'DEMO-MONDAY-001', submittedAt: '2026-08-31T15:00:00Z',
+    ownerName: 'Alex Morgan', ownerEmail: 'owner@executive-demo.invalid',
+    stores: [
+      { name: 'Demo Downtown', license: 'DEMO-NY-EXEC-001', address: '101 Market Street, Demo, NY', quickbooksCustomerId: 'demo-001', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
+      { name: 'Demo Riverside', license: 'DEMO-NY-EXEC-002', address: '202 River Road, Demo, NY', quickbooksCustomerId: 'demo-001-child-2', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
+      { name: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', address: '303 North Avenue, Demo, NY', quickbooksCustomerId: 'demo-001-child-3', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' }
+    ],
+    people: [
+      { id: 'demo-person-owner', role: 'owner', name: 'Alex Morgan', email: 'owner@executive-demo.invalid', accessStatus: 'active' },
+      { id: 'demo-person-buyer', role: 'buyer', name: 'Jordan Lee', email: 'buyer@executive-demo.invalid', storeLicense: 'DEMO-NY-EXEC-001, DEMO-NY-EXEC-002', accessStatus: 'active' },
+      { id: 'demo-person-budtender', role: 'budtender', name: 'Maya Chen', email: 'budtender@executive-demo.invalid', storeLicense: 'DEMO-NY-EXEC-001', accessStatus: 'active' }
+    ],
+    events: [
+      { toStage: 'intake', createdAt: '2026-08-31T15:00:00Z', note: 'Synthetic multi-store request accepted by the isolated demo workflow.' },
+      { toStage: 'qualification', createdAt: '2026-08-31T15:05:00Z', note: 'Three fictional licenses and QuickBooks identities recorded.' },
+      { toStage: 'terms', createdAt: '2026-08-31T15:10:00Z', note: 'Demo commercial terms recorded without a live price publication.' },
+      { toStage: 'account_creation', createdAt: '2026-08-31T15:15:00Z', note: 'Synthetic retailer account linked.' },
+      { toStage: 'access', createdAt: '2026-08-31T15:20:00Z', note: 'Owner, Buyer, and Budtender access scoped to the demo stores.' },
+      { toStage: 'ready', createdAt: '2026-08-31T15:25:00Z', note: 'All demo gates passed; the organization is ready for an isolated test order.' }
+    ],
+    note: 'Synthetic end-to-end record: QuickBooks-linked organization, three qualified stores, owner profile, scoped buyer, store-assigned budtender and paired kiosk.' },
   { org: 'Cedar & Pine Provisions', licenses: '2 locations · OCM-RETL-24-000871, OCM-RETL-24-000872', stage: 5, note: 'Owner invited 21 Aug. Waiting on the owner to accept and add their buyers.' },
   { org: 'Harborline Cannabis Co.', licenses: '1 location · OCM-RETL-24-000904', stage: 3, note: 'Held at commercial terms — no per-account rate card record exists, so no price can be assigned.' },
   { org: 'Marigold Street Dispensary', licenses: '4 locations · 3 qualified, 1 pending', stage: 2, note: 'One license failed qualification against the state record. The other three proceed; that location cannot order.' },
@@ -3389,7 +3425,8 @@ function buildCanixCatalog(data) {
 
 const QUICKBOOKS_DEMO_ACCOUNTS = [
   { id: 'qbo:customer:demo-001', name: DEMO_ORG, company: DEMO_ORG, active: true,
-    balance: 0, currency: 'USD', source: 'QuickBooks demo customer', portalStatus: 'READY TO ORDER', locations: 3, demo: true },
+    balance: 0, currency: 'USD', source: 'QuickBooks demo customer', portalStatus: 'ready_to_order', locations: 3,
+    portalAccountId: 'demo-retailer-001', quickbooksCustomerId: 'demo-001', demo: true },
   { id: 'qbo:customer:demo-002', name: 'Demo Multi-Store Markets', company: 'Demo Multi-Store Markets', active: true,
     balance: 2840, currency: 'USD', source: 'QuickBooks demo customer', portalStatus: 'CREDIT REVIEW', locations: 3, demo: true },
   { id: 'qbo:customer:demo-003', name: 'Demo Inactive Retailer', company: 'Demo Inactive Retailer', active: false,
@@ -3643,7 +3680,7 @@ class Component extends DCLogic {
     retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
     accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
     accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
-    onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
+    onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
     onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
     kioskMode: 'counter', kioskSearch: '', lineagePackage: null, lineageSearch: '', lineageCoa: 'all',
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
@@ -4265,7 +4302,7 @@ class Component extends DCLogic {
       retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
       accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
       accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
-      onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
+      onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
       onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
       outbox: [], requests: [], account: null
@@ -7739,9 +7776,9 @@ class Component extends DCLogic {
       const searchText = item.searchText || [item.org, item.licenses, item.note].join(' ').toLowerCase();
       return stageMatch && (!onboardingNeedle || searchText.includes(onboardingNeedle));
     });
-    const selectedOnboarding = !loc.demo
-      ? s.retailerOnboarding.find(request => request.id === s.onboardingSelectedId) || null
-      : null;
+    const selectedOnboarding = loc.demo
+      ? onboardingSourceAll.find(request => request.id === s.onboardingSelectedId) || null
+      : s.retailerOnboarding.find(request => request.id === s.onboardingSelectedId) || null;
     const onboardingNextStage = selectedOnboarding ? ({ intake: 'qualification', qualification: 'terms', terms: 'account_creation', account_creation: 'access', access: 'ready' }[selectedOnboarding.stage] || null) : null;
     const onboardingStageLabel = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
     const selectedOnboardingAccount = selectedOnboarding
@@ -7756,6 +7793,52 @@ class Component extends DCLogic {
       label: (account.name || account.company || 'Unnamed QuickBooks customer')
         + (String(account.quickbooksCustomerId || '') === selectedOnboardingRootQboId ? ' · account' : ' · child')
     })) : [];
+    const requestedOnboardingPanel = ['queue', 'workflow', 'stores', 'access', 'history'].includes(s.onboardingPanel)
+      ? s.onboardingPanel : 'queue';
+    const onboardingPanel = selectedOnboarding || requestedOnboardingPanel === 'queue'
+      ? requestedOnboardingPanel : 'queue';
+    const selectedOnboardingStores = selectedOnboarding && Array.isArray(selectedOnboarding.stores)
+      ? selectedOnboarding.stores : [];
+    const selectedOnboardingPeople = selectedOnboarding && Array.isArray(selectedOnboarding.people)
+      ? selectedOnboarding.people : [];
+    const selectedOnboardingEvents = selectedOnboarding && Array.isArray(selectedOnboarding.events)
+      ? selectedOnboarding.events : [];
+    const onboardingLocationCount = onboardingSourceAll.reduce((total, request) =>
+      total + (Array.isArray(request.stores) ? request.stores.length : Number(String(request.licenses || '').split('location')[0]) || 0), 0);
+    const onboardingPeopleCount = onboardingSourceAll.reduce((total, request) =>
+      total + (Array.isArray(request.people) ? request.people.length : 0), 0);
+    const onboardingReconciliationCount = onboardingSourceAll.filter(request =>
+      request.workflowState && request.workflowState !== 'accepted').length;
+    const onboardingReadyCount = onboardingSourceAll.filter(request =>
+      request.stage === 'ready' || request.stage === 6).length;
+    const selectedReviewedStores = selectedOnboardingStores.filter(store =>
+      ['qualified', 'rejected'].includes(String(store.qualificationStatus || ''))).length;
+    const selectedQualifiedStores = selectedOnboardingStores.filter(store =>
+      String(store.qualificationStatus || '') === 'qualified').length;
+    const selectedInvitedPeople = selectedOnboardingPeople.filter(person =>
+      ['invited', 'active'].includes(String(person.accessStatus || ''))).length;
+    const selectedStageNumber = selectedOnboarding
+      ? onboardingStageNumber[selectedOnboarding.stage] || Number(selectedOnboarding.stage) || 1 : 0;
+    const onboardingCheck = (pass, label, detail) => ({
+      state: pass ? 'READY' : 'WAITING', label, detail,
+      style: 'display:inline-block;white-space:nowrap;font:700 8.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:'
+        + (pass ? 'var(--ux-accent)' : 'var(--ux-signal-tint)') + ';color:' + (pass ? '#fff' : 'var(--ux-signal-text)')
+    });
+    const onboardingReadinessChecks = selectedOnboarding ? [
+      onboardingCheck(selectedOnboarding.workflowState === 'accepted', 'Monday intake',
+        selectedOnboarding.workflowState === 'accepted' ? 'Durable request accepted.' : 'Reconciliation must finish before qualification.'),
+      onboardingCheck(!!selectedOnboarding.retailerAccountId, 'QuickBooks identity',
+        selectedOnboarding.retailerAccountId ? 'Linked to one portal retailer account.' : 'Choose the verified parent QuickBooks customer.'),
+      onboardingCheck(selectedOnboardingStores.length > 0 && selectedReviewedStores === selectedOnboardingStores.length && selectedQualifiedStores > 0,
+        'Store licenses', selectedReviewedStores + ' of ' + selectedOnboardingStores.length + ' reviewed · ' + selectedQualifiedStores + ' qualified.'),
+      onboardingCheck(selectedStageNumber >= 5, 'Portal stores',
+        selectedStageNumber >= 5 ? 'Qualified locations were materialized.' : 'Created only when the request enters Access.'),
+      onboardingCheck(selectedOnboardingPeople.length > 0 && selectedInvitedPeople === selectedOnboardingPeople.length,
+        'User access', selectedInvitedPeople + ' of ' + selectedOnboardingPeople.length + ' invited or active.'),
+      onboardingCheck(!!selectedOnboardingAccount && selectedOnboardingAccount.portalStatus === 'ready_to_order',
+        'Order readiness', selectedOnboardingAccount && selectedOnboardingAccount.portalStatus === 'ready_to_order'
+          ? 'Account is explicitly ready; each store still enforces its own gates.' : 'Set the linked account and at least one qualified store to ready.')
+    ] : [];
 
     const validationGroups = VALIDATION.map(g => ({
       cls: g.cls, closedBy: g.closedBy,
@@ -9204,14 +9287,43 @@ class Component extends DCLogic {
           }))
         };
       })(),
+      onboardingKpis: [
+        { label: 'OPEN REQUESTS', value: String(onboardingSourceAll.length - onboardingReadyCount), note: 'Not yet ready to order' },
+        { label: 'LOCATIONS', value: String(onboardingLocationCount), note: 'Across current requests' },
+        { label: 'PEOPLE', value: String(onboardingPeopleCount), note: 'Requested portal access' },
+        { label: 'NEEDS RECONCILIATION', value: String(onboardingReconciliationCount), note: 'Monday response incomplete' }
+      ],
+      onboardingPanels: [
+        ['queue', 'Requests', onboardingSourceAll.length],
+        ['workflow', 'Workflow', selectedOnboarding ? String(selectedStageNumber).padStart(2, '0') : '\u2014'],
+        ['stores', 'Stores', selectedOnboardingStores.length],
+        ['access', 'Access', selectedOnboardingPeople.length],
+        ['history', 'History', selectedOnboardingEvents.length]
+      ].map(([id, label, count]) => {
+        const disabled = id !== 'queue' && !selectedOnboarding;
+        return { id, label, count: String(count), pressed: onboardingPanel === id ? 'true' : 'false',
+          disabled: disabled ? 'true' : 'false',
+          style: 'background:' + (onboardingPanel === id ? 'var(--ux-ink)' : 'transparent') + ';color:'
+            + (onboardingPanel === id ? 'var(--ux-ground)' : disabled ? 'var(--ux-faint)' : 'var(--ux-ink)')
+            + ';border:0;border-right:1px solid rgba(23,14,11,.2);padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:'
+            + (disabled ? 'not-allowed' : 'pointer') + ';white-space:nowrap',
+          onPick: () => { if (!disabled) this.set({ onboardingPanel: id }); }
+        };
+      }),
+      onboardingViewQueue: onboardingPanel === 'queue',
+      onboardingViewWorkflow: onboardingPanel === 'workflow' && !!selectedOnboarding,
+      onboardingViewStores: onboardingPanel === 'stores' && !!selectedOnboarding,
+      onboardingViewAccess: onboardingPanel === 'access' && !!selectedOnboarding,
+      onboardingViewHistory: onboardingPanel === 'history' && !!selectedOnboarding,
       onboarding: onboardingSource.map(o => ({ ...o,
         stageLabel: String(o.stage).padStart(2, '0') + ' \u00b7 ' + ONBOARDING_STAGES[o.stage - 1],
         stageStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
           + (o.stage >= 5 ? 'var(--ux-accent);color:#fff' : o.stage <= 2 ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
-        canOpen: !loc.demo && !!o.id,
+        canOpen: !!o.id,
         onOpen: () => {
-          const request = s.retailerOnboarding.find(item => item.id === o.id);
-          this.set({ onboardingSelectedId: o.id, onboardingAccountDraft: request && request.retailerAccountId ? request.retailerAccountId : '', onboardingNote: '', onboardingStoreDetailsDrafts: {} });
+          const request = loc.demo ? onboardingSourceAll.find(item => item.id === o.id)
+            : s.retailerOnboarding.find(item => item.id === o.id);
+          this.set({ onboardingSelectedId: o.id, onboardingPanel: 'workflow', onboardingAccountDraft: request && request.retailerAccountId ? request.retailerAccountId : '', onboardingNote: '', onboardingStoreDetailsDrafts: {} });
         } })),
       onboardingSearch: s.onboardingSearch,
       onOnboardingSearch: e => this.set({ onboardingSearch: e.target.value }),
@@ -9230,16 +9342,28 @@ class Component extends DCLogic {
       onboardingHasSelection: !!selectedOnboarding,
       onboardingDetailId: selectedOnboarding ? selectedOnboarding.id : '',
       onboardingDetailName: selectedOnboarding ? (selectedOnboarding.dba || selectedOnboarding.legalEntity || 'Unnamed retailer') : '',
-      onboardingDetailMeta: selectedOnboarding ? onboardingStageLabel(selectedOnboarding.stage) + ' · Monday ' + String(selectedOnboarding.workflowState || 'pending').replace(/_/g, ' ') + ' · submitted ' + this.orderEventDate(selectedOnboarding.submittedAt) : '',
-      onCloseOnboardingDetail: () => this.set({ onboardingSelectedId: null, onboardingAccountDraft: '', onboardingNote: '', onboardingStoreDetailsDrafts: {} }),
+      onboardingDetailMeta: selectedOnboarding ? (ONBOARDING_STAGES[selectedStageNumber - 1] || onboardingStageLabel(selectedOnboarding.stage)) + ' · Monday ' + String(selectedOnboarding.workflowState || 'pending').replace(/_/g, ' ') + ' · submitted ' + this.orderEventDate(selectedOnboarding.submittedAt) : '',
+      onCloseOnboardingDetail: () => this.set({ onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingStoreDetailsDrafts: {} }),
+      onboardingStageRail: ONBOARDING_STAGES.map((label, index) => ({ number: String(index + 1).padStart(2, '0'), label,
+        style: 'min-width:105px;padding:9px 10px;border-right:1px solid rgba(23,14,11,.14);background:'
+          + (index + 1 === selectedStageNumber ? 'var(--ux-ink)' : index + 1 < selectedStageNumber ? 'var(--ux-surface)' : '#fff')
+          + ';color:' + (index + 1 === selectedStageNumber ? 'var(--ux-ground)' : 'var(--ux-muted-strong)') })),
+      onboardingReadinessChecks,
+      onboardingStoreSummary: selectedReviewedStores + ' of ' + selectedOnboardingStores.length + ' reviewed · '
+        + selectedQualifiedStores + ' qualified · ' + selectedOnboardingStores.length + ' of 10 requested',
+      onboardingRoleRules: [
+        { role: 'Store Owner', scope: 'Every qualified store in the retailer organization.' },
+        { role: 'Buyer', scope: 'Only the qualified stores assigned in this request.' },
+        { role: 'Budtender', scope: 'Exactly one qualified store; never organization-wide.' }
+      ],
       onboardingAccountValue: s.onboardingAccountDraft || (selectedOnboarding && selectedOnboarding.retailerAccountId) || '',
       onOnboardingAccount: e => this.set({ onboardingAccountDraft: e.target.value }),
-      onboardingAccountOptions: s.retailerAccounts.filter(account => !account.demo && account.portalAccountId).map(account => ({
+      onboardingAccountOptions: s.retailerAccounts.filter(account => account.portalAccountId && (loc.demo ? account.demo : !account.demo)).map(account => ({
         id: account.portalAccountId,
         label: (account.name || account.company || account.organizationName || 'Unnamed account') + ' · ' + String(account.portalStatus || 'not qualified').replace(/_/g, ' ')
       })),
       onboardingLinkLabel: s.onboardingActionPending === 'link-onboarding-account' ? 'Linking\u2026' : selectedOnboarding && selectedOnboarding.retailerAccountId ? 'Update link' : 'Link account',
-      onboardingCanLinkAccount: !!selectedOnboarding && !['access', 'ready', 'rejected', 'closed'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
+      onboardingCanLinkAccount: !loc.demo && !!selectedOnboarding && !['access', 'ready', 'rejected', 'closed'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
       onLinkOnboardingAccount: () => this.linkOnboardingAccount(selectedOnboarding),
       onboardingHasLinkedAccount: !!(selectedOnboarding && selectedOnboarding.retailerAccountId),
       onOpenOnboardingRetailer: () => this.openOnboardingRetailer(selectedOnboarding),
@@ -9263,7 +9387,7 @@ class Component extends DCLogic {
         onSaveSetup: () => this.saveOnboardingStoreDetails(selectedOnboarding, store),
         statusLabel: String(store.qualificationStatus || 'pending').toUpperCase(),
         statusStyle: 'font:600 9.5px ui-monospace,monospace;padding:3px 7px;background:' + (store.qualificationStatus === 'qualified' ? 'var(--ux-accent)' : store.qualificationStatus === 'rejected' ? 'var(--ux-signal)' : 'var(--ux-surface)') + ';color:' + (store.qualificationStatus === 'pending' ? 'var(--ux-muted-strong)' : '#fff'),
-        canReview: selectedOnboarding.stage === 'qualification' && selectedOnboarding.workflowState === 'accepted' && !s.onboardingActionPending,
+        canReview: !loc.demo && selectedOnboarding.stage === 'qualification' && selectedOnboarding.workflowState === 'accepted' && !s.onboardingActionPending,
         onQualify: () => this.qualifyOnboardingStore(selectedOnboarding, store, 'qualified'),
         onReject: () => this.qualifyOnboardingStore(selectedOnboarding, store, 'rejected')
       })) : [],
@@ -9272,16 +9396,16 @@ class Component extends DCLogic {
         store: person.storeLicense ? ' · ' + person.storeLicense : '',
         statusLabel: String(person.accessStatus || 'pending').toUpperCase(),
         statusStyle: 'font:600 9.5px ui-monospace,monospace;padding:3px 7px;background:' + (person.accessStatus === 'invited' || person.accessStatus === 'active' ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (person.accessStatus === 'invited' || person.accessStatus === 'active' ? '#fff' : 'var(--ux-muted-strong)'),
-        canInvite: selectedOnboarding.stage === 'access' && selectedOnboarding.workflowState === 'accepted' && !['invited', 'active'].includes(person.accessStatus) && !s.onboardingActionPending,
+        canInvite: !loc.demo && selectedOnboarding.stage === 'access' && selectedOnboarding.workflowState === 'accepted' && !['invited', 'active'].includes(person.accessStatus) && !s.onboardingActionPending,
         inviteLabel: s.onboardingActionPending === 'person:' + person.id ? 'Inviting\u2026' : 'Invite access',
         onInvite: () => this.inviteOnboardingPerson(selectedOnboarding, person)
       })) : [],
       onboardingNote: s.onboardingNote,
       onOnboardingNote: e => this.set({ onboardingNote: e.target.value }),
-      onboardingCanAdvance: !!selectedOnboarding && selectedOnboarding.workflowState === 'accepted' && !!onboardingNextStage && !s.onboardingActionPending,
+      onboardingCanAdvance: !loc.demo && !!selectedOnboarding && selectedOnboarding.workflowState === 'accepted' && !!onboardingNextStage && !s.onboardingActionPending,
       onboardingAdvanceLabel: s.onboardingActionPending === 'advance-onboarding' ? 'Saving\u2026' : onboardingNextStage ? 'Advance to ' + onboardingStageLabel(onboardingNextStage) : 'Complete',
       onAdvanceOnboarding: () => this.advanceOnboarding(selectedOnboarding, onboardingNextStage),
-      onboardingCanReject: !!selectedOnboarding && selectedOnboarding.workflowState === 'accepted' && !['ready', 'rejected', 'closed'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
+      onboardingCanReject: !loc.demo && !!selectedOnboarding && selectedOnboarding.workflowState === 'accepted' && !['ready', 'rejected', 'closed'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
       onRejectOnboarding: () => this.advanceOnboarding(selectedOnboarding, 'rejected'),
       onboardingDetailEvents: selectedOnboarding && Array.isArray(selectedOnboarding.events) ? selectedOnboarding.events.map(event => ({
         stage: onboardingStageLabel(event.toStage), when: this.orderEventDate(event.createdAt), note: event.note || 'Workflow updated by ' + (event.actorEmail || event.source || 'system')

@@ -92,6 +92,20 @@ Requests cannot skip or move backward through stages. Rejection requires a note.
 
 The operations queue loads independently from the QuickBooks customer list. A QuickBooks outage can prevent account linking, but it does not hide durable onboarding requests or their reconciliation state. Operators can search the queue and filter it by stage.
 
+### Compact operator workspace
+
+The Store onboarding screen separates the operator workload into five switchable sections instead of rendering the entire account at once:
+
+- **Requests** keeps the searchable, stage-filtered queue in a bounded scrolling region.
+- **Workflow** shows the six-stage rail, QuickBooks account link, readiness gates, review note, and only the currently valid advance/reject actions.
+- **Stores** contains the QuickBooks child-customer mapping, license expiration, evidence save, and license qualification controls for up to ten locations.
+- **Access** states the Owner, Buyer, and Budtender scoping rules next to the requested-user invitation controls.
+- **History** contains the workflow events and protected-record boundary.
+
+Selecting a request opens Workflow first. Returning to Requests clears the selected record, and detail sections cannot be opened without a selected request. Summary counts expose open requests, requested locations, requested users, and Monday reconciliation exceptions without requiring operators to open each record.
+
+Cannabis Store (DEMO) includes a complete read-only three-store onboarding record with a synthetic QuickBooks parent, three qualified store identities, Owner/Buyer/Budtender scope, and six-stage event history. It can be used to demonstrate and inspect the end state without creating a retailer, sending an invitation, changing QuickBooks, or writing to Monday.
+
 ## Verification
 
 - Link an active QuickBooks customer and confirm the customer record itself is unchanged.
