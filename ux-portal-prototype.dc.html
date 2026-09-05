@@ -3453,7 +3453,7 @@ function readRecovery() {
 const RECOVERY = readRecovery();
 
 function readSsoReturn() {
-  const out = { token: null, err: null };
+  const out = { token: null, refreshToken: null, err: null };
   if (typeof location === 'undefined' || !location.hash) return out;
   const h = new URLSearchParams(location.hash.slice(1));
   if (h.get('type') === 'recovery') return out;
@@ -3462,6 +3462,7 @@ function readSsoReturn() {
     return out;
   }
   if (h.get('access_token')) out.token = h.get('access_token');
+  if (h.get('refresh_token')) out.refreshToken = h.get('refresh_token');
   return out;
 }
 const SSO_RETURN = readSsoReturn();
@@ -3518,9 +3519,10 @@ function pwnedCount(password) {
 class Component extends DCLogic {
   state = {
     deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null, auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
-    token: null, auLocs: [], auLocOpen: false, pwNotice: null,
+    token: null, refreshToken: null, auLocs: [], auLocOpen: false, pwNotice: null,
     mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '',
     mfaCode: '', mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
+    mfaRefreshToken: null,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
     onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
@@ -3833,6 +3835,69 @@ class Component extends DCLogic {
       ...(json ? { 'Content-Type': 'application/json' } : {}) };
   }
 
+  clearSessionRefresh() {
+    if (this._sessionRefreshTimer) clearTimeout(this._sessionRefreshTimer);
+    this._sessionRefreshTimer = null;
+  }
+
+  scheduleSessionRefresh(token, refreshToken) {
+    this.clearSessionRefresh();
+    if (!token || !refreshToken) return;
+    const expiresAt = Number(portalJwtClaims(token).exp || 0) * 1000;
+    const delay = Math.max(30000, expiresAt - Date.now() - 5 * 60 * 1000);
+    this._sessionRefreshTimer = setTimeout(() => {
+      this.refreshSession(true).catch(() => this.expireSession());
+    }, delay);
+  }
+
+  expireSession() {
+    this.signOut();
+    this.set({ loginErr: 'Your secure session expired. Sign in again to continue.' });
+  }
+
+  refreshSession(force) {
+    const token = this.state.token;
+    const refreshToken = this.state.refreshToken;
+    const expiresAt = Number(portalJwtClaims(token).exp || 0) * 1000;
+    if (!force && token && expiresAt > Date.now() + 5 * 60 * 1000) return Promise.resolve(token);
+    if (!refreshToken) return Promise.reject(new Error('session refresh unavailable'));
+    if (this._sessionRefreshPromise) return this._sessionRefreshPromise;
+    this._sessionRefreshPromise = fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
+      .then(({ ok, body }) => {
+        const upgraded = body.access_token || (body.session && body.session.access_token);
+        const rotated = body.refresh_token || (body.session && body.session.refresh_token) || refreshToken;
+        if (!ok || !upgraded || (MFA_REQUIRED && portalJwtClaims(upgraded).aal !== 'aal2')) {
+          throw new Error('session refresh rejected');
+        }
+        return new Promise(resolve => this.setState({ token: upgraded, refreshToken: rotated }, () => {
+          this.scheduleSessionRefresh(upgraded, rotated);
+          resolve(upgraded);
+        }));
+      })
+      .finally(() => { this._sessionRefreshPromise = null; });
+    return this._sessionRefreshPromise;
+  }
+
+  portalFetch(url, options) {
+    const request = token => {
+      const baseHeaders = (options && options.headers) || {};
+      const headers = { ...baseHeaders };
+      if (token) headers.Authorization = 'Bearer ' + token;
+      return fetch(url, { ...(options || {}), headers });
+    };
+    return request(this.state.token).then(response => {
+      if (![401, 403].includes(response.status) || !this.state.refreshToken) return response;
+      return this.refreshSession(true).then(request).catch(error => {
+        this.expireSession();
+        throw error;
+      });
+    });
+  }
+
   authenticatedUser(token) {
     return fetch(SUPABASE_URL + '/auth/v1/user', { headers: this.authHeaders(token, false) })
       .then(r => r.json().catch(() => ({})).then(user => ({ ok: r.ok, user: user || {} })))
@@ -3842,30 +3907,31 @@ class Component extends DCLogic {
       });
   }
 
-  finishVerifiedLogin(token, emailHint, weak, sso) {
+  finishVerifiedLogin(token, emailHint, weak, sso, refreshToken) {
     if (MFA_REQUIRED && portalJwtClaims(token).aal !== 'aal2') return Promise.reject(new Error('mfa required'));
     return this.portalIdentity(token, emailHint, weak).then(identity => {
       if (sso && (!identity.email.endsWith('@' + SSO_DOMAIN) || identity.me.role !== 'internal')) {
         throw new Error('domain');
       }
-      this.finishLoginIdentity(identity);
+      this.finishLoginIdentity({ ...identity, refreshToken: refreshToken || null });
       return identity;
     });
   }
 
-  beginAuthenticatedSession(token, emailHint, weak, sso) {
+  beginAuthenticatedSession(token, emailHint, weak, sso, refreshToken) {
     return this.authenticatedUser(token).then(user => {
       const email = String(user.email || emailHint || '').trim().toLowerCase();
       if (sso && !email.endsWith('@' + SSO_DOMAIN)) throw new Error('domain');
       if (!MFA_REQUIRED || portalJwtClaims(token).aal === 'aal2') {
-        return this.finishVerifiedLogin(token, email, weak, sso);
+        return this.finishVerifiedLogin(token, email, weak, sso, refreshToken);
       }
       const factors = Array.isArray(user.factors) ? user.factors : [];
       const verified = factors.find(factor => factor && factor.factor_type === 'totp' && factor.status === 'verified');
       if (verified && verified.id) {
         this.set({ screen: 'mfa', loginBusy: false, ssoBusy: false, mfaToken: token,
           mfaFactorId: verified.id, mfaStage: 'challenge', mfaQr: '', mfaSecret: '', mfaCode: '',
-          mfaError: null, mfaBusy: false, mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso });
+          mfaError: null, mfaBusy: false, mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso,
+          mfaRefreshToken: refreshToken || null });
         return null;
       }
       const unverified = factors.filter(factor => factor && factor.factor_type === 'totp'
@@ -3881,7 +3947,8 @@ class Component extends DCLogic {
           this.set({ screen: 'mfa', loginBusy: false, ssoBusy: false, mfaToken: token,
             mfaFactorId: body.id, mfaStage: 'enroll', mfaQr: totpQrSource(body.totp.qr_code),
             mfaSecret: String(body.totp.secret), mfaCode: '', mfaError: null, mfaBusy: false,
-            mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso });
+            mfaEmail: email, mfaWeak: weak || null, mfaSso: !!sso,
+            mfaRefreshToken: refreshToken || null });
           return null;
         });
     });
@@ -3910,7 +3977,8 @@ class Component extends DCLogic {
       .then(({ ok, body }) => {
         const upgraded = body.access_token || (body.session && body.session.access_token);
         if (!ok || !upgraded || portalJwtClaims(upgraded).aal !== 'aal2') throw new Error('verify');
-        return this.finishVerifiedLogin(upgraded, s.mfaEmail, s.mfaWeak, s.mfaSso);
+        return this.finishVerifiedLogin(upgraded, s.mfaEmail, s.mfaWeak, s.mfaSso,
+          body.refresh_token || (body.session && body.session.refresh_token) || s.mfaRefreshToken);
       })
       .catch(error => this.setState({ mfaBusy: false, mfaCode: '',
         mfaError: error && error.message === 'domain'
@@ -3926,7 +3994,7 @@ class Component extends DCLogic {
     if (token) fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: this.authHeaders(token, false) }).catch(() => {});
     this.set({ screen: 'signin', loginBusy: false, ssoBusy: false, mfaToken: null, mfaFactorId: null,
       mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '', mfaError: null, mfaBusy: false,
-      mfaEmail: '', mfaWeak: null, mfaSso: false });
+      mfaEmail: '', mfaWeak: null, mfaSso: false, mfaRefreshToken: null });
   }
 
   portalIdentity(token, emailHint, weak) {
@@ -3964,14 +4032,16 @@ class Component extends DCLogic {
       });
   }
 
-  finishLoginIdentity({ me, token, email, weak, permissions }) {
+  finishLoginIdentity({ me, token, email, weak, permissions, refreshToken }) {
     const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
     this.set({ loginBusy: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
-      loginUser: '', loginPass: '', token: token, pwNotice: weak || null,
+      loginUser: '', loginPass: '', token: token, refreshToken: refreshToken || null, pwNotice: weak || null,
       mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
-      mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false });
+      mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
+      mfaRefreshToken: null });
     this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
       staffRole: me.staff_role || null, permissions: Array.isArray(permissions) ? permissions : [] });
+    this.scheduleSessionRefresh(token, refreshToken || null);
   }
 
   startSso() {
@@ -4007,7 +4077,7 @@ class Component extends DCLogic {
       .then(({ ok, tok }) => {
         if (!ok || !tok.access_token) throw new Error(tok.error_code === 'weak_password' ? 'weak' : 'rejected');
         const weak = tok.weak_password ? (tok.weak_password.message || 'It no longer meets this portal\u2019s password rules.') : null;
-        return this.beginAuthenticatedSession(tok.access_token, email, weak, false);
+        return this.beginAuthenticatedSession(tok.access_token, email, weak, false, tok.refresh_token || null);
       })
       .catch(e => this.setState({ loginBusy: false, loginPass: '', loginInvalidField: null,
         loginErr: e && e.message === 'weak'
@@ -4059,6 +4129,7 @@ class Component extends DCLogic {
   }
 
   signOut() {
+    this.clearSessionRefresh();
     const u = this.state.authUser;
     if (u) this.logAudit('Signed out', u.name, 'Session ended.', u.name);
     const token = this.state.token;
@@ -4071,10 +4142,11 @@ class Component extends DCLogic {
       if (PRODUCTS[index].source === 'Canix' || PRODUCTS[index].source === 'Portal order') PRODUCTS.splice(index, 1);
     }
     this.set({
-      authUser: null, token: null, screen: 'signin', order: null, confirmed: null, toast: null,
+      authUser: null, token: null, refreshToken: null, screen: 'signin', order: null, confirmed: null, toast: null,
       loginErr: null, loginInvalidField: null, impersonating: null,
       mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
       mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
+      mfaRefreshToken: null,
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
@@ -4376,7 +4448,7 @@ class Component extends DCLogic {
     this.set({ inventoryLoading: true, inventoryError: null });
     const headers = { 'Accept': 'application/json' };
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    fetch(CANIX_INVENTORY_API, { method: 'GET', headers, credentials: 'same-origin' })
+    this.portalFetch(CANIX_INVENTORY_API, { method: 'GET', headers, credentials: 'same-origin' })
       .then(r => {
         if (!r.ok) throw new Error('Inventory endpoint returned ' + r.status + '.');
         return r.json();
@@ -4420,7 +4492,7 @@ class Component extends DCLogic {
     if (!this.requirePermission('inventory.sync', 'synchronize the Canix Item Master')) return;
     if (this.state.itemMasterSyncPending) return;
     this.set({ itemMasterSyncPending: true, inventoryError: null });
-    fetch(CANIX_ITEM_MASTER_API + '?force=true', { method: 'POST', credentials: 'same-origin',
+    this.portalFetch(CANIX_ITEM_MASTER_API + '?force=true', { method: 'POST', credentials: 'same-origin',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + (this.state.token || '') }, body: JSON.stringify({ source: 'administrator' }) })
       .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
@@ -4439,7 +4511,7 @@ class Component extends DCLogic {
     if (!this.requirePermission('inventory.sync', 'synchronize the Monday lot register')) return;
     if (this.state.lotSyncPending) return;
     this.set({ lotSyncPending: true, inventoryError: null });
-    fetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
+    this.portalFetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
       headers: { 'Accept': 'application/json', 'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + (this.state.token || '') } })
       .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
@@ -4460,7 +4532,7 @@ class Component extends DCLogic {
     if (!this.requirePermission('inventory.sync', 'stage unknown Canix lots for Monday review')) return;
     if (this.state.lotStagePending) return;
     this.set({ lotStagePending: true, inventoryError: null });
-    fetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
+    this.portalFetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
         'Authorization': 'Bearer ' + (this.state.token || '') },
       body: JSON.stringify({ action: 'stage-unknown-lots' }) })
@@ -4481,7 +4553,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY,
       'Authorization': 'Bearer ' + (this.state.token || '') };
     if (body) headers['Content-Type'] = 'application/json';
-    return fetch(ECONOMIC_OWNERSHIP_API, { method, headers, body: body ? JSON.stringify(body) : undefined })
+    return this.portalFetch(ECONOMIC_OWNERSHIP_API, { method, headers, body: body ? JSON.stringify(body) : undefined })
       .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
       .then(({ ok, status, payload }) => {
         if (!ok) throw new Error((payload && payload.error) || ('Economic ownership endpoint returned ' + status + '.'));
@@ -4685,7 +4757,7 @@ class Component extends DCLogic {
     if (!this.state.authUser || this.state.catalogLoading) return;
     const headers = { 'Accept': 'application/json', 'Authorization': 'Bearer ' + (this.state.token || '') };
     this.set({ catalogLoading: true, catalogError: null });
-    fetch(CANIX_CATALOG_API, { method: 'GET', headers })
+    this.portalFetch(CANIX_CATALOG_API, { method: 'GET', headers })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Canix catalog endpoint returned ' + status + '.'));
@@ -4721,14 +4793,14 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY };
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
     this.set({ retailerAccountsLoading: true, retailerAccountsError: null });
-    const qboRequest = fetch(QUICKBOOKS_ACCOUNTS_API, { method: force ? 'POST' : 'GET', headers })
+    const qboRequest = this.portalFetch(QUICKBOOKS_ACCOUNTS_API, { method: force ? 'POST' : 'GET', headers })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('QuickBooks account endpoint returned ' + status + '.'));
         if (!Array.isArray(body.accounts)) throw new Error('QuickBooks account endpoint returned an incomplete response.');
         return body.accounts;
       });
-    const portalRequest = fetch(PORTAL_RETAILERS_API, { method: 'GET', headers })
+    const portalRequest = this.portalFetch(PORTAL_RETAILERS_API, { method: 'GET', headers })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Retailer operations endpoint returned ' + status + '.'));
@@ -4754,13 +4826,13 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + s.token };
     this.set({ financialLoading: true, financialError: null });
     const syncFirst = force && s.role === 'internal' && this.hasPermission('accounts.manage')
-      ? fetch(QUICKBOOKS_ACCOUNTS_API, { method: 'POST', headers })
+      ? this.portalFetch(QUICKBOOKS_ACCOUNTS_API, { method: 'POST', headers })
         .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
         .then(({ ok, status, body }) => {
           if (!ok) throw new Error((body && body.error) || ('QuickBooks refresh returned ' + status + '.'));
         })
       : Promise.resolve();
-    return syncFirst.then(() => fetch(QUICKBOOKS_FINANCIALS_API, { method: 'GET', headers }))
+    return syncFirst.then(() => this.portalFetch(QUICKBOOKS_FINANCIALS_API, { method: 'GET', headers }))
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('QuickBooks financial endpoint returned ' + status + '.'));
@@ -4776,7 +4848,7 @@ class Component extends DCLogic {
   retailerCall(action, payload) {
     const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'apikey': SUPABASE_KEY };
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_RETAILERS_API, { method: 'POST', headers, body: JSON.stringify({ action, ...payload }) })
+    return this.portalFetch(PORTAL_RETAILERS_API, { method: 'POST', headers, body: JSON.stringify({ action, ...payload }) })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Retailer account service returned ' + status + '.'));
@@ -4895,7 +4967,7 @@ class Component extends DCLogic {
   portalAdmin(action, payload) {
     const headers = { 'Content-Type': 'application/json' };
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_ADMIN_API, { method: 'POST', headers, body: JSON.stringify({ action, ...payload }) })
+    return this.portalFetch(PORTAL_ADMIN_API, { method: 'POST', headers, body: JSON.stringify({ action, ...payload }) })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Access service returned ' + status + '.'));
@@ -4949,7 +5021,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json' };
     if (payload) headers['Content-Type'] = 'application/json';
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_PRICING_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
+    return this.portalFetch(PORTAL_PRICING_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Pricing service returned ' + status + '.'));
@@ -4961,7 +5033,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json' };
     if (payload) headers['Content-Type'] = 'application/json';
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_ORDER_POLICY_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
+    return this.portalFetch(PORTAL_ORDER_POLICY_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Order policy service returned ' + status + '.'));
@@ -4975,7 +5047,7 @@ class Component extends DCLogic {
     if (s.role !== 'internal' || !this.hasPermission('readiness.read')) return Promise.resolve();
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + s.token };
     this.set({ readinessLoading: true, readinessError: null });
-    return fetch(PORTAL_READINESS_API, { method: 'GET', headers })
+    return this.portalFetch(PORTAL_READINESS_API, { method: 'GET', headers })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Readiness service returned ' + status + '.'));
@@ -4992,7 +5064,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ quickBooksConnecting: true, quickBooksConnectionError: null });
-    return fetch(QUICKBOOKS_OAUTH_API, { method: 'POST', headers, body: '{}' })
+    return this.portalFetch(QUICKBOOKS_OAUTH_API, { method: 'POST', headers, body: '{}' })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('QuickBooks connection service returned ' + status + '.'));
@@ -5008,7 +5080,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ mondayConnecting: true, mondayConnectionError: null });
-    return fetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: '{}' })
+    return this.portalFetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: '{}' })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.authorizationUrl) throw new Error((body && body.error) || ('Monday connection service returned ' + status + '.'));
@@ -5024,7 +5096,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ mondayConnecting: true, mondayConnectionError: null });
-    return fetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: JSON.stringify({ action: 'refresh-webhook' }) })
+    return this.portalFetch(MONDAY_OAUTH_API, { method: 'POST', headers, body: JSON.stringify({ action: 'refresh-webhook' }) })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.webhookId) throw new Error((body && body.error) || ('Monday webhook service returned ' + status + '.'));
@@ -5043,7 +5115,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (s.token) headers.Authorization = 'Bearer ' + s.token;
     this.set({ mondayCatalogSyncing: true, mondayConnectionError: null });
-    return fetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify({ action: 'sync-monday' }) })
+    return this.portalFetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify({ action: 'sync-monday' }) })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok || !body.summary) throw new Error((body && body.error) || ('Monday catalog service returned ' + status + '.'));
@@ -5066,7 +5138,7 @@ class Component extends DCLogic {
   catalogMappingCall(payload) {
     const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify(payload) })
+    return this.portalFetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers, body: JSON.stringify(payload) })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Catalog mapping service returned ' + status + '.'));
@@ -5211,7 +5283,7 @@ class Component extends DCLogic {
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY };
     if (payload) headers['Content-Type'] = 'application/json';
     if (this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
-    return fetch(PORTAL_ORDERS_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
+    return this.portalFetch(PORTAL_ORDERS_API, { method, headers, body: payload ? JSON.stringify(payload) : undefined })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
       .then(({ ok, status, body }) => {
         if (!ok) throw new Error((body && body.error) || ('Order service returned ' + status + '.'));
@@ -5728,7 +5800,7 @@ class Component extends DCLogic {
     this.mountTurnstile();
     if (SSO_RETURN.token && !RECOVERY.active) {
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
-      this.beginAuthenticatedSession(SSO_RETURN.token, null, null, true)
+      this.beginAuthenticatedSession(SSO_RETURN.token, null, null, true, SSO_RETURN.refreshToken)
         .catch(e => this.setState({ loginBusy: false, ssoBusy: false,
           ssoErr: e && e.message === 'domain'
             ? 'Use an approved @' + SSO_DOMAIN + ' account for workforce SSO.'
@@ -5809,7 +5881,11 @@ class Component extends DCLogic {
     }
   }
 
-  componentWillUnmount() { window.removeEventListener('resize', this._onResize); this.removeTurnstile(); }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._onResize);
+    this.clearSessionRefresh();
+    this.removeTurnstile();
+  }
 
   toggleFav(id) {
     this.setState(st => ({ favs: st.favs.indexOf(id) === -1 ? st.favs.concat([id]) : st.favs.filter(x => x !== id) }));
