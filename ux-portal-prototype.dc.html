@@ -1094,38 +1094,31 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ isInventory }}" hint-placeholder-val="{{ false }}">
 <div>
-<div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px">
+<div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px">
 <div>
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Inventory</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0;max-width:76ch;line-height:1.6">Internal only. Package inventory comes from the Canix reporting API. The portal reads and explains it; Canix remains the only place inventory can change.</p>
+<h1 style="font:800 28px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 4px">Inventory</h1>
+<p style="font-size:12.5px;color:var(--ux-muted);margin:0;max-width:76ch;line-height:1.5">Read, filter and reconcile the current Canix package and Item Master snapshots.</p>
 </div>
 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px;white-space:nowrap">CANIX API · READ ONLY</span><sc-if value="{{ invCanSyncInventory }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvSyncInventory }}" aria-disabled="{{ invInventorySyncPending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 11px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invInventorySyncOpacity }}">{{ invInventorySyncLabel }}</button></sc-if></div>
 </div>
 
-<div style="background:var(--ux-ink);color:var(--ux-ground);padding:20px 22px;margin:22px 0 26px;display:flex;gap:24px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
-<div style="max-width:72ch">
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-<span style="{{ invConnectionStyle }}">{{ invConnectionLabel }}</span>
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light)">PACKAGE GRAIN</span>
+<div role="tablist" aria-label="Inventory sections" style="display:flex;overflow-x:auto;border:1px solid rgba(23,14,11,.22);background:var(--ux-ground);margin-bottom:10px">
+<sc-for list="{{ invSectionTabs }}" as="t" hint-placeholder-count="4"><button type="button" role="tab" onClick="{{ t.onPick }}" aria-selected="{{ t.pressed }}" style="{{ t.style }}">{{ t.label }} <span style="opacity:.58;margin-left:4px">{{ t.count }}</span></button></sc-for>
 </div>
-<div style="font:700 16px/1.35 Archivo,sans-serif;margin-bottom:6px">Canix inventory · package_inventory_facts_current</div>
-<div style="font-size:12.5px;line-height:1.6;opacity:.78">One deduplicated row per package, maintained by near-real-time change capture. This screen uses the source&rsquo;s documented on-hand rule and reports only weight and count.</div>
+
+<div style="background:var(--ux-ink);color:var(--ux-ground);padding:11px 13px;margin:0 0 14px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+<div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap"><span style="{{ invConnectionStyle }}">{{ invConnectionLabel }}</span><span style="font:700 11px Archivo,sans-serif">{{ invPackageCount }} packages</span><span style="font:10.5px ui-monospace,monospace;opacity:.65">Synced {{ invLastSync }}</span></div>
+<button type="button" onClick="{{ onInvSyncDetails }}" aria-expanded="{{ invSyncDetailsOpen }}" style="background:transparent;color:var(--ux-ground);border:1px solid rgba(250,247,243,.35);padding:6px 9px;font:600 10.5px Archivo,sans-serif;cursor:pointer">{{ invSyncDetailsLabel }}</button>
 </div>
-<div style="border-left:2px solid var(--ux-accent-light);padding-left:14px;min-width:240px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light);margin-bottom:5px">LATEST CANIX RECORD</div>
-<div style="font:800 16px/1.2 Archivo,sans-serif">{{ invSourceUpdated }}</div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-light);margin:11px 0 5px">LAST SUCCESSFUL SYNC</div>
-<div style="font:800 16px/1.2 Archivo,sans-serif">{{ invLastSync }}</div>
-<div style="font-size:11.5px;line-height:1.45;opacity:.72;margin-top:5px">Server-side sync target: every five minutes.</div>
-</div>
-</div>
+<sc-if value="{{ invSyncDetailsOpen }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(23,14,11,.15);margin:-4px 0 14px"><div style="background:var(--ux-surface);padding:10px 12px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">LATEST CANIX RECORD</div><div style="font:700 11.5px ui-monospace,monospace">{{ invSourceUpdated }}</div></div><div style="background:var(--ux-surface);padding:10px 12px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SOURCE CONTRACT</div><div style="font-size:11.5px;line-height:1.45">One row per package · weight and count only · five-minute target</div></div></div></sc-if>
 <sc-if value="{{ invHasConnectionNote }}" hint-placeholder-val="{{ false }}">
-<div style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin:-10px 0 24px;max-width:80ch">
+<div style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 12px;margin:0 0 14px;max-width:80ch">
 <div style="font-size:12.5px;line-height:1.6">{{ invConnectionNote }}</div>
 </div>
 </sc-if>
 
-<section aria-labelledby="lot-integrity-heading" style="margin:0 0 30px;border:1px solid rgba(23,14,11,.24);background:#fff;padding:17px 18px">
+<sc-if value="{{ invViewOwnership }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="lot-integrity-heading" style="margin:0 0 18px;border:1px solid rgba(23,14,11,.24);background:#fff;padding:15px 16px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
 <div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">MONDAY LOT REGISTER · {{ invLotModeLabel }}</div><h2 id="lot-integrity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Package ownership integrity</h2><p style="font-size:12px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Canix carries only the Lot ID pointer. Economic ownership and approval resolve through the protected Monday register. {{ invLotModeNote }}</p></div>
 <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-if value="{{ invCanStageLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotStage }}" aria-disabled="{{ invLotStagePending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotStageOpacity }}">{{ invLotStageLabel }}</button></sc-if><sc-if value="{{ invCanSyncLots }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvLotSync }}" aria-disabled="{{ invLotSyncPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invLotSyncOpacity }}">{{ invLotSyncLabel }}</button></sc-if></div>
@@ -1135,7 +1128,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="font-size:10.5px;color:var(--ux-muted);line-height:1.5;margin-top:10px">Last register sync: {{ invLotLastSync }} · Last integrity check: {{ invLotLastCheck }} · Board 18429359264</div>
 </section>
+</sc-if>
 
+<sc-if value="{{ invViewItemMaster }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="item-master-heading" style="margin:0 0 32px;border-top:2px solid rgba(23,14,11,.42);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
 <div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">CANIX GET /ITEMS · ITEM GRAIN</div><h2 id="item-master-heading" style="font:800 20px/1.2 Archivo,sans-serif;margin:0 0 5px">Canix Item Master</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:80ch">Every Canix Item ID is retained independently of package inventory, including inactive items and items with no current package. Package coverage is joined for context; it does not decide whether an item exists.</p></div>
@@ -1155,17 +1150,19 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div></div>
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0"><div><span style="font:800 18px Archivo,sans-serif">{{ invMasterResultCount }}</span> <span style="font-size:11px;color:var(--ux-muted)">matching items · showing {{ invMasterRangeLabel }}</span></div><div style="display:flex;gap:8px"><button type="button" onClick="{{ onInvMasterExport }}" aria-disabled="{{ invMasterExportDisabled }}" style="{{ invMasterExportStyle }}">Export filtered CSV</button><button type="button" onClick="{{ onInvMasterReset }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:600 11px Archivo,sans-serif;cursor:pointer">Reset Item Master</button></div></div>
 
-<div role="region" aria-label="Canix Item Master" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:590px"><div role="table" aria-label="All Canix items" style="min-width:1580px">
+<div role="region" aria-label="Canix Item Master" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:500px"><div role="table" aria-label="All Canix items" style="min-width:1580px">
 <div role="row" style="display:grid;grid-template-columns:1.7fr 1.05fr .6fr 1.05fr 1fr .8fr .75fr 1fr .85fr .45fr;gap:12px;padding:9px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2"><sc-for list="{{ invMasterColumns }}" as="c" hint-placeholder-count="10"><button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button></sc-for></div>
 <sc-if value="{{ invMasterHasRows }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ invMasterTableRows }}" as="r" hint-placeholder-count="8"><div role="row" style="display:grid;grid-template-columns:1.7fr 1.05fr .6fr 1.05fr 1fr .8fr .75fr 1fr .85fr .45fr;gap:12px;padding:12px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:11.5px;align-items:center;{{ r.rowStyle }}"><div style="min-width:0"><div style="font:700 12.5px Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted)">{{ r.idSku }}</div></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.license }}</div></div><div><span style="{{ r.statusStyle }}">{{ r.status }}</span></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.type }}</div><div style="font-size:9.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.subtype }}</div></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.brand }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.strain }}</div></div><div><div style="font-weight:700">{{ r.quantity }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.unit }}</div></div><div><div style="font:700 12px ui-monospace,monospace">{{ r.packages }}</div><div style="font-size:9px;color:var(--ux-muted)">{{ r.packageSplit }}</div></div><div><div style="font-weight:600">{{ r.totals }}</div><div style="font-size:9px;color:var(--ux-muted)">{{ r.orderTotals }}</div></div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted-strong)">{{ r.updated }}</div><button type="button" onClick="{{ r.onInspect }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 7px;font:600 10px Archivo,sans-serif;cursor:pointer">Inspect</button></div></sc-for></sc-if>
 <sc-if value="{{ invMasterNoRows }}" hint-placeholder-val="{{ false }}"><div style="padding:30px 20px;text-align:center;background:var(--ux-surface);font-size:12px;color:var(--ux-muted)">No Canix Item Master records match these filters.</div></sc-if>
 </div></div>
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px"><label style="font-size:11px;color:var(--ux-muted)">Rows <select value="{{ invMasterPageSize }}" onChange="{{ onInvMasterPageSize }}" style="margin-left:5px;background:var(--ux-ground);border:1px solid rgba(23,14,11,.25);padding:5px 7px"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select></label><div style="display:flex;align-items:center;gap:8px"><button type="button" onClick="{{ onInvMasterPrev }}" aria-disabled="{{ invMasterPrevDisabled }}" style="{{ invMasterPrevStyle }}">Previous</button><span style="font:600 10.5px ui-monospace,monospace">{{ invMasterPageLabel }}</span><button type="button" onClick="{{ onInvMasterNext }}" aria-disabled="{{ invMasterNextDisabled }}" style="{{ invMasterNextStyle }}">Next</button></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px"><label style="font-size:11px;color:var(--ux-muted)">Rows <select value="{{ invMasterPageSize }}" onChange="{{ onInvMasterPageSize }}" style="margin-left:5px;background:var(--ux-ground);border:1px solid rgba(23,14,11,.25);padding:5px 7px"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select></label><div style="display:flex;align-items:center;gap:8px"><button type="button" onClick="{{ onInvMasterPrev }}" aria-disabled="{{ invMasterPrevDisabled }}" style="{{ invMasterPrevStyle }}">Previous</button><span style="font:600 10.5px ui-monospace,monospace">{{ invMasterPageLabel }}</span><button type="button" onClick="{{ onInvMasterNext }}" aria-disabled="{{ invMasterNextDisabled }}" style="{{ invMasterNextStyle }}">Next</button></div></div>
 
 <sc-if value="{{ invMasterHasSelection }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-ink);color:var(--ux-ground);padding:18px;margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px"><div><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-light);margin-bottom:4px">ITEM MASTER DETAIL</div><div style="font:800 17px Archivo,sans-serif">{{ invMasterSelectedTitle }}</div><div style="font:10.5px ui-monospace,monospace;opacity:.65;margin-top:4px">{{ invMasterSelectedId }}</div></div><button type="button" onClick="{{ onInvMasterCloseDetail }}" style="background:transparent;border:1px solid rgba(250,247,243,.35);color:var(--ux-ground);padding:6px 9px;font:600 10px Archivo,sans-serif;cursor:pointer">Close</button></div><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(250,247,243,.16)"><sc-for list="{{ invMasterDetailRows }}" as="d" hint-placeholder-count="20"><div style="background:var(--ux-ink);padding:10px 11px;min-width:0"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.06em;opacity:.52;margin-bottom:4px">{{ d.label }}</div><div style="font-size:11.5px;line-height:1.45;overflow-wrap:anywhere">{{ d.value }}</div></div></sc-for></div></div></sc-if>
 </sc-if>
 </section>
+</sc-if>
 
+<sc-if value="{{ invViewOwnership }}" hint-placeholder-val="{{ false }}">
 <sc-if value="{{ invCanManageOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="economic-party-heading" style="margin-bottom:32px;border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
@@ -1195,6 +1192,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </section>
 </sc-if>
 
+</sc-if>
+
+<sc-if value="{{ invViewPackages }}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="inventory-quantity-heading" style="margin-bottom:32px">
 <div style="display:flex;gap:12px;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">
 <h2 id="inventory-quantity-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0">Usable production inventory</h2>
@@ -1221,7 +1221,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="font-size:11px;color:var(--ux-muted);line-height:1.55;margin-top:8px;max-width:92ch">Plant material is matched from the Canix Item Name (Clone, Biomass, Seed or Seeds). Bulk is matched from the Canix item or category identity. Plant material takes priority when both rules match, so every package appears in exactly one lane.</div>
 </section>
+</sc-if>
 
+<sc-if value="{{ invViewOwnership }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="inventory-risk-heading" style="margin-bottom:34px">
 <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">INTERNAL ECONOMIC CLASSIFICATION</div><h2 id="inventory-risk-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Economic risk coverage</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:78ch">Shows who carries production risk and which commercial model applies. Grams and units remain separate; dollar exposure is not estimated without an approved cost basis.</p></div><span style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;padding:4px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">NO INFERRED VALUE</span></div>
 <div style="{{ invRiskKpiStyle }}"><sc-for list="{{ invRiskKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:13px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 19px Archivo,sans-serif">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for></div>
@@ -1247,6 +1249,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </section>
 </sc-if>
 
+ </sc-if>
+
+<sc-if value="{{ invViewPackages }}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="inventory-workbench-heading" style="margin-bottom:38px">
 <div style="display:flex;gap:14px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:13px">
 <div>
@@ -1255,6 +1260,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">{{ invWorkbenchDescription }} Search, quick views and filters combine; every table heading sorts the current result.</p>
 </div>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" onClick="{{ onInvFilterToggle }}" aria-expanded="{{ invFiltersOpen }}" aria-pressed="{{ invFilterTogglePressed }}" style="{{ invFilterToggleStyle }}">{{ invFilterToggleLabel }}</button>
 <button type="button" onClick="{{ onInvExport }}" aria-disabled="{{ invExportDisabled }}" style="{{ invExportStyle }}" style-hover="background:var(--ux-accent);border-color:var(--ux-accent)">Export filtered CSV</button>
 <button type="button" onClick="{{ onInvReset }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Reset view</button>
 </div>
@@ -1267,7 +1273,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 
-<div style="background:var(--ux-surface);padding:16px;margin-bottom:12px">
+<sc-if value="{{ invFiltersOpen }}" hint-placeholder-val="{{ false }}">
+<div style="background:var(--ux-surface);padding:13px;margin-bottom:12px">
 <div style="{{ invFilterGridStyle }}">
 <label style="display:flex;flex-direction:column;gap:6px;{{ invSearchFieldStyle }}">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">SEARCH</span>
@@ -1357,6 +1364,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </label>
 </div>
 </div>
+</sc-if>
 
 <div style="{{ invResultStripStyle }}">
 <div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">MATCHING PACKAGES</div><div style="font:800 18px Archivo,sans-serif">{{ invFilteredCount }}</div></div>
@@ -1365,7 +1373,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="background:var(--ux-ground);padding:12px 14px"><div style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SHOWING</div><div style="font:700 13px Archivo,sans-serif">{{ invRangeLabel }}</div></div>
 </div>
 
-<div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:650px">
+<div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:520px">
 <div role="table" aria-label="Canix package inventory" style="min-width:1960px">
 <div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
 <sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="15">
@@ -1401,7 +1409,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0 0">
 <label style="font-size:11px;color:var(--ux-muted)">Rows per page&nbsp;
-<select value="{{ invPageSize }}" onChange="{{ onInvPageSize }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:11px Archivo,sans-serif"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+<select value="{{ invPageSize }}" onChange="{{ onInvPageSize }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:11px Archivo,sans-serif"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>
 </label>
 <div style="display:flex;align-items:center;gap:8px">
 <span style="font:600 10.5px ui-monospace,monospace;color:var(--ux-muted)">{{ invPageLabel }}</span>
@@ -1437,7 +1445,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </aside>
 </sc-if>
 </section>
+</sc-if>
 
+<sc-if value="{{ invViewOverview }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="inventory-live-heading" style="margin-bottom:34px">
 <h2 id="inventory-live-heading" style="font:800 18px/1.2 Archivo,sans-serif;margin:0 0 5px">Canix on-hand rule</h2>
 <p style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;margin:0 0 14px;max-width:76ch">The API contract resolves the earlier ambiguity by requiring every clause together. The portal does not choose one field over another.</p>
@@ -1524,6 +1534,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:6px">PLANNING BOUNDARY</div>
 <div style="font-size:13px;line-height:1.62">This inventory view exposes lot and production batch, but not a parent-package field. Production planning still needs a separate Canix Traceability read. No BOM, yield model or replacement inventory ledger is implied here.</div>
 </div>
+</sc-if>
 </div>
 </sc-if>
 
@@ -3551,10 +3562,11 @@ class Component extends DCLogic {
     account: null, loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
     invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
-    invSortDir: 'desc', invPage: 1, invPageSize: 50, invSelectedPackage: null,
+    inventoryPanel: 'packages', inventorySyncDetailsOpen: false, invFiltersOpen: false,
+    invSortDir: 'desc', invPage: 1, invPageSize: 25, invSelectedPackage: null,
     invMasterOpen: true, invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all',
     invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
-    invMasterPage: 1, invMasterPageSize: 50, invSelectedItem: null, itemMasterSyncPending: false,
+    invMasterPage: 1, invMasterPageSize: 25, invSelectedItem: null, itemMasterSyncPending: false,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
     inventorySyncPending: false,
     lotSyncPending: false, lotStagePending: false,
@@ -4157,9 +4169,10 @@ class Component extends DCLogic {
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoading: false, ordersLoaded: false,
       ordersError: null, orderTransitioning: null,
       inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
+      inventoryPanel: 'packages', inventorySyncDetailsOpen: false, invFiltersOpen: false,
       invMasterOpen: true, invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all',
       invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
-      invMasterPage: 1, invMasterPageSize: 50, invSelectedItem: null, itemMasterSyncPending: false,
+      invMasterPage: 1, invMasterPageSize: 25, invSelectedItem: null, itemMasterSyncPending: false,
       lotSyncPending: false, lotStagePending: false,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
@@ -6777,7 +6790,7 @@ class Component extends DCLogic {
       if (result === 0) result = Number(a.package_id) - Number(b.package_id);
       return s.invSortDir === 'asc' ? result : -result;
     });
-    const invPageSize = Number(s.invPageSize) || 50;
+    const invPageSize = Number(s.invPageSize) || 25;
     const invPageCount = Math.max(1, Math.ceil(invSorted.length / invPageSize));
     const invPage = Math.min(Math.max(1, Number(s.invPage) || 1), invPageCount);
     const invPageStart = (invPage - 1) * invPageSize;
@@ -6814,7 +6827,7 @@ class Component extends DCLogic {
       if (result === 0) result = Number(a.item_id) - Number(b.item_id);
       return s.invMasterSortDir === 'asc' ? result : -result;
     });
-    const invMasterPageSize = Number(s.invMasterPageSize) || 50;
+    const invMasterPageSize = Number(s.invMasterPageSize) || 25;
     const invMasterPageCount = Math.max(1, Math.ceil(invMasterSorted.length / invMasterPageSize));
     const invMasterPage = Math.min(Math.max(1, Number(s.invMasterPage) || 1), invMasterPageCount);
     const invMasterPageStart = (invMasterPage - 1) * invMasterPageSize;
@@ -6824,6 +6837,11 @@ class Component extends DCLogic {
     const invMasterSummary = invMasterData.summary || {};
     const invSource = invData.source || {};
     const invIsStale = invSource.stale === true;
+    const inventoryPanel = ['packages', 'item_master', 'ownership', 'overview'].includes(s.inventoryPanel)
+      ? s.inventoryPanel : 'packages';
+    const invActiveFilterCount = [s.invFacility, s.invStatus, s.invQuantity, s.invCategory, s.invBrand,
+      s.invPartner, s.invOwner, s.invCommercial, s.invUom, s.invCost, s.invLab, s.invAge]
+      .filter(value => value && value !== 'all').length + (invNeedle ? 1 : 0) + (s.invView !== 'all' ? 1 : 0);
     /* Brand geometry: the mark is built from arches, so category markers, image
        frames and empty states repeat that arch rather than inventing a shape. */
     const arch = (size, fill) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + fill;
@@ -7936,6 +7954,21 @@ class Component extends DCLogic {
       economicPartyRowStyle: 'display:grid;grid-template-columns:' + (narrow ? '1.4fr .8fr .8fr .65fr 1fr' : '1.5fr .9fr .9fr .65fr 1fr')
         + ';gap:12px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;min-width:' + (narrow ? '760px' : '0'),
       economicPartyRows,
+      invSectionTabs: [
+        ['packages', 'Packages', invScopedPackages.length],
+        ['item_master', 'Item Master', invMasterItems.length],
+        ['ownership', 'Ownership', Number(invData.checks.lot_exception_packages || 0)],
+        ['overview', 'Overview', null]
+      ].map(([id, label, count]) => ({ label, count: count === null ? '' : invNumber(count),
+        pressed: inventoryPanel === id ? 'true' : 'false',
+        style: 'background:' + (inventoryPanel === id ? 'var(--ux-ink)' : 'transparent') + ';color:'
+          + (inventoryPanel === id ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:0;border-right:1px solid rgba(23,14,11,.2);padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer;white-space:nowrap',
+        onPick: () => this.set({ inventoryPanel: id, invSelectedPackage: null, invSelectedItem: null,
+          invMasterOpen: id === 'item_master' ? true : s.invMasterOpen }) })),
+      invViewPackages: inventoryPanel === 'packages',
+      invViewItemMaster: inventoryPanel === 'item_master',
+      invViewOwnership: inventoryPanel === 'ownership',
+      invViewOverview: inventoryPanel === 'overview',
       invConnectionLabel: s.inventoryLoading ? 'LOADING CANIX DATA' : s.inventoryLoaded ? (invIsStale ? 'SYNC STALE' : 'LIVE CANIX CACHE') : 'CANIX DATA NOT LOADED',
       invConnectionStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:4px 7px;background:'
         + (s.inventoryError || invIsStale ? 'var(--ux-signal)' : s.inventoryLoaded ? 'var(--ux-accent)' : 'rgba(250,247,243,.16)') + ';color:#fff',
@@ -7944,6 +7977,10 @@ class Component extends DCLogic {
       invInventorySyncLabel: s.inventorySyncPending ? 'Synchronizing packages\u2026' : 'Synchronize packages now',
       invInventorySyncOpacity: s.inventorySyncPending ? '.5' : '1',
       onInvSyncInventory: () => this.syncInventory(),
+      invPackageCount: invNumber(invPackages.length),
+      invSyncDetailsOpen: s.inventorySyncDetailsOpen,
+      invSyncDetailsLabel: s.inventorySyncDetailsOpen ? 'Hide source details' : 'Source details',
+      onInvSyncDetails: () => this.set({ inventorySyncDetailsOpen: !s.inventorySyncDetailsOpen }),
       invHasConnectionNote: !!s.inventoryError || invIsStale || !s.inventoryLoaded,
       invConnectionNote: s.inventoryError
         ? 'The authenticated inventory endpoint did not return data (' + s.inventoryError + '). No package values are displayed, and unavailable values are never replaced with zero.'
@@ -8127,6 +8164,12 @@ class Component extends DCLogic {
           + ';border:1px solid ' + (s.invView === id ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:7px 9px;font:600 10.5px Archivo,sans-serif;cursor:pointer',
         onPick: () => this.inventoryFilter({ invView: id }) })),
       invFilterGridStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : mid ? 2 : 4) + ',minmax(0,1fr));gap:12px',
+      invFiltersOpen: s.invFiltersOpen,
+      invFilterToggleLabel: s.invFiltersOpen ? 'Hide filters' : 'Filters' + (invActiveFilterCount ? ' · ' + invNumber(invActiveFilterCount) + ' active' : ''),
+      invFilterTogglePressed: s.invFiltersOpen ? 'true' : 'false',
+      invFilterToggleStyle: 'background:' + (s.invFiltersOpen || invActiveFilterCount ? 'var(--ux-surface)' : 'transparent')
+        + ';color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer',
+      onInvFilterToggle: () => this.set({ invFiltersOpen: !s.invFiltersOpen }),
       invSearchFieldStyle: narrow ? '' : 'grid-column:span 2',
       invSearch: s.invSearch,
       onInvSearch: e => this.inventoryFilter({ invSearch: e.target.value }),
