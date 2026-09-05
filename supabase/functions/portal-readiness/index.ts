@@ -10,6 +10,8 @@ const MONDAY_LOT_BOARD_ID = Deno.env.get("MONDAY_LOT_BOARD_ID") ??
   "18429359264";
 const QBO_ENVIRONMENT = (Deno.env.get("QBO_ENVIRONMENT") ?? "").trim()
   .toLowerCase();
+const ASSET_UPLOADS_ENABLED = Deno.env.get("PORTAL_ASSET_UPLOADS_ENABLED") ===
+  "true";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -642,6 +644,13 @@ Deno.serve(async (request) => {
             label: "Private portal assets",
             detail:
               `${activeAssets} active; ${pendingAssetReviews} awaiting review; ${quarantinedAssets} quarantined. Only active assets receive five-minute signed URLs.`,
+          },
+          {
+            state: ASSET_UPLOADS_ENABLED ? "warn" : "deferred",
+            label: "Portal-managed uploads",
+            detail: ASSET_UPLOADS_ENABLED
+              ? "Uploads are enabled and require a separate authorized reviewer; confirm the approved scanner is operating before production use."
+              : "Product-image and portal-managed COA uploads are intentionally on hold until an approved content scanner is connected. Canix-supplied COA data remains available.",
           },
         ],
       },

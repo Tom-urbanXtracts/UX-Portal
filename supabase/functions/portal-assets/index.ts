@@ -5,6 +5,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BUCKET = "portal-assets";
+const ASSET_UPLOADS_ENABLED = Deno.env.get("PORTAL_ASSET_UPLOADS_ENABLED") ===
+  "true";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -145,6 +147,12 @@ async function verifyOwner(
 }
 
 async function createUpload(caller: Caller, body: Row): Promise<Row> {
+  if (!ASSET_UPLOADS_ENABLED) {
+    throw new AssetError(
+      503,
+      "Portal-managed uploads are on hold until the approved content scanner is connected.",
+    );
+  }
   const purpose = clean(body.purpose, 40);
   requirePurposeAccess(caller, purpose);
   const ownerId = positiveId(body.ownerId);
@@ -280,6 +288,15 @@ async function reviewAsset(
   }
   if (!new Set(["approve", "quarantine"]).has(decision)) {
     throw new AssetError(400, "Choose approve or quarantine.");
+  }
+  if (String(asset.created_by ?? "") === String(caller.profile.id ?? "")) {
+    throw new AssetError(
+      409,
+      "A different authorized reviewer must decide this upload.",
+    );
+  }
+  if (decision === "quarantine" && !note) {
+    throw new AssetError(400, "A quarantine reason is required.");
   }
   const { data: updated, error } = await service.rpc("portal_review_asset", {
     p_asset_id: assetId,

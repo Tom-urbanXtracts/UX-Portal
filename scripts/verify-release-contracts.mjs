@@ -29,6 +29,7 @@ const readiness = await readFile(resolve(root, "supabase/functions/portal-readin
 const migration = await readFile(resolve(root, "supabase/migrations/20260901240000_canix_availability_contract.sql"), "utf8");
 const securityMigration = await readFile(resolve(root, "supabase/migrations/20260901250000_security_and_inventory_commitments.sql"), "utf8");
 const assetMigration = await readFile(resolve(root, "supabase/migrations/20260901280000_private_portal_assets.sql"), "utf8");
+const assetPolicyMigration = await readFile(resolve(root, "supabase/migrations/20260905120000_asset_review_retention_policy.sql"), "utf8");
 const quickbooksOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901290000_quickbooks_oauth_broker.sql"), "utf8");
 const orderCronMigration = await readFile(resolve(root, "supabase/migrations/20260901300000_order_outbox_cron.sql"), "utf8");
 const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
@@ -126,6 +127,7 @@ assertContract(financials.includes("const allStores = storeMappings") && financi
 assertContract(catalog.includes("PORTAL_EXTERNAL_ASSET_HOSTS") && productContent.includes("PORTAL_EXTERNAL_ASSET_HOSTS"), "external catalog assets use an exact-host allowlist");
 assertContract(assetMigration.includes("'portal-assets'") && assetMigration.includes("public = false") && assetMigration.includes("revoke all on table public.portal_asset from public, anon, authenticated"), "portal product and COA storage is private and browser tables are denied");
 assertContract(assets.includes('state: "pending_review"') && assets.includes('"portal_review_asset"') && assetMigration.includes("target.state <> 'pending_review'") && assetMigration.includes("p_decision = 'approve'"), "portal assets fail closed until an authorized review activates them");
+assertContract(assets.includes("PORTAL_ASSET_UPLOADS_ENABLED") && assets.includes("A different authorized reviewer") && assetPolicyMigration.includes("interval '90 days'") && assetPolicyMigration.includes("interval '365 days'"), "portal-managed assets stay held until scanning is enabled and enforce reviewer separation plus retention");
 assertContract(catalog.includes('createSignedUrls(paths, 300)') && catalog.includes('.eq("state", "active")'), "catalog assets use short-lived URLs for active records only");
 assertContract(intake.includes("TURNSTILE_REQUIRED") && intake.includes("siteverify") && !intake.includes('form.set("remoteip"'), "public onboarding supports Turnstile without sending visitor IP addresses");
 assertContract(intake.includes("PUBLIC_INTAKE_RATE_SECRET") && intake.includes("portal_claim_public_intake_rate") && intake.includes("delete verifiedPayload.antiAbuseToken"), "public onboarding rate scope is HMAC-protected and the anti-bot token is not forwarded");
@@ -197,6 +199,7 @@ assertContract(readiness.includes("Latest Monday catalog scan") && readiness.inc
 assertContract(readiness.includes("Economic-ownership allocation gate") && readiness.includes("Daily lot-integrity scheduler") && readiness.includes("lotAllocationExceptions"), "live readiness reports lot-register, scheduler, and allocation-control state");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
+assertContract(source.includes('https://www.urbanxtracts.com/contact') && source.includes('Contact support'), "sign-in provides an in-app support contact path");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");
 assertContract(!source.includes("QBO_CLIENT_SECRET"), "QuickBooks client secret is absent from the browser source");
 

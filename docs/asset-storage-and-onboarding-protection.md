@@ -4,16 +4,17 @@
 
 The portal uses the private Supabase Storage bucket `portal-assets`. It accepts only JPEG, PNG, WebP, and PDF files, has a 20 MiB bucket limit, and has no browser-readable Storage policy.
 
-`portal-assets` is the only asset-management endpoint:
+`portal-assets` is the only asset-management endpoint. New uploads are disabled by default with `PORTAL_ASSET_UPLOADS_ENABLED=false` while product images are on hold and until an approved scanner is connected:
 
 1. An active internal user with `catalog.manage` creates a signed product-image upload for a current Canix item. A user with `quality.manage` may create a PDF COA upload for a current Canix package.
 2. The upload is recorded as `pending_upload`. Completing it verifies that the stored object exists and that its observed size and MIME metadata match the declaration. A mismatch is quarantined.
-3. A separate review action changes a valid upload from `pending_review` to `active` or `quarantined`. Activation, prior-version archival, and the product/COA link occur in one database transaction under an advisory lock.
+3. A different authorized user must review the upload; creators cannot approve or quarantine their own files. A quarantine decision requires a reason. The review changes a valid upload from `pending_review` to `active` or `quarantined`. Activation, prior-version archival, and the product/COA link occur in one database transaction under an advisory lock.
 4. Only active assets receive five-minute signed read URLs from `canix-catalog`. Pending, quarantined, and archived files never appear in catalog responses.
+5. Quarantined objects receive a 90-day purge date. Superseded archived objects receive a 365-day purge date. Active assets have no purge date; their former version receives one when replaced. The purge date is retained as protected lifecycle evidence while uploads remain disabled; IT must connect the deletion worker together with the scanner before enabling uploads.
 
 The current Monday `protected_static` host remains prohibited. Monday should populate product copy and the positive Canix Item ID; an authorized portal workflow uploads and approves the durable image separately.
 
-Before production use, Quality and IT still need to decide whether manual review is sufficient or an automated malware/content scanner is mandatory, who may approve an upload they created, and retention for quarantined and archived versions.
+The v1 policy is fail-closed: an automated malware/content scanner is mandatory before portal-managed uploads are enabled, reviewer separation is mandatory, and retention is 90 days for quarantined objects and 365 days for superseded archives. Until IT connects and validates the scanner, Canix-supplied structured COA data and approved exact-host links may display, while portal-managed product-image and PDF uploads remain unavailable.
 
 ## Public onboarding
 
