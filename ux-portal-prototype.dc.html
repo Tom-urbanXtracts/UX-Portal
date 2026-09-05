@@ -3494,6 +3494,48 @@ function portalJwtClaims(token) {
   }
 }
 
+const PORTAL_SESSION_KEY = 'uxos.portal.tab-session.v1';
+const PORTAL_SESSION_MAX_IDLE_MS = 12 * 60 * 60 * 1000;
+
+function clearStoredPortalSession() {
+  if (typeof sessionStorage === 'undefined') return;
+  try { sessionStorage.removeItem(PORTAL_SESSION_KEY); } catch (_) {}
+}
+
+function readStoredPortalSession() {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const session = JSON.parse(sessionStorage.getItem(PORTAL_SESSION_KEY) || 'null');
+    if (!session || session.version !== 1 || typeof session.accessToken !== 'string'
+      || typeof session.refreshToken !== 'string' || !session.refreshToken
+      || !Number.isFinite(session.savedAt) || session.savedAt < Date.now() - PORTAL_SESSION_MAX_IDLE_MS) {
+      clearStoredPortalSession();
+      return null;
+    }
+    const claims = portalJwtClaims(session.accessToken);
+    if (claims.aal !== 'aal2' || claims.role !== 'authenticated') {
+      clearStoredPortalSession();
+      return null;
+    }
+    return session;
+  } catch (_) {
+    clearStoredPortalSession();
+    return null;
+  }
+}
+
+function storePortalSession(accessToken, refreshToken, email, sso) {
+  if (typeof sessionStorage === 'undefined' || !refreshToken) return;
+  const claims = portalJwtClaims(accessToken);
+  if (claims.aal !== 'aal2' || claims.role !== 'authenticated') return;
+  try {
+    sessionStorage.setItem(PORTAL_SESSION_KEY, JSON.stringify({ version: 1, accessToken,
+      refreshToken, email: String(email || '').trim().toLowerCase(), sso: !!sso, savedAt: Date.now() }));
+  } catch (_) {}
+}
+
+const RESTORED_SESSION = !RECOVERY.active && !SSO_RETURN.token ? readStoredPortalSession() : null;
+
 function totpQrSource(value) {
   const qr = String(value || '');
   if (!qr) return '';
@@ -3547,8 +3589,8 @@ class Component extends DCLogic {
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
     onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
     turnstileToken: '', turnstileError: null,
-    outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token,
-    ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
+    outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token || !!RESTORED_SESSION,
+    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
     rstStage: null, rstNote: null,
     fpBusy: false, fpMsg: null,
@@ -3893,6 +3935,8 @@ class Component extends DCLogic {
           throw new Error('session refresh rejected');
         }
         return new Promise(resolve => this.setState({ token: upgraded, refreshToken: rotated }, () => {
+          storePortalSession(upgraded, rotated, this.state.authUser && this.state.authUser.email,
+            this.state.role === 'internal');
           this.scheduleSessionRefresh(upgraded, rotated);
           resolve(upgraded);
         }));
@@ -3926,13 +3970,42 @@ class Component extends DCLogic {
       });
   }
 
+  restorePortalSession(session) {
+    if (!session || !session.accessToken || !session.refreshToken) return Promise.resolve(false);
+    const finish = (accessToken, refreshToken) => this.beginAuthenticatedSession(accessToken,
+      session.email || null, null, !!session.sso, refreshToken).then(() => true);
+    const expiresAt = Number(portalJwtClaims(session.accessToken).exp || 0) * 1000;
+    const restored = expiresAt > Date.now() + 60 * 1000
+      ? finish(session.accessToken, session.refreshToken)
+      : fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({ refresh_token: session.refreshToken })
+      })
+        .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
+        .then(({ ok, body }) => {
+          const accessToken = body.access_token || (body.session && body.session.access_token);
+          const refreshToken = body.refresh_token || (body.session && body.session.refresh_token) || session.refreshToken;
+          if (!ok || !accessToken || !refreshToken || portalJwtClaims(accessToken).aal !== 'aal2') {
+            throw new Error('session restore rejected');
+          }
+          return finish(accessToken, refreshToken);
+        });
+    return restored.catch(() => {
+      clearStoredPortalSession();
+      this.setState({ loginBusy: false, sessionRestoring: false,
+        loginErr: 'Your previous secure session ended. Sign in again to continue.' },
+        () => this.focusLogin('login-email'));
+      return false;
+    });
+  }
+
   finishVerifiedLogin(token, emailHint, weak, sso, refreshToken) {
     if (MFA_REQUIRED && portalJwtClaims(token).aal !== 'aal2') return Promise.reject(new Error('mfa required'));
     return this.portalIdentity(token, emailHint, weak).then(identity => {
       if (sso && (!identity.email.endsWith('@' + SSO_DOMAIN) || identity.me.role !== 'internal')) {
         throw new Error('domain');
       }
-      this.finishLoginIdentity({ ...identity, refreshToken: refreshToken || null });
+      this.finishLoginIdentity({ ...identity, refreshToken: refreshToken || null, sso: !!sso });
       return identity;
     });
   }
@@ -4009,6 +4082,7 @@ class Component extends DCLogic {
   }
 
   cancelMfa() {
+    clearStoredPortalSession();
     const token = this.state.mfaToken;
     if (token) fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST', headers: this.authHeaders(token, false) }).catch(() => {});
     this.set({ screen: 'signin', loginBusy: false, ssoBusy: false, mfaToken: null, mfaFactorId: null,
@@ -4051,15 +4125,16 @@ class Component extends DCLogic {
       });
   }
 
-  finishLoginIdentity({ me, token, email, weak, permissions, refreshToken }) {
+  finishLoginIdentity({ me, token, email, weak, permissions, refreshToken, sso }) {
     const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management' }[me.role];
-    this.set({ loginBusy: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
+    this.set({ loginBusy: false, sessionRestoring: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
       loginUser: '', loginPass: '', token: token, refreshToken: refreshToken || null, pwNotice: weak || null,
       mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
       mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
       mfaRefreshToken: null });
     this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
       staffRole: me.staff_role || null, permissions: Array.isArray(permissions) ? permissions : [] });
+    storePortalSession(token, refreshToken || null, email, !!sso || me.role === 'internal');
     this.scheduleSessionRefresh(token, refreshToken || null);
   }
 
@@ -4149,6 +4224,7 @@ class Component extends DCLogic {
 
   signOut() {
     this.clearSessionRefresh();
+    clearStoredPortalSession();
     const u = this.state.authUser;
     if (u) this.logAudit('Signed out', u.name, 'Session ended.', u.name);
     const token = this.state.token;
@@ -4161,7 +4237,7 @@ class Component extends DCLogic {
       if (PRODUCTS[index].source === 'Canix' || PRODUCTS[index].source === 'Portal order') PRODUCTS.splice(index, 1);
     }
     this.set({
-      authUser: null, token: null, refreshToken: null, screen: 'signin', order: null, confirmed: null, toast: null,
+      authUser: null, token: null, refreshToken: null, sessionRestoring: false, screen: 'signin', order: null, confirmed: null, toast: null,
       loginErr: null, loginInvalidField: null, impersonating: null,
       mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '', mfaCode: '',
       mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
@@ -5958,6 +6034,8 @@ class Component extends DCLogic {
                 ? 'Google sign-in succeeded, but authenticator setup could not start. Try again in a moment.'
             : 'Single sign-on could not complete. Use your email and password or contact an administrator.'
         }, () => this.focusLogin('sso-error')));
+    } else if (RESTORED_SESSION && !RECOVERY.active) {
+      this.restorePortalSession(RESTORED_SESSION);
     }
   }
 
