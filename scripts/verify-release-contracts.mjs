@@ -42,6 +42,7 @@ const mfaMigration = await readFile(resolve(root, "supabase/migrations/202609020
 const quickbooksEnvironmentMigration = await readFile(resolve(root, "supabase/migrations/20260902050000_quickbooks_environment_isolation.sql"), "utf8");
 const quickbooksSafeCacheMigration = await readFile(resolve(root, "supabase/migrations/20260902060000_quickbooks_environment_safe_cache_clear.sql"), "utf8");
 const retailerStoreControlsMigration = await readFile(resolve(root, "supabase/migrations/20260905130000_retailer_store_accounting_controls.sql"), "utf8");
+const canixStaleRecoveryMigration = await readFile(resolve(root, "supabase/migrations/20260905150000_canix_stale_sync_recovery.sql"), "utf8");
 const lotIntegrityMigration = await readFile(resolve(root, "supabase/migrations/20260902070000_inbound_lot_integrity.sql"), "utf8");
 const lotIntegrityCronMigration = await readFile(resolve(root, "supabase/migrations/20260902080000_lot_integrity_cron.sql"), "utf8");
 const canixCronMigration = await readFile(resolve(root, "supabase/migrations/20260902090000_canix_sync_cron_vault.sql"), "utf8");
@@ -120,6 +121,7 @@ assertContract(lotReviewStagingMigration.includes("portal_claim_lot_review_stagi
 assertContract(lotIntegrity.includes('action === "stage-unknown-lots"') && lotIntegrity.includes('["boards:read", "boards:write"]') && lotIntegrity.includes('{ label: "Pending Review" }') && source.includes("stageUnknownLots()"), "authorized staff can stage unknown valid Canix lots as unapproved Monday review rows without inferring ownership");
 assertContract(inventory.includes('"canix_claim_sync_run"') && !inventory.includes("await syncInventory(true);"), "inventory reads are cache-only and sync claims are serialized");
 assertContract(inventory.includes('"canix_package_sync_stage"') && inventory.includes('"canix_publish_sync_run"') && securityMigration.includes("Canix sync ownership was lost before snapshot publication"), "Canix snapshots publish atomically from a private stage");
+assertContract(canixStaleRecoveryMigration.includes("stale_after_seconds") && canixStaleRecoveryMigration.includes("delete from public.canix_package_sync_stage") && source.includes("Synchronize packages now"), "abandoned Canix package runs recover safely and administrators can request an immediate refresh");
 assertContract(admin.includes("Store Owners may deactivate current Buyers and Budtenders only."), "Store Owners cannot mutate current Owner or internal roles");
 assertContract(admin.includes('action === "list-users"') && admin.includes("service.auth.admin.listUsers") && source.includes("loadUsers(force)"), "user access renders the protected live portal directory instead of production fixture rows");
 assertContract(admin.includes('action === "remove-test-user"') && admin.includes("testDemoReason") && admin.includes("deleteUser(") && admin.includes("dana@downtownprovisions.com") && admin.includes("toni@urbanxtracts.com") && source.includes("Remove test user"), "test-user removal is administrator-only, server-classified, includes the exact legacy fixture allowlist, soft-deleted, and separately exposed");

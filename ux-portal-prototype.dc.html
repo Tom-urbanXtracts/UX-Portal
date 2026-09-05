@@ -1099,7 +1099,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Inventory</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0;max-width:76ch;line-height:1.6">Internal only. Package inventory comes from the Canix reporting API. The portal reads and explains it; Canix remains the only place inventory can change.</p>
 </div>
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px;white-space:nowrap">CANIX API · READ ONLY</span>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;background:var(--ux-ink);color:var(--ux-ground);padding:5px 8px;white-space:nowrap">CANIX API · READ ONLY</span><sc-if value="{{ invCanSyncInventory }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onInvSyncInventory }}" aria-disabled="{{ invInventorySyncPending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 11px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ invInventorySyncOpacity }}">{{ invInventorySyncLabel }}</button></sc-if></div>
 </div>
 
 <div style="background:var(--ux-ink);color:var(--ux-ground);padding:20px 22px;margin:22px 0 26px;display:flex;gap:24px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
@@ -3556,6 +3556,7 @@ class Component extends DCLogic {
     invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
     invMasterPage: 1, invMasterPageSize: 50, invSelectedItem: null, itemMasterSyncPending: false,
     inventoryData: CANIX_INVENTORY_SNAPSHOT, inventoryLoading: false, inventoryLoaded: false, inventoryError: null,
+    inventorySyncPending: false,
     lotSyncPending: false, lotStagePending: false,
     economicParties: [], economicOwnershipMappings: [], economicBrandMappings: [], economicOwnershipLoading: false,
     economicOwnershipLoaded: false, economicOwnershipError: null,
@@ -4494,6 +4495,26 @@ class Component extends DCLogic {
       })
       .catch(e => this.set({ inventoryLoading: false, inventoryLoaded: false,
         inventoryError: (e && e.message) || 'The inventory endpoint could not be reached.' }));
+  }
+
+  syncInventory() {
+    if (!this.requirePermission('inventory.sync', 'synchronize Canix package inventory')) return;
+    if (this.state.inventorySyncPending) return;
+    this.set({ inventorySyncPending: true, inventoryError: null });
+    this.portalFetch(CANIX_INVENTORY_API + '?force=true', { method: 'POST', credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + (this.state.token || '') }, body: JSON.stringify({ source: 'administrator' }) })
+      .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, status: r.status, payload })))
+      .then(({ ok, status, payload }) => {
+        if (!ok) throw new Error((payload && payload.error) || ('Canix inventory endpoint returned ' + status + '.'));
+        const sync = payload && payload.sync ? payload.sync : {};
+        if (sync.skipped && sync.reason === 'already_running') throw new Error('A recent Canix package sync is still running. Try again after it completes.');
+        this.set({ inventorySyncPending: false, toast: Number(sync.packages || 0).toLocaleString('en-US')
+          + ' Canix package record(s) synchronized.', toastKind: 'SYNCED' });
+        this.loadInventory();
+      })
+      .catch(e => this.set({ inventorySyncPending: false,
+        inventoryError: (e && e.message) || 'Canix package inventory could not be synchronized.' }));
   }
 
   syncItemMaster() {
@@ -7918,6 +7939,11 @@ class Component extends DCLogic {
       invConnectionLabel: s.inventoryLoading ? 'LOADING CANIX DATA' : s.inventoryLoaded ? (invIsStale ? 'SYNC STALE' : 'LIVE CANIX CACHE') : 'CANIX DATA NOT LOADED',
       invConnectionStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:4px 7px;background:'
         + (s.inventoryError || invIsStale ? 'var(--ux-signal)' : s.inventoryLoaded ? 'var(--ux-accent)' : 'rgba(250,247,243,.16)') + ';color:#fff',
+      invCanSyncInventory: canStaff('inventory.sync'),
+      invInventorySyncPending: s.inventorySyncPending,
+      invInventorySyncLabel: s.inventorySyncPending ? 'Synchronizing packages\u2026' : 'Synchronize packages now',
+      invInventorySyncOpacity: s.inventorySyncPending ? '.5' : '1',
+      onInvSyncInventory: () => this.syncInventory(),
       invHasConnectionNote: !!s.inventoryError || invIsStale || !s.inventoryLoaded,
       invConnectionNote: s.inventoryError
         ? 'The authenticated inventory endpoint did not return data (' + s.inventoryError + '). No package values are displayed, and unavailable values are never replaced with zero.'
