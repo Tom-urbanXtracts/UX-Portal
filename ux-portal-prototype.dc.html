@@ -2533,8 +2533,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <div style="margin-top:20px;font-size:11.5px;color:var(--ux-muted);line-height:1.6;max-width:74ch">A retailer never chooses a specific lot. urbanXtracts allocates the package during fulfillment; the compliance tag belongs on the delivery/received record after that allocation exists. Prices exclude tax. Sample data.</div>
 <div style="margin-top:28px;border-top:2px solid rgba(23,14,11,.4);padding-top:18px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">Reported to the team</div>
-<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">Submitting this posted the payload below to Monday, where it created an item on the <strong>Portal Orders</strong> board and alerted the account&rsquo;s rep and the fulfilment owner. It travels through a webhook rather than an API key, which is why a page with no server can send it at all &mdash; and why the URL needs a shared secret before this carries production traffic. Every field is a real column: nothing on that board is derived by parsing the item name, and Canix stays the subledger of record for the order itself.</p>
+<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin-bottom:8px">{{ confirmReportLabel }}</div>
+<p style="font-size:13px;line-height:1.6;color:var(--ux-muted);margin:0 0 14px;max-width:76ch">{{ confirmReportBody }}</p>
 <div style="border-top:1px solid rgba(23,14,11,.2)">
 <sc-for list="{{ mondayRows }}" as="mr" hint-placeholder-count="13">
 <div style="display:grid;grid-template-columns:170px 1fr;gap:16px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12.5px;align-items:baseline">
@@ -3029,7 +3029,7 @@ const ONBOARDING = [
     stores: [
       { name: 'Demo Downtown', license: 'DEMO-NY-EXEC-001', address: '101 Market Street, Demo, NY', quickbooksCustomerId: 'demo-001', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
       { name: 'Demo Riverside', license: 'DEMO-NY-EXEC-002', address: '202 River Road, Demo, NY', quickbooksCustomerId: 'demo-001-child-2', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
-      { name: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', address: '303 North Avenue, Demo, NY', quickbooksCustomerId: 'demo-001-child-3', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' }
+      { name: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', address: '303 North Avenue, Demo, NY', quickbooksCustomerId: 'demo-001-child-3', licenseExpiresOn: '2026-08-31', qualificationStatus: 'expired' }
     ],
     people: [
       { id: 'demo-person-owner', role: 'owner', name: 'Alex Morgan', email: 'owner@executive-demo.invalid', accessStatus: 'active' },
@@ -3038,13 +3038,13 @@ const ONBOARDING = [
     ],
     events: [
       { toStage: 'intake', createdAt: '2026-08-31T15:00:00Z', note: 'Synthetic multi-store request accepted by the isolated demo workflow.' },
-      { toStage: 'qualification', createdAt: '2026-08-31T15:05:00Z', note: 'Three fictional licenses and QuickBooks identities recorded.' },
+      { toStage: 'qualification', createdAt: '2026-08-31T15:05:00Z', note: 'Three fictional licenses and QuickBooks identities were reviewed; Northgate is now an expired store-level hold.' },
       { toStage: 'terms', createdAt: '2026-08-31T15:10:00Z', note: 'Demo commercial terms recorded without a live price publication.' },
       { toStage: 'account_creation', createdAt: '2026-08-31T15:15:00Z', note: 'Synthetic retailer account linked.' },
       { toStage: 'access', createdAt: '2026-08-31T15:20:00Z', note: 'Owner, Buyer, and Budtender access scoped to the demo stores.' },
       { toStage: 'ready', createdAt: '2026-08-31T15:25:00Z', note: 'All demo gates passed; the organization is ready for an isolated test order.' }
     ],
-    note: 'Synthetic end-to-end record: QuickBooks-linked organization, three qualified stores, owner profile, scoped buyer, store-assigned budtender and paired kiosk.' },
+    note: 'Synthetic end-to-end record: QuickBooks-linked organization, three reviewed stores with location-specific gates, owner profile, scoped buyer, store-assigned budtender and paired kiosk.' },
   { org: 'Cedar & Pine Provisions', licenses: '2 locations · OCM-RETL-24-000871, OCM-RETL-24-000872', stage: 5, note: 'Owner invited 21 Aug. Waiting on the owner to accept and add their buyers.' },
   { org: 'Harborline Cannabis Co.', licenses: '1 location · OCM-RETL-24-000904', stage: 3, note: 'Held at commercial terms — no per-account rate card record exists, so no price can be assigned.' },
   { org: 'Marigold Street Dispensary', licenses: '4 locations · 3 qualified, 1 pending', stage: 2, note: 'One license failed qualification against the state record. The other three proceed; that location cannot order.' },
@@ -7812,7 +7812,7 @@ class Component extends DCLogic {
     const onboardingReadyCount = onboardingSourceAll.filter(request =>
       request.stage === 'ready' || request.stage === 6).length;
     const selectedReviewedStores = selectedOnboardingStores.filter(store =>
-      ['qualified', 'rejected'].includes(String(store.qualificationStatus || ''))).length;
+      ['qualified', 'rejected', 'expired'].includes(String(store.qualificationStatus || ''))).length;
     const selectedQualifiedStores = selectedOnboardingStores.filter(store =>
       String(store.qualificationStatus || '') === 'qualified').length;
     const selectedInvitedPeople = selectedOnboardingPeople.filter(person =>
@@ -9648,9 +9648,20 @@ class Component extends DCLogic {
       })(),
       confirmRef: (() => {
         const o = s.orders.find(x => x.id === s.confirmed);
+        if (o && o.demo) return 'Isolated demo reference. No external order number was requested.';
         return (o && o.orderNo)
           ? 'Order number, assigned by the order board. Portal reference ' + o.id + '.'
           : 'Portal reference. The order number is assigned when the board accepts it \u2014 quote this until then.';
+      })(),
+      confirmReportLabel: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return o && o.demo ? 'Isolated demo result' : 'Reported to the team';
+      })(),
+      confirmReportBody: (() => {
+        const o = s.orders.find(x => x.id === s.confirmed);
+        return o && o.demo
+          ? 'This order completed only inside the executive demo. It did not create a Monday item, change QuickBooks or Canix, alert a live account owner, or reserve production inventory. Resetting the demo removes it.'
+          : 'Submitting this created a durable portal order, then sent its structured payload to the Portal Orders board in Monday and alerted the account rep and fulfillment owner. Canix remains the compliance subledger of record, and QuickBooks remains read-only in this order path.';
       })(),
       confirmState: (() => {
         const o = s.orders.find(x => x.id === s.confirmed);
@@ -9666,6 +9677,19 @@ class Component extends DCLogic {
         if (!o) return { mondayRows: [] };
         const loc = LOCATIONS.find(x => x.id === o.loc) || { name: o.loc, license: '' };
         const who = s.authUser ? s.authUser.name + ' (' + s.authUser.role + ')' : 'Unknown';
+        if (o.demo) {
+          const demoRows = [
+            ['Demo reference', o.id],
+            ['Retailer', DEMO_ORG],
+            ['Store', loc.name + ' \u00b7 ' + loc.license],
+            ['Submitted by', who],
+            ['Order value', MONEY(this.orderValue(o))],
+            ['Approval result', o.state === 'Awaiting approval' ? 'Held for the synthetic Store Owner' : 'No approval hold at this store and value'],
+            ['External writes', 'None \u2014 browser-local executive demo only'],
+            ['Reset behavior', 'Removed by Reset executive demo']
+          ];
+          return { mondayRows: demoRows.map(([k, v]) => ({ k, v })) };
+        }
         const rows = [
           ['Item name', o.id + ' \u00b7 ' + ACTING_ORG + ' (' + loc.name + ')'],
           ['Order number', o.id],
