@@ -408,6 +408,7 @@ button{font-family:inherit}
 <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap"><input type="text" inputmode="decimal" value="{{ orderPolicyAmount }}" onInput="{{ onOrderPolicyAmount }}" placeholder="$500.00" aria-label="Buyer order approval threshold" style="width:130px;background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:700 13px Archivo,sans-serif"><button type="button" onClick="{{ onOrderPolicyThreshold }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Require above amount</button><button type="button" onClick="{{ onOrderPolicyAll }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Require every Buyer order</button><button type="button" onClick="{{ onOrderPolicyDisable }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Disable value approval</button></div>
 <div style="font-size:11px;color:var(--ux-muted);line-height:1.45;margin-top:7px">Administrator, Operations, or Sales may change this licensed-store rule. Store Owners approve held orders; Store Owners and Buyers cannot change the rule.</div>
 <div style="border-top:1px solid rgba(23,14,11,.18);margin-top:12px;padding-top:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><div style="font:700 10px Archivo,sans-serif;margin-bottom:3px">Canix case multiples · {{ orderCasePolicyLabel }}</div><div style="font-size:11px;color:var(--ux-muted);line-height:1.45;max-width:54ch">Off by default. When enabled, intake fails closed unless Canix supplies one positive case quantity and every line is a whole-case multiple.</div></div><button type="button" onClick="{{ onOrderCaseToggle }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:{{ orderCasePolicyButtonBg }};color:{{ orderCasePolicyButtonColor }};border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ orderCasePolicyButton }}</button></div>
+<div style="border-top:1px solid rgba(23,14,11,.18);margin-top:12px;padding-top:12px"><div style="font:700 10px Archivo,sans-serif;margin-bottom:3px">Store order terms · {{ orderCommercialTermsLabel }}</div><div style="font-size:11px;color:var(--ux-muted);line-height:1.45;max-width:64ch;margin-bottom:8px">Minimum value is enforced again by the server at submission. Lead time is informational and measured in calendar days after approval. Leave either field blank to keep it disabled.</div><div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">MINIMUM ORDER</span><input type="text" inputmode="decimal" value="{{ orderMinimumAmount }}" onInput="{{ onOrderMinimumAmount }}" placeholder="No minimum" aria-label="Store minimum order" style="width:130px;background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:700 12px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">LEAD TIME · DAYS</span><input type="text" inputmode="numeric" value="{{ orderLeadTimeDays }}" onInput="{{ onOrderLeadTimeDays }}" placeholder="Not published" aria-label="Store order lead time in days" style="width:130px;background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:700 12px Archivo,sans-serif"></label><button type="button" onClick="{{ onOrderCommercialTermsSave }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Save terms</button><button type="button" onClick="{{ onOrderCommercialTermsClear }}" aria-disabled="{{ orderPolicyDisabled }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Clear both</button></div></div>
 </div>
 </sc-if>
 </div>
@@ -3090,7 +3091,7 @@ const VALIDATION = [
     { severity: 'Record and continue', screen: 'Lot panel', question: 'Which lot and batch identifiers will exist going forward?', detail: 'Most active packages carry no lot identifier and a large share carry no batch number either. The prototype treats the compliance tag as sufficient identity so it works either way.', blocks: 'Nothing today; affects lineage depth', owner: 'Operations', evidence: 'A go-forward identifier rule' }
   ] },
   { cls: 'CANIX VALIDATION REQUIRED', closedBy: 'Closed by a Canix test or a vendor answer', items: [
-    { severity: 'DECIDED', screen: 'Order builder', question: 'How are case quantity, minimum order and lead time handled?', detail: 'Resolved 1 Sep 2026: Canix item case_quantity is normalized when supplied. Each store defaults to accepting eaches; Administrator, Operations, or Sales may enable whole-case enforcement, which fails closed if the item has no single positive case quantity. Minimum order and lead time remain blank because the connected reporting contract does not expose them.', blocks: 'Nothing — unsupported fields stay blank', owner: 'Operations', evidence: 'Protected store policy plus server-side case-multiple validation' },
+    { severity: 'DECIDED', screen: 'Order builder', question: 'How are case quantity, minimum order and lead time handled?', detail: 'Canix item case_quantity is normalized when supplied. Each store defaults to accepting eaches; Administrator, Operations, or Sales may enable whole-case enforcement, which fails closed if the item has no single positive case quantity. The same staff roles may set or clear a licensed-store minimum order and publish an informational lead time. Existing stores default to no minimum and no published lead time; submission rechecks any configured minimum server-side.', blocks: 'Nothing — optional store terms remain off until deliberately configured', owner: 'Sales Operations', evidence: 'Protected store policy, audited updates, server-side case and minimum-order validation' },
     { severity: 'DECIDED', screen: 'Catalog', question: 'What makes a package sellable and what groups packages into a product?', detail: 'Resolved from the connected Canix reporting contract and live urbanXtracts data on 1 Sep 2026. Sellable means active with status_category available. Explicit reservations are subtracted. The catalog groups by item_id because it covers the active package population; product_id is missing on 958 of 1,359 active non-sample packages.', blocks: 'Nothing — closed for v1', owner: 'Operations and Data', evidence: 'Canix schema plus live status, reservation and identifier coverage queries' },
     { severity: 'Record and continue', screen: 'Catalog', question: 'How does the wholesale sheet map to immutable Canix items?', detail: 'The selected ACTIVE CART sheet has 118 priced rows but no Canix Item ID; Brand is encoded as section headings. Only unique exact product-name + Brand matches may be auto-associated. Every normalized, name-only, duplicate, or conflicting candidate remains review-only.', blocks: 'Default list-price publication for unmatched products', owner: 'Sales operations and Data', evidence: 'A reviewed Canix Item ID for each source row' }
   ] },
@@ -3584,11 +3585,11 @@ const DEMO_STORE_PRICES = [
 
 const DEMO_ORDER_POLICIES = [
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-001', locationName: 'Demo Downtown',
-    thresholdCents: 50000, mode: 'above_threshold', enforceCaseQuantity: false, updatedAt: '2026-08-31T20:00:00-04:00', demo: true },
+    thresholdCents: 50000, mode: 'above_threshold', enforceCaseQuantity: false, minimumOrderCents: 25000, leadTimeDays: 3, updatedAt: '2026-08-31T20:00:00-04:00', demo: true },
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-002', locationName: 'Demo Riverside',
-    thresholdCents: 0, mode: 'all_buyer_orders', enforceCaseQuantity: false, updatedAt: '2026-08-31T20:00:00-04:00', demo: true },
+    thresholdCents: 0, mode: 'all_buyer_orders', enforceCaseQuantity: false, minimumOrderCents: null, leadTimeDays: 5, updatedAt: '2026-08-31T20:00:00-04:00', demo: true },
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-003', locationName: 'Demo Northgate',
-    thresholdCents: null, mode: 'disabled', enforceCaseQuantity: false, updatedAt: '2026-08-31T20:00:00-04:00', demo: true }
+    thresholdCents: null, mode: 'disabled', enforceCaseQuantity: false, minimumOrderCents: null, leadTimeDays: null, updatedAt: '2026-08-31T20:00:00-04:00', demo: true }
 ];
 
 const DEMO_TOUR_STEPS = [
@@ -3807,6 +3808,7 @@ class Component extends DCLogic {
     pricingProduct: 'p1', pricingAmount: '', pricingNote: '', pricingReviewNote: '',
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
+    orderMinimumAmount: '', orderLeadTimeDays: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
     readinessTaskDrafts: {}, readinessTaskPending: null,
     readinessGroupOpen: { not_started: true, in_progress: true, completed: false }, readinessSectionOpen: {},
@@ -3879,8 +3881,13 @@ class Component extends DCLogic {
 
   pickLocation(location) {
     const draft = this.state.drafts.find(d => d.loc === location.id);
+    const policy = this.state.orderPolicies.find(row => row.locationLicense === location.license) || {};
     const enteringDemo = location.demo && !this.state.demoTourCompleted && !this.state.demoTourActive;
     this.set({ loc: location.id, activeDraft: draft ? draft.id : this.state.activeDraft, order: null, orderPolicyAmount: '',
+      orderMinimumAmount: policy.minimumOrderCents === null || policy.minimumOrderCents === undefined
+        ? '' : (Number(policy.minimumOrderCents) / 100).toFixed(2),
+      orderLeadTimeDays: policy.leadTimeDays === null || policy.leadTimeDays === undefined
+        ? '' : String(policy.leadTimeDays),
       recallTag: location.demo ? DEMO_RECALL_TAG : RECALL_TAG, recallInput: '', recallMsg: null });
     if (enteringDemo) this.startDemoTour();
   }
@@ -3906,6 +3913,7 @@ class Component extends DCLogic {
         outbox: current.outbox.filter(item => !/^DEMO-/.test(String(item.detail || ''))),
         order: null, confirmed: null, loc: 'l-demo', screen: 'dash', seq: 24188,
         pricingPending: null, pricingAmount: '', pricingNote: '', pricingReviewNote: '', orderPolicyPending: false, orderPolicyAmount: '',
+        orderMinimumAmount: '', orderLeadTimeDays: '',
         financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
         recallTag: DEMO_RECALL_TAG, recallInput: '', recallMsg: null, recallIssued: false, recallAcks: [], coaAmended: false, coaAcks: [],
         demoTourActive: true, demoTourStep: 0, demoTourCompleted: false,
@@ -6302,15 +6310,28 @@ class Component extends DCLogic {
     if (!s.authUser || s.orderPoliciesLoading || (!force && s.orderPoliciesLoaded)) return;
     if (!['internal', 'owner', 'buyer'].includes(s.role)) return;
     if (this.loc().demo) {
-      this.set({ orderPoliciesLoaded: true, orderPoliciesLoading: false, orderPoliciesError: null });
+      const current = this.approvalPolicyFor(this.loc());
+      this.set({ orderPoliciesLoaded: true, orderPoliciesLoading: false, orderPoliciesError: null,
+        orderMinimumAmount: current.minimumOrderCents === null || current.minimumOrderCents === undefined
+          ? '' : (Number(current.minimumOrderCents) / 100).toFixed(2),
+        orderLeadTimeDays: current.leadTimeDays === null || current.leadTimeDays === undefined
+          ? '' : String(current.leadTimeDays) });
       return;
     }
     this.set({ orderPoliciesLoading: true, orderPoliciesError: null });
     this.orderPolicyCall('GET')
-      .then(body => this.set({
-        orderPolicies: this.withDemoOrderPolicies(body.policies),
-        orderPoliciesLoading: false, orderPoliciesLoaded: true, orderPoliciesError: null
-      }))
+      .then(body => {
+        const policies = this.withDemoOrderPolicies(body.policies);
+        const loc = this.loc();
+        const selected = policies.find(row => row.locationLicense === loc.license) || {};
+        this.set({ orderPolicies: policies,
+          orderPoliciesLoading: false, orderPoliciesLoaded: true, orderPoliciesError: null,
+          orderMinimumAmount: selected.minimumOrderCents === null || selected.minimumOrderCents === undefined
+            ? '' : (Number(selected.minimumOrderCents) / 100).toFixed(2),
+          orderLeadTimeDays: selected.leadTimeDays === null || selected.leadTimeDays === undefined
+            ? '' : String(selected.leadTimeDays)
+        });
+      })
       .catch(error => this.set({ orderPoliciesLoading: false, orderPoliciesLoaded: true,
         orderPoliciesError: (error && error.message) || 'The order approval policy could not be loaded.' }));
   }
@@ -6319,7 +6340,8 @@ class Component extends DCLogic {
     const loc = location || this.loc();
     return this.state.orderPolicies.find(row => row.locationLicense === loc.license) || {
       organization: this.actingOrg(), locationLicense: loc.license, locationName: loc.name,
-      thresholdCents: null, mode: 'disabled', enforceCaseQuantity: false, updatedAt: null, demo: !!loc.demo
+      thresholdCents: null, mode: 'disabled', enforceCaseQuantity: false,
+      minimumOrderCents: null, leadTimeDays: null, updatedAt: null, demo: !!loc.demo
     };
   }
 
@@ -6395,6 +6417,59 @@ class Component extends DCLogic {
     this.orderPolicyCall('POST', { action: 'update-case-policy', locationLicense: loc.license, enforceCaseQuantity })
       .then(body => apply(body.policy))
       .catch(error => this.set({ orderPolicyPending: false, toast: 'Case policy was not saved: ' + error.message, toastKind: 'NOT SAVED' }));
+  }
+
+  saveCommercialTerms(clear) {
+    const s = this.state;
+    if (s.orderPolicyPending || !this.requirePermission('accounts.manage', 'change store order terms')) return;
+    if (s.impersonating) {
+      this.set({ toast: 'This is a read-only view-as session. Store order terms were not changed.', toastKind: 'BLOCKED — READ ONLY' });
+      return;
+    }
+    const loc = this.loc();
+    const current = this.approvalPolicyFor(loc);
+    let minimumOrderCents = null;
+    let leadTimeDays = null;
+    if (!clear) {
+      const minimumText = String(s.orderMinimumAmount || '').trim();
+      const leadText = String(s.orderLeadTimeDays || '').trim();
+      if (minimumText) {
+        const amount = Number(minimumText.replace(/[$,\s]/g, ''));
+        if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) {
+          this.set({ toast: 'Enter a positive minimum order value, or leave it blank.', toastKind: 'MINIMUM NOT SAVED' });
+          return;
+        }
+        minimumOrderCents = Math.round(amount * 100);
+      }
+      if (leadText) {
+        leadTimeDays = Number(leadText);
+        if (!Number.isInteger(leadTimeDays) || leadTimeDays < 0 || leadTimeDays > 365) {
+          this.set({ toast: 'Lead time must be a whole number from 0 to 365 days, or blank.', toastKind: 'LEAD TIME NOT SAVED' });
+          return;
+        }
+      }
+    }
+    const apply = saved => {
+      const policy = saved || { ...current, minimumOrderCents, leadTimeDays,
+        updatedAt: new Date().toISOString(), demo: !!loc.demo };
+      this.logAudit('Store order terms changed', loc.name,
+        (minimumOrderCents === null ? 'No minimum order' : 'Minimum ' + MONEY(minimumOrderCents))
+        + ' · ' + (leadTimeDays === null ? 'Lead time not published' : leadTimeDays + ' calendar day lead time'));
+      this.setState(state => ({
+        orderPolicies: [policy].concat(state.orderPolicies.filter(row => row.locationLicense !== loc.license)),
+        orderPolicyPending: false,
+        orderMinimumAmount: minimumOrderCents === null ? '' : (minimumOrderCents / 100).toFixed(2),
+        orderLeadTimeDays: leadTimeDays === null ? '' : String(leadTimeDays),
+        toast: 'Store order terms updated for ' + loc.name + '.', toastKind: 'TERMS UPDATED'
+      }));
+    };
+    if (loc.demo) { apply(null); return; }
+    this.set({ orderPolicyPending: true });
+    this.orderPolicyCall('POST', { action: 'update-commercial-terms', locationLicense: loc.license,
+      minimumOrderCents, leadTimeDays })
+      .then(body => apply(body.policy))
+      .catch(error => this.set({ orderPolicyPending: false,
+        toast: 'Store order terms were not saved: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
   withDemoPricing(rows, demoRows) {
@@ -7207,12 +7282,21 @@ class Component extends DCLogic {
     const l = this.loc();
     if (l.expired) { this.blocked('licence'); this.set({ toast: 'Cannot submit: the license record for ' + l.name + ' has expired. Other locations are unaffected.', toastKind: 'BLOCKED — LICENSE' }); return; }
     if (l.pastDue) { this.blocked('receivables'); this.set({ toast: 'Cannot submit: ' + l.name + ' has an explicit account ordering hold. The portal checks that store status at order entry; QuickBooks balance display does not create or clear it. The draft is kept as it is.', toastKind: 'BLOCKED — ACCOUNT HOLD' }); return; }
+    const submissionPolicy = this.approvalPolicyFor(l);
+    const submissionTotalCents = lines.reduce((total, line) => total + line.price * line.qty, 0);
+    if (submissionPolicy.minimumOrderCents !== null && submissionPolicy.minimumOrderCents !== undefined
+      && submissionTotalCents < Number(submissionPolicy.minimumOrderCents)) {
+      this.blocked('minimumOrder');
+      this.set({ toast: 'Cannot submit: ' + l.name + ' requires a minimum order of '
+        + MONEY(Number(submissionPolicy.minimumOrderCents)) + '. The draft is preserved.', toastKind: 'BLOCKED — MINIMUM ORDER' });
+      return;
+    }
     const elapsed = st.metrics.sessionStart ? Date.now() - st.metrics.sessionStart : null;
     this.bump(m => ({ submits: m.submits + 1, byStore: m.byStore + 1,
       firstSubmitMs: m.firstSubmitMs === null ? elapsed : m.firstSubmitMs }));
     const isBuyer = st.role === 'buyer';
     const loc = l;
-    const orderTotalCents = lines.reduce((a, line) => a + line.price * line.qty, 0);
+    const orderTotalCents = submissionTotalCents;
     const ownerApprovalRequired = isBuyer && this.buyerApprovalRequired(orderTotalCents, loc);
     const state = ownerApprovalRequired ? 'Awaiting approval' : 'Placed';
     const preorderProductIds = Array.from(new Set(lines.filter(line => P(line.id).preorder).map(line => P(line.id).sourceId || P(line.id).id)));
@@ -7233,7 +7317,8 @@ class Component extends DCLogic {
       history: state === 'Awaiting approval' ? { 'Awaiting approval': TODAY } : { 'Placed': TODAY },
       lines: lines.map(line => ({ ...line })), delivery: st.delivery,
       submittedBy: isBuyer ? 'Buyer' : st.role === 'owner' ? 'Owner' : 'Internal staff', demo: !!loc.demo,
-      ownerApprovalRequired, approvalThresholdCents: this.approvalPolicyFor(loc).thresholdCents,
+      ownerApprovalRequired, approvalThresholdCents: submissionPolicy.thresholdCents,
+      minimumOrderCents: submissionPolicy.minimumOrderCents, leadTimeDays: submissionPolicy.leadTimeDays,
       containsPreorder, preorderProductIds, releaseHold: containsPreorder,
       orderNo: loc.demo ? id : null, clientRequestId
     };
@@ -7280,7 +7365,8 @@ class Component extends DCLogic {
         orderMode: pp.preorder ? 'preorder' : 'standard', releaseState: pp.preorder ? 'awaiting_release' : 'released'
       }; }),
       deliveryWindow: ds.window || '', receivingContact: ds.contact || '', receivingInstructions: ds.instructions || '',
-      gatesAtSubmission: 'Licence, explicit store ordering status, store scope, approved price, Canix availability, release state, and approval threshold are rechecked server-side.'
+      minimumOrderCents: submissionPolicy.minimumOrderCents, leadTimeDays: submissionPolicy.leadTimeDays,
+      gatesAtSubmission: 'Licence, explicit store ordering status, store scope, approved price, Canix availability, release state, optional case and minimum-order policies, and approval threshold are rechecked server-side.'
     };
     const finalize = reply => {
       const number = (reply && reply.orderNumber) || (loc.demo ? id : null);
@@ -7703,6 +7789,7 @@ class Component extends DCLogic {
       pressed: role === id ? 'true' : 'false',
       onPick: () => this.set({ role: id, screen: id === 'budtender' ? 'kiosk' : 'dash', order: null, toast: null,
         pricingLoaded: false, orderPoliciesLoaded: false, orderPolicyAmount: '',
+        orderMinimumAmount: '', orderLeadTimeDays: '',
         financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all' })
     }));
 
@@ -8021,6 +8108,10 @@ class Component extends DCLogic {
 
     const currentOrderPolicy = this.approvalPolicyFor(loc);
     const caseQuantityEnforced = currentOrderPolicy.enforceCaseQuantity === true;
+    const minimumOrderCents = currentOrderPolicy.minimumOrderCents === null || currentOrderPolicy.minimumOrderCents === undefined
+      ? null : Number(currentOrderPolicy.minimumOrderCents);
+    const leadTimeDays = currentOrderPolicy.leadTimeDays === null || currentOrderPolicy.leadTimeDays === undefined
+      ? null : Number(currentOrderPolicy.leadTimeDays);
     const approvalThreshold = currentOrderPolicy.thresholdCents === null || currentOrderPolicy.thresholdCents === undefined
       ? null : Number(currentOrderPolicy.thresholdCents);
     const buyerNeedsApproval = role === 'buyer' && this.buyerApprovalRequired(
@@ -8059,6 +8150,13 @@ class Component extends DCLogic {
       warnings.push(caseQuantityEnforced
         ? { kind: 'CASE MULTIPLES ENFORCED', text: 'The server requires a single positive Canix case quantity for every Canix item and rejects a line that is not a whole-case multiple.' }
         : { kind: 'EACHES ACCEPTED', text: 'Case enforcement is off for this store. Canix case quantity is displayed when supplied, but quantities may be entered as eaches.' });
+      if (minimumOrderCents !== null) warnings.push({
+        kind: cartTotalCents < minimumOrderCents ? 'MINIMUM ORDER NOT MET' : 'MINIMUM ORDER MET',
+        text: 'This store requires at least ' + MONEY(minimumOrderCents) + '. The current draft is ' + MONEY(cartTotalCents) + '; the server verifies the final value at submission.'
+      });
+      if (leadTimeDays !== null) warnings.push({ kind: 'FULFILLMENT LEAD TIME',
+        text: leadTimeDays === 0 ? 'This store is configured for same-day fulfillment after approval; availability is still confirmed by Operations.'
+          : 'The published fulfillment lead time is ' + leadTimeDays + ' calendar day' + (leadTimeDays === 1 ? '' : 's') + ' after approval.' });
     }
     if (changed.length) warnings.push({ kind: 'PRICE CHANGED SINCE THIS LINE WAS ADDED', text: changed.length + ' line(s) differ from today’s published store price. Submission will stop so the draft can be reviewed.' });
     const preorderLines = cart.filter(line => P(line.id).preorder);
@@ -9780,6 +9878,14 @@ class Component extends DCLogic {
       orderCasePolicyButtonBg: caseQuantityEnforced ? 'var(--ux-ink)' : 'transparent',
       orderCasePolicyButtonColor: caseQuantityEnforced ? 'var(--ux-ground)' : 'var(--ux-ink)',
       onOrderCaseToggle: () => this.toggleCasePolicy(),
+      orderCommercialTermsLabel: [minimumOrderCents === null ? 'NO MINIMUM' : MONEY(minimumOrderCents) + ' MINIMUM',
+        leadTimeDays === null ? 'LEAD TIME NOT PUBLISHED' : leadTimeDays + ' DAY' + (leadTimeDays === 1 ? '' : 'S')].join(' · '),
+      orderMinimumAmount: s.orderMinimumAmount,
+      onOrderMinimumAmount: e => this.set({ orderMinimumAmount: e.target.value.slice(0, 18) }),
+      orderLeadTimeDays: s.orderLeadTimeDays,
+      onOrderLeadTimeDays: e => this.set({ orderLeadTimeDays: e.target.value.replace(/[^0-9]/g, '').slice(0, 3) }),
+      onOrderCommercialTermsSave: () => this.saveCommercialTerms(false),
+      onOrderCommercialTermsClear: () => this.saveCommercialTerms(true),
       orderPolicyHasError: !!s.orderPoliciesError,
       orderPolicyError: s.orderPoliciesError || '',
 

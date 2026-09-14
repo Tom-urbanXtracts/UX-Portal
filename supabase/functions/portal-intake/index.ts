@@ -627,7 +627,7 @@ async function verifyOrder(
   if (!license) throw new IntakeError(400, "A licensed store is required.");
   const { data: store, error: storeError } = await service.from("portal_store")
     .select(
-      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,retailer_account_id,quickbooks_customer_id,license_status,license_expires_on,qualified_at,ordering_status",
+      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,retailer_account_id,quickbooks_customer_id,license_status,license_expires_on,qualified_at,ordering_status",
     )
     .eq("license_number", license).maybeSingle();
   if (storeError) throw storeError;
@@ -921,6 +921,22 @@ async function verifyOrder(
       store.approval_threshold_cents === undefined
     ? null
     : Number(store.approval_threshold_cents);
+  const minimumOrderCents = store.minimum_order_cents === null ||
+      store.minimum_order_cents === undefined
+    ? null
+    : Number(store.minimum_order_cents);
+  if (minimumOrderCents !== null && orderValueCents < minimumOrderCents) {
+    throw new IntakeError(
+      409,
+      `This store requires a minimum order of $${
+        (minimumOrderCents / 100).toFixed(2)
+      }. The draft was preserved.`,
+    );
+  }
+  const leadTimeDays = store.lead_time_days === null ||
+      store.lead_time_days === undefined
+    ? null
+    : Number(store.lead_time_days);
   const ownerApprovalRequired = caller.profile.role === "buyer" &&
     threshold !== null &&
     (threshold === 0 || orderValueCents > threshold);
@@ -934,6 +950,8 @@ async function verifyOrder(
     orderValue: orderValueCents / 100,
     orderValueCents,
     approvalThresholdCents: threshold,
+    minimumOrderCents,
+    leadTimeDays,
     ownerApprovalRequired,
     approvalState: ownerApprovalRequired
       ? "Awaiting store owner approval"
@@ -943,7 +961,7 @@ async function verifyOrder(
     releaseHold: preorderProductIds.length > 0,
     caseQuantityEnforced: store.enforce_case_quantity === true,
     gatesAtSubmission:
-      "Retailer readiness, store license, ordering status, store scope, published price, Canix availability after explicit reservations, optional case policy, release state, and owner-approval threshold verified server-side.",
+      "Retailer readiness, store license, ordering status, store scope, published price, Canix availability after explicit reservations, optional case and minimum-order policies, release state, and owner-approval threshold verified server-side.",
   };
 }
 
@@ -994,6 +1012,8 @@ async function createDurableOrder(
       approvalHeldBy: payload.approvalHeldBy,
       gatesAtSubmission: payload.gatesAtSubmission,
       caseQuantityEnforced: payload.caseQuantityEnforced === true,
+      minimumOrderCents: payload.minimumOrderCents ?? null,
+      leadTimeDays: payload.leadTimeDays ?? null,
     },
   });
   if (error) {

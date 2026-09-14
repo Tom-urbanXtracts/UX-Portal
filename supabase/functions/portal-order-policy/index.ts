@@ -78,7 +78,7 @@ async function storesFor(caller: Caller): Promise<Row[]> {
     if (!caller.canManage) return [];
     const { data, error } = await service.from("portal_store")
       .select(
-        "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,approval_policy_updated_at",
+        "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at",
       )
       .eq("active", true).order("organization").order("display_name");
     if (error) throw error;
@@ -87,7 +87,7 @@ async function storesFor(caller: Caller): Promise<Row[]> {
   if (caller.profile.role === "owner") {
     const { data, error } = await service.from("portal_store")
       .select(
-        "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,approval_policy_updated_at",
+        "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at",
       )
       .eq("organization", caller.profile.org).eq("active", true).order(
         "display_name",
@@ -105,7 +105,7 @@ async function storesFor(caller: Caller): Promise<Row[]> {
   if (!licenses.length) return [];
   const { data, error } = await service.from("portal_store")
     .select(
-      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,approval_policy_updated_at",
+      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at",
     )
     .eq("organization", caller.profile.org).eq("active", true).in(
       "license_number",
@@ -130,6 +130,14 @@ function serialize(store: Row): Row {
       ? "all_buyer_orders"
       : "above_threshold",
     enforceCaseQuantity: store.enforce_case_quantity === true,
+    minimumOrderCents: store.minimum_order_cents === null ||
+        store.minimum_order_cents === undefined
+      ? null
+      : Number(store.minimum_order_cents),
+    leadTimeDays: store.lead_time_days === null ||
+        store.lead_time_days === undefined
+      ? null
+      : Number(store.lead_time_days),
     updatedAt: store.approval_policy_updated_at,
   };
 }
@@ -172,6 +180,27 @@ async function auditCasePolicy(
       locationLicense: store.license_number,
       locationName: store.display_name,
       enforceCaseQuantity: enabled,
+    },
+  });
+  if (error) throw error;
+}
+
+async function auditCommercialTerms(
+  caller: Caller,
+  store: Row,
+  minimumOrderCents: number | null,
+  leadTimeDays: number | null,
+): Promise<void> {
+  const { error } = await service.from("portal_admin_audit").insert({
+    actor_id: caller.profile.id,
+    actor_org: caller.profile.org,
+    action: "order-commercial-terms-updated",
+    target_org: store.organization,
+    detail: {
+      locationLicense: store.license_number,
+      locationName: store.display_name,
+      minimumOrderCents,
+      leadTimeDays,
     },
   });
   if (error) throw error;
@@ -230,6 +259,53 @@ Deno.serve(async (request) => {
       }).eq("license_number", locationLicense);
       if (error) throw error;
       await auditCasePolicy(caller, store, body.enforceCaseQuantity);
+      const policies = (await storesFor(caller)).map(serialize);
+      return json(request, {
+        ok: true,
+        policy: policies.find((row) => row.locationLicense === locationLicense),
+        policies,
+      });
+    }
+    if (action === "update-commercial-terms") {
+      const rawMinimum = body.minimumOrderCents;
+      const rawLeadTime = body.leadTimeDays;
+      const minimumOrderCents = rawMinimum === null || rawMinimum === ""
+        ? null
+        : Number(rawMinimum);
+      const leadTimeDays = rawLeadTime === null || rawLeadTime === ""
+        ? null
+        : Number(rawLeadTime);
+      if (
+        minimumOrderCents !== null &&
+        (!Number.isInteger(minimumOrderCents) || minimumOrderCents <= 0 ||
+          minimumOrderCents > 100000000)
+      ) {
+        return json(request, {
+          error: "Enter a valid positive minimum order value or leave it blank.",
+        }, 400);
+      }
+      if (
+        leadTimeDays !== null &&
+        (!Number.isInteger(leadTimeDays) || leadTimeDays < 0 ||
+          leadTimeDays > 365)
+      ) {
+        return json(request, {
+          error: "Lead time must be a whole number from 0 to 365 days or blank.",
+        }, 400);
+      }
+      const { error } = await service.from("portal_store").update({
+        minimum_order_cents: minimumOrderCents,
+        lead_time_days: leadTimeDays,
+        approval_policy_updated_by: caller.profile.id,
+        approval_policy_updated_at: new Date().toISOString(),
+      }).eq("license_number", locationLicense);
+      if (error) throw error;
+      await auditCommercialTerms(
+        caller,
+        store,
+        minimumOrderCents,
+        leadTimeDays,
+      );
       const policies = (await storesFor(caller)).map(serialize);
       return json(request, {
         ok: true,

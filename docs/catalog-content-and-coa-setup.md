@@ -95,7 +95,7 @@ No value is calculated, copied from another lot, or interpreted. When a normaliz
 - The catalog response does not contain exact on-hand quantity, cost, sales-order allocation, Cost Object, or owner-only accounting fields.
 - Weight-based cultivation and processing material remains in Inventory, not the retailer catalog.
 - Order intake rechecks the requested total against current available Canix units, and the database atomically subtracts active portal commitments before accepting each line. Errors do not disclose the available total.
-- Whole-case enforcement is a per-store policy and defaults off. When enabled, intake requires one positive, unambiguous Canix `case_quantity` per item and rejects non-multiples. Minimum order and lead time stay blank because they are not in the connected reporting contract.
+- Whole-case enforcement is a per-store policy and defaults off. When enabled, intake requires one positive, unambiguous Canix `case_quantity` per item and rejects non-multiples. Administrator, Operations, or Sales may separately set or clear a store minimum value and informational calendar-day lead time; both default blank, and intake rechecks a configured minimum.
 - Retail users may inspect package-specific COAs but cannot choose a fulfillment lot. The submitted compliance tag is blank until urbanXtracts allocates the package through the fulfillment workflow.
 
 ## Verification

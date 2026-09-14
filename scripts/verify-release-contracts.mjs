@@ -56,6 +56,7 @@ const mondayItemMasterRetargetMigration = await readFile(resolve(root, "supabase
 const costObjectSourceMigration = await readFile(resolve(root, "supabase/migrations/20260914131500_cost_object_source_boundary.sql"), "utf8");
 const costObjectDecisionMigration = await readFile(resolve(root, "supabase/migrations/20260914160000_lot_cost_object_decisions.sql"), "utf8");
 const kioskMigration = await readFile(resolve(root, "supabase/migrations/20260914173000_public_store_kiosk_links.sql"), "utf8");
+const commercialTermsMigration = await readFile(resolve(root, "supabase/migrations/20260914214500_store_minimum_order_and_lead_time.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -92,6 +93,10 @@ assertContract(intake.includes("store.enforce_case_quantity === true"), "case en
 assertContract(intake.includes("orderable_units"), "order intake uses reservation-adjusted availability");
 assertContract(policy.includes('action === "update-case-policy"'), "case policy has a protected update action");
 assertContract(migration.includes("enforce_case_quantity boolean not null default false"), "case enforcement defaults off");
+assertContract(policy.includes('action === "update-commercial-terms"') && policy.includes("minimum_order_cents") && policy.includes("lead_time_days"), "optional store commercial terms have a protected update action");
+assertContract(intake.includes("orderValueCents < minimumOrderCents") && intake.includes("The draft was preserved"), "configured store minimum orders are rechecked server-side without discarding the draft");
+assertContract(commercialTermsMigration.includes("minimum_order_cents is null") && commercialTermsMigration.includes("lead_time_days is null") && commercialTermsMigration.includes("status = 'completed'"), "minimum order and lead time default off and are recorded as a completed deferred item");
+assertContract(source.includes("Store order terms") && source.includes("BLOCKED — MINIMUM ORDER") && source.includes("FULFILLMENT LEAD TIME"), "order builders display and enforce configured licensed-store terms");
 assertContract(intake.includes("labPassed(") && intake.includes("releasedUnitsByProduct"), "order release is quantity-aware and exact-status based");
 assertContract(orders.includes("portal_inventory_commitment") && orders.includes("orderTransitionAllowed"), "order release and Monday transitions fail closed");
 assertContract(orders.includes("mondayOrderState") && !orders.includes("/deliver|received|customer accepted/"), "Monday statuses use an exact allowlist rather than substring promotion");
