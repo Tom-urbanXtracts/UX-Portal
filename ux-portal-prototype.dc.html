@@ -1283,7 +1283,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="{{ invFilterGridStyle }}">
 <label style="display:flex;flex-direction:column;gap:6px;{{ invSearchFieldStyle }}">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">SEARCH</span>
-<input type="search" value="{{ invSearch }}" onInput="{{ onInvSearch }}" placeholder="Package tag, item, SKU, brand, economic owner or room" aria-label="Search inventory packages" style="width:100%;min-width:0;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:10px 11px;font:12.5px Archivo,sans-serif;color:var(--ux-ink);outline:none">
+<input type="search" value="{{ invSearch }}" onInput="{{ onInvSearch }}" placeholder="Package tag, item, SKU, brand, Canix owner, economic owner or room" aria-label="Search inventory packages" style="width:100%;min-width:0;background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:10px 11px;font:12.5px Archivo,sans-serif;color:var(--ux-ink);outline:none">
 </label>
 <label style="display:flex;flex-direction:column;gap:6px">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">FACILITY</span>
@@ -1319,6 +1319,14 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <option value="all">All brands</option>
 <sc-for list="{{ invBrandOptions }}" as="o" hint-placeholder-count="6"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
 </select>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px">
+<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">CANIX OWNER</span>
+<select value="{{ invCanixOwner }}" onChange="{{ onInvCanixOwner }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink);max-width:220px">
+<option value="all">Assigned and blank</option>
+<sc-for list="{{ invCanixOwnerOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.value }}">{{ o.label }}</option></sc-for>
+</select>
+<span style="font-size:9.5px;line-height:1.35;color:var(--ux-muted)">Operational assignee from Canix; separate from Economic Owner.</span>
 </label>
 <label style="display:flex;flex-direction:column;gap:6px">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">ECONOMIC PARTNER</span>
@@ -1379,19 +1387,20 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 
 <div role="region" aria-label="Filtered package inventory" tabindex="0" style="overflow:auto;border-top:2px solid rgba(23,14,11,.45);border-bottom:1px solid rgba(23,14,11,.25);max-height:520px">
-<div role="table" aria-label="Canix package inventory" style="min-width:1960px">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
-<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="15">
+<div role="table" aria-label="Canix package inventory" style="min-width:2080px">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:10px 8px;background:var(--ux-ground);border-bottom:1px solid rgba(23,14,11,.22);position:sticky;top:0;z-index:2">
+<sc-for list="{{ invColumns }}" as="c" hint-placeholder-count="16">
 <button type="button" role="columnheader" onClick="{{ c.onSort }}" aria-sort="{{ c.ariaSort }}" style="background:transparent;border:0;padding:0;text-align:left;font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);cursor:pointer">{{ c.label }} {{ c.arrow }}</button>
 </sc-for>
 </div>
 <sc-if value="{{ invHasRows }}" hint-placeholder-val="{{ true }}">
 <sc-for list="{{ invTableRows }}" as="r" hint-placeholder-count="8">
-<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
+<div role="row" style="display:grid;grid-template-columns:2fr 1.15fr .9fr .9fr .9fr .55fr .9fr .85fr .8fr .8fr .8fr .5fr .9fr .75fr .9fr .5fr;gap:13px;padding:13px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px;align-items:center;{{ r.rowStyle }}">
 <div style="min-width:0"><div style="font:700 12.5px/1.35 Archivo,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.item }}</div><div style="font:10.5px/1.45 ui-monospace,monospace;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.skuTag }}</div></div>
 <div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:10.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.partner }}</div>
 <div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.owner }}</div>
+<div style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.canixOwner }}</div>
 <div style="font:700 10.5px ui-monospace,monospace">{{ r.uom }}</div>
 <div style="font:10.5px/1.4 ui-monospace,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.lotId }}</div>
 <div><span style="{{ r.lotStyle }}">{{ r.lotStatus }}</span></div>
@@ -3652,7 +3661,7 @@ class Component extends DCLogic {
     drafts: [{ id: 'D1', name: 'Downtown restock', loc: 'l1', lines: [] }], activeDraft: 'D1',
     account: null, accountsSearch: '', accountsFilter: 'all', accountsSort: 'priority', loading: false, stale: false, confirmed: null, invSandbox: false,
     invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-    invInventoryBucket: 'packaged', invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
+    invInventoryBucket: 'packaged', invBrand: 'all', invCanixOwner: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all', invView: 'all', invSortKey: 'source_updated_at',
     inventoryPanel: 'packages', inventorySyncDetailsOpen: false, invFiltersOpen: false,
     invSortDir: 'desc', invPage: 1, invPageSize: 25, invSelectedPackage: null,
     invMasterOpen: true, invMasterSearch: '', invMasterStatus: 'all', invMasterFacility: 'all',
@@ -4454,7 +4463,7 @@ class Component extends DCLogic {
   inventoryBucketSelect(bucket) {
     if (!['packaged', 'plant_material', 'bulk'].includes(bucket)) return;
     this.set({ invInventoryBucket: bucket, invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invBrand: 'all', invCanixOwner: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
       invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
       invPage: 1, invSelectedPackage: null, invQueueItemId: null,
       invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
@@ -4462,7 +4471,7 @@ class Component extends DCLogic {
 
   inventoryReset() {
     this.set({ invSearch: '', invFacility: 'all', invStatus: 'all', invQuantity: 'all', invCategory: 'all',
-      invBrand: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
+      invBrand: 'all', invCanixOwner: 'all', invPartner: 'all', invOwner: 'all', invCommercial: 'all', invUom: 'all', invCost: 'all', invLab: 'all', invAge: 'all',
       invView: 'all', invSortKey: 'source_updated_at', invSortDir: 'desc',
       invPage: 1, invSelectedPackage: null, invQueueItemId: null,
       invQueueOwnerDraft: '', invQueueModelDraft: '', invQueueSettlementDraft: '', invQueueNote: '' });
@@ -6867,6 +6876,7 @@ class Component extends DCLogic {
       : view === 'allocated' ? row.status_category === 'allocated'
       : view === 'failed' ? String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1
       : view === 'aged' ? Number(row.age_days) > 90
+      : view === 'canix_owner' ? !row.canix_package_owner_name
       : view === 'ownership' ? !row.economic_owner_name
       : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
       : view === 'lot' ? row.lot_control_status !== 'valid'
@@ -6886,6 +6896,7 @@ class Component extends DCLogic {
       if (s.invQuantity !== 'all' && row.quantity_type !== s.invQuantity) return false;
       if (s.invCategory !== 'all' && row.item_category_name !== s.invCategory) return false;
       if (s.invBrand !== 'all' && (row.brand_name || 'Not recorded') !== s.invBrand) return false;
+      if (s.invCanixOwner !== 'all' && (row.canix_package_owner_name || 'Not assigned') !== s.invCanixOwner) return false;
       if (s.invPartner !== 'all' && (row.economic_partner_name || 'Not mapped') !== s.invPartner) return false;
       if (s.invOwner !== 'all' && (row.economic_owner_name || 'Not classified') !== s.invOwner) return false;
       if (s.invCommercial !== 'all' && (row.commercial_model || 'Not classified') !== s.invCommercial) return false;
@@ -6967,7 +6978,7 @@ class Component extends DCLogic {
     const inventoryPanel = ['packages', 'item_master', 'ownership', 'overview'].includes(s.inventoryPanel)
       ? s.inventoryPanel : 'packages';
     const invActiveFilterCount = [s.invFacility, s.invStatus, s.invQuantity, s.invCategory, s.invBrand,
-      s.invPartner, s.invOwner, s.invCommercial, s.invUom, s.invCost, s.invLab, s.invAge]
+      s.invCanixOwner, s.invPartner, s.invOwner, s.invCommercial, s.invUom, s.invCost, s.invLab, s.invAge]
       .filter(value => value && value !== 'all').length + (invNeedle ? 1 : 0) + (s.invView !== 'all' ? 1 : 0);
     /* Brand geometry: the mark is built from arches, so category markers, image
        frames and empty states repeat that arch rather than inventing a shape. */
@@ -8398,6 +8409,7 @@ class Component extends DCLogic {
         ['allocated', 'Allocated', invViewCounts('allocated')],
         ['failed', 'Lab failed', invViewCounts('failed')],
         ['aged', 'Aged 90+ days', invViewCounts('aged')],
+        ['canix_owner', 'Canix owner blank', invViewCounts('canix_owner')],
         ['ownership', 'Owner unclassified', invViewCounts('ownership')],
         ['mapping', 'Missing mapping', invViewCounts('mapping')],
         ['lot', 'Lot exceptions', invViewCounts('lot')],
@@ -8432,6 +8444,9 @@ class Component extends DCLogic {
       invBrand: s.invBrand,
       onInvBrand: e => this.inventoryFilter({ invBrand: e.target.value }),
       invBrandOptions: invFacet('brand_name', 'Not recorded'),
+      invCanixOwner: s.invCanixOwner,
+      onInvCanixOwner: e => this.inventoryFilter({ invCanixOwner: e.target.value }),
+      invCanixOwnerOptions: invFacet('canix_package_owner_name', 'Not assigned'),
       invPartner: s.invPartner,
       onInvPartner: e => this.inventoryFilter({ invPartner: e.target.value }),
       invPartnerOptions: invFacet('economic_partner_name', 'Not mapped'),
@@ -8509,7 +8524,7 @@ class Component extends DCLogic {
         onClassify: () => this.openOwnershipQueueItem(item) })),
       invQueueEmpty: invOwnershipQueue.length === 0,
       invColumns: [
-        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['uom_code', 'UOM'],
+        ['item_name', 'Item / package'], ['facility_name', 'Facility / room'], ['economic_partner_name', 'Economic partner'], ['economic_owner_name', 'Economic owner'], ['canix_package_owner_name', 'Canix owner'], ['uom_code', 'UOM'],
         ['lot_id', 'Lot ID'], ['lot_control_status', 'Lot control'], ['status_category', 'Status'],
         ['quantity', 'On hand'], ['lab_test_status', 'Lab'], ['age_days', 'Age'], ['allocation', 'Allocation'],
         ['cost_object_id', 'Cost object'], ['source_updated_at', 'Updated'], ['package_id', 'Detail']
@@ -8531,6 +8546,7 @@ class Component extends DCLogic {
           facility: row.facility_name || '\u2014', room: row.room_name || 'No room assigned',
           partner: row.economic_partner_name || 'Not mapped',
           owner: row.economic_owner_name || 'Not classified',
+          canixOwner: row.canix_package_owner_name || 'Not assigned',
           uom: row.uom_code || '\u2014',
           lotId: row.lot_id || '\u2014',
           lotStatus: invTitle(row.lot_control_status || 'not_checked'),
@@ -8595,7 +8611,7 @@ class Component extends DCLogic {
         ['Settlement counterparty', invSelected.settlement_counterparty_name || 'None recorded'],
         ['Ownership scope / source', [invSelected.ownership_scope, invSelected.economic_owner_source,
           invSelected.economic_owner_source_field].filter(Boolean).map(invTitle).join(' · ') || 'No mapping'],
-        ['Canix Package Owner', invSelected.canix_package_owner_name || 'Not supplied by API'], ['UX OS UOM', invSelected.uom_code || ''],
+        ['Canix Owner (operational)', invSelected.canix_package_owner_name || 'Not assigned in Canix'], ['UX OS UOM', invSelected.uom_code || ''],
         ['Lot ID', invSelected.lot_id || 'Not recorded'],
         ['Production batch', invSelected.production_batch_number || 'Not recorded'],
         ['Lot control', invTitle(invSelected.lot_control_status || 'not_checked')],

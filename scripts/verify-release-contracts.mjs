@@ -73,6 +73,7 @@ assertContract(economicPartnerMigration.includes("portal_sync_brand_economic_par
 assertContract(economicPartnerMigration.includes("where party_code = 'WANA'") && economicPartnerMigration.includes("display_name = 'Wana'"), "Wana uses the requested Economic Partner display name");
 assertContract(economicOwnership.includes('action === "sync-brand-partners"') && economicOwnership.includes("brandPartners"), "authorized staff can inspect and refresh Canix Brand partner mappings");
 assertContract(source.includes("ECONOMIC PARTNER") && source.includes("invPartnerOptions") && source.includes("economic_partner_name"), "inventory UI filters, displays, and exports Economic Partner");
+assertContract(inventory.includes("firstObject(source.owner, source.package_owner)") && inventory.includes("canix_package_owner_name") && source.includes("invCanixOwnerOptions") && source.includes("Canix owner blank") && source.includes("Canix Owner (operational)"), "Canix package Owner is pulled, searchable, filterable, and kept separate from Economic Owner");
 assertContract(inventory.includes("availability_rule:") && inventory.includes("active Canix package + status_category available; explicit reservations subtracted"), "inventory publishes the availability rule");
 assertContract(inventory.includes('reservation_state: reservation.field ? "known" : "unknown"'), "unknown reservation coverage is explicit");
 assertContract(catalog.includes('groupingPolicy: "canix_item_id_v1"'), "catalog grouping is the approved Canix item contract");
