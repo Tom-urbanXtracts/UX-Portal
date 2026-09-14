@@ -198,35 +198,32 @@ A static page cannot hold a secret. Committing the Make URL and the shared
 secret to make the live site post would publish both to a public repository,
 which turns the secret into decoration.
 
-Submissions now go to a Supabase Edge Function, `portal-intake`, which holds the
-URL and secret server-side, checks the caller, stamps the submitter from the
-verified token rather than trusting the payload, and forwards to Make.
+Submissions now go to a Supabase Edge Function, `portal-intake`, which checks
+the caller, stamps the submitter from the verified token rather than trusting
+the payload, and writes through the dedicated Monday app. The earlier Make
+forwarding design was retired on 14 September 2026; no shared intake credential
+or browser-configured webhook remains.
 
 | Caller | Result |
 |---|---|
 | No `Authorization` header | 401 at the platform gate |
 | Publishable key as bearer | **401** — it passes `verify_jwt` but is not a person, so the function asks Auth and rejects it |
-| Signed-in session | forwarded |
-| No session, `kind: onboarding` | forwarded, flagged `unauthenticated: true` |
+| Signed-in authorized session | verified and sent through the direct Monday app |
+| No session, `kind: onboarding` | Turnstile/rate checked, durably recorded, and sent through the direct Monday app |
 
 That second row is the reason the function asks `/auth/v1/user` rather than
 trusting `verify_jwt`: the publishable key is a valid project JWT and is public.
 
 "Request access" stays open by design — a store with no account has to be able
-to ask for one. Those arrive flagged as unauthenticated, and are spammable
-without a captcha; that is an open item, not a solved one.
+to ask for one. Production requests require the hostname-bound Turnstile action
+and a privacy-preserving daily rate limit.
 
-### Two secrets have to be set on the function
+### The function uses the dedicated Monday connection
 
-Edge Functions → `portal-intake` → Secrets. Not settable from here:
-
-| Secret | Value |
-|---|---|
-| `MAKE_WEBHOOK_URL` | the scenario's webhook URL |
-| `MAKE_INTAKE_SECRET` | the shared secret the scenario's route filters already expect |
-
-Until both are set the function answers `503 intake not configured`, and the
-portal now says so in the toast rather than claiming the order was submitted.
+The encrypted Monday OAuth connection and pinned board/column identifiers are
+server-side. If the direct connection is unavailable, intake answers 503 and
+the portal keeps the durable request for reconciliation rather than trying a
+second workflow or claiming success.
 
 ### Failures are now visible where they happen
 

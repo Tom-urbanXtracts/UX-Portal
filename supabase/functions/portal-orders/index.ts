@@ -11,10 +11,6 @@ import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const MAKE_ORDER_STATUS_WEBHOOK_URL =
-  Deno.env.get("MAKE_ORDER_STATUS_WEBHOOK_URL") ??
-    Deno.env.get("MAKE_WEBHOOK_URL") ?? "";
-const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
 const MONDAY_STATUS_SECRET = Deno.env.get("MONDAY_STATUS_SECRET") ?? "";
 const ORDER_SYNC_CRON_SECRET = Deno.env.get("ORDER_SYNC_CRON_SECRET") ?? "";
 const MONDAY_TOKEN_ENCRYPTION_KEY =
@@ -544,10 +540,6 @@ async function sendOutbox(eventId: string): Promise<Row> {
     .select("*").eq("id", outbox.order_id).maybeSingle();
   if (orderError) throw orderError;
   if (!order) throw new PortalError(404, "Portal order not found.");
-  const { data: event, error: eventError } = await service.from(
-    "portal_order_event",
-  ).select("*").eq("id", eventId).maybeSingle();
-  if (eventError) throw eventError;
   const attempt = Number(outbox.attempts || 0) + 1;
   const attemptedAt = new Date().toISOString();
   let errorMessage: string | null = null;
@@ -561,56 +553,8 @@ async function sendOutbox(eventId: string): Promise<Row> {
       ? error.message
       : "Monday status workflow failed.";
   }
-  if (!sentDirectly && MAKE_ORDER_STATUS_WEBHOOK_URL && MAKE_INTAKE_SECRET) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 20_000);
-      let response: Response;
-      try {
-        response = await fetch(MAKE_ORDER_STATUS_WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            accept: "application/json",
-          },
-          body: JSON.stringify({
-            kind: "order-status",
-            secret: MAKE_INTAKE_SECRET,
-            sentAt: attemptedAt,
-            source: "UX Store Portal",
-            payload: {
-              portalOrderId: order.id,
-              portalReference: order.portal_reference,
-              orderNumber: order.order_number,
-              mondayItemId: order.monday_item_id,
-              account: order.organization,
-              licenceNumber: order.location_license,
-              location: order.location_name,
-              state: order.state,
-              publicState: publicState(String(order.state)),
-              eventId,
-              fromState: event?.from_state,
-              rawStatus: event?.raw_status,
-              note: event?.note,
-            },
-          }),
-          signal: controller.signal,
-        });
-      } finally {
-        clearTimeout(timeout);
-      }
-      errorMessage = response.ok
-        ? null
-        : `Monday status workflow returned ${response.status}.`;
-    } catch (error) {
-      errorMessage = error instanceof Error && error.name === "AbortError"
-        ? "Monday status workflow timed out."
-        : error instanceof Error
-        ? error.message
-        : "Monday status workflow failed.";
-    }
-  } else if (!sentDirectly && !errorMessage) {
-    errorMessage = "Monday status synchronization is not configured.";
+  if (!sentDirectly && !errorMessage) {
+    errorMessage = "Direct Monday status synchronization is not configured.";
   }
   const state = errorMessage ? "failed" : "sent";
   const { error: updateError } = await service.from("portal_order_sync_outbox")

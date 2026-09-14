@@ -2180,43 +2180,12 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ isLicense }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:620px">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Send a document for review</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:70ch">A lapsed licence pauses ordering at that location only. Send the renewal here and it reaches a reviewer with your account already attached.</p>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:70ch">A lapsed licence pauses ordering at that location only. The renewal-upload route is temporarily held while urbanXtracts connects the approved document scanner.</p>
 <div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin-bottom:24px;max-width:72ch">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">SENDING THIS DOES NOT LIFT THE GATE</div>
-<div style="font-size:13px;line-height:1.62">The gate reads your licence record, not this upload. A reviewer looks at the document and updates that record, and the gate moves then. Nothing you attach here can clear a block on its own &mdash; that is the point of it.</div>
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">CONTROLLED HOLD &middot; NO FILE IS ACCEPTED HERE</div>
+<div style="font-size:13px;line-height:1.62">Send the renewal to your urbanXtracts representative through the existing approved process. The portal will not read, retain, or claim delivery of a file from this screen. Uploads will return only after malware scanning, quarantine handling, reviewer evidence, and retention are verified.</div>
 </div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Document type</div>
-<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
-<sc-for list="{{ licTypes }}" as="lt" hint-placeholder-count="4">
-<button type="button" onClick="{{ lt.onPick }}" style="{{ lt.style }}">{{ lt.label }}</button>
-</sc-for>
-</div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Which location</div>
-<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
-<sc-for list="{{ licLocs }}" as="ll" hint-placeholder-count="3">
-<button type="button" onClick="{{ ll.onPick }}" style="{{ ll.style }}">{{ ll.label }}</button>
-</sc-for>
-</div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Expiry the renewal carries</div>
-<input type="text" value="{{ licExpiry }}" onInput="{{ onLicExpiry }}" aria-label="Expiry the renewal carries" placeholder="e.g. 31 Aug 2027" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">The document</div>
-<input type="file" onChange="{{ onLicFile }}" aria-label="Choose the document" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:6px">
-<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ licFileLabel }}</div>
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:5px">Anything the reviewer should know</div>
-<input type="text" value="{{ licNote }}" onInput="{{ onLicNote }}" aria-label="Note for the reviewer" style="width:100%;padding:11px 12px;border:1px solid rgba(23,14,11,.3);background:#fff;font:400 13px Archivo,sans-serif;margin-bottom:20px">
-<sc-if value="{{ licHasErr }}" hint-placeholder-val="{{ false }}">
-<div style="border-left:3px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:18px;max-width:74ch">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:4px">CANNOT SEND YET</div>
-<div style="font-size:13px;line-height:1.55">{{ licErr }}</div>
-</div>
-</sc-if>
-<button type="button" onClick="{{ onLicSubmit }}" style="background:var(--ux-accent);color:#fff;border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:pointer;min-height:46px">Send for review</button>
-<sc-if value="{{ licSent }}" hint-placeholder-val="{{ false }}">
-<div style="margin-top:20px;border-left:3px solid var(--ux-accent);padding:12px 0 12px 16px;max-width:72ch">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">SENT</div>
-<div style="font-size:13px;line-height:1.62">It is on the License Verification board as <strong>Submitted</strong>, with your account, location and licence number attached. You will see its state under Documents. Ordering at that location stays paused until the licence record is updated.</div>
-</div>
-</sc-if>
+<button type="button" disabled aria-disabled="true" title="An approved scanner and retention workflow are required before uploads can be enabled." style="background:var(--ux-faint);color:var(--ux-muted);border:0;padding:13px 16px;font:700 13px Archivo,sans-serif;cursor:not-allowed;min-height:46px">Document upload temporarily unavailable</button>
 </div>
 </sc-if>
 
@@ -3217,13 +3186,10 @@ const STORE_VISIBLE_AUDIT = [
   'COA amended', 'Amended COA acknowledged', 'COA published'
 ];
 
-// The intake endpoint and its key are supplied at deploy time and are deliberately
-// absent from any public build. Anything a browser can read, a visitor can read, so
-// a key committed here would not be a key. Set both on a host that can hold a
-// secret; until then submissions are recorded and not sent.
+// Public runtime configuration contains only browser-safe values. Orders and
+// onboarding always enter through the portal Edge Function; direct Monday
+// credentials and board routing never enter this document.
 const PORTAL_CONFIG = (typeof window !== 'undefined' && window.UX_PORTAL_CONFIG) || {};
-const MAKE_WEBHOOK = PORTAL_CONFIG.intakeUrl || '';
-const INTAKE_KEY = PORTAL_CONFIG.intakeKey || '';
 
 // Supabase Auth. The project URL and publishable key are designed to be public —
 // they identify the project, they do not grant anything. Row-level security in the
@@ -6862,39 +6828,13 @@ class Component extends DCLogic {
     return d ? d.lines : [];
   }
 
-  MAX_UPLOAD() { return 2 * 1024 * 1024; }
   MAX_ONBOARDING_UPLOAD() { return 10 * 1024 * 1024; }
 
-  licPickFile(e) {
-    const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    if (f.size > this.MAX_UPLOAD()) {
-      this.set({ licErr: f.name + ' is ' + Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB. This route carries up to 2 MB, because the bytes travel inside the webhook payload. A larger scan needs file storage in front of it \u2014 email it to your rep for now.', licFileName: '', licFileData: null, licFileSize: 0 });
-      return;
-    }
-    const r = new FileReader();
-    r.onload = () => this.set({ licFileName: f.name, licFileSize: f.size, licFileData: String(r.result).split(',').pop(), licErr: null });
-    r.onerror = () => this.set({ licErr: 'That file could not be read.', licFileName: '', licFileData: null });
-    r.readAsDataURL(f);
-  }
-
   licSubmit() {
-    const s = this.state;
-    if (!s.licFileData) { this.set({ licErr: 'Choose the document first. There is nothing to review without it.' }); return; }
-    if (!s.licExpiry.trim()) { this.set({ licErr: 'Give the expiry the renewal carries. It is recorded as claimed, and a reviewer checks it against the state record.' }); return; }
-    const loc = LOCATIONS.find(x => x.id === s.licLoc) || {};
-    this.logAudit('Document uploaded', s.licType + ' \u00b7 ' + loc.name, 'Sent for internal review. Visible to your organisation.');
-    this.post('license', {
-      summary: s.licType + ' \u00b7 ' + loc.name + ' \u00b7 ' + s.licFileName,
-      board: 'License Verification',
-      account: ACTING_ORG, licenceNumber: loc.license, location: loc.name,
-      documentType: s.licType, expiryClaimed: s.licExpiry.trim(), note: s.licNote.trim(),
-      uploadedBy: s.authUser ? s.authUser.name + ' (' + s.authUser.role + ')' : 'Unknown',
-      reviewState: 'Submitted',
-      file: { name: s.licFileName, sizeBytes: s.licFileSize, base64: s.licFileData }
-    });
-    this.set({ licSent: true, licErr: null, licFileName: '', licFileData: null, licFileSize: 0, licExpiry: '', licNote: '',
-      toast: 'Sent for review. Nothing about your licence gate has changed yet \u2014 it reads the licence record, and that moves when a reviewer has looked at this.', toastKind: 'SENT FOR REVIEW' });
+    this.set({ licSent: false,
+      licErr: 'Document upload is on a controlled hold until the approved malware scanner and retention workflow are connected.',
+      toast: 'No document was sent or retained. Use the current approved renewal process with your urbanXtracts representative.',
+      toastKind: 'UPLOAD HELD' });
   }
 
   fixPassword() {
@@ -7082,20 +7022,12 @@ class Component extends DCLogic {
 
   post(kind, payload, onOk, onFail) {
     const s = this.state;
-    // Everything a static page carries is public, so the published portal cannot
-    // hold the Make URL or the shared secret. It posts to the portal's own
-    // intake function instead, which holds both server-side and checks who is
-    // calling before forwarding. A directly configured Make URL still works for
-    // local development.
-    const direct = !!MAKE_WEBHOOK && !!INTAKE_KEY;
-    const url = direct ? MAKE_WEBHOOK : SUPABASE_URL + '/functions/v1/portal-intake';
-    const headers = direct
-      ? { 'Content-Type': 'application/json' }
-      : { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
-          'Authorization': 'Bearer ' + (s.token || SUPABASE_KEY) };
-    const body = direct
-      ? { kind, secret: INTAKE_KEY, sentAt: new Date().toISOString(), source: 'UX Store Portal', payload }
-      : { kind, payload };
+    // The browser sends only to the portal's authenticated intake boundary.
+    // Direct Monday credentials and board routing remain server-side.
+    const url = SUPABASE_URL + '/functions/v1/portal-intake';
+    const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (s.token || SUPABASE_KEY) };
+    const body = { kind, payload };
     this.setState(st => ({ outbox: [{ kind, at: TODAY, state: 'Sending', detail: payload.summary || kind }].concat(st.outbox) }));
     const failed = (state, why, detail) => {
       const reconciliation = (kind === 'order' || kind === 'onboarding') && !!(detail && (detail.reconciliationRequired || detail.uncertain));
@@ -7122,7 +7054,7 @@ class Component extends DCLogic {
           failed('Rejected: HTTP ' + status, why, detail);
           return;
         }
-        this.setState(st => ({ outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Accepted by Make' } : o) }));
+        this.setState(st => ({ outbox: st.outbox.map((o, i) => i === 0 ? { ...o, state: 'Accepted by portal' } : o) }));
         let reply = null;
         try { reply = JSON.parse(t); } catch (e) {}
         if (onOk) onOk(reply);
@@ -9077,7 +9009,7 @@ class Component extends DCLogic {
       rstDone: s.rstDone, rstLive: !!s.rstToken && !s.rstDone, rstDead: !s.rstToken && !s.rstDone,
       onRstSubmit: () => this.submitReset(), onLeaveReset: () => this.leaveReset(),
       outbox: s.outbox.map(o => ({ ...o, style: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
-        + (o.state === 'Accepted by Make' ? 'var(--ux-accent);color:#fff' : o.state === 'Sending' ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-signal);color:#fff') })),
+        + (o.state === 'Accepted by portal' ? 'var(--ux-accent);color:#fff' : o.state === 'Sending' ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-signal);color:#fff') })),
       hasOutbox: s.outbox.length > 0,
       signInUsers: USERS.filter(u => u.role !== 'Kiosk device' && (u.org === ACTING_ORG || u.org === 'urbanXtracts' || u.org === DEMO_ORG)).map(u => ({
         name: u.name, email: u.email, org: u.org, role: u.role,

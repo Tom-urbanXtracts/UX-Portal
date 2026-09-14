@@ -1,20 +1,20 @@
-# Make order automation remediation
+# Retired Make order automation record
 
 Audit date: 2 September 2026
 
-This is the compatibility-path remediation plan for Make scenario `6043707`, **UX Portal intake to monday**. It records no webhook addresses or shared secrets. Direct portal order creation, portal-to-Monday status writes, and signed Monday-to-portal order callbacks now use the dedicated Monday app and do not depend on this paused scenario.
+This is the historical remediation and retirement record for Make scenario `6043707`, **UX Portal intake to monday**. It records no webhook addresses or shared secrets. Direct portal order and onboarding creation, portal-to-Monday status writes, and signed Monday-to-portal order callbacks use the dedicated Monday app and do not depend on this paused scenario.
 
 ## Current state
 
-- The Make organization is paused.
+- The Make organization and scenario are inactive.
 - The free plan has consumed 1,004 of 1,000 operations and reports its next reset on 14 September 2026. It cannot execute another production validation unless the plan is upgraded or the allowance resets.
 - Scenario `6043707` was deactivated for the structural repair on 1 September 2026. Its custom webhook remains detached while the scenario and organization are inactive.
-- The existing router handles order, license, and onboarding payloads and writes to the existing Monday boards.
+- The historical router handled order, license, onboarding, and order-status payloads. The portal no longer invokes any of those routes.
 - The saved order route now searches **Portal request ID** before creation, stores both portal identifiers on new items, and returns `orderNumber`, `mondayItemId`, `mondayBoardId`, and `status` for both found and created branches.
 - The saved scenario now includes an authenticated `order-status` route and returns a complete onboarding receipt.
 - Make's blueprint validator and the Monday module validators accepted the saved structure with no warnings. Runtime execution is not verified because the paused organization has no remaining operation allowance.
 - The direct Monday app path passed idempotent TEST order reconciliation and signed `Ordered` / `Approved` callback tests on 2 September 2026. The independent five-minute portal-outbox flush is active.
-- Portal order persistence is durable and fail-closed. These Make gaps affect only the compatibility and Make-only intake paths, including onboarding; they do not block the direct order path, Canix inventory reader, or executive demo.
+- Portal order and onboarding persistence are durable and fail-closed. The application contains no Make URL, shared-secret, or runtime fallback. The inactive scenario is retained only as an audit/rollback artifact and must not be reactivated without a new security and acceptance review.
 
 ## Safe repair sequence
 
@@ -40,14 +40,9 @@ This is the compatibility-path remediation plan for Make scenario `6043707`, **U
 8. Configure an independent five-minute scheduler to call `portal-orders` with `action = flush-outbox`. Do not reuse the callback secret for this scheduler. **Completed 1 September 2026:** the active Supabase cron reads its independent credential from Vault; a controlled empty-queue request returned HTTP 200 with zero failures.
 9. Validate the complete scenario blueprint, run the test matrix below while it remains inactive for general traffic, and activate it only as a separate deliberate release action.
 
-## Required server-only configuration
+## Retired server-only configuration
 
-- Existing intake: `MAKE_WEBHOOK_URL`, `MAKE_INTAKE_SECRET`.
-- Portal-to-Monday outbox: `MAKE_ORDER_STATUS_WEBHOOK_URL` or the existing webhook fallback.
-- Monday-to-portal callback: `MONDAY_STATUS_SECRET`.
-- Five-minute retry job: `ORDER_SYNC_CRON_SECRET`.
-
-The values themselves belong in Supabase/Make secret storage and must never be copied into browser configuration, documentation, execution notes, or Git.
+`MAKE_WEBHOOK_URL`, `MAKE_ORDER_STATUS_WEBHOOK_URL`, and `MAKE_INTAKE_SECRET` are retired and must not be restored. The app-signed `MONDAY_STATUS_SECRET` and the independent `ORDER_SYNC_CRON_SECRET` remain active controls. Their values must never be copied into browser configuration, documentation, execution notes, or Git.
 
 ## Acceptance matrix
 
@@ -64,4 +59,4 @@ The values themselves belong in Supabase/Make secret storage and must never be c
 | Canix sales-order link | Positive numeric ID links to one portal order only and prevents double inventory subtraction |
 | Onboarding route | One-to-ten stores stay durable and the response includes the Monday item identifier |
 
-The Make compatibility path is ready only when every applicable row passes with execution IDs retained in the deployment record and the scenario finishes attached, unpaused, and deliberately active. This requirement does not replace the already verified dedicated-app acceptance evidence for the direct order path.
+This historical matrix remains useful only if urbanXtracts later authorizes a new fallback design. Reactivation is not a recovery step: it would be a separate release requiring a new credential, threat review, complete acceptance evidence, and deliberate approval.

@@ -6,8 +6,6 @@ import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const MAKE_WEBHOOK_URL = Deno.env.get("MAKE_WEBHOOK_URL") ?? "";
-const MAKE_INTAKE_SECRET = Deno.env.get("MAKE_INTAKE_SECRET") ?? "";
 const MONDAY_TOKEN_ENCRYPTION_KEY =
   Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
 const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
@@ -41,7 +39,7 @@ const PUBLIC_ONBOARDING_DAILY_LIMIT = Math.min(
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
-const KINDS = new Set(["order", "onboarding", "license", "recall"]);
+const KINDS = new Set(["order", "onboarding"]);
 
 type Row = Record<string, unknown>;
 
@@ -1347,21 +1345,15 @@ Deno.serve(async (request) => {
       );
     }
     let directMondayConfigured = false;
-    if ((kind === "order" && caller) || kind === "onboarding") {
-      try {
-        directMondayConfigured = !!(await mondayWriteToken());
-      } catch {
-        // The existing Make path remains available if connection-state
-        // inspection is temporarily unavailable.
-      }
+    try {
+      directMondayConfigured = !!(await mondayWriteToken());
+    } catch {
+      directMondayConfigured = false;
     }
-    if (
-      (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) &&
-      !directMondayConfigured
-    ) {
+    if (!directMondayConfigured) {
       return json(
         request,
-        { error: "The portal intake is not configured." },
+        { error: "Direct Monday intake is temporarily unavailable." },
         503,
       );
     }
@@ -1454,88 +1446,15 @@ Deno.serve(async (request) => {
         durableOnboardingDocumentId = String(document.id || "") || null;
       }
     }
-    let response: Response | null = null;
     let result: Row = {};
     if (kind === "order" && durableOrderId) {
-      try {
-        result = (await directMondayOrder(verifiedPayload)) ?? {};
-      } catch {
-        // A direct API failure still gets the existing Make compatibility
-        // path. Both paths use the same client request identifier.
-        result = {};
-      }
+      result = (await directMondayOrder(verifiedPayload)) ?? {};
     }
-    if (kind === "onboarding" && durableOnboardingId && directMondayConfigured) {
-      // Unlike the legacy compatibility path, direct onboarding is idempotent
-      // on Portal Request ID and can deliver the document to the same item.
-      // A partial failure must be reconciled there, never fanned out to a
-      // second workflow that could create a duplicate board item.
+    if (kind === "onboarding" && durableOnboardingId) {
+      // Direct onboarding is idempotent on Portal Request ID and can deliver
+      // the document to the same item. A partial failure is reconciled there;
+      // it is never fanned out to a second workflow that could duplicate it.
       result = (await directMondayOnboarding(verifiedPayload)) ?? {};
-    }
-    if (!result.orderNumber && !result.id && !result.mondayItemId) {
-      if (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) {
-        throw new IntakeError(
-          503,
-          "Monday order delivery is temporarily unavailable.",
-        );
-      }
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 28_000);
-      try {
-        response = await fetch(MAKE_WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            accept: "application/json",
-          },
-          body: JSON.stringify({
-            kind,
-            secret: MAKE_INTAKE_SECRET,
-            sentAt: new Date().toISOString(),
-            source: "UX Store Portal",
-            unauthenticated: !caller,
-            payload: verifiedPayload,
-          }),
-          signal: controller.signal,
-        });
-      } finally {
-        clearTimeout(timeout);
-      }
-      const text = await response.text();
-      try {
-        result = text ? JSON.parse(text) as Row : {};
-      } catch {
-        result = {};
-      }
-    }
-    if (!response) {
-      response = new Response(JSON.stringify(result), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }
-    if (!response.ok) {
-      const message = String(
-        result.error || `The workflow returned ${response.status}.`,
-      );
-      if (durableOrderId) {
-        await markDurableOrder(durableOrderId, "needs_reconciliation", {
-          error: message,
-        });
-      }
-      if (durableOnboardingId) {
-        await markDurableOnboarding(
-          durableOnboardingId,
-          "needs_reconciliation",
-          { error: message },
-        );
-      }
-      return json(request, {
-        error: message,
-        reconciliationRequired: !!(durableOrderId || durableOnboardingId),
-        portalOrderId: durableOrderId || null,
-        portalOnboardingRequestId: durableOnboardingId || null,
-      }, 502);
     }
     if (kind === "order" && !result.orderNumber && !result.id) {
       const message =

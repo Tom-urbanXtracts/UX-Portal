@@ -2,14 +2,14 @@
 
 The portal owns the durable customer-facing order and its append-only event history. Monday remains the operations work board. QuickBooks is not written automatically in this release; accounting staff create the record after the store data has been reviewed.
 
-> Live status, 1 September 2026: the portal and Supabase order layer are deployed. Make scenario `6043707` now has structurally validated request-ID deduplication, complete order/onboarding responses, and a portal-to-Monday status route. It remains inactive and untested because the Make organization is paused after exceeding its free operation allowance. The Monday-to-portal callback and five-minute retry schedule also remain unverified. Keep live ordering gated until the full matrix passes end to end.
+> Live status, 14 September 2026: the portal and Supabase order layer use the dedicated Monday app exclusively. Direct, board-pinned order and onboarding creation, direct status writes, the signed Monday-to-portal callback, and the five-minute retry schedule are deployed. The old paused Make scenario is retained only as an inactive audit artifact and no portal credential or runtime fallback points to it.
 
 ## Data flow
 
 1. The browser assigns a UUID to the draft and keeps it through every retry.
 2. `portal-intake` authenticates the caller and verifies store scope, the published store price, current Canix availability after explicit reservations, optional whole-case policy, release state, and the store's Owner-approval threshold.
 3. One `portal_order`, its verified `portal_order_line` rows, and per-item `portal_inventory_commitment` rows are created in one transaction. Product-scoped database locks ensure two request IDs cannot consume the same available units. Reusing the UUID returns the existing order and never commits or sends it twice.
-4. Make creates or finds the Monday item and returns its identifiers. The portal marks the workflow accepted only after that response.
+4. The dedicated Monday app creates or finds the board item by the stable client request identifier and returns its identifiers. The portal marks the workflow accepted only after that response.
 5. Portal state changes append `portal_order_event` rows and queue an outbox message. A Monday outage cannot roll back or erase the portal change.
 6. Monday changes return through the secret-authenticated callback. Both the Edge Function and PostgreSQL enforce the one-step transition graph; Store Owner approval, release holds, and terminal states cannot be skipped.
 
@@ -17,19 +17,16 @@ Active commitments remain through approval and processing. They are released onl
 
 ## Required Edge Function secrets
 
-- `MAKE_WEBHOOK_URL`: existing order-intake Make scenario.
-- `MAKE_ORDER_STATUS_WEBHOOK_URL`: portal-to-Monday status scenario; falls back to `MAKE_WEBHOOK_URL` when not set.
-- `MAKE_INTAKE_SECRET`: shared secret included inside the server-to-Make payload.
 - `MONDAY_STATUS_SECRET`: high-entropy secret used in the `x-ux-monday-secret` callback header.
-- `MONDAY_TOKEN_ENCRYPTION_KEY`: also enables the server-side direct Monday fallback after the installed UX OS app is granted `boards:write`.
-- `MONDAY_ORDER_BOARD_ID`, `MONDAY_ORDER_STATUS_COLUMN_ID`, and the optional account/order column overrides pin direct writes to the intended boards and columns. The fallback checks the stable client request ID before creating an item, so a Make timeout or malformed response cannot create a second order.
+- `MONDAY_TOKEN_ENCRYPTION_KEY`, `MONDAY_CLIENT_ID`, and `MONDAY_CLIENT_SECRET`: enable the server-side app connection after UX OS is granted `boards:write`.
+- `MONDAY_ORDER_BOARD_ID`, `MONDAY_ONBOARDING_BOARD_ID`, `MONDAY_ORDER_STATUS_COLUMN_ID`, `MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID`, and the optional account/order column overrides pin writes to the intended boards and columns. The direct path checks the stable client request ID before creating an item.
 - `ORDER_SYNC_CRON_SECRET`: independent high-entropy secret used in the `x-ux-cron-secret` retry header.
 
 Do not expose any of these values in the browser configuration.
 
 ## Monday intake response
 
-The Make intake scenario must deduplicate on `payload.clientRequestId` and return JSON like:
+The direct Monday intake path deduplicates on `payload.clientRequestId` and returns a portal receipt like:
 
 ```json
 {
@@ -76,4 +73,4 @@ The deployed `portal-order-outbox-flush-5m` Supabase cron runs this request ever
 
 ## Reconciliation rule
 
-An order whose initial Make response is missing, timed out, or incomplete remains in `needs_reconciliation`. The portal intentionally does not resend it automatically because Monday may already have created the item. Internal users with `orders.manage` see it in the Orders queue as **RECONCILIATION**. They search Monday by `clientRequestId` or `portalReference`, open the order, and use the internal-only reconciliation panel to attach the existing order number and item ID. This is the safe side of the duplicate-order tradeoff.
+An order whose initial Monday response is missing, timed out, or incomplete remains in `needs_reconciliation`. The portal intentionally does not resend it automatically because Monday may already have created the item. Internal users with `orders.manage` see it in the Orders queue as **RECONCILIATION**. They search Monday by `clientRequestId` or `portalReference`, open the order, and use the internal-only reconciliation panel to attach the existing order number and item ID. This is the safe side of the duplicate-order tradeoff.

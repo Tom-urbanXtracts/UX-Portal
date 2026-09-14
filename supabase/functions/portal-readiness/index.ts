@@ -563,8 +563,6 @@ Deno.serve(async (request) => {
       mondayScopes.includes("boards:read") &&
       /^\d+$/.test(MONDAY_LOT_BOARD_ID) &&
       String(lotIntegrity?.monday_board_id ?? "") === MONDAY_LOT_BOARD_ID;
-    const makeIntakeReady = configured("MAKE_WEBHOOK_URL") &&
-      configured("MAKE_INTAKE_SECRET");
     const signedMondayReady = mondayOAuthReady &&
       configured("MONDAY_SIGNING_SECRET") &&
       monday?.webhook_status === "active" && Boolean(monday?.webhook_id);
@@ -682,15 +680,11 @@ Deno.serve(async (request) => {
         label: "Orders and Monday",
         checks: [
           {
-            state: directMondayIntakeReady || makeIntakeReady
-              ? "pass"
-              : "block",
+            state: directMondayIntakeReady ? "pass" : "block",
             label: "Order intake",
             detail: directMondayIntakeReady
-              ? "Direct, board-pinned Monday order intake is active; Make remains a compatibility path."
-              : makeIntakeReady
-              ? "Authenticated Make intake is configured as the compatibility path."
-              : "Neither the direct Monday app path nor the authenticated Make compatibility path is ready.",
+              ? "Direct, board-pinned Monday order and onboarding intake is active; no shared intake credential is retained."
+              : "The direct Monday app path is not ready.",
           },
           {
             state: signedMondayReady ? "pass" : "block",
