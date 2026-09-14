@@ -48,7 +48,7 @@ These items do not block the current inventory, retailer onboarding, catalog, pr
 | P1 | Approval aging and escalation | Store Owner remains the sole approval holder with no automatic delegation | Sales leadership | Define escalation time and backup path |
 | P1 | License review evidence and cadence | Portal records explicit qualification; it does not claim independent validity | Quality / Compliance | Name reviewer, retained evidence, and recheck cycle |
 | P2 | Monday store-visit notes | Account notes remain source-labelled and unverified | Sales operations | Map board columns and retention |
-| P2 | Reorder interval definition | Uses only urbanXtracts order history; no retailer sell-through is inferred | Sales leadership | Choose average interval or days-since-last-order |
+| Complete | Reorder interval definition | Store Performance shows both the average interval between portal orders and days since the latest portal order. Insufficient history is explicit; retailer sell-through is not inferred | Sales Operations | Maintain the source labels if the performance model changes |
 | Complete | MFA policy | TOTP is required for both workforce SSO and retailer password accounts; only `aal2` sessions reach profiles, capabilities, authenticated APIs, or RLS-protected data | Administration | Maintain administrator recovery procedures and test enrollment during account onboarding |
 | P2 | Rep-held order approval | Disabled | Legal / CCO / Sales leadership | Approve written authority model or reject feature |
 | P2 | Draft inventory holds | Drafts hold nothing; submit rechecks availability | Operations / Sales operations | Decide whether reservations ever occur before acceptance |

@@ -156,6 +156,7 @@ Demo-only QuickBooks accounts, users, onboarding, documents, invoices, notificat
 - Test order approval policy values `NULL` (disabled), `0` (every Buyer order), and a positive threshold (only orders above the value). Confirm Store Owner orders never receive a value-approval hold.
 - Test per-store case enforcement off and on. On must reject missing/ambiguous Canix case data and non-multiples; off must continue accepting positive whole-number eaches.
 - Set and clear a licensed-store minimum order and lead time. A below-minimum draft must remain intact and fail both the client and server checks; clearing both values must restore the prior behavior without inventing a lead time.
+- Confirm Store Performance shows both average reorder interval and days since the latest order from portal history, while stores with insufficient history and all retailer POS sell-through remain explicitly unreported.
 - Test a pre-order through approval and internal confirmation. It must not move to Processed/Delivered until a refreshed Canix catalog reports a passing lab result; a standard released order must continue normally.
 - Test QuickBooks active and inactive customers, explicit portal readiness, non-zero balances, and multi-store links without inferring past-due status from balance alone.
 - Test the retailer-account gate sequence: start qualification, add a store, qualify its license, enable store ordering, then set the account ready. Confirm every earlier state blocks order submission server-side.

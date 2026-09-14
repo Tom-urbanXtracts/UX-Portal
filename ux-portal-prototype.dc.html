@@ -3114,7 +3114,7 @@ const VALIDATION = [
     { severity: 'DECIDED', screen: 'Order builder · Financials', question: 'Does QuickBooks past due automatically block ordering?', detail: 'No. Invoice state is displayed for visibility, while the portal-owned store ordering status is the explicit gate. An automated finance threshold is deferred until Finance approves a rule.', blocks: 'Only a future automated-hold feature', owner: 'Finance', evidence: 'Verify a balance change cannot mutate store ordering status' },
     { severity: 'DECIDED', screen: 'Order builder · Store pricing', question: 'What order value triggers Store Owner approval?', detail: 'Resolved 1 Sep 2026: Administrator, Operations, or Sales sets the rule per licensed store. A blank rule disables value-based approval, zero requires approval for every Buyer order, and a positive threshold holds only Buyer orders above that value. Store Owner orders enter the queue directly.', blocks: 'Nothing — closed', owner: 'Sales leadership', evidence: 'Protected store policy, server-side order-value verification, and a Buyer/Owner approval test' },
     { severity: 'Record and continue', screen: 'Exceptions', question: 'Who owns each exception type, and against what clock?', detail: 'A store sees status only, never the owner or the clock, so this is an internal decision that does not change any external screen.', blocks: 'Exception queue routing', owner: 'Operations', evidence: 'An owner and a target per exception type' },
-    { severity: 'Record and continue', screen: 'Dashboard \u00b7 Reorder', question: 'What is the reorder interval basis \u2014 the account\u2019s own average, or days since last order?', detail: 'With sell-through decided out of scope this is the only basis there will ever be, so the choice is permanent rather than provisional. The basis is stated on screen either way.', blocks: 'Nothing today; fixes the reorder signal permanently', owner: 'Sales leadership', evidence: 'A stated basis' },
+    { severity: 'DECIDED', screen: 'Store performance \u00b7 Reorder', question: 'What is the reorder interval basis \u2014 the account\u2019s own average, or days since last order?', detail: 'Both are displayed from the store\u2019s own portal order history: average days between orders and days since the latest order. Insufficient history remains explicit. Retail POS sell-through stays Not connected and is never inferred from wholesale orders.', blocks: 'Nothing \u2014 both source-labelled signals are available', owner: 'Sales Operations', evidence: 'Store Performance comparison rows sourced from portal order history' },
     { severity: 'DECIDED', screen: 'Sign-in', question: 'Is multi-factor authentication enforced?', detail: 'Verified in production 2 Sep 2026: every Google SSO and retailer password session must present an authenticator code and receive an aal2 token before profiles, permissions, or protected APIs can be reached.', blocks: 'Nothing — closed', owner: 'Administration', evidence: 'Successful Tom enrollment plus aal2 browser, Edge Function, and restrictive RLS gates' },
     { severity: 'Record and continue', screen: 'Order builder · Approvals', question: 'May an urbanXtracts rep hold a store’s ordering approval, and on whose written authority?', detail: 'Rep-held approval is disabled. Store Owner approval remains the only supported retailer approval path, so this decision cannot weaken the production order flow while Legal and Sales leadership consider it.', blocks: 'Only the deferred rep-delegation feature', owner: 'Sales leadership, with the CCO and Legal', evidence: 'A written authority, or a decision not to offer it' },
     { severity: 'Record and continue', screen: 'Draft order', question: 'Does a draft hold inventory, for how long, and who wins when two accounts draft the last of a lot?', detail: 'Today a draft holds nothing, which is why the inventory-changed gate exists. The gate stays whichever way the policy lands; the policy has never been written.', blocks: 'Nothing today; the gate handles the symptom', owner: 'Operations with sales operations', evidence: 'A stated hold policy, or a stated refusal to hold' },
@@ -10874,6 +10874,9 @@ class Component extends DCLogic {
           const category = Object.keys(categories).sort((a, b) => categories[b] - categories[a])[0] || '\u2014';
           const dates = orders.map(order => Date.parse(order.placed)).filter(Number.isFinite).sort((a, b) => a - b);
           const intervals = dates.slice(1).map((date, index) => Math.max(0, Math.round((date - dates[index]) / 86400000)));
+          const daysSinceLatest = dates.length
+            ? Math.max(0, Math.floor((Date.now() - dates[dates.length - 1]) / 86400000)) + ' days'
+            : 'No order history';
           const financial = allFinancialRows.find(row => row.license === location.license) || {};
           const explicitStatus = location.expired ? 'Paused \u2014 license'
             : location.pastDue ? 'Paused \u2014 explicit account hold' : 'Open';
@@ -10881,6 +10884,7 @@ class Component extends DCLogic {
             orders: String(orders.length), value: MONEY(total),
             average: orders.length ? MONEY(Math.round(total / orders.length)) : '\u2014',
             interval: intervals.length ? Math.round(intervals.reduce((sum, days) => sum + days, 0) / intervals.length) + ' days' : 'Not enough history',
+            daysSinceLatest,
             category, skus: String(skus.size),
             payment: Number(financial.pastDueCents || 0) > 0
               ? MONEY(Number(financial.pastDueCents)) + ' past due'
@@ -10895,6 +10899,7 @@ class Component extends DCLogic {
             { metric: 'Wholesale order value', a: cell(0, 'value'), b: cell(1, 'value'), c: cell(2, 'value') },
             { metric: 'Average order value', a: cell(0, 'average'), b: cell(1, 'average'), c: cell(2, 'average') },
             { metric: 'Reorder interval', a: cell(0, 'interval'), b: cell(1, 'interval'), c: cell(2, 'interval') },
+            { metric: 'Days since latest order', a: cell(0, 'daysSinceLatest'), b: cell(1, 'daysSinceLatest'), c: cell(2, 'daysSinceLatest') },
             { metric: 'Largest product category', a: cell(0, 'category'), b: cell(1, 'category'), c: cell(2, 'category') },
             { metric: 'Distinct SKUs ordered', a: cell(0, 'skus'), b: cell(1, 'skus'), c: cell(2, 'skus') },
             { metric: 'Payment behavior', a: cell(0, 'payment'), b: cell(1, 'payment'), c: cell(2, 'payment') },
