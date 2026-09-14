@@ -58,7 +58,7 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 type Row = Record<string, unknown>;
-type Caller = { id: string; org: string; staffRole: string };
+type Caller = { id: string; email: string; org: string; staffRole: string };
 
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
@@ -156,6 +156,7 @@ async function callerFor(
   return grant
     ? {
       id: String(profile.id),
+      email: clean(user.email, 320) ?? "",
       org: String(profile.org || "urbanXtracts"),
       staffRole: String(profile.staff_role),
     }
@@ -509,6 +510,32 @@ async function stageUnknownLots(caller: Caller): Promise<Row> {
   return { ...summary, registerSync };
 }
 
+async function setCostObjectDecision(caller: Caller, body: Row): Promise<Row> {
+  const { data, error } = await service.rpc(
+    "portal_set_lot_cost_object_decision",
+    {
+      p_lot_id: clean(body.lotId, 200),
+      p_decision_status: clean(body.status, 80),
+      p_cost_object_id: clean(body.costObjectId, 200),
+      p_decision_note: clean(body.note, 1500),
+      p_actor_id: caller.id,
+      p_actor_email: caller.email,
+    },
+  );
+  if (error) throw error;
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.id,
+    actor_org: caller.org,
+    action: "inventory.cost_object_decided",
+    detail: {
+      lotId: clean(body.lotId, 200),
+      status: clean(body.status, 80),
+      hasCode: Boolean(clean(body.costObjectId, 200)),
+    },
+  });
+  return data && typeof data === "object" ? data as Row : {};
+}
+
 async function snapshot(): Promise<Row> {
   const [stateResult, exceptionResult] = await Promise.all([
     service.from("portal_lot_integrity_state").select(
@@ -555,18 +582,30 @@ Deno.serve(async (request) => {
   if (request.method !== "GET" && request.method !== "POST") {
     return json(request, { error: "Method not allowed" }, 405);
   }
+  let attemptedAction = request.method === "GET" ? "read" : "sync";
   try {
     if (request.method === "POST") {
       const body = await request.json().catch(() => ({})) as Row;
       const action = clean(body.action, 80) ?? "sync";
+      attemptedAction = action;
       const suppliedSecret = request.headers.get("x-cron-secret") ?? "";
       const cronAuthorized = LOT_CRON_SECRET.length >= 32 &&
         constantTimeEqual(suppliedSecret, LOT_CRON_SECRET);
+      const requiredPermission = action === "set-cost-object-decision"
+        ? "cost_objects.manage"
+        : "inventory.sync";
       const caller = cronAuthorized
         ? null
-        : await callerFor(request, "inventory.sync");
+        : await callerFor(request, requiredPermission);
       if (!cronAuthorized && !caller) {
         return json(request, { error: "Forbidden" }, 403);
+      }
+      if (action === "set-cost-object-decision") {
+        if (!caller) return json(request, { error: "Forbidden" }, 403);
+        return json(request, {
+          ok: true,
+          decision: await setCostObjectDecision(caller, body),
+        });
       }
       if (action === "stage-unknown-lots") {
         if (!caller) return json(request, { error: "Forbidden" }, 403);
@@ -588,11 +627,17 @@ Deno.serve(async (request) => {
     const message = error instanceof Error
       ? error.message
       : "Lot integrity synchronization failed.";
-    await service.from("portal_lot_integrity_state").update({
-      register_sync_status: "error",
-      last_error: message.slice(0, 1000),
-      updated_at: new Date().toISOString(),
-    }).eq("id", 1);
-    return json(request, { error: message }, 502);
+    if (attemptedAction !== "set-cost-object-decision") {
+      await service.from("portal_lot_integrity_state").update({
+        register_sync_status: "error",
+        last_error: message.slice(0, 1000),
+        updated_at: new Date().toISOString(),
+      }).eq("id", 1);
+    }
+    return json(
+      request,
+      { error: message },
+      attemptedAction === "set-cost-object-decision" ? 400 : 502,
+    );
   }
 });

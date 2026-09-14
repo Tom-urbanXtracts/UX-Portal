@@ -53,6 +53,7 @@ const mondayItemMasterMigration = await readFile(resolve(root, "supabase/migrati
 const mondayItemMasterTuningMigration = await readFile(resolve(root, "supabase/migrations/20260902140000_monday_item_master_batch_tuning.sql"), "utf8");
 const mondayItemMasterRetargetMigration = await readFile(resolve(root, "supabase/migrations/20260902150000_monday_item_master_retarget.sql"), "utf8");
 const costObjectSourceMigration = await readFile(resolve(root, "supabase/migrations/20260914131500_cost_object_source_boundary.sql"), "utf8");
+const costObjectDecisionMigration = await readFile(resolve(root, "supabase/migrations/20260914160000_lot_cost_object_decisions.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -65,9 +66,12 @@ function assertContract(condition, name) {
 }
 
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
-assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allApprovedLotCostObjects") && inventory.includes('control?.integrity_status === "valid"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid approved lot");
+assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allInboundLotCostObjects") && inventory.includes("allLotCostObjectDecisions") && inventory.includes('control?.integrity_status === "valid"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid Monday-backed lot decision");
 assertContract(costObjectSourceMigration.includes("set cost_object_id = null") && costObjectSourceMigration.includes("check (cost_object_id is null)") && costObjectSourceMigration.includes("never copy a Canix sales-order line"), "the migration clears and prevents the former sales-order-line Cost Object alias");
-assertContract(source.includes("Cost object blank") && source.includes("Not assigned — no approved lot-level source"), "inventory distinguishes missing Cost Object from Lot ID exceptions");
+assertContract(costObjectDecisionMigration.includes("pending_assignment") && costObjectDecisionMigration.includes("not_required") && costObjectDecisionMigration.includes("portal_lot_cost_object_event_immutable") && costObjectDecisionMigration.includes("Cost Object decision history is append-only") && costObjectDecisionMigration.includes("exactly match the approved Monday Cost Object value") && costObjectDecisionMigration.includes("Clear the Monday Cost Object value before approving Not Required"), "Cost Object decisions distinguish pending, assigned, and evidenced no-code outcomes with source validation and immutable history");
+assertContract(costObjectDecisionMigration.includes("'administrator', 'cost_objects.manage'") && costObjectDecisionMigration.includes("'operations', 'cost_objects.manage'") && !costObjectDecisionMigration.includes("'sales', 'cost_objects.manage'"), "only Administrator and Operations roles receive Cost Object decision authority");
+assertContract(lotIntegrity.includes('action === "set-cost-object-decision"') && lotIntegrity.includes('"cost_objects.manage"') && lotIntegrity.includes("portal_set_lot_cost_object_decision"), "the Cost Object decision endpoint is separately permission-gated and uses the protected database function");
+assertContract(source.includes("Lot &amp; Cost Object control") && source.includes("Pending Finance/Ops assignment") && source.includes("SOURCE CONFLICT") && source.includes("Cost object unresolved"), "inventory exposes a searchable Cost Object decision and conflict work queue instead of ambiguous blanks");
 assertContract(inventory.includes("function inventoryBucket(row: Json)") && inventory.includes('"inventory_bucket_reason"'), "inventory publishes one auditable lane classification per package");
 assertContract(inventory.includes("/\\b(?:clone|biomass|seeds?)\\b/i.test(itemName)") && inventory.indexOf("item_name_keyword") < inventory.indexOf("bulkIdentity"), "Clone, Biomass, Seed, and Seeds item names take priority over Bulk routing");
 assertContract(inventory.includes("row.item_category_name") && inventory.includes("row.item_sub_category_name") && inventory.includes("/\\bbulk\\b/i.test(bulkIdentity)"), "Bulk routing uses the Canix item and category identity");
@@ -226,6 +230,7 @@ assertContract(productContent.includes("reviewItems: reviewItems.slice(0, 1000)"
 assertContract(source.includes("syncMondayCatalog()") && source.includes("Sync catalog content"), "portal administrators can scan linked Monday catalog content from release readiness");
 assertContract(readiness.includes("Latest Monday catalog scan") && readiness.includes("lastProductSyncMissingCanixItemId"), "live readiness reports Monday catalog mapping and sync evidence");
 assertContract(readiness.includes("Economic-ownership allocation gate") && readiness.includes("Daily lot-integrity scheduler") && readiness.includes("lotAllocationExceptions"), "live readiness reports lot-register, scheduler, and allocation-control state");
+assertContract(readiness.includes("Lot-level Cost Object decisions") && readiness.includes("costObjectConflicts") && readiness.includes("costObjectNotRequired"), "live readiness reports pending, validated, no-code, and conflicting Cost Object decisions");
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(source.includes('https://www.urbanxtracts.com/contact') && source.includes('Contact support'), "sign-in provides an in-app support contact path");

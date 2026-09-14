@@ -16,12 +16,14 @@ This implements the recommended compensating control for B3 / Intake Form C. It 
 - Portal source: server-side Monday OAuth with `boards:read`
 - Portal mirror: `portal_inbound_lot`
 - Package decision: `portal_package_lot_control`
+- Cost Object decision: `portal_lot_cost_object_decision`
+- Cost Object audit history: `portal_lot_cost_object_event`
 - Rollout state: `portal_lot_integrity_state`
 - Default enforcement mode: `monitor`
 
 The explicit **Lot ID** column is authoritative. The default Monday item name is a human-readable reference only. Required control fields are Lot ID, Ownership Code, Economic Partner, Agreement Reference, Deal Type, UOM Code, Approval Status, Approved By, Effective Date, and Approval Date. Optional operational fields retain blanks rather than inventing data.
 
-Cost Object is an independent, optional Finance classification until Finance and Operations decide whether flower intake requires one and approve the intake-stream mapping. When assigned, it must use the immutable `DEPT-LINE[-VARIANT]` format and may be exposed only from the approved Monday lot record. It is never derived from the Canix sales-order line, Lot ID, Ownership Code, Brand, or potency. A blank Cost Object does not make a Lot ID blank or invalid, and a valid Lot ID does not imply that a Cost Object exists.
+Cost Object is an independent Finance classification. Each valid Lot ID has one explicit portal decision: `pending_assignment`, `assigned`, or `not_required`. Assigned values must use `DEPT-LINE[-VARIANT]` and exactly match the active, approved Monday lot record. Not Required requires recorded evidence and is rejected while the Monday row contains a Cost Object value. Every change records the prior and new state in append-only history. Administrator and Operations roles may decide; inventory readers may inspect. It is never derived from the Canix sales-order line, Lot ID, Ownership Code, Brand, or potency. A blank code no longer ambiguously means both pending and unnecessary.
 
 UX-AUX-CMP-POL-004, UX-AUX-OPS-PRC-SOP-006, and UX-AUX-FIN-SOP-011 govern receiving, physical intake, QA/QC, and purchase accounting. None of the approved Knowledge Base material currently assigns a flower-intake Cost Object. Route the code or no-code decision to Amrit Kharas (Finance/Controller), with Jonathan DeMart (Operations) for the facility, department, and processing-line mapping.
 
@@ -92,6 +94,7 @@ After sign-off, a service-role operator may call `portal_set_lot_integrity_mode(
 5. Select **Sync lot register** in UX OS Inventory or wait for the daily job.
 6. Resolve every exception shown in **Package ownership integrity**.
 7. Treat missing, malformed, unknown, duplicated, unapproved, or changed pointers as allocation exceptions once block mode is active.
+8. In **Inventory → Controls**, resolve each valid Lot ID from Pending to either Assigned or Not Required. For Assigned, enter and approve the code on the Monday row first, synchronize the register, then save the exact matching code with a decision note. For Not Required, keep the Monday Cost Object blank and record the Finance/Operations rationale.
 
 The portal never writes package Lot ID back to Canix because the documented Canix reporting API currently exposes package reads but no package-update operation.
 
@@ -110,5 +113,8 @@ Required acceptance evidence:
 - monitor mode does not change orderability;
 - block mode rejects or excludes every non-valid package consistently in catalog, commitment, and release flows.
 - a Canix sales-order line never populates Cost Object;
-- a Cost Object appears only for a valid Lot ID whose single active approved Monday record contains the value;
-- missing Lot ID and missing Cost Object remain separately visible and actionable.
+- an Assigned Cost Object appears only for a valid Lot ID whose single active approved Monday record contains the exact value;
+- Not Required is an explicit evidenced state and cannot be saved while Monday contains a Cost Object;
+- a later Monday change causes Source Conflict rather than silently replacing the approved decision;
+- only Administrator and Operations can change a decision, and every change creates an audit event;
+- missing Lot ID and unresolved Cost Object remain separately visible and actionable.

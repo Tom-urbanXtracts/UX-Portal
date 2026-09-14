@@ -158,6 +158,9 @@ Deno.serve(async (request) => {
       pendingAssetReviews,
       activeAssets,
       quarantinedAssets,
+      costObjectDecisionResult,
+      costObjectSourceResult,
+      validLotPointerResult,
     ] = await Promise.all([
       service.from("canix_sync_state").select(
         "status,last_successful_at,last_error,package_count,latest_source_updated_at",
@@ -231,9 +234,10 @@ Deno.serve(async (request) => {
       ),
       exactCount(
         "portal_store",
-        (query) => query.eq("active", true).or(
-          `quickbooks_customer_id.is.null,license_expires_on.is.null,license_expires_on.lte.${today}`,
-        ),
+        (query) =>
+          query.eq("active", true).or(
+            `quickbooks_customer_id.is.null,license_expires_on.is.null,license_expires_on.lte.${today}`,
+          ),
       ),
       exactCount("portal_profile", (query) => query.eq("active", true)),
       exactCount(
@@ -258,6 +262,16 @@ Deno.serve(async (request) => {
         "portal_asset",
         (query) => query.eq("state", "quarantined"),
       ),
+      service.from("portal_lot_cost_object_decision").select(
+        "lot_id,decision_status,cost_object_id",
+      ),
+      service.from("portal_inbound_lot").select(
+        "lot_id,cost_object_id,approval_status",
+      ).eq("active", true),
+      service.from("portal_package_lot_control").select("lot_id").eq(
+        "integrity_status",
+        "valid",
+      ).not("lot_id", "is", null),
     ]);
     if (canixResult.error) throw canixResult.error;
     if (canixSchedulerResult.error) throw canixSchedulerResult.error;
@@ -273,6 +287,9 @@ Deno.serve(async (request) => {
     if (latestMondayProductSyncResult.error) {
       throw latestMondayProductSyncResult.error;
     }
+    if (costObjectDecisionResult.error) throw costObjectDecisionResult.error;
+    if (costObjectSourceResult.error) throw costObjectSourceResult.error;
+    if (validLotPointerResult.error) throw validLotPointerResult.error;
 
     const canix = canixResult.data as Row | null;
     const canixScheduler = Array.isArray(canixSchedulerResult.data) &&
@@ -300,6 +317,44 @@ Deno.serve(async (request) => {
     const latestMondayProductSync = latestMondayProductSyncResult.data as
       | Row
       | null;
+    const costObjectDecisions = (costObjectDecisionResult.data ?? []) as Row[];
+    const costObjectSources = new Map(
+      ((costObjectSourceResult.data ?? []) as Row[]).map((row) => [
+        String(row.lot_id ?? ""),
+        row,
+      ]),
+    );
+    const validLotIds = new Set(
+      ((validLotPointerResult.data ?? []) as Row[]).map((row) =>
+        String(row.lot_id ?? "")
+      ).filter(Boolean),
+    );
+    const costObjectDecisionByLot = new Map(
+      costObjectDecisions.map((row) => [String(row.lot_id ?? ""), row]),
+    );
+    let costObjectPending = 0;
+    let costObjectAssigned = 0;
+    let costObjectNotRequired = 0;
+    let costObjectConflicts = 0;
+    for (const lotId of validLotIds) {
+      const decision = costObjectDecisionByLot.get(lotId);
+      const source = costObjectSources.get(lotId);
+      const status = String(decision?.decision_status ?? "pending_assignment");
+      const sourceCode = String(source?.cost_object_id ?? "").trim()
+        .toUpperCase();
+      const decisionCode = String(decision?.cost_object_id ?? "").trim()
+        .toUpperCase();
+      if (status === "assigned") {
+        if (
+          source?.approval_status === "approved" && sourceCode &&
+          sourceCode === decisionCode
+        ) costObjectAssigned += 1;
+        else costObjectConflicts += 1;
+      } else if (status === "not_required") {
+        if (sourceCode) costObjectConflicts += 1;
+        else costObjectNotRequired += 1;
+      } else costObjectPending += 1;
+    }
     const latestMondayRefreshDetail = latestMondayRefresh?.detail &&
         typeof latestMondayRefresh.detail === "object"
       ? latestMondayRefresh.detail as Row
@@ -447,6 +502,16 @@ Deno.serve(async (request) => {
                 lotIntegrity?.allocation_exception_rows ?? 0
               } available or allocated packages currently fail the lot-pointer control. Monitor mode intentionally preserves ordering during historical reconciliation.`,
           },
+          {
+            state: costObjectConflicts > 0
+              ? "block"
+              : costObjectPending > 0
+              ? "warn"
+              : "pass",
+            label: "Lot-level Cost Object decisions",
+            detail:
+              `${costObjectPending} pending; ${costObjectAssigned} assigned and source-validated; ${costObjectNotRequired} approved Not Required; ${costObjectConflicts} source conflicts.`,
+          },
         ],
       },
       {
@@ -590,7 +655,8 @@ Deno.serve(async (request) => {
           {
             state: onboardingReconciliationRequests > 0 ? "warn" : "pass",
             label: "Store onboarding queue",
-            detail: `${openOnboardingRequests} open requests; ${onboardingReconciliationRequests} require workflow reconciliation. The queue remains readable when QuickBooks is unavailable.`,
+            detail:
+              `${openOnboardingRequests} open requests; ${onboardingReconciliationRequests} require workflow reconciliation. The queue remains readable when QuickBooks is unavailable.`,
           },
           {
             state: activeStoresMissingSourceEvidence > 0 ? "warn" : "pass",

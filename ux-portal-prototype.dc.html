@@ -1135,6 +1135,28 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </section>
 </sc-if>
 
+<sc-if value="{{ invViewOwnership }}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="cost-object-control-heading" style="margin:0 0 28px;border-top:2px solid rgba(23,14,11,.42);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+<div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:5px">FINANCE / OPERATIONS · LOT GRAIN</div><h2 id="cost-object-control-heading" style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 5px">Lot &amp; Cost Object control</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:82ch">Every valid Lot ID is explicit: Pending Finance/Ops assignment, Assigned, or Not Required. Assigned codes must already exist on the approved Monday lot row; the portal never derives them from a sales order.</p></div>
+<a href="https://urban915991.monday.com/boards/18429359264" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.3);padding:8px 11px;font:700 11px Archivo,sans-serif;text-decoration:none">Open Monday lot register</a>
+</div>
+<div style="{{ costObjectKpiStyle }}"><sc-for list="{{ costObjectKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:12px 13px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:5px">{{ k.label }}</div><div style="font:800 18px Archivo,sans-serif;{{ k.valueStyle }}">{{ k.value }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ k.note }}</div></div></sc-for></div>
+
+<div role="tablist" aria-label="Cost Object decision queues" style="display:flex;overflow-x:auto;border:1px solid rgba(23,14,11,.22);background:var(--ux-ground);margin:14px 0 10px"><sc-for list="{{ costObjectQueueTabs }}" as="t" hint-placeholder-count="5"><button type="button" role="tab" onClick="{{ t.onPick }}" aria-selected="{{ t.pressed }}" style="{{ t.style }}">{{ t.label }} <span style="opacity:.58;margin-left:4px">{{ t.count }}</span></button></sc-for></div>
+<div style="display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px"><label style="flex:1;min-width:240px"><span style="display:block;font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">SEARCH LOT CONTROL</span><input type="search" value="{{ costObjectSearch }}" onInput="{{ onCostObjectSearch }}" placeholder="Lot ID, facility, item, code, note, or decision maker" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px 10px;font:12px Archivo,sans-serif"></label><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted);padding-bottom:9px">{{ costObjectResultCount }}</span></div>
+
+<sc-if value="{{ costObjectHasSelection }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:15px 16px;margin:0 0 15px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:4px">SELECTED LOT</div><div style="font:800 17px Archivo,sans-serif">{{ costObjectSelectedLot }}</div><div style="font-size:11px;color:var(--ux-muted);margin-top:4px">{{ costObjectSelectedMeta }}</div></div><button type="button" onClick="{{ onCostObjectClose }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:600 10px Archivo,sans-serif;cursor:pointer">Close</button></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:rgba(23,14,11,.14);margin-top:12px"><div style="background:#fff;padding:10px 11px"><div style="font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">MONDAY SOURCE VALUE</div><div style="font:700 12px ui-monospace,monospace">{{ costObjectSelectedSource }}</div></div><div style="background:#fff;padding:10px 11px"><div style="font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">CURRENT DECISION</div><div style="font:700 12px">{{ costObjectSelectedDecision }}</div></div></div>
+<sc-if value="{{ costObjectCanManage }}" hint-placeholder-val="{{ false }}"><div style="{{ costObjectFormStyle }}"><label style="display:flex;flex-direction:column;gap:5px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">DECISION STATUS</span><select value="{{ costObjectStatusDraft }}" onChange="{{ onCostObjectStatusDraft }}" style="background:#fff;border:1px solid rgba(23,14,11,.28);padding:9px 10px;font:12px Archivo,sans-serif"><option value="pending_assignment">Pending Finance/Ops assignment</option><option value="assigned">Assigned</option><option value="not_required">Not Required</option></select></label><sc-if value="{{ costObjectDraftAssigned }}" hint-placeholder-val="{{ false }}"><label style="display:flex;flex-direction:column;gap:5px"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">COST OBJECT ID</span><input type="text" value="{{ costObjectCodeDraft }}" onInput="{{ onCostObjectCodeDraft }}" maxlength="120" placeholder="DEPT-LINE or DEPT-LINE-VARIANT" style="background:#fff;border:1px solid rgba(23,14,11,.28);padding:9px 10px;font:12px ui-monospace,monospace;text-transform:uppercase"></label></sc-if><label style="display:flex;flex-direction:column;gap:5px;grid-column:1/-1"><span style="font:600 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">DECISION NOTE · REQUIRED</span><textarea value="{{ costObjectNote }}" onInput="{{ onCostObjectNote }}" maxlength="1500" rows="3" placeholder="Assignment source, Finance/Ops rationale, or why this lot does not require a Cost Object" style="background:#fff;border:1px solid rgba(23,14,11,.28);padding:9px 10px;font:12px/1.45 Archivo,sans-serif;resize:vertical"></textarea></label></div><sc-if value="{{ costObjectHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 11px;margin-top:10px;font-size:11.5px;line-height:1.5">{{ costObjectError }}</div></sc-if><div style="display:flex;gap:8px;align-items:center;margin-top:12px"><button type="button" onClick="{{ onCostObjectSave }}" aria-disabled="{{ costObjectPending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ costObjectSaveOpacity }}">{{ costObjectSaveLabel }}</button><span style="font-size:10.5px;color:var(--ux-muted)">The server rechecks the Monday source and your role before saving.</span></div></sc-if>
+<sc-if value="{{ costObjectReadOnly }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:var(--ux-muted);margin-top:12px">You can inspect Cost Object decisions. Administrator or Operations access is required to change them.</div></sc-if></div></sc-if>
+
+<div role="region" aria-label="Lot and Cost Object decision queue" tabindex="0" style="max-height:520px;overflow:auto;border-top:2px solid rgba(23,14,11,.42)"><div style="min-width:1080px"><div style="position:sticky;top:0;z-index:1;background:var(--ux-ground);display:grid;grid-template-columns:1fr 1.2fr .85fr .9fr .9fr 1.35fr .55fr;gap:12px;padding:9px 8px;border-bottom:1px solid rgba(23,14,11,.2);font:600 9px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--ux-muted)"><div>Lot ID</div><div>Facility / room</div><div>Packages / items</div><div>Decision</div><div>Monday value</div><div>Decision evidence</div><div>Action</div></div><sc-for list="{{ costObjectRows }}" as="r" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:1fr 1.2fr .85fr .9fr .9fr 1.35fr .55fr;gap:12px;padding:12px 8px;border-bottom:1px solid rgba(23,14,11,.13);font-size:11.5px;align-items:center;{{ r.rowStyle }}"><div><div style="font:700 11.5px ui-monospace,monospace">{{ r.lotId }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.validation }}</div></div><div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.facility }}</div><div style="font-size:9.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.room }}</div></div><div><div style="font:700 11.5px ui-monospace,monospace">{{ r.packages }}</div><div style="font-size:9.5px;color:var(--ux-muted)">{{ r.items }}</div></div><div><span style="{{ r.statusStyle }}">{{ r.status }}</span><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted);margin-top:4px">{{ r.code }}</div></div><div style="font:10.5px ui-monospace,monospace;overflow-wrap:anywhere">{{ r.source }}</div><div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.note }}</div><div style="font-size:9.5px;color:var(--ux-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.actor }}</div></div><button type="button" onClick="{{ r.onOpen }}" style="background:transparent;border:1px solid rgba(23,14,11,.28);padding:6px 7px;font:600 10px Archivo,sans-serif;cursor:pointer">{{ r.action }}</button></div></sc-for></div></div>
+<sc-if value="{{ costObjectEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:26px 18px;text-align:center;background:var(--ux-surface);font-size:12px;color:var(--ux-muted)">No valid Lot IDs match this Cost Object queue and search.</div></sc-if>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px"><div style="font-size:10.5px;color:var(--ux-muted);line-height:1.5">{{ costObjectSummary }} Cost Object remains separate from ownership and Lot ID.</div><button type="button" onClick="{{ onCostObjectOpenLotExceptions }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:600 10.5px Archivo,sans-serif;cursor:pointer">Open Lot ID exceptions</button></div>
+</section>
+</sc-if>
+
 <sc-if value="{{ invViewItemMaster }}" hint-placeholder-val="{{ false }}">
 <section aria-labelledby="item-master-heading" style="margin:0 0 32px;border-top:2px solid rgba(23,14,11,.42);border-bottom:1px solid rgba(23,14,11,.22);padding:18px 0 20px">
 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
@@ -1359,7 +1381,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <label style="display:flex;flex-direction:column;gap:6px">
 <span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted)">COST OBJECT</span>
 <select value="{{ invCost }}" onChange="{{ onInvCost }}" style="background:var(--ux-ground);border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:12px Archivo,sans-serif;color:var(--ux-ink)">
-<option value="all">Assigned and blank</option><option value="assigned">Assigned</option><option value="unassigned">Blank</option>
+<option value="all">All decisions</option><option value="assigned">Assigned</option><option value="pending">Pending assignment</option><option value="not_required">Not required</option><option value="conflict">Source conflict</option><option value="lot_required">Lot ID required first</option>
 </select>
 </label>
 <label style="display:flex;flex-direction:column;gap:6px">
@@ -3287,7 +3309,10 @@ const INVENTORY_PACKAGE_COLUMNS = [
   'economic_owner_id', 'economic_owner_name', 'commercial_model',
   'settlement_counterparty_id', 'settlement_counterparty_name',
   'economic_owner_source', 'economic_owner_source_field', 'ownership_scope',
-  'lot_control_status', 'lot_allocation_eligible', 'lot_control_detail', 'lot_checked_at'
+  'lot_control_status', 'lot_allocation_eligible', 'lot_control_detail', 'lot_checked_at',
+  'cost_object_status', 'cost_object_validation_state', 'cost_object_source_value',
+  'cost_object_source_status',
+  'cost_object_decision_note', 'cost_object_decided_by', 'cost_object_decided_at'
 ];
 
 const ITEM_MASTER_STORED_COLUMNS = [
@@ -3356,7 +3381,10 @@ const CANIX_INVENTORY_SNAPSHOT = {
     lot_multiple_value_packages: null, lot_unknown_pointer_packages: null, lot_unknown_pointer_lots: null,
     lot_allocation_exception_packages: null,
     lot_register_rows: null, lot_register_approved_rows: null, lot_register_invalid_rows: null,
-    lot_register_duplicate_rows: null },
+    lot_register_duplicate_rows: null,
+    cost_object_assigned_packages: null, cost_object_unassigned_packages: null,
+    cost_object_pending_packages: null, cost_object_not_required_packages: null,
+    cost_object_source_conflict_packages: null },
   item_master: { source: { system: 'Canix', table: 'GET /items', grain: 'one row per Canix Item ID',
       active_and_inactive: true, last_successful_sync_at: null, latest_updated_at: null, stale: true,
       status: 'never_run', last_error: null, cost_fields_included: false },
@@ -3680,6 +3708,9 @@ class Component extends DCLogic {
     invSettlementPartyDraft: '', invOwnershipNote: '', invOwnershipPending: false,
     invQueueItemId: null, invQueueOwnerDraft: '', invQueueModelDraft: '',
     invQueueSettlementDraft: '', invQueueNote: '', invQueuePending: false,
+    costObjectQueue: 'pending_assignment', costObjectSearch: '', costObjectSelectedLot: null,
+    costObjectStatusDraft: 'pending_assignment', costObjectCodeDraft: '', costObjectNote: '',
+    costObjectPending: false, costObjectError: null,
     catalogLoading: false, catalogLoaded: false, catalogError: null,
     pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })), pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })),
     pricingDefaults: [], wholesaleSources: [], wholesaleSummary: {}, wholesaleQuery: '', wholesaleStatus: 'all',
@@ -4309,6 +4340,9 @@ class Component extends DCLogic {
       invMasterQuantity: 'all', invMasterPackageCoverage: 'all', invMasterSortKey: 'name', invMasterSortDir: 'asc',
       invMasterPage: 1, invMasterPageSize: 25, invSelectedItem: null, itemMasterSyncPending: false,
       lotSyncPending: false, lotStagePending: false,
+      costObjectQueue: 'pending_assignment', costObjectSearch: '', costObjectSelectedLot: null,
+      costObjectStatusDraft: 'pending_assignment', costObjectCodeDraft: '', costObjectNote: '',
+      costObjectPending: false, costObjectError: null,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
       pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })), pricingLoading: false, pricingLoaded: false, pricingError: null,
@@ -4547,6 +4581,9 @@ class Component extends DCLogic {
       ['Canix package owner (operational)', 'canix_package_owner_name'], ['Strain', 'strain_name'],
       ['Quantity type', 'quantity_type'], ['Quantity', '_display_quantity'], ['Unit', '_display_unit'],
       ['UX OS UOM', 'uom_code'], ['Cost Object', 'cost_object_id'],
+      ['Cost Object status', 'cost_object_status'], ['Cost Object validation', 'cost_object_validation_state'],
+      ['Monday Cost Object value', 'cost_object_source_value'],
+      ['Monday Cost Object approval', 'cost_object_source_status'],
       ['Lot ID', 'lot_id'], ['Production batch', 'production_batch_number'], ['Lot control', 'lot_control_status'],
       ['Lot allocation eligible', 'lot_allocation_eligible'], ['Lot control detail', 'lot_control_detail'], ['Lot checked at', 'lot_checked_at'],
       ['Facility', 'facility_name'], ['Room', 'room_name'], ['Status', 'status'], ['Status category', 'status_category'],
@@ -4724,6 +4761,62 @@ class Component extends DCLogic {
       })
       .catch(e => this.set({ lotStagePending: false,
         inventoryError: (e && e.message) || 'The Canix lot review queue could not be staged.' }));
+  }
+
+  openCostObjectDecision(lot) {
+    const record = lot || {};
+    this.set({
+      costObjectSelectedLot: record.lotId || null,
+      costObjectStatusDraft: record.status || 'pending_assignment',
+      costObjectCodeDraft: record.costObjectId || record.sourceCostObjectId || '',
+      costObjectNote: record.note || '',
+      costObjectError: null
+    });
+  }
+
+  closeCostObjectDecision() {
+    if (this.state.costObjectPending) return;
+    this.set({ costObjectSelectedLot: null, costObjectStatusDraft: 'pending_assignment',
+      costObjectCodeDraft: '', costObjectNote: '', costObjectError: null });
+  }
+
+  saveCostObjectDecision() {
+    if (!this.requirePermission('cost_objects.manage', 'record a Cost Object decision')) return;
+    if (this.state.costObjectPending || !this.state.costObjectSelectedLot) return;
+    const status = String(this.state.costObjectStatusDraft || 'pending_assignment');
+    const lotId = String(this.state.costObjectSelectedLot);
+    const costObjectId = String(this.state.costObjectCodeDraft || '').trim().toUpperCase();
+    const note = String(this.state.costObjectNote || '').trim();
+    if (!['pending_assignment', 'assigned', 'not_required'].includes(status)) {
+      this.set({ costObjectError: 'Choose Pending Finance/Ops assignment, Assigned, or Not Required.' });
+      return;
+    }
+    if (note.length < 8) {
+      this.set({ costObjectError: 'Add a decision note of at least 8 characters.' });
+      return;
+    }
+    if (status === 'assigned' && !/^[A-Z0-9]+-[A-Z0-9]+(-[A-Z0-9]+)?$/.test(costObjectId)) {
+      this.set({ costObjectError: 'Assigned codes must use DEPT-LINE or DEPT-LINE-VARIANT.' });
+      return;
+    }
+    this.set({ costObjectPending: true, costObjectError: null });
+    this.portalFetch(PORTAL_LOT_INTEGRITY_API, { method: 'POST', credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + (this.state.token || '') },
+      body: JSON.stringify({ action: 'set-cost-object-decision', lotId,
+        status, costObjectId: status === 'assigned' ? costObjectId : null, note }) })
+      .then(r => r.json().catch(() => ({})).then(payload => ({ ok: r.ok, statusCode: r.status, payload })))
+      .then(({ ok, statusCode, payload }) => {
+        if (!ok) throw new Error((payload && payload.error) || ('Cost Object endpoint returned ' + statusCode + '.'));
+        const decision = payload && payload.decision ? payload.decision : {};
+        this.set({ costObjectPending: false, costObjectSelectedLot: null, costObjectCodeDraft: '',
+          costObjectNote: '', costObjectStatusDraft: 'pending_assignment',
+          toast: 'Lot ' + (decision.lotId || lotId) + ' is now '
+            + status.replace(/_/g, ' ') + '.', toastKind: status === 'assigned' ? 'ASSIGNED' : 'DECISION RECORDED' });
+        this.loadInventory();
+      })
+      .catch(e => this.set({ costObjectPending: false,
+        costObjectError: (e && e.message) || 'The Cost Object decision could not be saved.' }));
   }
 
   economicOwnershipCall(method, body) {
@@ -6873,14 +6966,69 @@ class Component extends DCLogic {
     const invOwnershipQueue = Array.from(invOwnershipQueueMap.values())
       .sort((a, b) => b.packages - a.packages || String(a.itemName).localeCompare(String(b.itemName)));
     const invQueueSelected = invOwnershipQueue.find(item => String(item.itemId) === String(s.invQueueItemId)) || null;
+    const costObjectLotMap = new Map();
+    const costObjectValidationPriority = { source_mismatch: 5, source_conflict: 5, pending: 4, valid: 3, accepted_no_code: 2 };
+    invPackages.filter(row => row.lot_control_status === 'valid' && row.lot_id).forEach(row => {
+      const lotId = String(row.lot_id).trim().toUpperCase();
+      const current = costObjectLotMap.get(lotId) || {
+        lotId, packages: 0, facilities: new Set(), rooms: new Set(), items: new Set(),
+        status: row.cost_object_status || 'pending_assignment',
+        validation: row.cost_object_validation_state || 'pending',
+        costObjectId: row.cost_object_id || '', sourceCostObjectId: row.cost_object_source_value || '',
+        sourceStatus: row.cost_object_source_status || '',
+        note: row.cost_object_decision_note || '', decidedBy: row.cost_object_decided_by || '',
+        decidedAt: row.cost_object_decided_at || ''
+      };
+      current.packages += 1;
+      if (row.facility_name) current.facilities.add(row.facility_name);
+      if (row.room_name) current.rooms.add(row.room_name);
+      if (row.item_name) current.items.add(row.item_name);
+      if ((costObjectValidationPriority[row.cost_object_validation_state] || 0)
+        > (costObjectValidationPriority[current.validation] || 0)) {
+        current.validation = row.cost_object_validation_state;
+      }
+      if (row.cost_object_status) current.status = row.cost_object_status;
+      if (row.cost_object_id) current.costObjectId = row.cost_object_id;
+      if (row.cost_object_source_value) current.sourceCostObjectId = row.cost_object_source_value;
+      if (row.cost_object_source_status) current.sourceStatus = row.cost_object_source_status;
+      if (row.cost_object_decision_note) current.note = row.cost_object_decision_note;
+      if (row.cost_object_decided_by) current.decidedBy = row.cost_object_decided_by;
+      if (row.cost_object_decided_at) current.decidedAt = row.cost_object_decided_at;
+      costObjectLotMap.set(lotId, current);
+    });
+    const costObjectLots = Array.from(costObjectLotMap.values()).map(lot => ({ ...lot,
+      facilitiesLabel: Array.from(lot.facilities).join(', ') || 'Facility not recorded',
+      roomsLabel: Array.from(lot.rooms).join(', ') || 'Room not recorded',
+      itemsLabel: Array.from(lot.items).slice(0, 3).join(', ') + (lot.items.size > 3 ? ' +' + (lot.items.size - 3) : ''),
+      itemCount: lot.items.size
+    }));
+    const costObjectQueue = ['pending_assignment', 'assigned', 'not_required', 'conflict', 'all'].includes(s.costObjectQueue)
+      ? s.costObjectQueue : 'pending_assignment';
+    const costObjectNeedle = String(s.costObjectSearch || '').trim().toLowerCase();
+    const costObjectIsConflict = lot => ['source_mismatch', 'source_conflict'].includes(lot.validation);
+    const costObjectFiltered = costObjectLots.filter(lot => {
+      if (costObjectQueue === 'conflict' && !costObjectIsConflict(lot)) return false;
+      if (!['conflict', 'all'].includes(costObjectQueue) && lot.status !== costObjectQueue) return false;
+      if (!['conflict', 'all'].includes(costObjectQueue) && costObjectIsConflict(lot)) return false;
+      if (!costObjectNeedle) return true;
+      return [lot.lotId, lot.facilitiesLabel, lot.roomsLabel, lot.itemsLabel, lot.status, lot.validation,
+        lot.costObjectId, lot.sourceCostObjectId, lot.sourceStatus, lot.note, lot.decidedBy]
+        .some(value => String(value || '').toLowerCase().includes(costObjectNeedle));
+    }).sort((a, b) => {
+      const priority = lot => costObjectIsConflict(lot) ? 0 : lot.status === 'pending_assignment' ? 1
+        : lot.status === 'assigned' ? 2 : 3;
+      return priority(a) - priority(b) || a.lotId.localeCompare(b.lotId, undefined, { numeric: true });
+    });
+    const costObjectSelected = costObjectLots.find(lot => lot.lotId === s.costObjectSelectedLot) || null;
     const invViewMatch = (row, view) => view === 'available' ? row.status_category === 'available'
       : view === 'allocated' ? row.status_category === 'allocated'
       : view === 'failed' ? String(row.lab_test_status || '').indexOf('Failed') !== -1 || String(row.test_result_status || '').indexOf('Failed') !== -1
       : view === 'aged' ? Number(row.age_days) > 90
       : view === 'canix_owner' ? !row.canix_package_owner_name
       : view === 'ownership' ? !row.economic_owner_name
-      : view === 'cost_object' ? !row.cost_object_id
-      : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code || !row.cost_object_id
+      : view === 'cost_object' ? !['valid', 'accepted_no_code'].includes(row.cost_object_validation_state)
+      : view === 'mapping' ? !row.economic_partner_name || !row.economic_owner_name || !row.uom_code
+        || !['valid', 'accepted_no_code'].includes(row.cost_object_validation_state)
       : view === 'lot' ? row.lot_control_status !== 'valid'
       : view === 'zero' ? Number(row._display_quantity) === 0
       : true;
@@ -6903,14 +7051,19 @@ class Component extends DCLogic {
       if (s.invOwner !== 'all' && (row.economic_owner_name || 'Not classified') !== s.invOwner) return false;
       if (s.invCommercial !== 'all' && (row.commercial_model || 'Not classified') !== s.invCommercial) return false;
       if (s.invUom !== 'all' && (row.uom_code || 'Not assigned') !== s.invUom) return false;
-      if (s.invCost === 'assigned' && !row.cost_object_id) return false;
-      if (s.invCost === 'unassigned' && row.cost_object_id) return false;
+      if (s.invCost === 'assigned' && row.cost_object_validation_state !== 'valid') return false;
+      if (s.invCost === 'pending' && row.cost_object_validation_state !== 'pending') return false;
+      if (s.invCost === 'not_required' && row.cost_object_validation_state !== 'accepted_no_code') return false;
+      if (s.invCost === 'conflict' && !['source_mismatch', 'source_conflict'].includes(row.cost_object_validation_state)) return false;
+      if (s.invCost === 'lot_required' && row.cost_object_validation_state !== 'lot_id_required') return false;
       if (s.invLab !== 'all' && (row.lab_test_status || 'No status') !== s.invLab) return false;
       if (!invMatchesAge(row)) return false;
       if (!invNeedle) return true;
       return [row.package_id, row.tag, row.item_name, row.sku, row.product_name, row.brand_name,
         row.economic_partner_name, row.economic_owner_name, row.commercial_model, row.settlement_counterparty_name, row.canix_package_owner_name,
-        row.uom_code, row.cost_object_id, row.lot_id, row.production_batch_number, row.lot_control_status,
+        row.uom_code, row.cost_object_id, row.cost_object_status, row.cost_object_validation_state,
+        row.cost_object_source_value, row.cost_object_source_status, row.cost_object_decision_note, row.cost_object_decided_by,
+        row.lot_id, row.production_batch_number, row.lot_control_status,
         row.strain_name, row.room_name]
         .some(value => String(value || '').toLowerCase().indexOf(invNeedle) !== -1);
     });
@@ -7986,6 +8139,34 @@ class Component extends DCLogic {
       ['backend_revenue_share', 'Backend revenue share'], ['toll_processing', 'Toll processing'],
       ['shared_risk', 'Shared risk'], ['unclassified', 'Explicitly unclassified']
     ].map(([value, label]) => ({ value, label }));
+    const costObjectCanManage = canStaff('cost_objects.manage');
+    const costObjectCounts = {
+      pending_assignment: costObjectLots.filter(lot => lot.status === 'pending_assignment' && !costObjectIsConflict(lot)).length,
+      assigned: costObjectLots.filter(lot => lot.status === 'assigned' && lot.validation === 'valid').length,
+      not_required: costObjectLots.filter(lot => lot.status === 'not_required' && lot.validation === 'accepted_no_code').length,
+      conflict: costObjectLots.filter(costObjectIsConflict).length
+    };
+    const costObjectActionCount = costObjectCounts.pending_assignment + costObjectCounts.conflict;
+    const costObjectMissingLotPackages = invPackages.filter(row => row.lot_control_status === 'missing_pointer').length;
+    const costObjectRows = costObjectFiltered.map(lot => {
+      const conflict = costObjectIsConflict(lot);
+      const statusLabel = conflict ? 'SOURCE CONFLICT' : lot.status === 'pending_assignment'
+        ? 'PENDING' : lot.status === 'not_required' ? 'NOT REQUIRED' : 'ASSIGNED';
+      const decidedAt = lot.decidedAt ? String(lot.decidedAt).replace('T', ' · ').replace('Z', '') : '';
+      return {
+        lotId: lot.lotId, validation: invTitle(lot.validation), facility: lot.facilitiesLabel, room: lot.roomsLabel,
+        packages: invNumber(lot.packages) + ' packages', items: invNumber(lot.itemCount) + ' items', status: statusLabel,
+        statusStyle: 'display:inline-block;white-space:nowrap;font:700 9px ui-monospace,monospace;letter-spacing:.04em;padding:3px 6px;background:'
+          + (conflict ? 'var(--ux-signal)' : lot.status === 'assigned' ? 'var(--ux-accent)' : lot.status === 'not_required' ? 'var(--ux-ink)' : 'var(--ux-surface)')
+          + ';color:' + (conflict || ['assigned', 'not_required'].includes(lot.status) ? '#fff' : 'var(--ux-muted-strong)'),
+        code: lot.costObjectId || '—', source: lot.sourceCostObjectId
+          ? lot.sourceCostObjectId + (lot.sourceStatus ? ' · ' + invTitle(lot.sourceStatus) : '') : 'No Monday value',
+        note: lot.note || 'Awaiting decision note', actor: lot.decidedBy ? lot.decidedBy + (decidedAt ? ' · ' + decidedAt : '') : 'No decision recorded',
+        action: costObjectCanManage ? 'Review' : 'Inspect',
+        rowStyle: lot.lotId === s.costObjectSelectedLot ? 'background:var(--ux-surface)' : '',
+        onOpen: () => this.openCostObjectDecision(lot)
+      };
+    });
 
     return {
       roleBadge: !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
@@ -8213,7 +8394,7 @@ class Component extends DCLogic {
       invSectionTabs: [
         ['packages', 'Packages', invScopedPackages.length],
         ['item_master', 'Item Master', invMasterItems.length],
-        ['ownership', 'Ownership', Number(invData.checks.lot_exception_packages || 0)],
+        ['ownership', 'Controls', Number(invData.checks.lot_exception_packages || 0) + costObjectActionCount],
         ['overview', 'Overview', null]
       ].map(([id, label, count]) => ({ label, count: count === null ? '' : invNumber(count),
         pressed: inventoryPanel === id ? 'true' : 'false',
@@ -8225,6 +8406,66 @@ class Component extends DCLogic {
       invViewItemMaster: inventoryPanel === 'item_master',
       invViewOwnership: inventoryPanel === 'ownership',
       invViewOverview: inventoryPanel === 'overview',
+      costObjectKpiStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 2 : 4)
+        + ',minmax(0,1fr));gap:1px;background:rgba(23,14,11,.16);margin-top:15px',
+      costObjectKpis: [
+        { label: 'PENDING ASSIGNMENT', value: invNumber(costObjectCounts.pending_assignment), note: 'Finance/Ops decision still required.', valueStyle: 'color:var(--ux-signal-text)' },
+        { label: 'ASSIGNED', value: invNumber(costObjectCounts.assigned), note: 'Matches the approved Monday value.', valueStyle: 'color:var(--ux-accent-text)' },
+        { label: 'NOT REQUIRED', value: invNumber(costObjectCounts.not_required), note: 'Approved no-code decisions with evidence.', valueStyle: '' },
+        { label: 'SOURCE CONFLICTS', value: invNumber(costObjectCounts.conflict), note: 'Portal decision and Monday disagree.', valueStyle: 'color:var(--ux-signal-text)' }
+      ],
+      costObjectQueueTabs: [
+        ['pending_assignment', 'Pending', costObjectCounts.pending_assignment],
+        ['assigned', 'Assigned', costObjectCounts.assigned],
+        ['not_required', 'Not required', costObjectCounts.not_required],
+        ['conflict', 'Conflicts', costObjectCounts.conflict],
+        ['all', 'All valid lots', costObjectLots.length]
+      ].map(([id, label, count]) => ({ label, count: invNumber(count), pressed: costObjectQueue === id ? 'true' : 'false',
+        style: 'background:' + (costObjectQueue === id ? 'var(--ux-ink)' : 'transparent') + ';color:'
+          + (costObjectQueue === id ? 'var(--ux-ground)' : 'var(--ux-ink)')
+          + ';border:0;border-right:1px solid rgba(23,14,11,.2);padding:9px 11px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap',
+        onPick: () => this.set({ costObjectQueue: id, costObjectSelectedLot: null, costObjectError: null }) })),
+      costObjectSearch: s.costObjectSearch,
+      onCostObjectSearch: e => this.set({ costObjectSearch: e.target.value, costObjectSelectedLot: null, costObjectError: null }),
+      costObjectResultCount: invNumber(costObjectFiltered.length) + ' of ' + invNumber(costObjectLots.length) + ' valid lots',
+      costObjectRows,
+      costObjectEmpty: costObjectFiltered.length === 0,
+      costObjectHasSelection: !!costObjectSelected,
+      costObjectSelectedLot: costObjectSelected ? costObjectSelected.lotId : '',
+      costObjectSelectedMeta: costObjectSelected ? costObjectSelected.facilitiesLabel + ' · '
+        + invNumber(costObjectSelected.packages) + ' packages · ' + invNumber(costObjectSelected.itemCount) + ' items' : '',
+      costObjectSelectedSource: costObjectSelected && costObjectSelected.sourceCostObjectId
+        ? costObjectSelected.sourceCostObjectId + (costObjectSelected.sourceStatus
+          ? ' · ' + invTitle(costObjectSelected.sourceStatus) : '') : 'No Cost Object value on the Monday lot row',
+      costObjectSelectedDecision: costObjectSelected
+        ? invTitle(costObjectSelected.status) + ' · ' + invTitle(costObjectSelected.validation) : '',
+      costObjectCanManage,
+      costObjectReadOnly: !costObjectCanManage,
+      costObjectFormStyle: 'display:grid;grid-template-columns:repeat(' + (narrow ? 1 : 2)
+        + ',minmax(0,1fr));gap:10px;margin-top:13px',
+      costObjectStatusDraft: s.costObjectStatusDraft,
+      onCostObjectStatusDraft: e => {
+        const status = e.target.value;
+        this.set({ costObjectStatusDraft: status,
+          costObjectCodeDraft: status === 'assigned'
+            ? (s.costObjectCodeDraft || (costObjectSelected && costObjectSelected.sourceCostObjectId) || '') : '',
+          costObjectError: null });
+      },
+      costObjectDraftAssigned: s.costObjectStatusDraft === 'assigned',
+      costObjectCodeDraft: s.costObjectCodeDraft,
+      onCostObjectCodeDraft: e => this.set({ costObjectCodeDraft: e.target.value.toUpperCase(), costObjectError: null }),
+      costObjectNote: s.costObjectNote,
+      onCostObjectNote: e => this.set({ costObjectNote: e.target.value.slice(0, 1500), costObjectError: null }),
+      costObjectHasError: !!s.costObjectError,
+      costObjectError: s.costObjectError || '',
+      costObjectPending: s.costObjectPending,
+      costObjectSaveOpacity: s.costObjectPending ? '.55' : '1',
+      costObjectSaveLabel: s.costObjectPending ? 'Saving decision…' : 'Save audited decision',
+      onCostObjectSave: () => this.saveCostObjectDecision(),
+      onCostObjectClose: () => this.closeCostObjectDecision(),
+      costObjectSummary: invNumber(costObjectMissingLotPackages) + ' packages still need a Lot ID before a Cost Object decision can be made.',
+      onCostObjectOpenLotExceptions: () => this.set({ inventoryPanel: 'packages', invView: 'lot', invPage: 1,
+        invSelectedPackage: null, costObjectSelectedLot: null }),
       invConnectionLabel: s.inventoryLoading ? 'LOADING CANIX DATA' : s.inventoryLoaded ? (invIsStale ? 'SYNC STALE' : 'LIVE CANIX CACHE') : 'CANIX DATA NOT LOADED',
       invConnectionStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:4px 7px;background:'
         + (s.inventoryError || invIsStale ? 'var(--ux-signal)' : s.inventoryLoaded ? 'var(--ux-accent)' : 'rgba(250,247,243,.16)') + ';color:#fff',
@@ -8413,7 +8654,7 @@ class Component extends DCLogic {
         ['aged', 'Aged 90+ days', invViewCounts('aged')],
         ['canix_owner', 'Canix owner blank', invViewCounts('canix_owner')],
         ['ownership', 'Owner unclassified', invViewCounts('ownership')],
-        ['cost_object', 'Cost object blank', invViewCounts('cost_object')],
+        ['cost_object', 'Cost object unresolved', invViewCounts('cost_object')],
         ['mapping', 'Missing mapping', invViewCounts('mapping')],
         ['lot', 'Lot exceptions', invViewCounts('lot')],
         ['zero', 'Zero on hand', invViewCounts('zero')]
@@ -8565,7 +8806,8 @@ class Component extends DCLogic {
             + (failed ? 'var(--ux-signal)' : row.lab_test_status === 'TestPassed' ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (failed || row.lab_test_status === 'TestPassed' ? '#fff' : 'var(--ux-muted-strong)'),
           age: invNumber(row.age_days) + ' d',
           allocation: row.sales_order_name || (row.sales_order_id ? 'Order ' + row.sales_order_id : 'Unallocated'),
-          costObject: row.cost_object_id || '\u2014',
+          costObject: row.cost_object_id || (row.cost_object_validation_state === 'accepted_no_code'
+            ? 'Not required' : row.cost_object_validation_state === 'pending' ? 'Pending' : '\u2014'),
           updated: String(row.source_updated_at || '\u2014').replace('T', ' · ').replace('Z', ''),
           rowStyle: String(row.package_id) === String(s.invSelectedPackage) ? 'background:var(--ux-surface)' : '',
           onInspect: () => this.inspectInventory(row)
@@ -8619,7 +8861,15 @@ class Component extends DCLogic {
         ['Production batch', invSelected.production_batch_number || 'Not recorded'],
         ['Lot control', invTitle(invSelected.lot_control_status || 'not_checked')],
         ['Lot-control detail', invSelected.lot_control_detail || 'Not checked'],
-        ['Cost Object', invSelected.cost_object_id || 'Not assigned — no approved lot-level source'], ['Raw Canix status', invSelected.status || ''],
+        ['Cost Object', invSelected.cost_object_id || (invSelected.cost_object_validation_state === 'accepted_no_code'
+          ? 'Not Required — approved no-code decision' : 'Not assigned')],
+        ['Cost Object status', invTitle(invSelected.cost_object_status || 'pending_assignment')],
+        ['Cost Object validation', invTitle(invSelected.cost_object_validation_state || 'lot_id_required')],
+        ['Monday Cost Object value', invSelected.cost_object_source_value || 'No value on the approved lot row'],
+        ['Monday Cost Object approval', invTitle(invSelected.cost_object_source_status || 'not recorded')],
+        ['Cost Object decision evidence', [invSelected.cost_object_decision_note, invSelected.cost_object_decided_by,
+          invSelected.cost_object_decided_at].filter(Boolean).join(' · ') || 'No decision recorded'],
+        ['Raw Canix status', invSelected.status || ''],
         ['Facility / room', [invSelected.facility_name, invSelected.room_name].filter(Boolean).join(' · ') || 'Not recorded'],
         ['Workflow status', invTitle(invSelected.status_category)],
         ['On hand', invSelected.quantity_type === 'WeightBased' ? invWeight(invSelected.c_weight_g) : invUnits(invSelected.weight)],

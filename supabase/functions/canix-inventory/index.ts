@@ -115,6 +115,13 @@ const PACKAGE_COLUMNS = [
   "lot_allocation_eligible",
   "lot_control_detail",
   "lot_checked_at",
+  "cost_object_status",
+  "cost_object_validation_state",
+  "cost_object_source_value",
+  "cost_object_source_status",
+  "cost_object_decision_note",
+  "cost_object_decided_by",
+  "cost_object_decided_at",
 ] as const;
 
 const STORED_ITEM_MASTER_COLUMNS = [
@@ -982,14 +989,31 @@ async function allLotControls(runId: string): Promise<Json[]> {
   return rows;
 }
 
-async function allApprovedLotCostObjects(): Promise<Json[]> {
+async function allInboundLotCostObjects(): Promise<Json[]> {
   const rows: Json[] = [];
   for (let start = 0;; start += 1000) {
     const { data, error } = await service.from("portal_inbound_lot")
-      .select("lot_id,cost_object_id")
+      .select("lot_id,cost_object_id,approval_status")
       .eq("active", true)
-      .eq("approval_status", "approved")
       .not("lot_id", "is", null)
+      .range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as Json[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+async function allLotCostObjectDecisions(): Promise<Json[]> {
+  const rows: Json[] = [];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from(
+      "portal_lot_cost_object_decision",
+    )
+      .select(
+        "lot_id,decision_status,cost_object_id,decision_note,decided_by_email,decided_at",
+      )
       .range(start, start + 999);
     if (error) throw error;
     const page = (data ?? []) as unknown as Json[];
@@ -1125,14 +1149,16 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   const [
     ownedRows,
     lotControls,
-    approvedLotCostObjects,
+    inboundLotCostObjects,
+    lotCostObjectDecisions,
     lotStateResult,
     itemStateResult,
     canReadCosts,
   ] = await Promise.all([
     withEconomicOwnership(await allCurrentPackages(runId)),
     allLotControls(runId),
-    allApprovedLotCostObjects(),
+    allInboundLotCostObjects(),
+    allLotCostObjectDecisions(),
     service.from("portal_lot_integrity_state").select(
       "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
     ).eq("id", 1).maybeSingle(),
@@ -1146,21 +1172,54 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   const lotControlByPackage = new Map(
     lotControls.map((control) => [String(control.package_id), control]),
   );
-  const costObjectByLot = new Map<string, string>();
-  for (const lot of approvedLotCostObjects) {
+  const sourceCostObjectByLot = new Map<string, Json>();
+  for (const lot of inboundLotCostObjects) {
     const lotId = stringOrNull(lot.lot_id);
-    const costObjectId = stringOrNull(lot.cost_object_id);
-    if (lotId && costObjectId) costObjectByLot.set(lotId, costObjectId);
+    if (lotId) {
+      sourceCostObjectByLot.set(lotId, {
+        costObjectId: stringOrNull(lot.cost_object_id)?.toUpperCase() ?? null,
+        approvalStatus: stringOrNull(lot.approval_status)?.toLowerCase() ??
+          null,
+      });
+    }
+  }
+  const costObjectDecisionByLot = new Map<string, Json>();
+  for (const decision of lotCostObjectDecisions) {
+    const lotId = stringOrNull(decision.lot_id);
+    if (lotId) costObjectDecisionByLot.set(lotId, decision);
   }
   const rows: Json[] = ownedRows.map((row): Json => {
     const control = lotControlByPackage.get(String(row.package_id));
     const validLotId = control?.integrity_status === "valid"
       ? stringOrNull(control.lot_id)
       : null;
+    const sourceCostObject = validLotId
+      ? sourceCostObjectByLot.get(validLotId) ?? null
+      : null;
+    const sourceCostObjectId = stringOrNull(sourceCostObject?.costObjectId);
+    const sourceCostObjectApproved = sourceCostObject?.approvalStatus ===
+      "approved";
+    const decision = validLotId
+      ? costObjectDecisionByLot.get(validLotId) ?? null
+      : null;
+    const decisionStatus = stringOrNull(decision?.decision_status) ??
+      "pending_assignment";
+    const decidedCostObjectId = stringOrNull(decision?.cost_object_id)
+      ?.toUpperCase() ?? null;
+    const costObjectValidationState = !validLotId
+      ? "lot_id_required"
+      : decisionStatus === "assigned"
+      ? sourceCostObjectApproved && sourceCostObjectId &&
+          decidedCostObjectId === sourceCostObjectId
+        ? "valid"
+        : "source_mismatch"
+      : decisionStatus === "not_required"
+      ? sourceCostObjectId ? "source_conflict" : "accepted_no_code"
+      : "pending";
     return {
       ...row,
-      cost_object_id: validLotId
-        ? costObjectByLot.get(validLotId) ?? null
+      cost_object_id: costObjectValidationState === "valid"
+        ? decidedCostObjectId
         : null,
       coa_url: httpsUrlOrNull(row.coa_url),
       lot_control_status: control?.integrity_status ?? "not_checked",
@@ -1168,6 +1227,13 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       lot_control_detail: control?.detail ??
         "Lot pointer has not been checked against the Monday register.",
       lot_checked_at: control?.checked_at ?? null,
+      cost_object_status: validLotId ? decisionStatus : null,
+      cost_object_validation_state: costObjectValidationState,
+      cost_object_source_value: sourceCostObjectId,
+      cost_object_source_status: stringOrNull(sourceCostObject?.approvalStatus),
+      cost_object_decision_note: decision?.decision_note ?? null,
+      cost_object_decided_by: decision?.decided_by_email ?? null,
+      cost_object_decided_at: decision?.decided_at ?? null,
     };
   });
   const lotState = lotStateResult.data as Json | null;
@@ -1264,7 +1330,7 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       ownership_model: "portal_item_default_with_package_override",
       ownership_fallback: "none",
       cost_object_source:
-        "approved Monday UX Inbound Lot Register; never Canix sales-order line",
+        "Finance/Operations decision validated against the approved Monday UX Inbound Lot Register; never Canix sales-order line",
       lot_register_system: "Monday UX Inbound Lot Register",
       lot_register_board_id: lotState?.monday_board_id ?? null,
       lot_register_last_sync_at: lotState?.last_register_sync_at ?? null,
@@ -1348,9 +1414,25 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
           (numberOrNull(row.c_reserved_weight) ?? 0) > 0
         ).length,
       cost_object_assigned_packages:
-        productionRows.filter((row) => Boolean(row.cost_object_id)).length,
+        productionRows.filter((row) =>
+          row.cost_object_validation_state === "valid"
+        ).length,
       cost_object_unassigned_packages:
         productionRows.filter((row) => !row.cost_object_id).length,
+      cost_object_pending_packages:
+        productionRows.filter((row) =>
+          row.cost_object_validation_state === "pending"
+        ).length,
+      cost_object_not_required_packages:
+        productionRows.filter((row) =>
+          row.cost_object_validation_state === "accepted_no_code"
+        ).length,
+      cost_object_source_conflict_packages:
+        productionRows.filter((row) =>
+          ["source_mismatch", "source_conflict"].includes(
+            String(row.cost_object_validation_state),
+          )
+        ).length,
       count_items_with_case_quantity: new Set(
         productionRows.filter((row) =>
           row.quantity_type === "CountBased" &&
