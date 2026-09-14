@@ -308,6 +308,7 @@ Deno.serve(async (request) => {
       activeCommitments,
       publishedContent,
       coaCount,
+      canixOwnerAssignments,
       readyRetailers,
       readyStores,
       openOnboardingRequests,
@@ -372,6 +373,10 @@ Deno.serve(async (request) => {
         (query) => query.eq("publication_state", "published"),
       ),
       exactCount("canix_package_coa"),
+      exactCount(
+        "canix_package_current",
+        (query) => query.not("canix_package_owner_name", "is", null),
+      ),
       exactCount(
         "portal_retailer_account",
         (query) => query.eq("portal_status", "ready_to_order"),
@@ -647,6 +652,13 @@ Deno.serve(async (request) => {
                 String(canixItem.last_error ?? "Unknown error").slice(0, 240)
               }`
               : "The Vault-backed Item Master job is incomplete.",
+          },
+          {
+            state: canixOwnerAssignments > 0 ? "pass" : "warn",
+            label: "Canix Package Owner source",
+            detail: canixOwnerAssignments > 0
+              ? `${canixOwnerAssignments} current package assignments are available as an operational Canix user field; Economic Owner remains separate.`
+              : "The REST-backed portal snapshot contains no Package Owner assignments. Canix Reporting has an owner field, but the runtime needs a supported Reporting bridge or a documented REST property before this can be treated as connected.",
           },
           {
             state: lotIntegrity?.enforcement_mode === "block"

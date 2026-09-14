@@ -607,7 +607,26 @@ function normalizePackage(
     : Object.keys(itemBrand).length
     ? itemBrand
     : productBrand;
-  const packageOwner = firstObject(source.owner, source.package_owner);
+  const packageOwner = firstObject(
+    source.owner,
+    source.package_owner,
+    source.owners,
+    source.package_owners,
+    source.assigned_owner,
+  );
+  const packageOwnerId = numberOrNull(packageOwner.id) ??
+    numberOrNull(source.owner_id) ??
+    numberOrNull(source.package_owner_id) ??
+    numberOrNull(source.assigned_owner_id);
+  const packageOwnerName = stringOrNull(packageOwner.name) ??
+    stringOrNull(packageOwner.full_name) ??
+    stringOrNull(source.owner_name) ??
+    stringOrNull(source.package_owner_name) ??
+    stringOrNull(source.assigned_owner_name) ??
+    (typeof source.owner === "string" ? stringOrNull(source.owner) : null) ??
+    (typeof source.package_owner === "string"
+      ? stringOrNull(source.package_owner)
+      : null);
   const strain = asObject(item.strain);
   const itemType = asObject(item.type);
   const itemSubType = asObject(item.sub_type);
@@ -705,11 +724,8 @@ function normalizePackage(
     // now remain blank. Canix Package Owner is a user, not the economic owner.
     owner_id: null,
     owner_name: null,
-    canix_package_owner_id: numberOrNull(packageOwner.id),
-    canix_package_owner_name: stringOrNull(packageOwner.name) ??
-      stringOrNull(packageOwner.full_name) ??
-      stringOrNull(source.owner_name) ??
-      stringOrNull(source.package_owner_name),
+    canix_package_owner_id: packageOwnerId,
+    canix_package_owner_name: packageOwnerName,
     strain_name: stringOrNull(strain.name),
     strain_type: stringOrNull(strain.type),
     quantity_type: quantityType,
@@ -1362,6 +1378,8 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
         (sum, row) => sum + (numberOrNull(row.orderable_units) ?? 0),
         0,
       ),
+      canix_owner_assigned_packages:
+        productionRows.filter((row) => row.canix_package_owner_name).length,
     },
     quantity_types: summarize(productionRows, "quantity_type"),
     statuses: summarize(productionRows, "status_category"),
@@ -1413,6 +1431,10 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
           row.status_category === "available" &&
           (numberOrNull(row.c_reserved_weight) ?? 0) > 0
         ).length,
+      canix_owner_assigned_packages:
+        productionRows.filter((row) => row.canix_package_owner_name).length,
+      canix_owner_unassigned_packages:
+        productionRows.filter((row) => !row.canix_package_owner_name).length,
       cost_object_assigned_packages:
         productionRows.filter((row) =>
           row.cost_object_validation_state === "valid"
