@@ -21,6 +21,10 @@ This implements the recommended compensating control for B3 / Intake Form C. It 
 
 The explicit **Lot ID** column is authoritative. The default Monday item name is a human-readable reference only. Required control fields are Lot ID, Ownership Code, Economic Partner, Agreement Reference, Deal Type, UOM Code, Approval Status, Approved By, Effective Date, and Approval Date. Optional operational fields retain blanks rather than inventing data.
 
+Cost Object is an independent, optional Finance classification until Finance and Operations decide whether flower intake requires one and approve the intake-stream mapping. When assigned, it must use the immutable `DEPT-LINE[-VARIANT]` format and may be exposed only from the approved Monday lot record. It is never derived from the Canix sales-order line, Lot ID, Ownership Code, Brand, or potency. A blank Cost Object does not make a Lot ID blank or invalid, and a valid Lot ID does not imply that a Cost Object exists.
+
+UX-AUX-CMP-POL-004, UX-AUX-OPS-PRC-SOP-006, and UX-AUX-FIN-SOP-011 govern receiving, physical intake, QA/QC, and purchase accounting. None of the approved Knowledge Base material currently assigns a flower-intake Cost Object. Route the code or no-code decision to Amrit Kharas (Finance/Controller), with Jonathan DeMart (Operations) for the facility, department, and processing-line mapping.
+
 Ownership Code accepts only:
 
 - `UX`
@@ -105,3 +109,6 @@ Required acceptance evidence:
 - changing an approved Monday Lot ID preserves the locked value and raises `register_lock_violation`;
 - monitor mode does not change orderability;
 - block mode rejects or excludes every non-valid package consistently in catalog, commitment, and release flows.
+- a Canix sales-order line never populates Cost Object;
+- a Cost Object appears only for a valid Lot ID whose single active approved Monday record contains the value;
+- missing Lot ID and missing Cost Object remain separately visible and actionable.

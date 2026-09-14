@@ -759,7 +759,10 @@ function normalizePackage(
     use_by_date: null,
     age_days: daysSince(packagedDate),
     order_item_id: allocation.order_item_id,
-    cost_object_id: allocation.order_item_id,
+    // A Canix sales-order line is not a Cost Object. The authoritative Cost
+    // Object, when one is approved, is joined from the Monday inbound-lot
+    // register while the cached response is assembled below.
+    cost_object_id: null,
     sales_order_id: allocation.sales_order_id,
     sales_order_name: allocation.sales_order_name,
     sales_order_status: allocation.sales_order_status,
@@ -967,9 +970,26 @@ async function allLotControls(runId: string): Promise<Json[]> {
   for (let start = 0;; start += 1000) {
     const { data, error } = await service.from("portal_package_lot_control")
       .select(
-        "package_id,integrity_status,allocation_eligible,detail,checked_at",
+        "package_id,lot_id,integrity_status,allocation_eligible,detail,checked_at",
       )
       .eq("sync_run_id", runId)
+      .range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as Json[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+async function allApprovedLotCostObjects(): Promise<Json[]> {
+  const rows: Json[] = [];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from("portal_inbound_lot")
+      .select("lot_id,cost_object_id")
+      .eq("active", true)
+      .eq("approval_status", "approved")
+      .not("lot_id", "is", null)
       .range(start, start + 999);
     if (error) throw error;
     const page = (data ?? []) as unknown as Json[];
@@ -1105,12 +1125,14 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   const [
     ownedRows,
     lotControls,
+    approvedLotCostObjects,
     lotStateResult,
     itemStateResult,
     canReadCosts,
   ] = await Promise.all([
     withEconomicOwnership(await allCurrentPackages(runId)),
     allLotControls(runId),
+    allApprovedLotCostObjects(),
     service.from("portal_lot_integrity_state").select(
       "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
     ).eq("id", 1).maybeSingle(),
@@ -1124,10 +1146,22 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   const lotControlByPackage = new Map(
     lotControls.map((control) => [String(control.package_id), control]),
   );
+  const costObjectByLot = new Map<string, string>();
+  for (const lot of approvedLotCostObjects) {
+    const lotId = stringOrNull(lot.lot_id);
+    const costObjectId = stringOrNull(lot.cost_object_id);
+    if (lotId && costObjectId) costObjectByLot.set(lotId, costObjectId);
+  }
   const rows: Json[] = ownedRows.map((row): Json => {
     const control = lotControlByPackage.get(String(row.package_id));
+    const validLotId = control?.integrity_status === "valid"
+      ? stringOrNull(control.lot_id)
+      : null;
     return {
       ...row,
+      cost_object_id: validLotId
+        ? costObjectByLot.get(validLotId) ?? null
+        : null,
       coa_url: httpsUrlOrNull(row.coa_url),
       lot_control_status: control?.integrity_status ?? "not_checked",
       lot_allocation_eligible: control?.allocation_eligible ?? false,
@@ -1229,6 +1263,8 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       connection_mode: "server_side_canix_api_cache",
       ownership_model: "portal_item_default_with_package_override",
       ownership_fallback: "none",
+      cost_object_source:
+        "approved Monday UX Inbound Lot Register; never Canix sales-order line",
       lot_register_system: "Monday UX Inbound Lot Register",
       lot_register_board_id: lotState?.monday_board_id ?? null,
       lot_register_last_sync_at: lotState?.last_register_sync_at ?? null,
@@ -1311,6 +1347,10 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
           row.status_category === "available" &&
           (numberOrNull(row.c_reserved_weight) ?? 0) > 0
         ).length,
+      cost_object_assigned_packages:
+        productionRows.filter((row) => Boolean(row.cost_object_id)).length,
+      cost_object_unassigned_packages:
+        productionRows.filter((row) => !row.cost_object_id).length,
       count_items_with_case_quantity: new Set(
         productionRows.filter((row) =>
           row.quantity_type === "CountBased" &&

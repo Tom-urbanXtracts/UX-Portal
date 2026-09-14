@@ -52,6 +52,7 @@ const itemMasterCronMigration = await readFile(resolve(root, "supabase/migration
 const mondayItemMasterMigration = await readFile(resolve(root, "supabase/migrations/20260902130000_monday_item_master_sync.sql"), "utf8");
 const mondayItemMasterTuningMigration = await readFile(resolve(root, "supabase/migrations/20260902140000_monday_item_master_batch_tuning.sql"), "utf8");
 const mondayItemMasterRetargetMigration = await readFile(resolve(root, "supabase/migrations/20260902150000_monday_item_master_retarget.sql"), "utf8");
+const costObjectSourceMigration = await readFile(resolve(root, "supabase/migrations/20260914131500_cost_object_source_boundary.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -64,6 +65,9 @@ function assertContract(condition, name) {
 }
 
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
+assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allApprovedLotCostObjects") && inventory.includes('control?.integrity_status === "valid"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid approved lot");
+assertContract(costObjectSourceMigration.includes("set cost_object_id = null") && costObjectSourceMigration.includes("check (cost_object_id is null)") && costObjectSourceMigration.includes("never copy a Canix sales-order line"), "the migration clears and prevents the former sales-order-line Cost Object alias");
+assertContract(source.includes("Cost object blank") && source.includes("Not assigned — no approved lot-level source"), "inventory distinguishes missing Cost Object from Lot ID exceptions");
 assertContract(inventory.includes("function inventoryBucket(row: Json)") && inventory.includes('"inventory_bucket_reason"'), "inventory publishes one auditable lane classification per package");
 assertContract(inventory.includes("/\\b(?:clone|biomass|seeds?)\\b/i.test(itemName)") && inventory.indexOf("item_name_keyword") < inventory.indexOf("bulkIdentity"), "Clone, Biomass, Seed, and Seeds item names take priority over Bulk routing");
 assertContract(inventory.includes("row.item_category_name") && inventory.includes("row.item_sub_category_name") && inventory.includes("/\\bbulk\\b/i.test(bulkIdentity)"), "Bulk routing uses the Canix item and category identity");
