@@ -244,6 +244,7 @@ assertContract(readiness.includes("Lot-level Cost Object decisions") && readines
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(source.includes('https://www.urbanxtracts.com/contact') && source.includes('Contact support'), "sign-in provides an in-app support contact path");
+assertContract(source.includes("params.set('prompt', 'select_account')") && source.includes("params.set('hd', SSO_DOMAIN)"), "Google Workspace SSO always offers account selection and hints the approved workforce domain");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");
 assertContract(!source.includes("QBO_CLIENT_SECRET"), "QuickBooks client secret is absent from the browser source");
 

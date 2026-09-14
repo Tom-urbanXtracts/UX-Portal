@@ -4372,8 +4372,12 @@ class Component extends DCLogic {
     if (!SSO_PROVIDER || this.state.ssoBusy) return;
     this.set({ ssoBusy: true, ssoErr: null });
     const redirect = location.origin + location.pathname;
-    location.assign(SUPABASE_URL + '/auth/v1/authorize?provider=' + encodeURIComponent(SSO_PROVIDER)
-      + '&redirect_to=' + encodeURIComponent(redirect));
+    const params = new URLSearchParams({ provider: SSO_PROVIDER, redirect_to: redirect });
+    if (SSO_PROVIDER === 'google') {
+      params.set('prompt', 'select_account');
+      params.set('hd', SSO_DOMAIN);
+    }
+    location.assign(SUPABASE_URL + '/auth/v1/authorize?' + params.toString());
   }
 
   submitLogin(event) {
