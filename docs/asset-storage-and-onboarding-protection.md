@@ -1,20 +1,20 @@
 # Private assets and public-onboarding protection
 
-## Product images and COAs
+## Product images
 
-The portal uses the private Supabase Storage bucket `portal-assets`. It accepts only JPEG, PNG, WebP, and PDF files, has a 20 MiB bucket limit, and has no browser-readable Storage policy.
+The portal uses the private Supabase Storage bucket `portal-assets`. The application accepts only JPEG, PNG, and WebP product images up to 10 MiB and has no browser-readable Storage policy. Historical bucket limits are broader, but the server rejects every non-image purpose and format.
 
-`portal-assets` is the only asset-management endpoint. New product-image and portal-COA uploads remain disabled by default with `PORTAL_ASSET_UPLOADS_ENABLED=false` while product images are on hold. The approved ClamAV wrapper is mandatory for onboarding documents and, when the product flag is enabled, for every portal-managed catalog asset:
+`portal-assets` is the only catalog asset-management endpoint. Product-image uploads remain disabled by default with `PORTAL_ASSET_UPLOADS_ENABLED=false` while product images are on hold. COA uploads and administration are explicitly rejected. The approved ClamAV wrapper is mandatory for onboarding documents and, when the product flag is enabled, for every portal-managed product image:
 
-1. An active internal user with `catalog.manage` creates a signed product-image upload for a current Canix item. A user with `quality.manage` may create a PDF COA upload for a current Canix package.
+1. An active internal user with `catalog.manage` creates a signed product-image upload for a current Canix item.
 2. The upload is recorded as `pending_upload`. Completing it verifies that the stored object exists, that its observed size and MIME metadata match the declaration, and that the private malware scanner returns a digest-matched clean result. A mismatch or infected verdict is quarantined; an unavailable scanner leaves the asset unavailable and retryable.
-3. A different authorized user must review the upload; creators cannot approve or quarantine their own files. A quarantine decision requires a reason. The review changes a valid upload from `pending_review` to `active` or `quarantined`. Activation, prior-version archival, and the product/COA link occur in one database transaction under an advisory lock.
+3. A different authorized user must review the upload; creators cannot approve or quarantine their own files. A quarantine decision requires a reason. The review changes a valid upload from `pending_review` to `active` or `quarantined`. Activation, prior-version archival, and the product-image link occur in one database transaction under an advisory lock.
 4. Only active assets receive five-minute signed read URLs from `canix-catalog`. Pending, quarantined, and archived files never appear in catalog responses.
 5. Quarantined objects receive a 90-day purge date. Superseded archived objects receive a 365-day purge date. Active assets have no purge date; their former version receives one when replaced. The purge date is retained as protected lifecycle evidence while uploads remain disabled; IT must connect the deletion worker together with the scanner before enabling uploads.
 
 The current Monday `protected_static` host remains prohibited. Monday should populate product copy and the positive Canix Item ID; an authorized portal workflow uploads and approves the durable image separately.
 
-The v1 policy is fail-closed: an automated malware/content scanner is mandatory, reviewer separation is mandatory, and proposed retention is 90 days for quarantined objects and 365 days for superseded archives. Product images remain intentionally held. Canix-supplied structured COA data and approved exact-host links may continue to display, while a portal-managed asset cannot display without both a clean scan and separate approval.
+The v1 policy is fail-closed: an automated malware/content scanner is mandatory, reviewer separation is mandatory, and proposed retention is 90 days for quarantined objects and 365 days for superseded archives. Product images remain intentionally held. Canix-supplied structured lab data and approved exact-host source-document links may continue to display in authorized product and lineage views; UX OS does not upload, amend, or publish COAs.
 
 ## Public onboarding
 

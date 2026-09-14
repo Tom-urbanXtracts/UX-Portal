@@ -12,9 +12,6 @@ const PORTAL_EMAIL_FROM = Deno.env.get("PORTAL_EMAIL_FROM") ??
 const PORTAL_URL = "https://portal.urbanxtracts.com";
 const DOCUMENT_SCANNER_CONFIGURED = /^https:\/\//.test(Deno.env.get("DOCUMENT_SCANNER_URL") ?? "") &&
   (Deno.env.get("DOCUMENT_SCANNER_SHARED_SECRET") ?? "").length >= 32;
-const PAYMENT_COLLECTION_CONFIGURED = Deno.env.get("PAYMENT_COLLECTION_ENABLED") === "true" &&
-  Boolean(Deno.env.get("STRIPE_SECRET_KEY")) && Boolean(Deno.env.get("STRIPE_WEBHOOK_SECRET"));
-const PUBLICATION_RELEASE_ENABLED = Deno.env.get("PUBLICATION_RELEASE_ENABLED") === "true";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -176,12 +173,6 @@ async function profileRecipient(profileId: string): Promise<{ email: string; pro
 }
 
 async function deliver(outbox: Row, template: Row): Promise<Row> {
-  const { data: policy } = await service.from("portal_notification_policy").select("*").eq("id", 1).single();
-  if (template.template_key === "recall_notice" && policy?.recall_copy_approved !== true) {
-    await service.from("portal_notification_outbox").update({ state: "held_policy", updated_at: new Date().toISOString() })
-      .eq("id", outbox.id);
-    throw new PortalError(409, "Recall copy and trigger policy require Compliance approval before sending.");
-  }
   if (!RESEND_API_KEY) {
     const { data } = await service.from("portal_notification_outbox").update({
       state: "held_provider",
@@ -190,14 +181,19 @@ async function deliver(outbox: Row, template: Row): Promise<Row> {
     }).eq("id", outbox.id).select("*").single();
     return data as Row;
   }
+  const { data: quotaState, error: quotaError } = await service.rpc(
+    "portal_claim_resend_free_quota",
+    { p_outbox_id: outbox.id },
+  );
+  if (quotaError) throw quotaError;
+  if (quotaState !== "claimed") {
+    const { data } = await service.from("portal_notification_outbox").select("*").eq("id", outbox.id).single();
+    return data as Row;
+  }
   const payload = (outbox.payload && typeof outbox.payload === "object" ? outbox.payload : {}) as Row;
   const allowed = Array.isArray(template.allowed_variables) ? template.allowed_variables.map(String) : [];
   const subject = interpolate(String(template.subject_template), payload, allowed);
   const text = interpolate(String(template.text_template), payload, allowed);
-  await service.from("portal_notification_outbox").update({
-    state: "sending", attempt_count: Number(outbox.attempt_count || 0) + 1,
-    updated_at: new Date().toISOString(), last_error: null,
-  }).eq("id", outbox.id);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -218,7 +214,11 @@ async function deliver(outbox: Row, template: Row): Promise<Row> {
   if (!response.ok || !result.id) {
     const errorText = clean(result.message || result.error, 500) || "Email provider rejected the request.";
     await service.from("portal_notification_outbox").update({
-      state: "failed", last_error: errorText, updated_at: new Date().toISOString(),
+      state: response.status === 429 ? "held_provider" : "failed",
+      last_error: response.status === 429
+        ? "The no-cost email provider limit was reached; message held for review."
+        : errorText,
+      updated_at: new Date().toISOString(),
     }).eq("id", outbox.id);
     throw new PortalError(502, "The message was saved, but the email provider did not accept it.");
   }
@@ -328,26 +328,36 @@ async function sendInvoiceNotice(caller: Caller, body: Row): Promise<Row[]> {
 async function listFor(caller: Caller): Promise<Row> {
   if (caller.profile.role === "internal") {
     requireManage(caller);
-    const [templates, policy, outbox, profiles, retention] = await Promise.all([
+    const [templates, policy, outbox, profiles, retention, quotaUsage] = await Promise.all([
       service.from("portal_notification_template").select("*").neq("approval_state", "retired").order("audience").order("category").order("title"),
       service.from("portal_notification_policy").select("*").eq("id", 1).single(),
       service.from("portal_notification_outbox").select("*").order("created_at", { ascending: false }).limit(200),
       service.from("portal_profile").select("id,full_name,org,role,staff_role,active").eq("active", true).order("full_name"),
       service.from("portal_document_retention_rule").select("*").order("display_name"),
+      service.rpc("portal_resend_free_quota_status"),
     ]);
     if (templates.error) throw templates.error;
     if (policy.error) throw policy.error;
     if (outbox.error) throw outbox.error;
     if (profiles.error) throw profiles.error;
     if (retention.error) throw retention.error;
+    if (quotaUsage.error) throw quotaUsage.error;
+    const quota = quotaUsage.data && typeof quotaUsage.data === "object" ? quotaUsage.data as Row : {};
     return {
       templates: templates.data ?? [], policy: policy.data, outbox: outbox.data ?? [], profiles: profiles.data ?? [],
       retentionRules: retention.data ?? [],
-      sender: { provider: "Resend", configured: Boolean(RESEND_API_KEY), from: PORTAL_EMAIL_FROM },
+      sender: {
+        provider: "Resend Free",
+        configured: Boolean(RESEND_API_KEY),
+        from: PORTAL_EMAIL_FROM,
+        costMode: "free_tier_hard_cap",
+        dailyUsed: Number(quota.dailyUsed ?? 0),
+        dailyLimit: Number(policy.data?.daily_email_limit ?? 100),
+        monthlyUsed: Number(quota.monthlyUsed ?? 0),
+        monthlyLimit: Number(policy.data?.monthly_email_limit ?? 3000),
+      },
       controls: {
         documentScannerConfigured: DOCUMENT_SCANNER_CONFIGURED,
-        paymentCollectionConfigured: PAYMENT_COLLECTION_CONFIGURED,
-        publicationReleaseEnabled: PUBLICATION_RELEASE_ENABLED,
         automaticDocumentDeletionEnabled: (retention.data ?? []).some((row) => row.automatic_deletion_enabled === true),
       },
     };

@@ -82,12 +82,7 @@ function extension(contentType: string): string {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
-    "application/pdf": "pdf",
   } as Record<string, string>)[contentType] ?? "";
-}
-
-function requiredPermission(purpose: string): string {
-  return purpose === "product_image" ? "catalog.manage" : "quality.manage";
 }
 
 async function callerFor(request: Request): Promise<Caller | null> {
@@ -116,28 +111,26 @@ async function callerFor(request: Request): Promise<Caller | null> {
 }
 
 function requirePurposeAccess(caller: Caller, purpose: string): void {
-  if (!new Set(["product_image", "coa_document"]).has(purpose)) {
-    throw new AssetError(400, "Choose a supported asset purpose.");
+  if (purpose !== "product_image") {
+    throw new AssetError(
+      400,
+      "Only product-image assets are supported. COA documents are managed off-portal.",
+    );
   }
-  if (!caller.permissions.has(requiredPermission(purpose))) {
+  if (!caller.permissions.has("catalog.manage")) {
     throw new AssetError(403, "This workforce role cannot manage that asset.");
   }
 }
 
-async function verifyOwner(
-  purpose: string,
-  ownerId: number,
-): Promise<{ ownerType: string }> {
+async function verifyOwner(ownerId: number): Promise<{ ownerType: string }> {
   const { data: state, error: stateError } = await service.from(
     "canix_sync_state",
   ).select("last_successful_run_id").eq("id", 1).single();
   if (stateError || !state?.last_successful_run_id) {
     throw new AssetError(503, "A successful Canix snapshot is required.");
   }
-  const ownerType = purpose === "product_image"
-    ? "canix_item"
-    : "canix_package";
-  const field = purpose === "product_image" ? "item_id" : "package_id";
+  const ownerType = "canix_item";
+  const field = "item_id";
   const { data, error } = await service.from("canix_package_current")
     .select(field).eq("sync_run_id", state.last_successful_run_id)
     .eq(field, ownerId).limit(1).maybeSingle();
@@ -161,20 +154,17 @@ async function createUpload(caller: Caller, body: Row): Promise<Row> {
   const purpose = clean(body.purpose, 40);
   requirePurposeAccess(caller, purpose);
   const ownerId = positiveId(body.ownerId);
-  const { ownerType } = await verifyOwner(purpose, ownerId);
+  const { ownerType } = await verifyOwner(ownerId);
   const contentType = clean(body.contentType, 100).toLowerCase();
   const expectedExtension = extension(contentType);
   if (!expectedExtension) {
-    throw new AssetError(400, "Use JPEG, PNG, WebP, or PDF content.");
+    throw new AssetError(400, "Use JPEG, PNG, or WebP content.");
   }
-  if (purpose === "product_image" && !contentType.startsWith("image/")) {
+  if (!contentType.startsWith("image/")) {
     throw new AssetError(400, "Product assets must be an approved image type.");
   }
-  if (purpose === "coa_document" && contentType !== "application/pdf") {
-    throw new AssetError(400, "COA assets must be PDF documents.");
-  }
   const sizeBytes = Number(body.sizeBytes);
-  const maximum = purpose === "product_image" ? 10_485_760 : 20_971_520;
+  const maximum = 10_485_760;
   if (
     !Number.isSafeInteger(sizeBytes) || sizeBytes <= 0 || sizeBytes > maximum
   ) {

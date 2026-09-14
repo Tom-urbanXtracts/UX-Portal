@@ -1078,42 +1078,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">COA versions and amendment</h2>
-<p style="font-size:13px;color:var(--ux-muted);margin:0 0 16px;max-width:78ch">Publishing a new version does not overwrite the old one &mdash; both stay resolvable, and the accounts that received the lot are told. The portal carries the wording compliance has approved and never composes it, and it never states what a result means.</p>
-<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:1px solid rgba(23,14,11,.14);padding:14px 0;margin-bottom:16px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Lot</div>
-<div style="font:700 15px Archivo,sans-serif;margin-bottom:4px"><span style="background:transparent">{{ coaLotName }}</span></div>
-<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:8px">{{ coaTag }}</div>
-<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-<span style="{{ coaVersionStyle }}">{{ coaVersionNow }} current</span>
-<span style="font-size:12px;color:var(--ux-muted)">{{ coaHolderCount }} accounts received this lot</span>
-</div>
-</div>
-<sc-if value="{{ coaNotAmended }}" hint-placeholder-val="{{ true }}">
-<div style="margin-bottom:8px"><button type="button" onClick="{{ onAmendCoa }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Publish an amended COA</button></div>
-<p style="font-size:12.5px;color:var(--ux-muted);margin:0 0 8px;max-width:78ch">Publishing version 2 notifies every account holding the lot, marks the lot on their product page, and writes the amendment to the audit trail. It is one of two notices a store user cannot switch off.</p>
-</sc-if>
-<sc-if value="{{ coaAmended }}" hint-placeholder-val="{{ false }}">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:8px">Notified accounts</div>
-<div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:1.2fr 1.2fr auto;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
-<div>Account</div><div>Acknowledgement</div><div></div>
-</div>
-<sc-for list="{{ coaHolders }}" as="h" hint-placeholder-count="3">
-<div style="display:grid;grid-template-columns:1.2fr 1.2fr auto;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
-<div style="font-weight:600"><span style="background:transparent">{{ h.org }}</span></div>
-<div><span style="{{ h.ackStyle }}">{{ h.ackText }}</span></div>
-<div><sc-if value="{{ h.canAck }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ h.onAck }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Record acknowledgement</button></sc-if></div>
-</div>
-</sc-for>
-</div>
-<div style="margin-top:18px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">VERSION 1 IS NOT GONE</div>
-<div style="font-size:13px;line-height:1.62">A store that received the lot under version 1 can still resolve version 1, because that is what they held at the time and what their own records say they received. Overwriting it would make their history wrong. What changed between versions, and what it means, is not for this portal to state.</div>
-</div>
-</sc-if>
-
-<div style="margin-top:18px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">Counts are measured from the live subledger on 2026-08-24 and are the real figures, not samples. A retailer never sees this screen, and a failed or quarantined lot has no external presence at all &mdash; not a disabled card, not an out-of-stock label.</div>
+<div style="margin-top:18px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">This screen is limited to Canix release-state monitoring. COA administration, amendment publishing, recall execution, and customer notices are handled through the approved off-portal compliance process.</div>
 </div>
 </sc-if>
 
@@ -1862,16 +1827,16 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ isCommunications }}" hint-placeholder-val="{{ false }}">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Communications and controls</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:78ch">One operational center for approved email copy, delivery evidence, receiving claims, retention policy, public COA/recall publication, and payment readiness. Provider credentials stay server-side and every release gate fails closed.</p>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:78ch">One operational center for approved internal and store messages, delivery evidence, receiving claims, and document-retention controls. Public COA/recall publishing and payment collection stay outside the portal.</p>
 <sc-if value="{{ communicationsHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:18px;font-size:13px">{{ communicationsError }}</div></sc-if>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px">
 <sc-for list="{{ controlCards }}" as="card" hint-placeholder-count="5"><div style="border-top:3px solid {{ card.color }};background:var(--ux-surface);padding:14px 15px;min-height:105px"><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.07em;color:{{ card.color }};margin-bottom:8px">{{ card.state }}</div><div style="font:800 15px Archivo,sans-serif;margin-bottom:5px">{{ card.title }}</div><div style="font-size:11.5px;line-height:1.5;color:var(--ux-muted)">{{ card.detail }}</div></div></sc-for>
 </div>
 
-<details open style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Message library and sender</summary>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Mandatory account, order, payment-receipt, claim, and quality notices cannot be muted. Invoice reminders and Kiosk, ordering, and user-management guides are optional. Select an active portal user once, then send the matching approved guide with one click.</p>
+<details open style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">No-cost message library and sender</summary>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Resend Free is capped in the portal at 100 messages per UTC day and 3,000 per UTC month. Account, order, license, claim, and integration messages can be mandatory; invoice reminders and how-to guides remain optional. When either limit is reached, new email stays held in the outbox instead of moving to a paid plan.</p>
 <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px"><label style="min-width:300px"><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">RECIPIENT</span><select value="{{ communicationRecipient }}" onChange="{{ onCommunicationRecipient }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="">Select an active portal user</option><sc-for list="{{ communicationRecipients }}" as="recipient" hint-placeholder-count="5"><option value="{{ recipient.id }}">{{ recipient.label }}</option></sc-for></select></label><button type="button" onClick="{{ onCommunicationsRefresh }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh</button></div>
-<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ communicationTemplates }}" as="template" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(190px,1fr) minmax(260px,1.5fr) auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:center"><div><div style="font:700 14px Archivo,sans-serif">{{ template.title }}</div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:5px">{{ template.meta }}</div></div><div style="font-size:12px;line-height:1.5;color:var(--ux-muted-strong)">{{ template.subject }}</div><button type="button" onClick="{{ template.onSend }}" aria-disabled="{{ template.disabled }}" style="{{ template.buttonStyle }}">{{ template.buttonLabel }}</button></div></sc-for></div>
+<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ communicationTemplates }}" as="template" hint-placeholder-count="16"><div style="display:grid;grid-template-columns:minmax(190px,.8fr) minmax(300px,1.7fr) auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:start"><div><div style="font:700 14px Archivo,sans-serif">{{ template.title }}</div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:5px">{{ template.meta }}</div></div><div><div style="font:700 12px/1.5 Archivo,sans-serif;color:var(--ux-muted-strong)">{{ template.subject }}</div><div style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin-top:5px">{{ template.preview }}</div></div><button type="button" onClick="{{ template.onSend }}" aria-disabled="{{ template.disabled }}" style="{{ template.buttonStyle }}">{{ template.buttonLabel }}</button></div></sc-for></div>
 </details>
 
 <details open style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Receiving claims</summary>
@@ -1882,12 +1847,6 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Document retention policy register</summary>
 <p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Five years is recorded as the regulatory floor for applicable distribution books, records, invoices, COAs, lot traceability, and recall evidence. All schedules remain pending approval and automatic deletion remains off; an active legal hold always wins.</p>
 <div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ retentionRules }}" as="rule" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:1.25fr .55fr .8fr 1.5fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px;align-items:baseline"><div style="font-weight:700">{{ rule.name }}</div><div>{{ rule.duration }}</div><div><span style="{{ rule.stateStyle }}">{{ rule.state }}</span></div><div style="color:var(--ux-muted)">{{ rule.basis }}</div></div></sc-for></div>
-</details>
-
-<details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Public COA and recall publishing</summary>
-<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Drafts are durable, approval requires a different authorized user, and public codes are opaque and non-enumerable. Publishing remains off until Compliance approves display/recall copy and Security enables the public resolver.</p>
-<div style="display:flex;gap:9px;align-items:end;flex-wrap:wrap;margin-bottom:14px"><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">CANIX PACKAGE ID</span><input type="text" value="{{ publicationPackage }}" onInput="{{ onPublicationPackage }}" placeholder="Numeric package ID" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label><button type="button" onClick="{{ onPublicationDraft }}" style="border:0;background:var(--ux-ink);color:var(--ux-ground);padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Create COA draft</button></div>
-<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ publicationRows }}" as="publication" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:.7fr 1.4fr .7fr auto;gap:12px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px;align-items:center"><div style="font:600 10px ui-monospace,monospace">{{ publication.type }}</div><div>{{ publication.subject }}</div><div><span style="{{ publication.stateStyle }}">{{ publication.state }}</span></div><div style="display:flex;gap:6px"><sc-if value="{{ publication.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ publication.onApprove }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Approve</button></sc-if><sc-if value="{{ publication.canPublish }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ publication.onPublish }}" style="border:0;background:var(--ux-accent);color:#fff;padding:8px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Publish</button></sc-if></div></div></sc-for></div>
 </details>
 
 <details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Delivery history</summary>
@@ -2094,7 +2053,6 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 <h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Invoices</h2>
-<sc-if value="{{ paymentHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 13px;margin-bottom:12px;font-size:12px">{{ paymentError }}</div></sc-if>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:.8fr .9fr .7fr .7fr .7fr .7fr .65fr 1fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Invoice</div><div>Location</div><div>Issued</div><div>Due</div><div>Original</div><div>Balance</div><div>State</div><div>Actions</div>
@@ -2108,7 +2066,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-weight:600"><span style="background:transparent">{{ i.amount }}</span></div>
 <div style="font-weight:600"><span style="background:transparent">{{ i.balance }}</span></div>
 <div><span style="{{ i.stateStyle }}">{{ i.state }}</span></div>
-<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-if value="{{ i.canSendNotice }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ i.onSendNotice }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">Send notice</button></sc-if><sc-if value="{{ i.canPay }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ i.onPay }}" style="border:0;background:var(--ux-accent);color:#fff;padding:8px 9px;font:700 10px Archivo,sans-serif;cursor:pointer">Pay securely</button></sc-if><sc-if value="{{ i.paymentHeld }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--ux-muted)">Online payment not enabled</span></sc-if></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-if value="{{ i.canSendNotice }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ i.onSendNotice }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">Send notice</button></sc-if><sc-if value="{{ i.readOnly }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;color:var(--ux-muted)">Read only</span></sc-if></div>
 </div>
 </sc-for>
 </div>
@@ -2122,12 +2080,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Separate controls</div><div>A non-zero or past-due QuickBooks balance is displayed here but never creates an order hold by itself. The portal&rsquo;s explicit store ordering status remains the only receivables-related gate.</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Buyer scope</div><div>Buyers see invoices and payments only for stores assigned to their profile. A store without a direct QuickBooks customer mapping stays blank instead of falling back to an organisation-wide customer and leaking another store.</div></div>
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payments</div><div>{{ paymentPolicyText }}</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payments</div><div>Payment collection stays outside UX OS through the approved cannabis-banking process. The portal displays the latest QuickBooks payment history but never accepts card or bank details and never creates a payment transaction.</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Source</div><div>Every live figure comes from the last fully successful server-side QuickBooks snapshot. A failed refresh leaves the prior complete snapshot visible with a stale warning.</div></div>
-</div>
-<div style="margin-top:26px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">{{ paymentBannerLabel }}</div>
-<div style="font-size:13px;line-height:1.62">{{ paymentBannerText }}</div>
 </div>
 </sc-if>
 
@@ -2302,7 +2256,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 <sc-if value="{{ recNoNotices }}" hint-placeholder-val="{{ true }}">
-<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);padding:14px 0;font-size:13px;color:var(--ux-muted)">No notice has been sent to your organisation. Recall and amended-COA notices appear here, and they are the two a user cannot switch off.</div>
+<div style="border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);padding:14px 0;font-size:13px;color:var(--ux-muted)">No portal notice has been sent to your organisation. Account, license, order, invoice, and receiving-claim messages appear here according to the approved channel policy.</div>
 </sc-if>
 <h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Audit history</h2>
 <p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:74ch">Your organisation&rsquo;s own actions, and ours where they touched you. An administrator viewing your screen appears here — a log only we could read would not be an audit trail from your side of it.</p>
@@ -2560,67 +2514,6 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
-<sc-if value="{{ isCoaLookup }}" hint-placeholder-val="{{ false }}">
-<div>
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Public COA page</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 8px;max-width:70ch">Unauthenticated, reached by the printed code. The code is the only key &mdash; a QR simply prefills it rather than resolving by its own path.</p>
-<p style="font-size:13px;color:var(--ux-signal-text);margin:0 0 26px;max-width:70ch">Nothing publishes while the display, retention and recall decisions are open. The mechanism below is designed for either answer.</p>
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px">
-<sc-for list="{{ coaStates }}" as="c" hint-placeholder-count="6">
-<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:20px 22px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong);display:inline-block;margin-bottom:11px">{{ c.kind }}</div>
-<div style="font:700 15.5px/1.3 Archivo,sans-serif;margin-bottom:8px">{{ c.title }}</div>
-<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong)">{{ c.body }}</div>
-</div>
-</sc-for>
-</div>
-
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 10px">Try the resolver</h2>
-<p style="font-size:13px;color:var(--ux-muted);margin:0 0 16px;max-width:78ch">This is the page a consumer reaches from a printed code. <strong>K7M2-QX48-RB91</strong> and <strong>T4J9-LW07-ZC63</strong> are published. <strong>P2R6-HN35-VD82</strong> is a real lot whose certificate is not published &mdash; note that it answers exactly as a code that never existed does.</p>
-<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px">
-<input type="text" value="{{ pubInput }}" onInput="{{ onPubInput }}" placeholder="Code printed on the package" style="flex:1;min-width:260px;padding:11px 13px;border:1px solid rgba(23,14,11,.3);background:#fff;font:500 12px ui-monospace,Menlo,monospace">
-<button type="button" onClick="{{ onPubResolve }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Look it up</button>
-<button type="button" onClick="{{ onPubReset }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Reset limit</button>
-</div>
-<div style="font-size:12px;color:var(--ux-muted);margin-bottom:18px">{{ pubAttemptsText }}</div>
-
-<sc-if value="{{ pubHasMsg }}" hint-placeholder-val="{{ false }}">
-<div style="border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;margin-bottom:20px;max-width:78ch">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:5px">{{ pubMsgKind }}</div>
-<div style="font-size:13px;line-height:1.6">{{ pubMsg }}</div>
-</div>
-</sc-if>
-
-<sc-if value="{{ pubHasResult }}" hint-placeholder-val="{{ false }}">
-<div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:22px 24px;margin-bottom:20px;max-width:560px">
-<div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:10px">Certificate of analysis</div>
-<div style="font:700 16px Archivo,sans-serif;margin-bottom:4px">{{ pubProduct }}</div>
-<div style="font:500 12px ui-monospace,Menlo,monospace;color:var(--ux-muted);margin-bottom:16px">{{ pubTag }}</div>
-<sc-if value="{{ pubAmended }}" hint-placeholder-val="{{ false }}">
-<div style="margin-bottom:14px"><span style="display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-signal);color:#fff">AMENDED &middot; VERSION 2 CURRENT</span></div>
-</sc-if>
-<div style="border-top:1px solid rgba(23,14,11,.14)">
-<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Lab result</div><div style="font-weight:700">{{ pubResult }}</div></div>
-<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Batch</div><div>Not recorded &mdash; the compliance tag is the lot identity</div></div>
-<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Packaged</div><div>{{ pubPackaged }}</div></div>
-<div style="display:grid;grid-template-columns:150px 1fr;gap:16px;padding:10px 0;font-size:13px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">Tested</div><div>{{ pubTested }}</div></div>
-</div>
-<div style="margin-top:16px;font-size:12px;color:var(--ux-muted);line-height:1.6">Lab result, batch and dates. Nothing here interprets the result, restates a value from the document, or makes a claim about effects or benefits. What this page displays, and how long a printed code keeps resolving, are the CCO&rsquo;s to set.</div>
-</div>
-</sc-if>
-
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">The controls, and why</h2>
-<p style="font-size:13px;color:var(--ux-muted);margin:0 0 12px;max-width:78ch">Rev 1 specified what this page shows and never specified that a third party could walk it. A walkable code space hands over a picture of batch and testing history to anyone patient.</p>
-<div style="border-top:2px solid rgba(23,14,11,.4)">
-<sc-for list="{{ pubControls }}" as="p" hint-placeholder-count="6">
-<div style="display:grid;grid-template-columns:210px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
-<div style="font-weight:700">{{ p.control }}</div><div>{{ p.detail }}</div>
-</div>
-</sc-for>
-</div>
-</div>
-</sc-if>
-
 <sc-if value="{{ isAccess }}" hint-placeholder-val="{{ false }}">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Access and session states</h1>
@@ -2850,7 +2743,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ isLineage }}" hint-placeholder-val="{{ false }}">
 <div>
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Lots, COAs and lineage</h1>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Lots and lineage</h1>
 <p style="font-size:14px;color:var(--ux-muted);margin:0 0 18px;max-width:76ch">Internal traceability projected from Canix package records. Package, location, lab, COA, allocation and explicit parent-package fields are shown as reported; missing lineage remains blank.</p>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px"><input type="text" value="{{ lineageSearch }}" onInput="{{ onLineageSearch }}" placeholder="Search tag, item, SKU, lab value or terpene" style="flex:1;min-width:250px;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px 11px;font:12.5px Archivo,sans-serif"><select value="{{ lineageCoa }}" onChange="{{ onLineageCoa }}" style="border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px 11px;font:12.5px Archivo,sans-serif"><option value="all">All COA states</option><option value="with">COA present</option><option value="without">COA not returned</option></select><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ lineageResultCount }}</span></div>
 <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-bottom:26px">
@@ -2867,7 +2760,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
-<div style="margin-top:24px;border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:18px 20px"><div style="display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><div><div style="font:700 14px Archivo,sans-serif">Structured COA fields</div><div style="font-size:11.5px;color:var(--ux-muted);margin-top:3px">{{ lineageLabMeta }}</div></div><sc-if value="{{ lineageHasCoaUrl }}" hint-placeholder-val="false"><a href="{{ lineageCoaUrl }}" target="_blank" rel="noopener noreferrer" style="background:var(--ux-ink);color:var(--ux-ground);padding:8px 11px;font:700 11.5px Archivo,sans-serif;text-decoration:none">Open original COA</a></sc-if></div><sc-if value="{{ lineageHasAnalytes }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 1.3fr .8fr;gap:10px;border-top:2px solid rgba(23,14,11,.35)"><sc-for list="{{ lineageAnalytes }}" as="row" hint-placeholder-count="4"><div style="display:contents"><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font:600 9px ui-monospace,monospace;color:var(--ux-muted)">{{ row.group }}</div><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12px">{{ row.name }}</div><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font:700 11.5px ui-monospace,monospace">{{ row.value }} {{ row.unit }}</div></div></sc-for></div></sc-if><sc-if value="{{ lineageNoAnalytes }}" hint-placeholder-val="true"><div style="font-size:12px;color:var(--ux-muted);line-height:1.55">No structured cannabinoid or terpene values were returned for this package.</div></sc-if></div>
+<div style="margin-top:24px;border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:18px 20px"><div style="display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><div><div style="font:700 14px Archivo,sans-serif">Structured lab fields</div><div style="font-size:11.5px;color:var(--ux-muted);margin-top:3px">{{ lineageLabMeta }}</div></div><sc-if value="{{ lineageHasCoaUrl }}" hint-placeholder-val="false"><a href="{{ lineageCoaUrl }}" target="_blank" rel="noopener noreferrer" style="background:var(--ux-ink);color:var(--ux-ground);padding:8px 11px;font:700 11.5px Archivo,sans-serif;text-decoration:none">Open source document</a></sc-if></div><sc-if value="{{ lineageHasAnalytes }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 1.3fr .8fr;gap:10px;border-top:2px solid rgba(23,14,11,.35)"><sc-for list="{{ lineageAnalytes }}" as="row" hint-placeholder-count="4"><div style="display:contents"><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font:600 9px ui-monospace,monospace;color:var(--ux-muted)">{{ row.group }}</div><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font-size:12px">{{ row.name }}</div><div style="padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12);font:700 11.5px ui-monospace,monospace">{{ row.value }} {{ row.unit }}</div></div></sc-for></div></sc-if><sc-if value="{{ lineageNoAnalytes }}" hint-placeholder-val="true"><div style="font-size:12px;color:var(--ux-muted);line-height:1.55">No structured cannabinoid or terpene values were returned for this package.</div></sc-if></div>
 <div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:74ch">The compliance tag anchors the chain. Parent/source identifiers and COA links appear only when Canix explicitly supplies them; blank values are never inferred.</div>
 </div>
 </sc-if>
@@ -3163,9 +3056,6 @@ const VALIDATION = [
     { severity: 'Record and continue', screen: 'Onboarding', question: 'Who qualifies a license against the state record, and how often is it rechecked?', detail: 'We record what the state record says and never assert validity ourselves, so the question is who looks, what evidence is kept, and on what cycle.', blocks: 'Stage 02 of onboarding', owner: 'Quality and compliance', evidence: 'A named owner and a recheck cycle' }
   ] },
   { cls: 'CCO SIGN-OFF REQUIRED', closedBy: 'Closed by the Chief Compliance Officer', items: [
-    { severity: 'Record and continue', screen: 'Public COA page', question: 'What does the public page display, how long does a printed code keep resolving, and is retest history shown?', detail: 'The public resolver stays disabled while this is open. Authenticated Catalog, Kiosk and Lineage may display the current protected COA record without creating a public compliance claim.', blocks: 'Only publication of the public resolver', owner: 'CCO', evidence: 'A written display, retention and retest decision' },
-    { severity: 'Record and continue', screen: 'Public COA page', question: 'What triggers a recall notice, what does it say, and how fast must it appear?', detail: 'Recall issuance and public notice rendering stay disabled. Internal lot-impact analysis remains available and cannot send a notice by itself.', blocks: 'Only public recall notice behavior', owner: 'CCO', evidence: 'Approved trigger and wording' },
-    { severity: 'Record and continue', screen: 'Public COA page', question: 'May a third party walk the public code space?', detail: 'No public resolver endpoint is released. Before publication it requires a non-sequential code, per-source rate limit, no listing route, and identical unknown/unpublished responses.', blocks: 'Only publication of the public resolver', owner: 'CCO', evidence: 'A code format, a rate limit, and an enumeration position' }
   ] }
 ];
 
@@ -3243,7 +3133,6 @@ const SUPABASE_KEY = PORTAL_CONFIG.supabaseKey || 'sb_publishable_aIrwn28FxjXNT-
 const SSO_PROVIDER = PORTAL_CONFIG.ssoProvider === 'azure' ? 'azure' : 'google';
 const SSO_DOMAIN = String(PORTAL_CONFIG.ssoDomain || 'urbanxtracts.com').toLowerCase();
 const MFA_REQUIRED = PORTAL_CONFIG.mfaRequired !== false;
-const RECALL_NOTICE_ENABLED = PORTAL_CONFIG.recallNoticeEnabled === true;
 const TURNSTILE_REQUIRED = PORTAL_CONFIG.turnstileRequired === true;
 const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 
@@ -3254,7 +3143,7 @@ const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 const STAFF_PERMISSIONS = [
   'inventory.read', 'inventory.sync', 'orders.manage', 'accounts.manage',
   'pricing.manage', 'catalog.manage', 'financials.read', 'economics.manage', 'quality.manage', 'lineage.read', 'users.manage', 'audit.read', 'readiness.read'
-  , 'readiness.manage', 'notifications.manage', 'claims.manage', 'publications.manage'
+  , 'readiness.manage', 'notifications.manage', 'claims.manage'
 ];
 const STAFF_ROLE_LABELS = {
   administrator: 'Administrator', operations: 'Operations', sales: 'Sales',
@@ -3488,10 +3377,6 @@ const PORTAL_NOTIFICATIONS_API = PORTAL_CONFIG.portalNotificationsUrl
   || SUPABASE_URL + '/functions/v1/portal-notifications';
 const PORTAL_CLAIMS_API = PORTAL_CONFIG.portalClaimsUrl
   || SUPABASE_URL + '/functions/v1/portal-claims';
-const PORTAL_PAYMENTS_API = PORTAL_CONFIG.portalPaymentsUrl
-  || SUPABASE_URL + '/functions/v1/portal-payments';
-const PORTAL_PUBLICATIONS_API = PORTAL_CONFIG.portalPublicationsUrl
-  || SUPABASE_URL + '/functions/v1/portal-publications';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3869,12 +3754,9 @@ class Component extends DCLogic {
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
     financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
-    paymentData: null, paymentLoading: false, paymentLoaded: false, paymentError: null, paymentPending: null,
     communicationsData: null, communicationsLoading: false, communicationsLoaded: false, communicationsError: null,
     communicationRecipient: '', communicationPending: null,
     claimsData: null, claimsLoading: false, claimsLoaded: false, claimsError: null, claimPending: null,
-    publicationsData: null, publicationsLoading: false, publicationsLoaded: false, publicationsError: null,
-    publicationPackage: '', publicationPending: null,
     retailerOnboarding: [], retailerOnboardingError: null,
     retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
     accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
@@ -3991,19 +3873,7 @@ class Component extends DCLogic {
   }
 
   recallIssue() {
-    if (!this.requirePermission('quality.manage', 'issue recall notices')) return;
-    if (this.state.recallIssued || !RECALL_NOTICE_ENABLED) return;
-    const tag = this.state.recallTag || RECALL_TAG;
-    this.post('recall', {
-      summary: 'Recall notice \u00b7 ' + tag,
-      complianceTag: tag,
-      board: 'Recall and Lot Impact',
-      submittedBy: this.state.authUser ? this.state.authUser.name : 'Unknown',
-      acknowledgementScope: 'Account, not individual user'
-    }, () => {
-      this.logAudit('Recall notice issued', tag, 'Accounts holding the lot notified; acknowledgement recorded per account', 'urbanXtracts quality');
-      this.set({ recallIssued: true, toast: 'The approved notice was accepted by the notification workflow. Account acknowledgement is now tracked here.', toastKind: 'NOTICE ISSUED' });
-    });
+    this.set({ toast: 'Recall execution and notices are managed through the approved off-portal compliance process.', toastKind: 'OFF-PORTAL PROCESS' });
   }
 
   requestReset() {
@@ -4479,10 +4349,8 @@ class Component extends DCLogic {
       ordersLoaded: false, ordersError: null, orderTransitioning: null,
       liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: false, usersError: null,
       financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all',
-      paymentData: null, paymentLoaded: false, paymentError: null, paymentPending: null,
       communicationsData: null, communicationsLoaded: false, communicationsError: null, communicationRecipient: '', communicationPending: null,
       claimsData: null, claimsLoaded: false, claimsError: null, claimPending: null,
-      publicationsData: null, publicationsLoaded: false, publicationsError: null, publicationPackage: '', publicationPending: null,
       toast: 'Signed in as ' + u.name + '. Your ' + accessLabel.toLowerCase() + ' access determines which sections and actions are available.', toastKind: 'SIGNED IN' });
   }
 
@@ -4531,12 +4399,9 @@ class Component extends DCLogic {
       retailerAccountsLoaded: false, retailerAccountsError: null,
       financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
       financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
-      paymentData: null, paymentLoading: false, paymentLoaded: false, paymentError: null, paymentPending: null,
       communicationsData: null, communicationsLoading: false, communicationsLoaded: false, communicationsError: null,
       communicationRecipient: '', communicationPending: null,
       claimsData: null, claimsLoading: false, claimsLoaded: false, claimsError: null, claimPending: null,
-      publicationsData: null, publicationsLoading: false, publicationsLoaded: false, publicationsError: null,
-      publicationPackage: '', publicationPending: null,
       liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
       retailerOnboarding: [], retailerOnboardingError: null,
       retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
@@ -4618,11 +4483,7 @@ class Component extends DCLogic {
   pubReset() { this.set({ pubAttempts: 0, pubResult: null, pubMsg: null, pubInput: '' }); }
 
   amendCoa() {
-    if (!this.requirePermission('quality.manage', 'publish an amended COA')) return;
-    if (this.state.coaAmended) return;
-    const tag = this.state.recallTag || RECALL_TAG;
-    this.logAudit('COA amended', 'Tag ' + tag, 'Version 2 published. Version 1 stays resolvable. Accounts that received this lot are notified.', 'urbanXtracts quality');
-    this.set({ coaAmended: true, toast: 'Version 2 is now the current COA for this lot. Version 1 stays resolvable, the accounts that received the lot are notified, and the notice carries the wording the CCO has approved \u2014 the portal never writes it and never interprets a result.', toastKind: 'NOTICE ISSUED' });
+    this.set({ toast: 'COA administration and amendment publishing are managed off-portal.', toastKind: 'OFF-PORTAL PROCESS' });
   }
 
   coaAck(org) {
@@ -5395,12 +5256,10 @@ class Component extends DCLogic {
     this.set({ communicationsLoading: true, communicationsError: null });
     return Promise.all([
       this.securedPortalCall(PORTAL_NOTIFICATIONS_API, 'GET'),
-      this.securedPortalCall(PORTAL_CLAIMS_API, 'GET'),
-      this.hasPermission('publications.manage') ? this.securedPortalCall(PORTAL_PUBLICATIONS_API, 'GET') : Promise.resolve({ publications: [], releaseEnabled: false })
-    ]).then(([communications, claims, publications]) => this.set({
+      this.securedPortalCall(PORTAL_CLAIMS_API, 'GET')
+    ]).then(([communications, claims]) => this.set({
       communicationsData: communications, communicationsLoading: false, communicationsLoaded: true,
       claimsData: claims, claimsLoaded: true, claimsError: null,
-      publicationsData: publications, publicationsLoaded: true, publicationsError: null,
       communicationsError: null
     })).catch(error => this.set({ communicationsLoading: false, communicationsLoaded: true,
       communicationsError: error.message || 'Communications and controls could not be loaded.' }));
@@ -5427,34 +5286,13 @@ class Component extends DCLogic {
 
   sendInvoiceNotice(invoice) {
     if (!invoice || this.state.communicationPending) return;
-    this.set({ communicationPending: 'invoice:' + invoice.rawId, paymentError: null });
+    this.set({ communicationPending: 'invoice:' + invoice.rawId });
     this.securedPortalCall(PORTAL_NOTIFICATIONS_API, 'POST', { action: 'send-invoice-notice', invoiceId: invoice.rawId })
       .then(body => this.set({ communicationPending: null,
         toast: (body.messages || []).length + ' Owner/Buyer invoice notice' + ((body.messages || []).length === 1 ? '' : 's') + ' accepted.',
         toastKind: 'INVOICE NOTICE' }))
-      .catch(error => this.set({ communicationPending: null, paymentError: error.message || 'The invoice notice was not sent.' }));
-  }
-
-  loadPayments(force) {
-    const s = this.state;
-    const allowed = ['owner', 'buyer'].includes(s.role) || (s.role === 'internal' && this.hasPermission('financials.read'));
-    if (!s.authUser || !s.token || !allowed || this.loc().demo || s.paymentLoading || (!force && s.paymentLoaded)) return Promise.resolve();
-    this.set({ paymentLoading: true, paymentError: null });
-    return this.securedPortalCall(PORTAL_PAYMENTS_API, 'GET')
-      .then(body => this.set({ paymentData: body, paymentLoading: false, paymentLoaded: true, paymentError: null }))
-      .catch(error => this.set({ paymentLoading: false, paymentLoaded: true, paymentError: error.message || 'Payment readiness could not be loaded.' }));
-  }
-
-  beginInvoicePayment(invoice) {
-    if (!invoice || this.state.paymentPending) return;
-    this.set({ paymentPending: invoice.rawId, paymentError: null });
-    this.securedPortalCall(PORTAL_PAYMENTS_API, 'POST', { action: 'create-checkout', invoiceId: invoice.rawId })
-      .then(body => {
-        const url = new URL(body.checkoutUrl);
-        if (url.protocol !== 'https:' || !/(^|\.)stripe\.com$/i.test(url.hostname)) throw new Error('The payment provider returned an unexpected destination.');
-        window.location.assign(url.toString());
-      })
-      .catch(error => this.set({ paymentPending: null, paymentError: error.message || 'Secure checkout could not be started.' }));
+      .catch(error => this.set({ communicationPending: null,
+        toast: error.message || 'The invoice notice was not sent.', toastKind: 'NOTICE NOT SENT' }));
   }
 
   loadClaims(force) {
@@ -5477,23 +5315,6 @@ class Component extends DCLogic {
         toast: claim.claimNumber + ' is now ' + state.replace(/_/g, ' ') + '.', toastKind: 'CLAIM UPDATED' }))
       .then(() => this.loadCommunications(true))
       .catch(error => this.set({ claimPending: null, communicationsError: error.message || 'The claim was not updated.' }));
-  }
-
-  publicationAction(action, publication) {
-    if (this.state.publicationPending) return;
-    const payload = action === 'draft-coa'
-      ? { action, packageId: Number(this.state.publicationPackage) }
-      : { action, publicationId: publication && publication.id };
-    this.set({ publicationPending: action + ':' + (publication && publication.id || 'new'), communicationsError: null });
-    this.securedPortalCall(PORTAL_PUBLICATIONS_API, 'POST', payload)
-      .then(body => this.set({ publicationPending: null, publicationsLoaded: false, communicationsLoaded: false,
-        publicationPackage: action === 'draft-coa' ? '' : this.state.publicationPackage,
-        toast: body.publication && body.publication.publicCode
-          ? 'Published. Copy this one-time public code now: ' + body.publication.publicCode
-          : 'Publication record moved to ' + action.replace(/-/g, ' ') + '.',
-        toastKind: action === 'publish' ? 'PUBLIC CODE CREATED' : 'PUBLICATION UPDATED' }))
-      .then(() => this.loadCommunications(true))
-      .catch(error => this.set({ publicationPending: null, communicationsError: error.message || 'The publication record was not changed.' }));
   }
 
   retailerCall(action, payload) {
@@ -7075,11 +6896,6 @@ class Component extends DCLogic {
       && !this.state.financialLoaded && !this.state.financialLoading) {
       this.loadFinancials();
     }
-    if (this.state.authUser && this.state.token && financialRoleAllowed && this.state.screen === 'receivables'
-      && !this.loc().demo && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
-      && !this.state.paymentLoaded && !this.state.paymentLoading) {
-      this.loadPayments();
-    }
     const claimsRoleAllowed = ['owner', 'buyer'].includes(this.state.role)
       || (this.state.role === 'internal' && this.hasPermission('claims.manage'));
     if (this.state.authUser && this.state.token && claimsRoleAllowed && ['orders', 'order', 'records', 'communications'].includes(this.state.screen)
@@ -7733,10 +7549,10 @@ class Component extends DCLogic {
   }
 
   navFor(role, permissions) {
-    if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa']];
+    if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training']];
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
-      return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['recall', 'Recall and lot impact', 'lineage'], ['lineage', 'Lots, COAs and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['onboarding', 'Store onboarding', 'accounts'], ['admin', 'Users and access', 'admin'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
+      return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['lineage', 'Lots and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['onboarding', 'Store onboarding', 'accounts'], ['admin', 'Users and access', 'admin'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
         .filter(([id]) => !INTERNAL_ROUTE_PERMISSION[id] || grants.has(INTERNAL_ROUTE_PERMISSION[id]));
     }
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training']];
@@ -10342,14 +10158,12 @@ class Component extends DCLogic {
         const good = 'var(--ux-accent-text)';
         const held = 'var(--ux-signal-text)';
         const controlCards = [
-          { title: 'Email sender', state: sender.configured ? 'READY' : 'PROVIDER SETUP', color: sender.configured ? good : held,
-            detail: sender.configured ? 'Resend is connected through ' + sender.from + '.' : 'Templates and outbox are live; verify the sending subdomain and add the server API key.' },
+          { title: 'No-cost email sender', state: sender.configured ? 'FREE TIER READY' : 'DOMAIN SETUP', color: sender.configured ? good : held,
+            detail: sender.configured
+              ? sender.dailyUsed + ' of ' + sender.dailyLimit + ' today · ' + sender.monthlyUsed + ' of ' + sender.monthlyLimit + ' this month. Hard caps prevent paid overage.'
+              : 'Templates, outbox, and hard caps are live; verify updates.urbanxtracts.com and add the Resend Free API key.' },
           { title: 'Malware scanner', state: controls.documentScannerConfigured ? 'READY' : 'DEPLOYMENT REQUIRED', color: controls.documentScannerConfigured ? good : held,
             detail: controls.documentScannerConfigured ? 'ClamAV must return a digest-bound clean verdict before review.' : 'Uploads remain fail-closed until the private ClamAV service is deployed and connected.' },
-          { title: 'Payment collection', state: controls.paymentCollectionConfigured ? 'READY' : 'CONTROLLED OFF', color: controls.paymentCollectionConfigured ? good : held,
-            detail: controls.paymentCollectionConfigured ? 'Stripe Checkout is bound to the latest verified open QuickBooks balance.' : 'Invoice display remains live; checkout waits for the merchant keys and Finance release.' },
-          { title: 'Public publishing', state: controls.publicationReleaseEnabled ? 'RELEASED' : 'CONTROLLED OFF', color: controls.publicationReleaseEnabled ? good : held,
-            detail: 'Draft and two-person approval are available. Public resolution stays off until Compliance and Security release it.' },
           { title: 'Automatic deletion', state: controls.automaticDocumentDeletionEnabled ? 'ENABLED' : 'DISABLED', color: controls.automaticDocumentDeletionEnabled ? held : good,
             detail: 'Retention rules are visible, but nothing is destroyed until policy approval and legal-hold checks exist.' }
         ];
@@ -10363,7 +10177,8 @@ class Component extends DCLogic {
           const disabled = !direct || !audienceMatch || !!s.communicationPending || !sender.configured;
           return { ...template, meta: String(template.audience || '').toUpperCase() + ' \u00b7 ' + String(template.category || '').toUpperCase()
               + (template.mandatory ? ' \u00b7 MANDATORY' : ' \u00b7 OPTIONAL GUIDE'),
-            subject: template.subject_template, disabled,
+            subject: template.subject_template,
+            preview: String(template.text_template || '').replace(/\s+/g, ' ').slice(0, 220), disabled,
             buttonLabel: !direct ? 'Workflow triggered' : !sender.configured ? 'Sender setup' : 'Send',
             buttonStyle: 'border:0;padding:9px 11px;font:700 10.5px Archivo,sans-serif;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';background:'
               + (disabled ? 'var(--ux-faint)' : 'var(--ux-ink)') + ';color:' + (disabled ? 'var(--ux-muted)' : 'var(--ux-ground)'),
@@ -10385,17 +10200,6 @@ class Component extends DCLogic {
           state: String(rule.policy_state || '').replace(/_/g, ' '), basis: rule.legal_basis || rule.notes || 'Business policy approval required',
           stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
             + (rule.policy_state === 'approved' ? 'var(--ux-accent);color:#fff' : 'var(--ux-signal-tint);color:var(--ux-signal-text)') }));
-        const publicationRows = ((s.publicationsData && s.publicationsData.publications) || []).map(publication => ({
-          id: publication.id, type: String(publication.publication_type || '').toUpperCase(),
-          subject: publication.source_compliance_tag || ('Package ' + (publication.source_package_id || '\u2014')),
-          state: String(publication.state || '').toUpperCase(),
-          stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
-            + (publication.state === 'published' ? 'var(--ux-accent);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
-          canApprove: publication.state === 'draft' && !s.publicationPending,
-          canPublish: publication.state === 'approved' && !s.publicationPending,
-          onApprove: () => this.publicationAction('approve', publication),
-          onPublish: () => this.publicationAction('publish', publication)
-        }));
         const outbox = (data.outbox || []).map(message => ({ recipient: message.recipient_email,
           template: message.template_key || message.event_type, state: String(message.state || '').replace(/_/g, ' '),
           when: dateSafe(message.sent_at || message.created_at),
@@ -10409,9 +10213,7 @@ class Component extends DCLogic {
           communicationRecipients: recipients, communicationTemplates: templates,
           onCommunicationsRefresh: () => { this.set({ communicationsLoaded: false }); this.loadCommunications(true); },
           communicationsClaims: claims, communicationsNoClaims: claims.length === 0,
-          retentionRules: retention, publicationPackage: s.publicationPackage,
-          onPublicationPackage: event => this.set({ publicationPackage: event.target.value }),
-          onPublicationDraft: () => this.publicationAction('draft-coa'), publicationRows,
+          retentionRules: retention,
           communicationOutbox: outbox
         };
       })(),
@@ -10468,7 +10270,7 @@ class Component extends DCLogic {
       onRepNoteSave: () => this.repNoteSave(),
       onRepNoteCancel: () => this.repNoteCancel(),
       isOnboarding: s.screen === 'onboarding' && canStaff('accounts.manage'),
-      isRecall: s.screen === 'recall' && canStaff('quality.manage'),
+      isRecall: false,
       isRecords: s.screen === 'records',
       isReceivables: s.screen === 'receivables' && (role === 'owner' || role === 'buyer' || canStaff('financials.read')),
       // Customer Store API is intentionally excluded from the product.
@@ -10597,10 +10399,6 @@ class Component extends DCLogic {
           return (result || String(a.id).localeCompare(String(b.id))) * (s.financialSortDir === 'asc' ? 1 : -1);
         });
         const open = invoiceFiltered.filter(i => i.state !== 'paid');
-        const paymentReady = !loc.demo && !!(s.paymentData && s.paymentData.enabled);
-        const paymentPolicyText = paymentReady
-          ? 'Secure payment uses Stripe-hosted Checkout for the exact open balance in the latest production QuickBooks snapshot. The portal stores no card or bank details and never changes QuickBooks automatically.'
-          : 'Invoice and payment history remain read-only until Finance enables Stripe Checkout. The portal does not collect bank or card details, and no QuickBooks transaction is created.';
         const source = data.source || {};
         const mappingMissing = Array.isArray(data.mappingIncomplete) ? data.mappingIncomplete : [];
         const notice = loc.demo
@@ -10665,10 +10463,8 @@ class Component extends DCLogic {
                 : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
             };
             view.canSendNotice = isInternal && canStaff('notifications.manage') && i.state !== 'paid' && !s.communicationPending;
-            view.canPay = !isInternal && paymentReady && i.state !== 'paid' && !s.paymentPending;
-            view.paymentHeld = !isInternal && !loc.demo && !paymentReady && i.state !== 'paid';
+            view.readOnly = !view.canSendNotice;
             view.onSendNotice = () => this.sendInvoiceNotice(view);
-            view.onPay = () => this.beginInvoicePayment(view);
             return view;
           }),
           arPayments: paymentsFiltered.map(p => ({
@@ -10682,12 +10478,7 @@ class Component extends DCLogic {
           arPaidAmount: MONEY(paymentsFiltered.reduce((a, p) => a + Number(p.totalAmountCents || 0), 0)),
           arCreditLimit: data.summary && data.summary.creditLimitCents !== null && data.summary.creditLimitCents !== undefined
             ? MONEY(Number(data.summary.creditLimitCents)) : 'Not recorded',
-          arPaymentCount: String(paymentsFiltered.length), arOpenCount: String(open.length),
-          paymentHasError: !!(s.paymentError), paymentError: s.paymentError || '', paymentPolicyText,
-          paymentBannerLabel: paymentReady ? 'SECURE ONLINE PAYMENT AVAILABLE' : 'ONLINE PAYMENT CONTROLLED OFF',
-          paymentBannerText: paymentReady
-            ? 'Owners and assigned Buyers may open Stripe-hosted Checkout from an unpaid invoice. The amount is fixed to the latest QuickBooks balance; successful payment is recorded in the portal and reconciled back to QuickBooks through the normal accounting process.'
-            : 'Banking, remittance and signatory details are never rendered here. Until Finance supplies and approves the production Stripe configuration, settle invoices through the existing approved process.'
+          arPaymentCount: String(paymentsFiltered.length), arOpenCount: String(open.length)
         };
       })(),
       ...(() => {
@@ -10791,12 +10582,12 @@ class Component extends DCLogic {
           recallDraftQty: draftHold.reduce((a, c) => a + c.qty, 0),
           recallAccountCount: orgs.length,
           recallIssued: s.recallIssued,
-          recallNoticeText: s.recallIssued ? 'Issued to ' + orgs.length + ' accounts' : RECALL_NOTICE_ENABLED ? 'Ready to issue' : 'Notification connector not configured',
-          recallNoticeStyle: chip + (s.recallIssued ? 'background:var(--ux-accent);color:#fff' : RECALL_NOTICE_ENABLED ? 'background:var(--ux-surface);color:var(--ux-muted-strong)' : 'background:var(--ux-signal-tint);color:var(--ux-signal-text)'),
-          recallIssueDisabled: s.recallIssued || !RECALL_NOTICE_ENABLED,
-          recallIssueLabel: s.recallIssued ? 'Notice issued' : RECALL_NOTICE_ENABLED ? 'Issue the notice' : 'Notification service required',
-          recallIssueTitle: !RECALL_NOTICE_ENABLED ? 'Configure the server-side recall notification workflow before this action is enabled.' : '',
-          recallIssueStyle: 'background:' + (s.recallIssued || !RECALL_NOTICE_ENABLED ? 'var(--ux-faint)' : 'var(--ux-accent)') + ';color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:' + (s.recallIssued || !RECALL_NOTICE_ENABLED ? 'not-allowed' : 'pointer'),
+          recallNoticeText: 'Managed off-portal',
+          recallNoticeStyle: chip + 'background:var(--ux-surface);color:var(--ux-muted-strong)',
+          recallIssueDisabled: true,
+          recallIssueLabel: 'Off-portal process',
+          recallIssueTitle: 'Recall execution and notices are managed through the approved off-portal compliance process.',
+          recallIssueStyle: 'background:var(--ux-faint);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:not-allowed',
           onRecallIssue: () => this.recallIssue(),
           recallAccounts: orgs.map(o => ({
             org: o.org, qty: o.qty, locs: o.locs.join(', '),
@@ -10982,7 +10773,7 @@ class Component extends DCLogic {
       onboardingDetailEvents: selectedOnboarding && Array.isArray(selectedOnboarding.events) ? selectedOnboarding.events.map(event => ({
         stage: onboardingStageLabel(event.toStage), when: this.orderEventDate(event.createdAt), note: event.note || 'Workflow updated by ' + (event.actorEmail || event.source || 'system')
       })) : [],
-      isTraining: s.screen === 'training', isCoaLookup: s.screen === 'coalookup',
+      isTraining: s.screen === 'training',
       pubInput: s.pubInput,
       onPubInput: e => this.set({ pubInput: e.target.value }),
       onPubResolve: () => this.pubResolve(),
@@ -11006,7 +10797,7 @@ class Component extends DCLogic {
         { id: 'administrator', label: 'Administrator', summary: 'All portal sections, user access, audit, and security operations.' },
         { id: 'operations', label: 'Operations', summary: 'Inventory sync, orders, accounts, lineage, and release readiness.' },
         { id: 'sales', label: 'Sales', summary: 'Inventory, orders, retailer accounts, field work, and lineage.' },
-        { id: 'quality', label: 'Quality', summary: 'Inventory, release, recall, lineage, audit, and readiness.' },
+        { id: 'quality', label: 'Quality', summary: 'Inventory, release-state monitoring, lineage, audit, and readiness.' },
         { id: 'viewer', label: 'Viewer', summary: 'Read-only inventory and lineage alongside the shared dashboard and catalog.' }
       ].map(p => ({ ...p, style: (s.authUser && s.authUser.staffRole === p.id) ? 'border-left:3px solid var(--ux-accent);background:var(--ux-accent-wash)' : '' })),
       showKioskLinks: isInternal && canStaff('users.manage'),

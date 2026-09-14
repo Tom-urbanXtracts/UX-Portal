@@ -53,9 +53,3 @@ verify_jwt = false
 
 [functions.portal-claims]
 verify_jwt = false
-
-[functions.portal-payments]
-verify_jwt = false
-
-[functions.portal-publications]
-verify_jwt = false
