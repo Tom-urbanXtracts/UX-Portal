@@ -196,6 +196,86 @@ async function portalUsers(actor: Row): Promise<Row[]> {
   }).filter((user) => user.email);
 }
 
+async function accessReviews(actor: Row): Promise<Row[]> {
+  if (actor.role !== "internal" || !(await hasPermission(actor, "users.manage"))) return [];
+  const { data, error } = await service.from("portal_access_review").select(
+    "id,profile_id,store_license,review_type,state,reason,created_at",
+  ).eq("state", "pending").order("created_at", { ascending: true }).limit(500);
+  if (error) throw error;
+  const profileIds = Array.from(new Set((data ?? []).map((row) => row.profile_id)));
+  const licenses = Array.from(new Set((data ?? []).map((row) => row.store_license)));
+  const [profileResult, storeResult] = await Promise.all([
+    profileIds.length
+      ? service.from("portal_profile").select("id,full_name,org,role").in("id", profileIds)
+      : Promise.resolve({ data: [], error: null }),
+    licenses.length
+      ? service.from("portal_store").select("license_number,display_name,organization").in("license_number", licenses)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (profileResult.error) throw profileResult.error;
+  if (storeResult.error) throw storeResult.error;
+  const profiles = new Map<string, Row>(
+    ((profileResult.data ?? []) as Row[]).map((row) => [String(row.id), row]),
+  );
+  const stores = new Map<string, Row>(
+    ((storeResult.data ?? []) as Row[]).map((row) => [
+      String(row.license_number),
+      row,
+    ]),
+  );
+  return (data ?? []).map((row) => {
+    const profile = profiles.get(String(row.profile_id)) ?? {};
+    const store = stores.get(String(row.store_license)) ?? {};
+    return {
+      id: row.id,
+      profileId: row.profile_id,
+      profileName: profile.full_name,
+      organization: profile.org ?? store.organization,
+      role: profile.role,
+      storeLicense: row.store_license,
+      storeName: store.display_name,
+      reviewType: row.review_type,
+      reason: row.reason,
+      createdAt: row.created_at,
+    };
+  });
+}
+
+async function resolveAccessReview(request: Request, actor: Row, body: Row): Promise<Response> {
+  if (actor.role !== "internal" || !(await hasPermission(actor, "users.manage"))) {
+    throw new AdminError(403, "Only an Administrator may resolve access reviews.");
+  }
+  const reviewId = text(body.reviewId, 80);
+  const decision = text(body.decision, 20).toLowerCase();
+  if (!new Set(["assign", "dismiss"]).has(decision)) {
+    throw new AdminError(400, "Choose Assign or Dismiss.");
+  }
+  const { data: review, error } = await service.from("portal_access_review").select("*")
+    .eq("id", reviewId).eq("state", "pending").maybeSingle();
+  if (error) throw error;
+  if (!review) throw new AdminError(404, "Pending access review not found.");
+  if (decision === "assign") {
+    const { error: assignmentError } = await service.from("portal_profile_store").insert({
+      profile_id: review.profile_id,
+      license_number: review.store_license,
+    });
+    if (assignmentError && assignmentError.code !== "23505") throw assignmentError;
+  }
+  const { error: updateError } = await service.from("portal_access_review").update({
+    state: decision === "assign" ? "assigned" : "dismissed",
+    resolved_by: actor.id,
+    resolved_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq("id", review.id).eq("state", "pending");
+  if (updateError) throw updateError;
+  await audit(actor, `access-review-${decision}`, { id: review.profile_id }, {
+    org: null,
+    accessReviewId: review.id,
+    storeLicense: review.store_license,
+  });
+  return json(request, { ok: true, reviews: await accessReviews(actor) });
+}
+
 async function resetUserMfa(
   request: Request,
   actor: Row,
@@ -584,9 +664,16 @@ Deno.serve(async (request) => {
     if (action === "invite-onboarding-person") {
       return await inviteOnboardingPerson(request, actor, body);
     }
+    if (action === "resolve-access-review") {
+      return await resolveAccessReview(request, actor, body);
+    }
     const email = text(body.email, 320).toLowerCase();
     if (action === "list-users") {
-      return json(request, { users: await portalUsers(actor) });
+      const [users, reviews] = await Promise.all([
+        portalUsers(actor),
+        accessReviews(actor),
+      ]);
+      return json(request, { users, reviews });
     }
     if (action === "remove-test-user") {
       if (!email || !email.includes("@")) {

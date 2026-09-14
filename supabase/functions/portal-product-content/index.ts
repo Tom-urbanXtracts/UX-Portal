@@ -1119,6 +1119,12 @@ function serialize(row: Row): Row {
     mondayItemId: row.monday_item_id,
     mondayBoardId: row.monday_board_id,
     publicationState: row.publication_state,
+    workflowState: row.workflow_state ?? row.publication_state,
+    completenessScore: row.completeness_score ?? 0,
+    missingFields: row.missing_fields ?? [],
+    validationWarnings: row.validation_warnings ?? [],
+    approvedAt: row.approved_at,
+    scheduledPublishAt: row.scheduled_publish_at,
     shortDescription: row.short_description,
     longDescription: row.long_description,
     sellingPoints: row.selling_points ?? [],
@@ -1131,6 +1137,90 @@ function serialize(row: Row): Row {
     lastSyncedAt: row.last_synced_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function publishDueCatalog(): Promise<void> {
+  const now = new Date().toISOString();
+  const { data: due, error } = await service.from("portal_product_content")
+    .select("canix_item_id,completeness_score,approved_at")
+    .eq("workflow_state", "scheduled").lte("scheduled_publish_at", now).limit(100);
+  if (error) throw error;
+  const eligible = (due ?? []).filter((row) => Number(row.completeness_score) === 100 && row.approved_at)
+    .map((row) => row.canix_item_id);
+  if (!eligible.length) return;
+  const { error: updateError } = await service.from("portal_product_content").update({
+    workflow_state: "published",
+    publication_state: "published",
+    scheduled_publish_at: null,
+    last_synced_at: now,
+    updated_at: now,
+  }).in("canix_item_id", eligible);
+  if (updateError) throw updateError;
+}
+
+async function updateCatalogWorkflow(caller: Caller, body: Row): Promise<Row> {
+  const canixItemId = Number(body.canixItemId);
+  if (!Number.isSafeInteger(canixItemId) || canixItemId <= 0) {
+    throw new ProductError(400, "Choose a valid Canix catalog item.");
+  }
+  const command = (clean(body.command, 40) ?? "").toLowerCase();
+  if (!new Set(["review", "approve", "schedule", "publish", "archive"]).has(command)) {
+    throw new ProductError(400, "Choose a supported catalog workflow action.");
+  }
+  const { data: current, error } = await service.from("portal_product_content").select("*")
+    .eq("canix_item_id", canixItemId).maybeSingle();
+  if (error) throw error;
+  if (!current) throw new ProductError(404, "Catalog content not found.");
+  const now = new Date().toISOString();
+  const patch: Row = { updated_by: caller.profile.id, updated_by_email: caller.user.email ?? null, updated_at: now };
+  if (command === "review") {
+    patch.workflow_state = "review";
+    patch.publication_state = "draft";
+    patch.approved_by = null;
+    patch.approved_at = null;
+    patch.scheduled_publish_at = null;
+  } else if (command === "approve") {
+    if (Number(current.completeness_score) !== 100) {
+      throw new ProductError(409, `Complete ${Array.isArray(current.missing_fields) ? current.missing_fields.join(", ") : "all required content"} before approval.`);
+    }
+    patch.workflow_state = "approved";
+    patch.publication_state = "draft";
+    patch.approved_by = caller.profile.id;
+    patch.approved_at = now;
+    patch.scheduled_publish_at = null;
+  } else if (command === "schedule") {
+    if (!current.approved_at || Number(current.completeness_score) !== 100) {
+      throw new ProductError(409, "Approve a complete record before scheduling publication.");
+    }
+    const scheduledAt = iso(body.scheduledAt);
+    if (!scheduledAt || new Date(scheduledAt).getTime() <= Date.now()) {
+      throw new ProductError(400, "Choose a future publication date and time.");
+    }
+    patch.workflow_state = "scheduled";
+    patch.publication_state = "draft";
+    patch.scheduled_publish_at = scheduledAt;
+  } else if (command === "publish") {
+    if (!current.approved_at || Number(current.completeness_score) !== 100) {
+      throw new ProductError(409, "Approve a complete record before publication.");
+    }
+    patch.workflow_state = "published";
+    patch.publication_state = "published";
+    patch.scheduled_publish_at = null;
+  } else {
+    patch.workflow_state = "archived";
+    patch.publication_state = "archived";
+    patch.scheduled_publish_at = null;
+  }
+  const { data, error: updateError } = await service.from("portal_product_content")
+    .update(patch).eq("canix_item_id", canixItemId).select("*").single();
+  if (updateError) throw updateError;
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.profile.id,
+    actor_org: caller.profile.org,
+    action: `catalog.workflow.${command}`,
+    detail: { canixItemId, scheduledPublishAt: patch.scheduled_publish_at ?? null },
+  });
+  return serialize(data as Row);
 }
 
 async function verifyCanixItems(itemIds: number[]): Promise<void> {
@@ -1269,11 +1359,33 @@ async function upsertItems(
       updated_at: now,
     };
     const previousState = clean(existing.publication_state, 20);
+    const requiredContent = [
+      record.short_description,
+      Array.isArray(record.selling_points) && record.selling_points.length
+        ? record.selling_points
+        : null,
+      record.ingredients,
+      record.usage_information,
+      record.product_profile,
+    ];
+    const contentIsComplete = requiredContent.every((value) =>
+      Array.isArray(value) ? value.length > 0 : Boolean(clean(value, 1))
+    );
+    // A Monday status is an editorial request, not an approval boundary. Keep
+    // new publish requests in Draft until a portal approver has reviewed a
+    // complete record. Existing published content remains stable on resync.
+    if (
+      source === "monday" && requestedState === "published" &&
+      previousState !== "published" &&
+      (!existing.approved_at || !contentIsComplete)
+    ) {
+      record.publication_state = "draft";
+    }
     const action = !Object.keys(existing).length
       ? "created"
-      : requestedState === "archived" && previousState !== "archived"
+      : record.publication_state === "archived" && previousState !== "archived"
       ? "archived"
-      : requestedState === "published" && previousState !== "published"
+      : record.publication_state === "published" && previousState !== "published"
       ? "published"
       : "updated";
     const { data, error } = await service.rpc("portal_upsert_product_content", {
@@ -1298,6 +1410,10 @@ async function upsertItems(
         mondayItemId,
         mondayBoardId,
         sourceUpdatedAt: record.source_updated_at,
+        requestedPublicationState: requestedState,
+        appliedPublicationState: record.publication_state,
+        publicationHeldForApproval: requestedState === "published" &&
+          record.publication_state !== "published",
       },
     });
     if (error) throw error;
@@ -1512,6 +1628,7 @@ Deno.serve(async (request) => {
     const caller = mondayAuthorized ? null : await callerFor(request);
     if (request.method === "GET") {
       if (!caller) return json(request, { error: "Forbidden" }, 403);
+      await publishDueCatalog();
       let query = service.from("portal_product_content").select("*").order(
         "updated_at",
         { ascending: false },
@@ -1528,6 +1645,13 @@ Deno.serve(async (request) => {
     }
     const body = await request.json() as Row;
     const action = String(body.action ?? "").toLowerCase();
+    if (action === "catalog-workflow") {
+      if (mondayAuthorized || !caller || !caller.canManage) {
+        return json(request, { error: "Forbidden" }, 403);
+      }
+      const product = await updateCatalogWorkflow(caller, body);
+      return json(request, { ok: true, product }, 200);
+    }
     if (action === "mapping-audit") {
       if (mondayAuthorized || !caller || !caller.canManage) {
         return json(request, { error: "Forbidden" }, 403);

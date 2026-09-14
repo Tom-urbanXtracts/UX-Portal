@@ -20,6 +20,8 @@ const MONDAY_ACCOUNT_LICENSE_COLUMN_ID =
   Deno.env.get("MONDAY_ACCOUNT_LICENSE_COLUMN_ID") ?? "text_mm607sg6";
 const MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID =
   Deno.env.get("MONDAY_ORDER_CLIENT_REQUEST_COLUMN_ID") ?? "text_mm6shj0q";
+const MONDAY_ONBOARDING_BOARD_ID = Deno.env.get("MONDAY_ONBOARDING_BOARD_ID") ??
+  "18428027063";
 const TURNSTILE_SECRET_KEY = Deno.env.get("TURNSTILE_SECRET_KEY") ?? "";
 const TURNSTILE_REQUIRED = Deno.env.get("TURNSTILE_REQUIRED") === "true";
 const TURNSTILE_ALLOWED_HOSTS = new Set(
@@ -93,6 +95,230 @@ async function mondayWriteToken(): Promise<string | null> {
     clientId: MONDAY_CLIENT_ID,
     clientSecret: MONDAY_CLIENT_SECRET,
   }, ["boards:write"]);
+}
+
+function mondayFileBytes(file: Row): Uint8Array {
+  const encoded = mondayText(file.base64, 15_000_000);
+  let binary = "";
+  try {
+    binary = atob(encoded);
+  } catch {
+    throw new Error("The onboarding document could not be decoded.");
+  }
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  const declared = Number(file.sizeBytes || 0);
+  if (!declared || bytes.byteLength !== declared || bytes.byteLength > 10 * 1024 * 1024) {
+    throw new Error("The onboarding document size did not pass validation.");
+  }
+  const contentType = mondayText(file.contentType, 120).toLowerCase();
+  const pdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+  const png = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (
+    !((contentType === "application/pdf" && pdf) ||
+      (contentType === "image/png" && png) ||
+      (contentType === "image/jpeg" && jpeg))
+  ) throw new Error("The onboarding document contents do not match its declared file type.");
+  return bytes;
+}
+
+async function mondayBoardColumns(accessToken: string, boardId: string): Promise<Row[]> {
+  const data = await mondayGraphql(
+    accessToken,
+    `query PortalBoardColumns($boardIds: [ID!]!) {
+      boards(ids: $boardIds) { id columns { id title type } }
+    }`,
+    { boardIds: [boardId] },
+  );
+  const boards = Array.isArray(data.boards) ? data.boards as Row[] : [];
+  return boards[0] && Array.isArray(boards[0].columns) ? boards[0].columns as Row[] : [];
+}
+
+async function ensureMondayColumn(
+  accessToken: string,
+  boardId: string,
+  title: string,
+  columnType: "text" | "file",
+): Promise<string> {
+  const columns = await mondayBoardColumns(accessToken, boardId);
+  const existing = columns.find((column) =>
+    mondayText(column.title, 200).toLowerCase() === title.toLowerCase()
+  );
+  if (existing?.id) return mondayColumnId(String(existing.id));
+  const data = await mondayGraphql(
+    accessToken,
+    `mutation CreatePortalColumn($boardId: ID!, $title: String!) {
+      create_column(board_id: $boardId, title: $title, column_type: ${columnType}) { id }
+    }`,
+    { boardId, title },
+  );
+  const created = data.create_column as Row | undefined;
+  if (!created?.id) throw new Error(`Monday did not create the ${title} column.`);
+  return mondayColumnId(String(created.id));
+}
+
+async function uploadMondayFile(
+  accessToken: string,
+  itemId: string,
+  columnId: string,
+  file: Row,
+): Promise<void> {
+  const bytes = mondayFileBytes(file);
+  const buffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+  const fileName = mondayText(file.name, 240);
+  const contentType = mondayText(file.contentType, 120).toLowerCase();
+  const form = new FormData();
+  form.set(
+    "query",
+    `mutation ($file: File!) { add_file_to_column(file: $file, item_id: ${itemId}, column_id: "${columnId}") { id } }`,
+  );
+  form.set(
+    "variables[file]",
+    new File([buffer], fileName, { type: contentType }),
+  );
+  const response = await fetch("https://api.monday.com/v2/file", {
+    method: "POST",
+    headers: { authorization: accessToken },
+    body: form,
+  });
+  const body = await response.json().catch(() => ({})) as Row;
+  if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    throw new Error("Monday created the onboarding item but did not accept its document.");
+  }
+}
+
+async function archiveOnboardingDocument(
+  requestId: string,
+  file: Row,
+  caller: { user: Row; profile: Row } | null,
+): Promise<Row> {
+  const bytes = mondayFileBytes(file);
+  const buffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+  const digestBytes = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", buffer),
+  );
+  const digest = Array.from(digestBytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const contentType = mondayText(file.contentType, 120).toLowerCase();
+  const extension = contentType === "application/pdf" ? "pdf" : contentType === "image/png" ? "png" : "jpg";
+  const objectPath = `${requestId}/${digest}.${extension}`;
+  const { data: existing, error: existingError } = await service.from("portal_onboarding_document")
+    .select("*").eq("onboarding_request_id", requestId).eq("sha256", digest).maybeSingle();
+  if (existingError) throw existingError;
+  if (existing) return existing as Row;
+  const { error: uploadError } = await service.storage.from("portal-onboarding-documents").upload(
+    objectPath,
+    bytes,
+    { contentType, cacheControl: "0", upsert: false },
+  );
+  if (uploadError && !String(uploadError.message || "").toLowerCase().includes("already exists")) {
+    throw uploadError;
+  }
+  const { data, error } = await service.from("portal_onboarding_document").insert({
+    onboarding_request_id: requestId,
+    object_path: objectPath,
+    original_name: mondayText(file.name, 240),
+    content_type: contentType,
+    size_bytes: bytes.byteLength,
+    sha256: digest,
+    scan_state: "pending_provider",
+    transfer_state: "pending",
+    uploaded_by: caller?.profile.id ?? null,
+  }).select("*").single();
+  if (error) throw error;
+  return data as Row;
+}
+
+async function directMondayOnboarding(payload: Row): Promise<Row | null> {
+  const accessToken = await mondayWriteToken();
+  if (!accessToken || !/^\d+$/.test(MONDAY_ONBOARDING_BOARD_ID)) return null;
+  const requestId = mondayText(payload.clientRequestId, 80);
+  const legalEntity = mondayText(payload.legalEntity, 300);
+  if (!requestId || !legalEntity) throw new Error("The direct Monday onboarding identifiers are incomplete.");
+  const requestColumnId = await ensureMondayColumn(
+    accessToken,
+    MONDAY_ONBOARDING_BOARD_ID,
+    "Portal Request ID",
+    "text",
+  );
+  const file = payload.file && typeof payload.file === "object" && !Array.isArray(payload.file)
+    ? payload.file as Row
+    : null;
+  const fileColumnId = file
+    ? await ensureMondayColumn(accessToken, MONDAY_ONBOARDING_BOARD_ID, "Onboarding Documents", "file")
+    : null;
+  const existingData = await mondayGraphql(
+    accessToken,
+    `query ExistingPortalOnboarding($boardId: ID!, $requestId: String!) {
+      items_page_by_column_values(
+        board_id: $boardId, limit: 1,
+        columns: [{ column_id: "${requestColumnId}", column_values: [$requestId] }]
+      ) { items { id name } }
+    }`,
+    { boardId: MONDAY_ONBOARDING_BOARD_ID, requestId },
+  );
+  const existing = firstMondayItem(existingData);
+  if (existing?.id) {
+    if (file && fileColumnId) {
+      await uploadMondayFile(accessToken, String(existing.id), fileColumnId, file);
+    }
+    return {
+      mondayItemId: String(existing.id),
+      mondayBoardId: MONDAY_ONBOARDING_BOARD_ID,
+      status: "accepted",
+      idempotent: true,
+      transport: "monday-direct",
+      documentDelivered: Boolean(file),
+    };
+  }
+  const owner = payload.owner && typeof payload.owner === "object" ? payload.owner as Row : {};
+  const buyer = payload.buyer && typeof payload.buyer === "object" ? payload.buyer as Row : {};
+  const locations = Array.isArray(payload.locations) ? payload.locations as Row[] : [];
+  const locationsText = locations.map((location) => [
+    mondayText(location.name, 200),
+    mondayText(location.license, 120),
+    mondayText(location.address, 500),
+    mondayText(location.licenseExpiresOn, 40),
+  ].filter(Boolean).join(" · ")).join("\n");
+  const submissionType = mondayText(payload.submissionType, 120) || "New store";
+  const columnValues: Row = {
+    color_mm6jkc5s: { label: submissionType },
+    color_mm6ja098: { label: "01 Intake" },
+    long_text_mm6js18: locationsText,
+    text_mm6jywpe: [mondayText(owner.name, 200), mondayText(owner.email, 320)].filter(Boolean).join(" · "),
+    text_mm6jtxq3: [mondayText(buyer.name, 200), mondayText(buyer.email, 320)].filter(Boolean).join(" · "),
+    numeric_mm6j7wyc: String(Number(payload.budtenderCount) || 0),
+    text_mm6jrv8k: mondayText(payload.submittedBy, 300),
+    [requestColumnId]: requestId,
+  };
+  const createdData = await mondayGraphql(
+    accessToken,
+    `mutation CreatePortalOnboarding($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
+      create_item(board_id: $boardId, item_name: $itemName, column_values: $columnValues, create_labels_if_missing: true) { id }
+    }`,
+    {
+      boardId: MONDAY_ONBOARDING_BOARD_ID,
+      itemName: `${submissionType} · ${legalEntity}`.slice(0, 500),
+      columnValues: JSON.stringify(columnValues),
+    },
+  );
+  const created = createdData.create_item as Row | undefined;
+  if (!created?.id) throw new Error("Monday did not return the created onboarding item.");
+  if (file && fileColumnId) {
+    await uploadMondayFile(accessToken, String(created.id), fileColumnId, file);
+  }
+  return {
+    mondayItemId: String(created.id),
+    mondayBoardId: MONDAY_ONBOARDING_BOARD_ID,
+    status: "accepted",
+    transport: "monday-direct",
+    documentDelivered: Boolean(file),
+  };
 }
 
 function firstMondayItem(data: Row): Row | null {
@@ -926,13 +1152,13 @@ async function createDurableOnboarding(
     if (
       !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
       !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
-      !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 2 * 1024 * 1024 ||
-      fileBody.length < 4 || fileBody.length > 2_800_000 ||
+      !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 10 * 1024 * 1024 ||
+      fileBody.length < 4 || fileBody.length > 14_000_000 ||
       !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
     ) {
       throw new IntakeError(
         400,
-        "Attach a PDF, PNG, or JPEG license document no larger than 2 MB.",
+        "Attach a PDF, PNG, or JPEG license document no larger than 10 MB.",
       );
     }
   }
@@ -1089,11 +1315,12 @@ Deno.serve(async (request) => {
     return json(request, { error: "Method not allowed" }, 405);
   }
   const contentLength = Number(request.headers.get("content-length") || 0);
-  if (contentLength > 3_000_000) {
+  if (contentLength > 15_000_000) {
     return json(request, { error: "Submission is too large." }, 413);
   }
   let durableOrderId: string | null = null;
   let durableOnboardingId: string | null = null;
+  let durableOnboardingDocumentId: string | null = null;
   try {
     const body = await request.json() as Row;
     const kind = String(body.kind || "").trim();
@@ -1119,10 +1346,10 @@ Deno.serve(async (request) => {
         403,
       );
     }
-    let directOrderConfigured = false;
-    if (kind === "order" && caller) {
+    let directMondayConfigured = false;
+    if ((kind === "order" && caller) || kind === "onboarding") {
       try {
-        directOrderConfigured = !!(await mondayWriteToken());
+        directMondayConfigured = !!(await mondayWriteToken());
       } catch {
         // The existing Make path remains available if connection-state
         // inspection is temporarily unavailable.
@@ -1130,11 +1357,11 @@ Deno.serve(async (request) => {
     }
     if (
       (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) &&
-      !directOrderConfigured
+      !directMondayConfigured
     ) {
       return json(
         request,
-        { error: "The order intake is not configured." },
+        { error: "The portal intake is not configured." },
         503,
       );
     }
@@ -1215,6 +1442,17 @@ Deno.serve(async (request) => {
           "This onboarding request already exists and needs reconciliation. It was not sent to Monday again.",
         );
       }
+      if (
+        verifiedPayload.file && typeof verifiedPayload.file === "object" &&
+        !Array.isArray(verifiedPayload.file)
+      ) {
+        const document = await archiveOnboardingDocument(
+          durableOnboardingId,
+          verifiedPayload.file as Row,
+          caller,
+        );
+        durableOnboardingDocumentId = String(document.id || "") || null;
+      }
     }
     let response: Response | null = null;
     let result: Row = {};
@@ -1227,7 +1465,14 @@ Deno.serve(async (request) => {
         result = {};
       }
     }
-    if (!result.orderNumber && !result.id) {
+    if (kind === "onboarding" && durableOnboardingId && directMondayConfigured) {
+      // Unlike the legacy compatibility path, direct onboarding is idempotent
+      // on Portal Request ID and can deliver the document to the same item.
+      // A partial failure must be reconciled there, never fanned out to a
+      // second workflow that could create a duplicate board item.
+      result = (await directMondayOnboarding(verifiedPayload)) ?? {};
+    }
+    if (!result.orderNumber && !result.id && !result.mondayItemId) {
       if (!MAKE_WEBHOOK_URL || !MAKE_INTAKE_SECRET) {
         throw new IntakeError(
           503,
@@ -1337,6 +1582,13 @@ Deno.serve(async (request) => {
         mondayItemId,
         mondayBoardId: result.mondayBoardId || result.boardId || null,
       });
+      if (durableOnboardingDocumentId) {
+        await service.from("portal_onboarding_document").update({
+          transfer_state: "delivered",
+          monday_item_id: String(mondayItemId),
+          updated_at: new Date().toISOString(),
+        }).eq("id", durableOnboardingDocumentId);
+      }
     }
     return json(request, {
       ok: true,
@@ -1384,6 +1636,14 @@ Deno.serve(async (request) => {
           "needs_reconciliation",
           { error: message },
         );
+      } catch { /* Keep the original error response. */ }
+    }
+    if (durableOnboardingDocumentId) {
+      try {
+        await service.from("portal_onboarding_document").update({
+          transfer_state: "failed",
+          updated_at: new Date().toISOString(),
+        }).eq("id", durableOnboardingDocumentId);
       } catch { /* Keep the original error response. */ }
     }
     return json(request, {

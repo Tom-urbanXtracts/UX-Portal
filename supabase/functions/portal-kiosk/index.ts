@@ -1,6 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
 import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+// @ts-ignore qrcode is bundled by esm.sh for the Edge runtime; no Node APIs are used here.
+import QRCode from "https://esm.sh/qrcode@1.5.4?target=deno&no-dts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -144,17 +146,29 @@ function safeProfile(value: unknown): Row {
   ).filter(([key, entry]) => Boolean(key && entry)));
 }
 
-async function resolveKiosk(token: string): Promise<Row> {
+function userAgentFamily(value: string): string {
+  const ua = value.toLowerCase();
+  if (ua.includes("edg/")) return "Edge";
+  if (ua.includes("chrome/")) return "Chrome";
+  if (ua.includes("safari/") && !ua.includes("chrome/")) return "Safari";
+  if (ua.includes("firefox/")) return "Firefox";
+  return value ? "Other" : "Not reported";
+}
+
+async function resolveKiosk(token: string, requestUserAgentFamily: string): Promise<Row> {
   if (!/^[A-Za-z0-9_-]{40,80}$/.test(token)) {
     throw new KioskError(404, "This kiosk link is invalid or no longer active.");
   }
   const tokenHash = await sha256(token);
   const { data: link, error: linkError } = await service.from(
     "portal_kiosk_link",
-  ).select("id,store_license,label,last_used_at").eq("token_hash", tokenHash)
+  ).select("id,store_license,label,last_used_at,expires_at,allowed_categories,allowed_item_ids,access_count").eq("token_hash", tokenHash)
     .eq("active", true).maybeSingle();
   if (linkError) throw linkError;
   if (!link) throw new KioskError(404, "This kiosk link is invalid or no longer active.");
+  if (link.expires_at && new Date(String(link.expires_at)).getTime() <= Date.now()) {
+    throw new KioskError(410, "This kiosk link has expired. Ask the store owner for a current link.");
+  }
 
   const { data: store, error: storeError } = await service.from("portal_store")
     .select("display_name,organization,active,license_status")
@@ -196,16 +210,25 @@ async function resolveKiosk(token: string): Promise<Row> {
     if (!coaByItem.has(itemId)) coaByItem.set(itemId, row as unknown as Row);
   }
 
+  const categoryScope = new Set(Array.isArray(link.allowed_categories)
+    ? link.allowed_categories.map((entry: unknown) => clean(entry, 160).toLowerCase()).filter(Boolean)
+    : []);
+  const itemScope = new Set(Array.isArray(link.allowed_item_ids)
+    ? link.allowed_item_ids.map(Number).filter(Number.isSafeInteger)
+    : []);
   const products = (content ?? []).map((record) => {
     const itemId = Number(record.canix_item_id);
     const item = itemById.get(itemId);
     if (!item) return null;
     const coa = coaByItem.get(itemId) ?? {};
+    const category = clean(item.item_category_name, 160) || "Other";
+    if (categoryScope.size && !categoryScope.has(category.toLowerCase())) return null;
+    if (itemScope.size && !itemScope.has(itemId)) return null;
     return {
       id: `canix-item-${itemId}`,
       name: clean(item.name, 300) || "Unnamed product",
       brand: clean(item.brand_name, 200) || "Brand not recorded",
-      category: clean(item.item_category_name, 160) || "Other",
+      category,
       format: clean(item.item_sub_type_name, 160) || "Product",
       sku: clean(item.sku, 120),
       strain: [clean(item.strain_name, 120), clean(item.strain_type, 80)].filter(Boolean)
@@ -241,7 +264,13 @@ async function resolveKiosk(token: string): Promise<Row> {
   if (!lastUsed || Date.now() - lastUsed > 15 * 60 * 1000) {
     await service.from("portal_kiosk_link").update({
       last_used_at: new Date().toISOString(),
+      access_count: Number(link.access_count || 0) + 1,
     }).eq("id", link.id).eq("active", true);
+    await service.from("portal_kiosk_access_event").insert({
+      kiosk_link_id: link.id,
+      product_count: products.length,
+      user_agent_family: clean(requestUserAgentFamily, 80) || null,
+    });
   }
   return {
     store: { name: store.display_name, organization: store.organization },
@@ -265,7 +294,7 @@ async function adminSnapshot(): Promise<Row> {
         "license_number,display_name,organization,active,license_status",
       ).eq("active", true).order("organization").order("display_name"),
       service.from("portal_kiosk_link").select(
-        "id,store_license,label,token_prefix,active,created_at,revoked_at,last_used_at",
+        "id,store_license,label,device_label,token_prefix,active,created_at,revoked_at,last_used_at,expires_at,allowed_categories,allowed_item_ids,access_count,last_rotated_at,rotated_from_id",
       ).order("created_at", { ascending: false }).limit(500),
     ]);
   if (storesError) throw storesError;
@@ -292,7 +321,10 @@ Deno.serve(async (request) => {
     const body = await request.json().catch(() => ({})) as Row;
     const action = clean(body.action, 40).toLowerCase();
     if (action === "resolve") {
-      return json(request, { ok: true, ...(await resolveKiosk(clean(body.token, 100))) });
+      return json(request, { ok: true, ...(await resolveKiosk(
+        clean(body.token, 100),
+        userAgentFamily(request.headers.get("user-agent") ?? ""),
+      )) });
     }
     const actor = await actorFor(request);
     if (!actor) return json(request, { error: "Forbidden" }, 403);
@@ -302,6 +334,14 @@ Deno.serve(async (request) => {
     if (action === "create") {
       const storeLicense = clean(body.storeLicense, 120).toUpperCase();
       const label = clean(body.label, 120) || "Budtender kiosk";
+      const deviceLabel = clean(body.deviceLabel, 160) || label;
+      const expiresInDays = Math.max(1, Math.min(365, Number(body.expiresInDays) || 90));
+      const allowedCategories = Array.isArray(body.allowedCategories)
+        ? Array.from(new Set(body.allowedCategories.map((entry) => clean(entry, 160)).filter(Boolean))).slice(0, 30)
+        : [];
+      const allowedItemIds = Array.isArray(body.allowedItemIds)
+        ? Array.from(new Set(body.allowedItemIds.map(Number).filter((value) => Number.isSafeInteger(value) && value > 0))).slice(0, 500)
+        : [];
       const { data: store, error: storeError } = await service.from("portal_store")
         .select("license_number,display_name,organization,active,license_status")
         .eq("license_number", storeLicense).maybeSingle();
@@ -314,23 +354,87 @@ Deno.serve(async (request) => {
         .insert({
           store_license: storeLicense,
           label,
+          device_label: deviceLabel,
           token_hash: await sha256(token),
           token_prefix: token.slice(0, 8),
+          expires_at: new Date(Date.now() + expiresInDays * 86400000).toISOString(),
+          allowed_categories: allowedCategories,
+          allowed_item_ids: allowedItemIds,
           created_by: actor.profile.id,
-        }).select("id,store_license,label,token_prefix,active,created_at").single();
+        }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_categories,allowed_item_ids,access_count").single();
       if (error) throw error;
       await audit(actor, "kiosk-link-created", {
         kioskLinkId: link.id,
         storeLicense,
         storeName: store.display_name,
         organization: store.organization,
+        expiresInDays,
+        categoryRestrictionCount: allowedCategories.length,
+        itemRestrictionCount: allowedItemIds.length,
       });
+      const kioskUrl = `https://portal.urbanxtracts.com/#kiosk=${token}`;
       return json(request, {
         ok: true,
         link,
         token,
+        kioskUrl,
+        qrSvg: await QRCode.toString(kioskUrl, {
+          type: "svg",
+          errorCorrectionLevel: "M",
+          margin: 1,
+          width: 320,
+        }),
         ...(await adminSnapshot()),
       }, 201);
+    }
+    if (action === "rotate") {
+      const linkId = clean(body.linkId, 80);
+      const { data: existing, error: existingError } = await service.from(
+        "portal_kiosk_link",
+      ).select("*").eq("id", linkId).eq("active", true).maybeSingle();
+      if (existingError) throw existingError;
+      if (!existing) throw new KioskError(404, "Active kiosk link not found.");
+      const token = newToken();
+      const now = new Date().toISOString();
+      const expiresInDays = Math.max(1, Math.min(365, Number(body.expiresInDays) || 90));
+      const { data: created, error: createError } = await service.from("portal_kiosk_link").insert({
+        store_license: existing.store_license,
+        label: existing.label,
+        device_label: existing.device_label,
+        token_hash: await sha256(token),
+        token_prefix: token.slice(0, 8),
+        expires_at: new Date(Date.now() + expiresInDays * 86400000).toISOString(),
+        allowed_categories: existing.allowed_categories ?? [],
+        allowed_item_ids: existing.allowed_item_ids ?? [],
+        rotated_from_id: existing.id,
+        last_rotated_at: now,
+        created_by: actor.profile.id,
+      }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_categories,allowed_item_ids,access_count").single();
+      if (createError) throw createError;
+      const { error: revokeError } = await service.from("portal_kiosk_link").update({
+        active: false,
+        revoked_by: actor.profile.id,
+        revoked_at: now,
+        last_rotated_at: now,
+      }).eq("id", existing.id).eq("active", true);
+      if (revokeError) {
+        await service.from("portal_kiosk_link").delete().eq("id", created.id);
+        throw revokeError;
+      }
+      await audit(actor, "kiosk-link-rotated", {
+        kioskLinkId: existing.id,
+        replacementLinkId: created.id,
+        storeLicense: existing.store_license,
+      });
+      const kioskUrl = `https://portal.urbanxtracts.com/#kiosk=${token}`;
+      return json(request, {
+        ok: true,
+        link: created,
+        token,
+        kioskUrl,
+        qrSvg: await QRCode.toString(kioskUrl, { type: "svg", errorCorrectionLevel: "M", margin: 1, width: 320 }),
+        ...(await adminSnapshot()),
+      });
     }
     if (action === "revoke") {
       const linkId = clean(body.linkId, 80);

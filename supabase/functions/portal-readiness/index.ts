@@ -17,11 +17,20 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 type Row = Record<string, unknown>;
+type Caller = { user: Row; profile: Row; canManage: boolean };
 type Check = {
   state: "pass" | "warn" | "block" | "deferred";
   label: string;
   detail: string;
 };
+
+class ReadinessError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
@@ -40,7 +49,7 @@ function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
     "access-control-allow-headers": "authorization, apikey, content-type",
-    "access-control-allow-methods": "GET, OPTIONS",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
   };
@@ -82,7 +91,7 @@ function effectiveQuickBooksConnectionStatus(qbo: Row | null): string {
     : "disconnected";
 }
 
-async function callerFor(request: Request): Promise<Row | null> {
+async function callerFor(request: Request): Promise<Caller | null> {
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.startsWith("Bearer ")) return null;
   const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -96,12 +105,161 @@ async function callerFor(request: Request): Promise<Row | null> {
   if (!profile || profile.active === false || profile.role !== "internal") {
     return null;
   }
-  const { data: grant } = await service.from("portal_role_permission").select(
+  const { data: grants } = await service.from("portal_role_permission").select(
     "permission",
   )
-    .eq("staff_role", profile.staff_role).eq("permission", "readiness.read")
-    .maybeSingle();
-  return grant ? profile as Row : null;
+    .eq("staff_role", profile.staff_role).in("permission", [
+      "readiness.read",
+      "readiness.manage",
+    ]);
+  const permissions = new Set((grants ?? []).map((row) => row.permission));
+  return permissions.has("readiness.read")
+    ? {
+      user,
+      profile: profile as Row,
+      canManage: permissions.has("readiness.manage"),
+    }
+    : null;
+}
+
+function clean(value: unknown, max = 2000): string {
+  return String(value ?? "").replace(
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,
+    "",
+  ).trim().slice(0, max);
+}
+
+function workTask(row: Row, comments: Row[], evidence: Row[]): Row {
+  return {
+    id: row.id,
+    key: row.task_key,
+    title: row.title,
+    section: row.section,
+    description: row.description,
+    status: row.status,
+    owner: row.owner_label,
+    dueOn: row.due_on,
+    evidenceSummary: row.evidence_summary,
+    sourceReference: row.source_reference,
+    completionCheck: row.completion_check,
+    updatedAt: row.updated_at,
+    comments: comments.filter((entry) => entry.task_id === row.id).map((entry) => ({
+      id: entry.id,
+      body: entry.body,
+      actorEmail: entry.actor_email,
+      createdAt: entry.created_at,
+    })),
+    evidence: evidence.filter((entry) => entry.task_id === row.id).map((entry) => ({
+      id: entry.id,
+      label: entry.label,
+      url: entry.url,
+      note: entry.note,
+      actorEmail: entry.actor_email,
+      createdAt: entry.created_at,
+    })),
+  };
+}
+
+async function workRegister(): Promise<Row[]> {
+  const [taskResult, commentResult, evidenceResult] = await Promise.all([
+    service.from("portal_readiness_task").select("*").eq("active", true)
+      .order("sort_order").order("updated_at", { ascending: false }),
+    service.from("portal_readiness_comment").select("*")
+      .order("created_at", { ascending: false }).limit(1000),
+    service.from("portal_readiness_evidence").select("*")
+      .order("created_at", { ascending: false }).limit(1000),
+  ]);
+  if (taskResult.error) throw taskResult.error;
+  if (commentResult.error) throw commentResult.error;
+  if (evidenceResult.error) throw evidenceResult.error;
+  return (taskResult.data ?? []).map((row) => workTask(
+    row as Row,
+    (commentResult.data ?? []) as Row[],
+    (evidenceResult.data ?? []) as Row[],
+  ));
+}
+
+async function updateWorkRegister(caller: Caller, body: Row): Promise<void> {
+  if (!caller.canManage) throw new ReadinessError(403, "Forbidden");
+  const action = clean(body.action, 40).toLowerCase();
+  const taskId = clean(body.taskId, 80);
+  if (!/^[0-9a-f-]{36}$/i.test(taskId)) {
+    throw new ReadinessError(400, "A readiness task is required.");
+  }
+  const actorId = caller.profile.id;
+  const actorEmail = clean(caller.user.email, 320) || null;
+  if (action === "update-task") {
+    const status = clean(body.status, 40);
+    if (!new Set(["not_started", "in_progress", "completed", "controlled_hold"]).has(status)) {
+      throw new ReadinessError(400, "Choose a supported readiness state.");
+    }
+    const dueOn = clean(body.dueOn, 10);
+    if (dueOn && !/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) {
+      throw new ReadinessError(400, "Use a valid due date.");
+    }
+    const { error } = await service.from("portal_readiness_task").update({
+      status,
+      owner_label: clean(body.owner, 240) || null,
+      due_on: dueOn || null,
+      evidence_summary: clean(body.evidenceSummary, 2000) || null,
+      updated_by: actorId,
+      updated_at: new Date().toISOString(),
+    }).eq("id", taskId).eq("active", true);
+    if (error) throw error;
+  } else if (action === "add-comment") {
+    const comment = clean(body.comment, 3000);
+    if (!comment) {
+      throw new ReadinessError(400, "Enter a comment before saving.");
+    }
+    const { error } = await service.from("portal_readiness_comment").insert({
+      task_id: taskId,
+      body: comment,
+      actor_id: actorId,
+      actor_email: actorEmail,
+    });
+    if (error) throw error;
+  } else if (action === "add-evidence") {
+    const label = clean(body.label, 300);
+    const url = clean(body.url, 2000);
+    const note = clean(body.note, 3000);
+    if (!label || (!url && !note)) {
+      throw new ReadinessError(
+        400,
+        "Evidence needs a label and a URL or note.",
+      );
+    }
+    if (url) {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        throw new ReadinessError(
+          400,
+          "Evidence URLs must be valid HTTPS links.",
+        );
+      }
+      if (parsed.protocol !== "https:") {
+        throw new ReadinessError(400, "Evidence URLs must use HTTPS.");
+      }
+    }
+    const { error } = await service.from("portal_readiness_evidence").insert({
+      task_id: taskId,
+      label,
+      url: url || null,
+      note: note || null,
+      actor_id: actorId,
+      actor_email: actorEmail,
+    });
+    if (error) throw error;
+  } else {
+    throw new ReadinessError(400, "Unsupported readiness action.");
+  }
+  await service.from("portal_admin_audit").insert({
+    actor_id: actorId,
+    actor_org: caller.profile.org,
+    action: `readiness.${action}`,
+    detail: { taskId },
+  });
 }
 
 async function exactCount(
@@ -119,12 +277,17 @@ Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(request) });
   }
-  if (request.method !== "GET") {
+  if (!new Set(["GET", "POST"]).has(request.method)) {
     return json(request, { error: "Method not allowed" }, 405);
   }
   try {
     const caller = await callerFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
+    if (request.method === "POST") {
+      const body = await request.json().catch(() => ({})) as Row;
+      await updateWorkRegister(caller, body);
+      return json(request, { ok: true, tasks: await workRegister(), canManage: caller.canManage });
+    }
     const today = new Date().toISOString().slice(0, 10);
 
     const [
@@ -884,6 +1047,8 @@ Deno.serve(async (request) => {
         quantityTypes: ["WeightBased", "CountBased"],
         volumeExcluded: true,
       },
+      tasks: await workRegister(),
+      canManageTasks: caller.canManage,
       integrations: {
         canix: {
           packageLastSuccessfulAt: canix?.last_successful_at ?? null,
@@ -941,10 +1106,11 @@ Deno.serve(async (request) => {
       },
     });
   } catch (error) {
+    const status = error instanceof ReadinessError ? error.status : 500;
     return json(request, {
       error: error instanceof Error
         ? error.message
         : "Unexpected readiness error",
-    }, 500);
+    }, status);
   }
 });

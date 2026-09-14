@@ -508,6 +508,15 @@ button{font-family:inherit}
 </section>
 </sc-if>
 
+<sc-if value="{{ showCatalogWorkflow }}" hint-placeholder-val="{{ false }}">
+<section style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:18px 20px;margin-bottom:24px">
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">INTERNAL · PUBLICATION CONTROL</div><h2 style="font:800 17px Archivo,sans-serif;margin:0 0 5px">Catalog readiness</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0">Completeness is computed from Monday content. Review, approval, scheduling, and publication are separate audited steps.</p></div><button type="button" onClick="{{ onCatalogWorkflowRefresh }}" aria-disabled="{{ catalogWorkflowLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Refresh</button></div>
+<sc-if value="{{ catalogWorkflowHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 12px;margin-top:12px;font-size:12px">{{ catalogWorkflowError }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px;margin:14px 0"><sc-for list="{{ catalogWorkflowMetrics }}" as="cm" hint-placeholder-count="5"><div style="background:var(--ux-surface);padding:10px 11px"><div style="font:800 18px Archivo,sans-serif">{{ cm.value }}</div><div style="font:600 8.5px ui-monospace,monospace;color:var(--ux-muted)">{{ cm.label }}</div></div></sc-for></div>
+<div style="max-height:420px;overflow:auto;border-top:2px solid rgba(23,14,11,.35)"><sc-for list="{{ catalogWorkflowRows }}" as="cw" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:1.35fr .55fr 1.25fr auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.13);font-size:12px"><div><strong>{{ cw.name }}</strong><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted)">CANIX ITEM {{ cw.canixItemId }} · {{ cw.workflowLabel }}</div></div><div><strong>{{ cw.score }}</strong><div style="font-size:10px;color:var(--ux-muted)">complete</div></div><div><div style="color:var(--ux-muted-strong)">{{ cw.missingLabel }}</div><div style="font-size:10px;color:var(--ux-muted)">{{ cw.scheduleLabel }}</div></div><div style="display:flex;gap:5px;flex-wrap:wrap"><button type="button" onClick="{{ cw.onPreview }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 9.5px Archivo,sans-serif;cursor:pointer">Preview</button><sc-if value="{{ cw.canReview }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ cw.onReview }}" aria-disabled="{{ cw.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 8px;font:700 9.5px Archivo,sans-serif;cursor:pointer">Review</button></sc-if><sc-if value="{{ cw.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ cw.onApprove }}" aria-disabled="{{ cw.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:7px 8px;font:700 9.5px Archivo,sans-serif;cursor:pointer">Approve</button></sc-if><sc-if value="{{ cw.canSchedule }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ cw.onSchedule }}" aria-disabled="{{ cw.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 9.5px Archivo,sans-serif;cursor:pointer">Schedule</button><button type="button" onClick="{{ cw.onPublish }}" aria-disabled="{{ cw.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:7px 8px;font:700 9.5px Archivo,sans-serif;cursor:pointer">Publish</button></sc-if></div></div></sc-for></div>
+</section>
+</sc-if>
+
 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:16px;border-bottom:2px solid rgba(23,14,11,.4)">
 <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="Search product, SKU, strain, terpene, potency or full tag" style="flex:1;min-width:220px;border:1px solid rgba(23,14,11,.35);background:#fff;padding:10px 12px;font:14px Archivo,sans-serif;border-radius:0">
 <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5">
@@ -1658,6 +1667,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:700 14px/1.4 Archivo,sans-serif;margin-bottom:5px">{{ item.label }}</div>
 <div style="font-size:12.5px;line-height:1.58;color:var(--ux-muted-strong);max-width:80ch">{{ item.detail }}</div>
 <sc-if value="{{ item.hasMeta }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:9px;font-size:11px;color:var(--ux-muted)"><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">BLOCKS</span><br>{{ item.blocks }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">OWNER</span><br>{{ item.owner }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">EVIDENCE</span><br>{{ item.evidence }}</div></div></sc-if>
+<sc-if value="{{ item.durable }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:minmax(145px,.7fr) minmax(180px,1fr) minmax(145px,.7fr);gap:8px;margin-top:12px"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.taskStatus }}" onChange="{{ item.onStatus }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="controlled_hold">Controlled hold</option></select></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</span><input type="text" value="{{ item.taskOwner }}" onInput="{{ item.onOwner }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE DATE</span><input type="date" value="{{ item.taskDueOn }}" onInput="{{ item.onDueOn }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:7px;font:11.5px Archivo,sans-serif"></label><label style="grid-column:1/-1"><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">EVIDENCE SUMMARY</span><input type="text" value="{{ item.taskEvidenceSummary }}" onInput="{{ item.onEvidenceSummary }}" disabled="{{ item.pending }}" placeholder="What proves this is complete?" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px"><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button><button type="button" onClick="{{ item.onComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add comment</button><button type="button" onClick="{{ item.onEvidence }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add evidence</button></div></sc-if>
 </div>
 </sc-for>
 </div>
@@ -1699,16 +1709,27 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ showKioskLinks }}" hint-placeholder-val="{{ false }}">
 <section style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:18px 20px;margin:0 0 24px">
 <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px"><div><div style="font:700 14px Archivo,sans-serif;margin-bottom:5px">Public kiosk links</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;max-width:70ch">Create a revocable, store-specific product-education link for a counter tablet or QR code. Anyone holding the link can open it without signing in, but it never exposes pricing, inventory quantities, orders, accounts, economic ownership, or administration.</div></div><button type="button" onClick="{{ onKioskLinksRefresh }}" aria-disabled="{{ kioskLinksLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kioskLinksRefreshLabel }}</button></div>
-<div style="display:grid;grid-template-columns:minmax(230px,1.2fr) minmax(190px,1fr) auto;gap:10px;align-items:end;margin-bottom:14px">
+<div style="display:grid;grid-template-columns:minmax(230px,1.2fr) minmax(170px,.8fr) minmax(170px,.8fr) minmax(110px,.45fr) auto;gap:10px;align-items:end;margin-bottom:10px">
 <label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">QUALIFIED STORE</span><select value="{{ kioskStoreDraft }}" onChange="{{ onKioskStoreDraft }}" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"><sc-for list="{{ kioskStoreOptions }}" as="ks" hint-placeholder-count="3"><option value="{{ ks.value }}" disabled="{{ ks.disabled }}">{{ ks.label }}</option></sc-for></select></label>
 <label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">LINK LABEL</span><input type="text" value="{{ kioskLabelDraft }}" onInput="{{ onKioskLabelDraft }}" maxlength="120" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">DEVICE LABEL</span><input type="text" value="{{ kioskDeviceDraft }}" onInput="{{ onKioskDeviceDraft }}" maxlength="160" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">EXPIRES</span><select value="{{ kioskExpiryDraft }}" onChange="{{ onKioskExpiryDraft }}" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"><option value="30">30 days</option><option value="90">90 days</option><option value="180">180 days</option><option value="365">1 year</option></select></label>
 <button type="button" onClick="{{ onCreateKioskLink }}" aria-disabled="{{ kioskCreateDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kioskCreateLabel }}</button>
 </div>
-<sc-if value="{{ kioskCreated }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 14px;margin-bottom:14px"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:6px">COPY THIS LINK NOW · SHOWN ONCE</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" readonly value="{{ kioskCreatedUrl }}" aria-label="New public kiosk link" style="flex:1;min-width:240px;border:1px solid rgba(23,14,11,.25);background:#fff;padding:9px;font:11px ui-monospace,monospace"><button type="button" onClick="{{ onCopyKioskLink }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Copy link</button></div></div></sc-if>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">OPTIONAL CATEGORIES · COMMA SEPARATED</span><input type="text" value="{{ kioskCategoriesDraft }}" onInput="{{ onKioskCategoriesDraft }}" placeholder="Flower, Edibles" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px;font:12px Archivo,sans-serif"></label><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">OPTIONAL CANIX ITEM IDS</span><input type="text" value="{{ kioskItemsDraft }}" onInput="{{ onKioskItemsDraft }}" placeholder="2867738, 2806248" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px;font:12px Archivo,sans-serif"></label></div>
+<sc-if value="{{ kioskCreated }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 14px;margin-bottom:14px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center"><sc-if value="{{ kioskCreatedHasQr }}" hint-placeholder-val="{{ true }}"><img src="{{ kioskCreatedQr }}" alt="Kiosk QR code" style="width:132px;height:132px;background:#fff;padding:7px;border:1px solid rgba(23,14,11,.18)"></sc-if><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:6px">COPY OR PRINT NOW · SHOWN ONCE</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" readonly value="{{ kioskCreatedUrl }}" aria-label="New public kiosk link" style="flex:1;min-width:240px;border:1px solid rgba(23,14,11,.25);background:#fff;padding:9px;font:11px ui-monospace,monospace"><button type="button" onClick="{{ onCopyKioskLink }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Copy link</button><button type="button" onClick="{{ onPrintKioskQr }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Print QR</button></div></div></div></sc-if>
 <sc-if value="{{ kioskLinksHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-bottom:13px;font-size:12px">{{ kioskLinksError }}</div></sc-if>
 <sc-if value="{{ kioskLinksLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:12px;margin-bottom:12px;font-size:12px;color:var(--ux-muted)">Loading kiosk links…</div></sc-if>
-<div style="border-top:2px solid rgba(23,14,11,.38)"><sc-for list="{{ kioskLinks }}" as="kl" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.2fr 1.5fr .85fr auto;gap:12px;align-items:center;border-bottom:1px solid rgba(23,14,11,.14);padding:11px 0;font-size:12px"><div><strong>{{ kl.label }}</strong><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">TOKEN {{ kl.tokenPrefix }}</div></div><div>{{ kl.storeName }}<div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kl.storeMeta }}</div></div><div><span style="{{ kl.stateStyle }}">{{ kl.state }}</span><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ kl.lastUsed }}</div></div><div><sc-if value="{{ kl.canRevoke }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ kl.onRevoke }}" aria-disabled="{{ kl.pending }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ kl.revokeLabel }}</button></sc-if></div></div></sc-for></div>
+<div style="border-top:2px solid rgba(23,14,11,.38)"><sc-for list="{{ kioskLinks }}" as="kl" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.1fr 1.35fr .9fr .8fr auto;gap:12px;align-items:center;border-bottom:1px solid rgba(23,14,11,.14);padding:11px 0;font-size:12px"><div><strong>{{ kl.label }}</strong><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">{{ kl.deviceLabel }} · TOKEN {{ kl.tokenPrefix }}</div></div><div>{{ kl.storeName }}<div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kl.storeMeta }}</div></div><div><span style="{{ kl.stateStyle }}">{{ kl.state }}</span><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ kl.expiryLabel }}</div></div><div><strong>{{ kl.accessCount }}</strong> opens<div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ kl.lastUsed }}</div></div><div style="display:flex;gap:6px"><sc-if value="{{ kl.canRevoke }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ kl.onRotate }}" aria-disabled="{{ kl.pending }}" style="background:var(--ux-ink);border:1px solid var(--ux-ink);color:var(--ux-ground);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Rotate</button><button type="button" onClick="{{ kl.onRevoke }}" aria-disabled="{{ kl.pending }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ kl.revokeLabel }}</button></sc-if></div></div></sc-for></div>
 <sc-if value="{{ kioskLinksEmpty }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:13px;font-size:12px;color:var(--ux-muted)">No kiosk links have been created. Create one only after the store is qualified.</div></sc-if>
+</section>
+</sc-if>
+<sc-if value="{{ showAccessReviews }}" hint-placeholder-val="{{ false }}">
+<section style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:18px 20px;margin:0 0 24px">
+<div style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">AUTOMATIC NEW-STORE RECONCILIATION</div>
+<h2 style="font:800 17px Archivo,sans-serif;margin:0 0 6px">Buyer access reviews</h2>
+<p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0 0 12px">Store Owners receive every qualified store automatically. Buyers require an explicit decision; Budtenders remain assigned to exactly one store.</p>
+<div style="border-top:2px solid rgba(23,14,11,.35)"><sc-for list="{{ accessReviewRows }}" as="ar" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.2fr 1.15fr 1.6fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px"><div><strong>{{ ar.profileName }}</strong><div style="font-size:10.5px;color:var(--ux-muted)">{{ ar.organization }}</div></div><div><strong>{{ ar.storeName }}</strong><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted)">{{ ar.storeLicense }}</div></div><div style="color:var(--ux-muted-strong)">{{ ar.reason }}</div><div style="display:flex;gap:6px"><button type="button" onClick="{{ ar.onAssign }}" aria-disabled="{{ ar.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Assign</button><button type="button" onClick="{{ ar.onDismiss }}" aria-disabled="{{ ar.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Dismiss</button></div></div></sc-for></div>
 </section>
 </sc-if>
 <sc-if value="{{ auClosed }}" hint-placeholder-val="{{ true }}">
@@ -3228,6 +3249,7 @@ const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 const STAFF_PERMISSIONS = [
   'inventory.read', 'inventory.sync', 'orders.manage', 'accounts.manage',
   'pricing.manage', 'catalog.manage', 'financials.read', 'economics.manage', 'quality.manage', 'lineage.read', 'users.manage', 'audit.read', 'readiness.read'
+  , 'readiness.manage'
 ];
 const STAFF_ROLE_LABELS = {
   administrator: 'Administrator', operations: 'Operations', sales: 'Sales',
@@ -3762,7 +3784,7 @@ function pwnedCount(password) {
 
 class Component extends DCLogic {
   state = {
-    deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null, auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
+    deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: false, usersError: null, auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auErr: null,
     token: null, refreshToken: null, auLocs: [], auLocOpen: false, pwNotice: null,
     mfaToken: null, mfaFactorId: null, mfaStage: '', mfaQr: '', mfaSecret: '',
     mfaCode: '', mfaError: null, mfaBusy: false, mfaEmail: '', mfaWeak: null, mfaSso: false,
@@ -3820,12 +3842,15 @@ class Component extends DCLogic {
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+    readinessTaskDrafts: {}, readinessTaskPending: null,
     readinessGroupOpen: { not_started: true, in_progress: true, completed: false }, readinessSectionOpen: {},
     quickBooksConnecting: false, quickBooksConnectionError: null,
     mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
     catalogMappingData: null, catalogMappingLoading: false, catalogMappingError: null, catalogMappingPending: null,
     catalogMappingQuery: '', catalogMappingStatus: 'all', catalogMappingSort: 'status',
     catalogMappingManualIds: {}, catalogMappingManualNote: '',
+    catalogWorkflowRows: [], catalogWorkflowLoading: false, catalogWorkflowLoaded: false, catalogWorkflowError: null,
+    catalogWorkflowPending: null,
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -3845,7 +3870,9 @@ class Component extends DCLogic {
     onboardingCreateError: null, onboardingCreateSubmitting: false,
     userActionEmail: null, userActionRole: 'buyer', userActionLocations: [], userActionError: null,
     kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
-    kioskStoreDraft: '', kioskLabelDraft: 'Budtender kiosk', kioskLinkPending: null, kioskCreatedUrl: '',
+    kioskStoreDraft: '', kioskLabelDraft: 'Budtender kiosk', kioskDeviceDraft: 'Counter tablet',
+    kioskExpiryDraft: '90', kioskCategoriesDraft: '', kioskItemsDraft: '', kioskLinkPending: null,
+    kioskCreatedUrl: '', kioskCreatedQr: '',
     publicKioskToken: PUBLIC_KIOSK_TOKEN, publicKioskData: null, publicKioskLoading: !!PUBLIC_KIOSK_TOKEN, publicKioskError: null,
     publicKioskProductId: null,
     kioskMode: 'counter', kioskSearch: '', lineagePackage: null, lineageSearch: '', lineageCoa: 'all',
@@ -4420,7 +4447,7 @@ class Component extends DCLogic {
     this.set({ authUser: u, role, screen: role === 'budtender' ? 'kiosk' : 'dash', order: null,
       loc: demoAccount ? 'l-demo' : 'l1', demoTourActive: demoAccount, demoTourStep: 0, demoTourCompleted: false,
       ordersLoaded: false, ordersError: null, orderTransitioning: null,
-      liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
+      liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: false, usersError: null,
       financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all',
       toast: 'Signed in as ' + u.name + '. Your ' + accessLabel.toLowerCase() + ' access determines which sections and actions are available.', toastKind: 'SIGNED IN' });
   }
@@ -4457,11 +4484,14 @@ class Component extends DCLogic {
       costObjectStatusDraft: 'pending_assignment', costObjectCodeDraft: '', costObjectNote: '',
       costObjectPending: false, costObjectError: null,
       catalogLoading: false, catalogLoaded: false, catalogError: null,
+      catalogWorkflowRows: [], catalogWorkflowLoading: false, catalogWorkflowLoaded: false,
+      catalogWorkflowError: null, catalogWorkflowPending: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
       pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })), pricingLoading: false, pricingLoaded: false, pricingError: null,
       orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false,
       orderPoliciesLoaded: false, orderPoliciesError: null,
       readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+      readinessTaskDrafts: {}, readinessTaskPending: null,
       readinessGroupOpen: { not_started: true, in_progress: true, completed: false }, readinessSectionOpen: {},
       retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false,
       retailerAccountsLoaded: false, retailerAccountsError: null,
@@ -4477,7 +4507,7 @@ class Component extends DCLogic {
       onboardingCreateError: null, onboardingCreateSubmitting: false, onboardingCreateFileData: null,
       userActionEmail: null, userActionLocations: [], userActionError: null,
       kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
-      kioskLinkPending: null, kioskCreatedUrl: '', publicKioskToken: '', publicKioskData: null,
+      kioskLinkPending: null, kioskCreatedUrl: '', kioskCreatedQr: '', publicKioskToken: '', publicKioskData: null,
       publicKioskLoading: false, publicKioskError: null,
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
       outbox: [], requests: [], account: null, accountsSearch: '', accountsFilter: 'all', accountsSort: 'priority'
@@ -5171,9 +5201,56 @@ class Component extends DCLogic {
             coa: { documentUrl: null, version: null, cannabinoids: [], terpenes: [], profile: {} } }]
         }));
         this.set({ catalogLoading: false, catalogLoaded: true, catalogError: null });
+        if (this.state.role === 'internal' && this.hasPermission('catalog.manage')) this.loadCatalogWorkflow();
       })
       .catch(error => this.set({ catalogLoading: false, catalogLoaded: false,
         catalogError: (error && error.message) || 'The Canix catalog could not be reached.' }));
+  }
+
+  loadCatalogWorkflow(force) {
+    const s = this.state;
+    if (!s.authUser || s.role !== 'internal' || !this.hasPermission('catalog.manage') || s.catalogWorkflowLoading
+      || (!force && s.catalogWorkflowLoaded)) return Promise.resolve();
+    const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (s.token || '') };
+    this.set({ catalogWorkflowLoading: true, catalogWorkflowError: null });
+    return this.portalFetch(PORTAL_PRODUCT_CONTENT_API, { method: 'GET', headers })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Catalog workflow returned ' + status + '.'));
+        this.set({ catalogWorkflowRows: Array.isArray(body.products) ? body.products : [],
+          catalogWorkflowLoading: false, catalogWorkflowLoaded: true, catalogWorkflowError: null });
+      })
+      .catch(error => this.set({ catalogWorkflowLoading: false, catalogWorkflowLoaded: true,
+        catalogWorkflowError: error.message || 'Catalog publication readiness could not be loaded.' }));
+  }
+
+  catalogWorkflowAction(row, command) {
+    if (!row || this.state.catalogWorkflowPending || !this.requirePermission('catalog.manage', 'manage catalog publication')) return;
+    let scheduledAt = null;
+    if (command === 'schedule') {
+      const answer = window.prompt('Publish date and time (example: 2026-09-30 09:00):');
+      if (!answer || !answer.trim()) return;
+      const parsed = new Date(answer.trim());
+      if (isNaN(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+        this.set({ catalogWorkflowError: 'Choose a valid future date and time.' }); return;
+      }
+      scheduledAt = parsed.toISOString();
+    }
+    this.set({ catalogWorkflowPending: row.canixItemId, catalogWorkflowError: null });
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (this.state.token || '') };
+    this.portalFetch(PORTAL_PRODUCT_CONTENT_API, { method: 'POST', headers,
+      body: JSON.stringify({ action: 'catalog-workflow', canixItemId: row.canixItemId, command, scheduledAt }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Catalog workflow returned ' + status + '.'));
+        this.set({ catalogWorkflowPending: null, catalogWorkflowLoaded: false,
+          toast: 'Catalog item ' + row.canixItemId + ' is now ' + command + (command === 'schedule' ? 'd' : 'ed') + '.',
+          toastKind: 'CATALOG UPDATED' });
+        return Promise.all([this.loadCatalogWorkflow(true), this.loadCatalog()]);
+      })
+      .catch(error => this.set({ catalogWorkflowPending: null,
+        catalogWorkflowError: error.message || 'The catalog workflow action was not saved.' }));
   }
 
   loadRetailerAccounts(force) {
@@ -5429,10 +5506,10 @@ class Component extends DCLogic {
       event.target.value = '';
       return;
     }
-    if (file.size > this.MAX_UPLOAD()) {
+    if (file.size > this.MAX_ONBOARDING_UPLOAD()) {
       this.set({ onboardingCreateFileName: '', onboardingCreateFileSize: 0,
         onboardingCreateFileType: '', onboardingCreateFileData: null,
-        onboardingCreateError: 'The license document must be 2 MB or smaller for the protected Monday intake route.' });
+        onboardingCreateError: 'The license document must be 10 MB or smaller. It is archived privately and transferred to the Store Onboarding item.' });
       event.target.value = '';
       return;
     }
@@ -5530,10 +5607,21 @@ class Component extends DCLogic {
     if (!(s.role === 'owner' || (s.role === 'internal' && this.hasPermission('users.manage')))) return Promise.resolve();
     this.set({ usersLoading: true, usersError: null });
     return this.portalAdmin('list-users', {})
-      .then(body => this.set({ liveUsers: Array.isArray(body.users) ? body.users : [], usersLoading: false,
+      .then(body => this.set({ liveUsers: Array.isArray(body.users) ? body.users : [],
+        accessReviews: Array.isArray(body.reviews) ? body.reviews : [], usersLoading: false,
         usersLoaded: true, usersError: null }))
-      .catch(error => this.set({ liveUsers: [], usersLoading: false, usersLoaded: true,
+      .catch(error => this.set({ liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: true,
         usersError: (error && error.message) || 'The protected user directory could not be loaded.' }));
+  }
+
+  resolveAccessReview(review, decision) {
+    if (!review || this.state.accessPending || !this.requirePermission('users.manage', 'resolve access reviews')) return;
+    this.set({ accessPending: review.id, usersError: null });
+    this.portalAdmin('resolve-access-review', { reviewId: review.id, decision })
+      .then(body => this.set({ accessReviews: Array.isArray(body.reviews) ? body.reviews : [], accessPending: null,
+        toast: decision === 'assign' ? 'The Buyer now has access to the new store.' : 'The access suggestion was dismissed.',
+        toastKind: decision === 'assign' ? 'STORE ACCESS ASSIGNED' : 'ACCESS REVIEW CLOSED' }))
+      .catch(error => this.set({ accessPending: null, usersError: error.message || 'The access review was not saved.' }));
   }
 
   kioskService(payload, authenticated) {
@@ -5566,19 +5654,41 @@ class Component extends DCLogic {
     const s = this.state;
     if (s.kioskLinkPending || !this.requirePermission('users.manage', 'create kiosk links')) return;
     if (!s.kioskStoreDraft) { this.set({ kioskLinksError: 'Choose an active, qualified store.' }); return; }
-    this.set({ kioskLinkPending: 'create', kioskLinksError: null, kioskCreatedUrl: '' });
+    this.set({ kioskLinkPending: 'create', kioskLinksError: null, kioskCreatedUrl: '', kioskCreatedQr: '' });
+    const categories = String(s.kioskCategoriesDraft || '').split(',').map(value => value.trim()).filter(Boolean);
+    const itemIds = String(s.kioskItemsDraft || '').split(/[\s,]+/).map(value => Number(value)).filter(Number.isSafeInteger);
     this.kioskService({ action: 'create', storeLicense: s.kioskStoreDraft,
-      label: String(s.kioskLabelDraft || '').trim() || 'Budtender kiosk' }, true)
+      label: String(s.kioskLabelDraft || '').trim() || 'Budtender kiosk',
+      deviceLabel: String(s.kioskDeviceDraft || '').trim() || 'Counter tablet',
+      expiresInDays: Number(s.kioskExpiryDraft) || 90,
+      allowedCategories: categories, allowedItemIds: itemIds }, true)
       .then(body => {
         if (!body.token) throw new Error('The kiosk service did not return the one-time link token.');
-        const url = location.origin + location.pathname + '#kiosk=' + body.token;
+        const url = body.kioskUrl || (location.origin + location.pathname + '#kiosk=' + body.token);
         this.set({ kioskLinks: Array.isArray(body.links) ? body.links : s.kioskLinks,
           kioskStores: Array.isArray(body.stores) ? body.stores : s.kioskStores,
           kioskLinkPending: null, kioskCreatedUrl: url,
+          kioskCreatedQr: body.qrSvg ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(body.qrSvg) : '',
           toast: 'A new read-only kiosk link was created. Copy it now; the raw link is not stored and cannot be shown again.',
           toastKind: 'KIOSK LINK CREATED' });
       })
       .catch(error => this.set({ kioskLinkPending: null, kioskLinksError: error.message || 'The kiosk link was not created.' }));
+  }
+
+  rotateKioskLink(link) {
+    if (!link || this.state.kioskLinkPending || !this.requirePermission('users.manage', 'rotate kiosk links')) return;
+    if (!window.confirm('Rotate the kiosk link “' + link.label + '”? The current link will stop working immediately.')) return;
+    this.set({ kioskLinkPending: link.id, kioskLinksError: null, kioskCreatedUrl: '', kioskCreatedQr: '' });
+    this.kioskService({ action: 'rotate', linkId: link.id, expiresInDays: Number(this.state.kioskExpiryDraft) || 90 }, true)
+      .then(body => {
+        if (!body.token) throw new Error('The kiosk service did not return the replacement token.');
+        this.set({ kioskLinks: Array.isArray(body.links) ? body.links : this.state.kioskLinks,
+          kioskStores: Array.isArray(body.stores) ? body.stores : this.state.kioskStores,
+          kioskLinkPending: null, kioskCreatedUrl: body.kioskUrl || (location.origin + location.pathname + '#kiosk=' + body.token),
+          kioskCreatedQr: body.qrSvg ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(body.qrSvg) : '',
+          toast: 'The kiosk link was rotated. Replace the old QR code with this one.', toastKind: 'KIOSK LINK ROTATED' });
+      })
+      .catch(error => this.set({ kioskLinkPending: null, kioskLinksError: error.message || 'The kiosk link was not rotated.' }));
   }
 
   revokeKioskLink(link) {
@@ -5588,7 +5698,7 @@ class Component extends DCLogic {
     this.kioskService({ action: 'revoke', linkId: link.id }, true)
       .then(body => this.set({ kioskLinks: Array.isArray(body.links) ? body.links : this.state.kioskLinks,
         kioskStores: Array.isArray(body.stores) ? body.stores : this.state.kioskStores,
-        kioskLinkPending: null, kioskCreatedUrl: '', toast: 'The kiosk link was revoked.', toastKind: 'KIOSK LINK REVOKED' }))
+        kioskLinkPending: null, kioskCreatedUrl: '', kioskCreatedQr: '', toast: 'The kiosk link was revoked.', toastKind: 'KIOSK LINK REVOKED' }))
       .catch(error => this.set({ kioskLinkPending: null, kioskLinksError: error.message || 'The kiosk link was not revoked.' }));
   }
 
@@ -5600,6 +5710,28 @@ class Component extends DCLogic {
     navigator.clipboard.writeText(value)
       .then(() => this.set({ toast: 'Kiosk link copied.', toastKind: 'COPIED' }))
       .catch(() => this.set({ toast: 'Select and copy the kiosk link manually.', toastKind: 'COPY LINK' }));
+  }
+
+  printKioskQr() {
+    if (!this.state.kioskCreatedQr || !this.state.kioskCreatedUrl) return;
+    const popup = window.open('', '_blank', 'width=620,height=720');
+    if (!popup) { this.set({ toast: 'Allow pop-ups to print the kiosk QR code.', toastKind: 'PRINT BLOCKED' }); return; }
+    popup.opener = null;
+    const label = String(this.state.kioskLabelDraft || 'Budtender kiosk');
+    popup.document.title = label;
+    popup.document.body.style.cssText = 'font-family:Arial,sans-serif;text-align:center;padding:42px;color:#170e0b';
+    const heading = popup.document.createElement('h1');
+    heading.textContent = label;
+    const image = popup.document.createElement('img');
+    image.alt = 'Kiosk QR code';
+    image.style.cssText = 'width:360px;height:360px';
+    const address = popup.document.createElement('p');
+    address.style.cssText = 'overflow-wrap:anywhere;font:13px monospace';
+    address.textContent = String(this.state.kioskCreatedUrl);
+    popup.document.body.replaceChildren(heading, image, address);
+    image.addEventListener('load', () => popup.print(), { once: true });
+    image.src = this.state.kioskCreatedQr;
+    if (image.complete) popup.setTimeout(() => popup.print(), 50);
   }
 
   loadPublicKiosk(token) {
@@ -5687,6 +5819,63 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ readinessLoading: false, readinessLoaded: true,
         readinessError: (error && error.message) || 'Live release diagnostics could not be loaded.' }));
+  }
+
+  readinessAction(action, payload) {
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (this.state.token || '') };
+    return this.portalFetch(PORTAL_READINESS_API, { method: 'POST', headers,
+      body: JSON.stringify({ action, ...payload }) })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Readiness service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  readinessTaskDraft(task, field, value) {
+    this.setState(state => ({ readinessTaskDrafts: {
+      ...(state.readinessTaskDrafts || {}),
+      [task.id]: { status: task.status, owner: task.owner || '', dueOn: task.dueOn || '',
+        evidenceSummary: task.evidenceSummary || '', ...((state.readinessTaskDrafts || {})[task.id] || {}), [field]: value }
+    } }));
+  }
+
+  saveReadinessTask(task) {
+    if (!task || this.state.readinessTaskPending || !this.requirePermission('readiness.manage', 'manage release-readiness work')) return;
+    const draft = (this.state.readinessTaskDrafts || {})[task.id] || task;
+    this.set({ readinessTaskPending: task.id, readinessError: null });
+    this.readinessAction('update-task', { taskId: task.id, status: draft.status || task.status,
+      owner: draft.owner || '', dueOn: draft.dueOn || '', evidenceSummary: draft.evidenceSummary || '' })
+      .then(body => this.set({ readinessData: { ...(this.state.readinessData || {}), tasks: body.tasks || [] },
+        readinessTaskPending: null, toast: task.title + ' was updated.', toastKind: 'READINESS UPDATED' }))
+      .catch(error => this.set({ readinessTaskPending: null, readinessError: error.message || 'The readiness task was not saved.' }));
+  }
+
+  addReadinessComment(task) {
+    if (!task || this.state.readinessTaskPending || !this.requirePermission('readiness.manage', 'comment on release readiness')) return;
+    const comment = window.prompt('Add a work-note comment for “' + task.title + '”:');
+    if (!comment || !comment.trim()) return;
+    this.set({ readinessTaskPending: task.id });
+    this.readinessAction('add-comment', { taskId: task.id, comment: comment.trim() })
+      .then(body => this.set({ readinessData: { ...(this.state.readinessData || {}), tasks: body.tasks || [] }, readinessTaskPending: null,
+        toast: 'Comment added to ' + task.title + '.', toastKind: 'COMMENT ADDED' }))
+      .catch(error => this.set({ readinessTaskPending: null, readinessError: error.message || 'The comment was not saved.' }));
+  }
+
+  addReadinessEvidence(task) {
+    if (!task || this.state.readinessTaskPending || !this.requirePermission('readiness.manage', 'add readiness evidence')) return;
+    const label = window.prompt('Evidence label for “' + task.title + '”:');
+    if (!label || !label.trim()) return;
+    const value = window.prompt('Paste an HTTPS evidence link, or enter a short evidence note:');
+    if (!value || !value.trim()) return;
+    const isUrl = /^https:\/\//i.test(value.trim());
+    this.set({ readinessTaskPending: task.id });
+    this.readinessAction('add-evidence', { taskId: task.id, label: label.trim(),
+      url: isUrl ? value.trim() : '', note: isUrl ? '' : value.trim() })
+      .then(body => this.set({ readinessData: { ...(this.state.readinessData || {}), tasks: body.tasks || [] }, readinessTaskPending: null,
+        toast: 'Evidence added to ' + task.title + '.', toastKind: 'EVIDENCE ADDED' }))
+      .catch(error => this.set({ readinessTaskPending: null, readinessError: error.message || 'The evidence was not saved.' }));
   }
 
   toggleReadinessGroup(id) {
@@ -6595,6 +6784,10 @@ class Component extends DCLogic {
       && prior.screen !== this.state.screen && !this.loc().demo && !this.state.catalogLoaded && !this.state.catalogLoading) {
       this.loadCatalog();
     }
+    if (this.state.role === 'internal' && this.hasPermission('catalog.manage') && this.state.screen === 'catalog'
+      && prior.screen !== this.state.screen && !this.state.catalogWorkflowLoaded && !this.state.catalogWorkflowLoading) {
+      this.loadCatalogWorkflow();
+    }
     if (this.state.role === 'internal' && this.hasPermission('accounts.manage') && ['accounts', 'onboarding', 'admin'].includes(this.state.screen)
       && prior.screen !== this.state.screen && !this.state.retailerAccountsLoaded && !this.state.retailerAccountsLoading) {
       this.loadRetailerAccounts();
@@ -6666,6 +6859,7 @@ class Component extends DCLogic {
   }
 
   MAX_UPLOAD() { return 2 * 1024 * 1024; }
+  MAX_ONBOARDING_UPLOAD() { return 10 * 1024 * 1024; }
 
   licPickFile(e) {
     const f = e.target.files && e.target.files[0];
@@ -7714,6 +7908,34 @@ class Component extends DCLogic {
       if (!this.priced(p)) return 'Price on request';
       return MONEY(this.priceFor(p)) + ' per unit';
     };
+    const catalogWorkflowRows = (s.catalogWorkflowRows || []).map(row => {
+      const linked = catalogPool.find(item => item.sourceId === 'canix:item:' + row.canixItemId);
+      const state = String(row.workflowState || row.publicationState || 'draft');
+      const complete = Number(row.completenessScore || 0) === 100;
+      const pending = String(s.catalogWorkflowPending || '') === String(row.canixItemId);
+      return {
+        ...row, name: linked ? linked.name : 'Canix item ' + row.canixItemId,
+        score: Number(row.completenessScore || 0) + '%', workflowLabel: state.replace(/_/g, ' ').toUpperCase(),
+        missingLabel: Array.isArray(row.missingFields) && row.missingFields.length ? 'Missing: ' + row.missingFields.join(', ') : 'Required product content complete',
+        scheduleLabel: row.scheduledPublishAt ? 'Scheduled ' + new Date(row.scheduledPublishAt).toLocaleString() : (Array.isArray(row.validationWarnings) ? row.validationWarnings.join(' · ') : ''),
+        pending: pending ? 'true' : 'false',
+        canReview: ['draft', 'published'].includes(state), canApprove: state === 'review' && complete,
+        canSchedule: state === 'approved',
+        onPreview: () => linked ? this.set({ product: linked.id, lot: 0, qty: 1, screen: 'product' })
+          : this.set({ toast: 'This item is not in the current retailer-facing Canix catalog.', toastKind: 'PREVIEW UNAVAILABLE' }),
+        onReview: () => this.catalogWorkflowAction(row, 'review'),
+        onApprove: () => this.catalogWorkflowAction(row, 'approve'),
+        onSchedule: () => this.catalogWorkflowAction(row, 'schedule'),
+        onPublish: () => this.catalogWorkflowAction(row, 'publish')
+      };
+    });
+    const catalogWorkflowMetrics = [
+      ['TOTAL', catalogWorkflowRows.length],
+      ['INCOMPLETE', catalogWorkflowRows.filter(row => Number(row.completenessScore || 0) < 100).length],
+      ['IN REVIEW', catalogWorkflowRows.filter(row => row.workflowState === 'review').length],
+      ['APPROVED / SCHEDULED', catalogWorkflowRows.filter(row => ['approved', 'scheduled'].includes(row.workflowState)).length],
+      ['PUBLISHED', catalogWorkflowRows.filter(row => row.workflowState === 'published').length]
+    ].map(([label, value]) => ({ label, value }));
 
     const catalogItems = catalogPool.filter(p => {
       const q = s.query.trim().toLowerCase();
@@ -8246,15 +8468,28 @@ class Component extends DCLogic {
       const pending = s.kioskLinkPending === link.id;
       return {
         ...link, tokenPrefix: (link.token_prefix || '') + '…', storeName: store.name || link.store_license,
+        deviceLabel: link.device_label || 'Unlabelled device',
         storeMeta: [store.organization, link.store_license].filter(Boolean).join(' · '),
         state: active ? 'ACTIVE' : 'REVOKED',
         stateStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;padding:3px 6px;background:'
           + (active ? 'var(--ux-accent);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
+        expiryLabel: link.expires_at ? 'Expires ' + String(link.expires_at).slice(0, 10) : 'No expiry recorded',
+        accessCount: Number(link.access_count || 0).toLocaleString(),
         lastUsed: link.last_used_at ? 'Used ' + String(link.last_used_at).slice(0, 10) : 'Never opened',
         canRevoke: active, pending: pending ? 'true' : 'false', revokeLabel: pending ? 'Revoking…' : 'Revoke',
-        onRevoke: () => this.revokeKioskLink(link)
+        onRevoke: () => this.revokeKioskLink(link), onRotate: () => this.rotateKioskLink(link)
       };
     });
+    const accessReviewRows = (s.accessReviews || []).map(review => ({
+      ...review,
+      pending: s.accessPending === review.id ? 'true' : 'false',
+      profileName: review.profileName || 'Unnamed Buyer',
+      storeName: review.storeName || 'Qualified store',
+      organization: review.organization || '',
+      reason: review.reason || 'Review whether this Buyer should receive the new store.',
+      onAssign: () => this.resolveAccessReview(review, 'assign'),
+      onDismiss: () => this.resolveAccessReview(review, 'dismiss')
+    }));
 
     const notificationTag = s.recallTag || (loc.demo ? DEMO_RECALL_TAG : RECALL_TAG);
     const notifications = [
@@ -8580,9 +8815,39 @@ class Component extends DCLogic {
       ? 'background:var(--ux-accent);color:#fff' : state === 'block'
         ? 'background:var(--ux-signal);color:#fff' : state === 'warn'
           ? 'background:#e5c968;color:var(--ux-ink)' : 'background:var(--ux-ink);color:var(--ux-ground)';
-    const readinessBucket = value => value === 'pass' || value === 'DECIDED' ? 'completed'
-      : value === 'warn' || (!['block', 'deferred', 'BLOCKING'].includes(value)) ? 'in_progress' : 'not_started';
+    const readinessBucket = value => ['pass', 'DECIDED', 'completed'].includes(value) ? 'completed'
+      : ['not_started', 'controlled_hold', 'block', 'deferred', 'BLOCKING'].includes(value) ? 'not_started' : 'in_progress';
     const readinessSectionSource = [];
+    ((s.readinessData && s.readinessData.tasks) || []).forEach(task => {
+      const draft = (s.readinessTaskDrafts || {})[task.id] || {};
+      const bucket = readinessBucket(String(draft.status || task.status || 'not_started'));
+      const comments = Array.isArray(task.comments) ? task.comments : [];
+      const evidenceRows = Array.isArray(task.evidence) ? task.evidence : [];
+      readinessSectionSource.push({ bucket, id: 'work-' + task.id,
+        label: task.section || 'Release work', items: [{
+          state: String(draft.status || task.status || 'not_started').replace(/_/g, ' ').toUpperCase(),
+          screen: 'DURABLE WORK ITEM', label: task.title, detail: task.description,
+          style: readinessStateStyle((draft.status || task.status) === 'completed' ? 'pass'
+            : (draft.status || task.status) === 'in_progress' ? 'warn' : 'block'),
+          hasMeta: true, blocks: task.sourceReference || 'Release readiness',
+          owner: draft.owner !== undefined ? draft.owner : (task.owner || 'Unassigned'),
+          evidence: evidenceRows.length + ' evidence · ' + comments.length + ' comments',
+          durable: !!(s.readinessData && s.readinessData.canManageTasks),
+          task, taskStatus: draft.status || task.status || 'not_started',
+          taskOwner: draft.owner !== undefined ? draft.owner : (task.owner || ''),
+          taskDueOn: draft.dueOn !== undefined ? draft.dueOn : (task.dueOn || ''),
+          taskEvidenceSummary: draft.evidenceSummary !== undefined ? draft.evidenceSummary : (task.evidenceSummary || ''),
+          pending: s.readinessTaskPending === task.id,
+          saveLabel: s.readinessTaskPending === task.id ? 'Saving…' : 'Save work item',
+          onStatus: event => this.readinessTaskDraft(task, 'status', event.target.value),
+          onOwner: event => this.readinessTaskDraft(task, 'owner', event.target.value),
+          onDueOn: event => this.readinessTaskDraft(task, 'dueOn', event.target.value),
+          onEvidenceSummary: event => this.readinessTaskDraft(task, 'evidenceSummary', event.target.value),
+          onSave: () => this.saveReadinessTask(task),
+          onComment: () => this.addReadinessComment(task),
+          onEvidence: () => this.addReadinessEvidence(task)
+        }] });
+    });
     ((s.readinessData && s.readinessData.checks) || []).forEach((section, sectionIndex) => {
       ['not_started', 'in_progress', 'completed'].forEach(bucket => {
         const items = (section.checks || []).filter(check => readinessBucket(String(check.state || 'unknown')) === bucket)
@@ -9622,6 +9887,10 @@ class Component extends DCLogic {
       catalogMappingManualNote: s.catalogMappingManualNote,
       onCatalogMappingManualNote: e => this.set({ catalogMappingManualNote: e.target.value }),
       catalogMappingStatusOptions,
+      showCatalogWorkflow: isInternal && canStaff('catalog.manage') && !s.impersonating,
+      catalogWorkflowRows, catalogWorkflowMetrics, catalogWorkflowLoading: s.catalogWorkflowLoading,
+      catalogWorkflowHasError: !!s.catalogWorkflowError, catalogWorkflowError: s.catalogWorkflowError || '',
+      onCatalogWorkflowRefresh: () => this.loadCatalogWorkflow(true),
       catalogMappingFilteredCount: catalogMappingRows.length + ' of ' + catalogMappingReviewItems.length + ' awaiting items',
       catalogMappingExportDisabled: catalogMappingRows.length === 0 || !!s.catalogMappingLoading || !!s.catalogMappingPending,
       onCatalogMappingExport: () => this.exportCatalogMappingReview(catalogMappingFiltered),
@@ -10367,13 +10636,20 @@ class Component extends DCLogic {
       showKioskLinks: isInternal && canStaff('users.manage'),
       kioskStoreDraft: s.kioskStoreDraft, onKioskStoreDraft: event => this.set({ kioskStoreDraft: event.target.value, kioskLinksError: null }),
       kioskLabelDraft: s.kioskLabelDraft, onKioskLabelDraft: event => this.set({ kioskLabelDraft: event.target.value, kioskLinksError: null }),
+      kioskDeviceDraft: s.kioskDeviceDraft, onKioskDeviceDraft: event => this.set({ kioskDeviceDraft: event.target.value, kioskLinksError: null }),
+      kioskExpiryDraft: s.kioskExpiryDraft, onKioskExpiryDraft: event => this.set({ kioskExpiryDraft: event.target.value, kioskLinksError: null }),
+      kioskCategoriesDraft: s.kioskCategoriesDraft, onKioskCategoriesDraft: event => this.set({ kioskCategoriesDraft: event.target.value, kioskLinksError: null }),
+      kioskItemsDraft: s.kioskItemsDraft, onKioskItemsDraft: event => this.set({ kioskItemsDraft: event.target.value, kioskLinksError: null }),
       kioskStoreOptions, kioskLinks,
       kioskLinksLoading: s.kioskLinksLoading, kioskLinksHasError: !!s.kioskLinksError, kioskLinksError: s.kioskLinksError || '',
       kioskLinksRefreshLabel: s.kioskLinksLoading ? 'Refreshing…' : 'Refresh links', onKioskLinksRefresh: () => this.loadKioskLinks(true),
       kioskCreateDisabled: s.kioskLinkPending || !s.kioskStoreDraft ? 'true' : 'false',
       kioskCreateLabel: s.kioskLinkPending === 'create' ? 'Creating…' : 'Create kiosk link', onCreateKioskLink: () => this.createKioskLink(),
-      kioskCreated: !!s.kioskCreatedUrl, kioskCreatedUrl: s.kioskCreatedUrl || '', onCopyKioskLink: () => this.copyKioskLink(),
+      kioskCreated: !!s.kioskCreatedUrl, kioskCreatedUrl: s.kioskCreatedUrl || '', kioskCreatedQr: s.kioskCreatedQr || '',
+      kioskCreatedHasQr: !!s.kioskCreatedQr, onCopyKioskLink: () => this.copyKioskLink(), onPrintKioskQr: () => this.printKioskQr(),
       kioskLinksEmpty: s.kioskLinksLoaded && !s.kioskLinksLoading && kioskLinks.length === 0,
+      showAccessReviews: s.role === 'internal' && this.hasPermission('users.manage') && accessReviewRows.length > 0,
+      accessReviewRows,
       auOpen: s.auOpen, auClosed: !s.auOpen,
       onAuToggle: () => this.auToggle(),
       auName: s.auName, onAuName: e => this.set({ auName: e.target.value }),
