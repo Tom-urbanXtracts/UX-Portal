@@ -11,6 +11,7 @@ const catalog = await readFile(resolve(root, "supabase/functions/canix-catalog/i
 const intake = await readFile(resolve(root, "supabase/functions/portal-intake/index.ts"), "utf8");
 const policy = await readFile(resolve(root, "supabase/functions/portal-order-policy/index.ts"), "utf8");
 const admin = await readFile(resolve(root, "supabase/functions/portal-admin/index.ts"), "utf8");
+const kiosk = await readFile(resolve(root, "supabase/functions/portal-kiosk/index.ts"), "utf8");
 const pricing = await readFile(resolve(root, "supabase/functions/portal-pricing/index.ts"), "utf8");
 const financials = await readFile(resolve(root, "supabase/functions/quickbooks-financials/index.ts"), "utf8");
 const orders = await readFile(resolve(root, "supabase/functions/portal-orders/index.ts"), "utf8");
@@ -54,6 +55,7 @@ const mondayItemMasterTuningMigration = await readFile(resolve(root, "supabase/m
 const mondayItemMasterRetargetMigration = await readFile(resolve(root, "supabase/migrations/20260902150000_monday_item_master_retarget.sql"), "utf8");
 const costObjectSourceMigration = await readFile(resolve(root, "supabase/migrations/20260914131500_cost_object_source_boundary.sql"), "utf8");
 const costObjectDecisionMigration = await readFile(resolve(root, "supabase/migrations/20260914160000_lot_cost_object_decisions.sql"), "utf8");
+const kioskMigration = await readFile(resolve(root, "supabase/migrations/20260914173000_public_store_kiosk_links.sql"), "utf8");
 const mfaHelper = await readFile(resolve(root, "supabase/functions/_shared/mfa.ts"), "utf8");
 const wholesaleSourceScript = await readFile(resolve(root, "scripts/prepare-wholesale-pricing.mjs"), "utf8");
 const gitignore = await readFile(resolve(root, ".gitignore"), "utf8");
@@ -145,6 +147,8 @@ assertContract(intake.includes("const threshold = store.approval_threshold_cents
 assertContract(source.includes("onbLocationOptions") && source.includes("All qualified stores") && source.includes("Choose exactly one store"), "onboarding binds buyer and Budtender scope to submitted stores instead of free text");
 assertContract(source.includes("accounts.rows.concat(QUICKBOOKS_DEMO_ACCOUNTS)") && source.includes("retailerOnboarding: onboarding.rows"), "the onboarding queue remains available when QuickBooks is temporarily unavailable");
 assertContract(source.includes("onboardingPanel: 'queue'") && source.includes("Store onboarding sections") && source.includes("onboardingReadinessChecks"), "store onboarding uses compact switchable sections with visible readiness gates");
+assertContract(source.includes("Add a store") && source.includes("onboardingCreateLicenseType") && source.includes("onboardingCreateFileData") && intake.includes("internalStorePanel"), "authorized staff can submit a complete store and license-document intake from the onboarding panel");
+assertContract(intake.includes("accounts.manage") && intake.includes("quickbooks_customer_cache") && intake.includes("storeEvidence"), "internal store intake verifies operator authority, QuickBooks identity, and license evidence before durable submission");
 assertContract(source.includes("{ role: 'Store Owner', scope: 'Every qualified store") && source.includes("{ role: 'Buyer', scope: 'Only the qualified stores") && source.includes("{ role: 'Budtender', scope: 'Exactly one qualified store"), "store onboarding states the server-enforced Owner, Buyer, and Budtender scopes beside access setup");
 assertContract(source.includes("demo-onboarding-complete") && source.includes("demo-retailer-001") && source.includes("three reviewed stores with location-specific gates") && source.includes("isolated test order"), "the executive demo includes a complete isolated three-store onboarding record");
 assertContract(source.includes("Isolated demo result") && source.includes("External writes") && source.includes("browser-local executive demo only"), "demo order confirmation states that no external system was changed");
@@ -170,6 +174,12 @@ assertContract(source.includes("/auth/v1/factors") && source.includes("/challeng
 assertContract(source.includes("grant_type=refresh_token") && source.includes("scheduleSessionRefresh(token, refreshToken)") && source.includes("this.portalFetch("), "aal2 browser sessions renew before expiry and retry protected portal requests once");
 assertContract(source.includes("sessionStorage.setItem(PORTAL_SESSION_KEY") && source.includes("sessionStorage.removeItem(PORTAL_SESSION_KEY") && source.includes("PORTAL_SESSION_MAX_IDLE_MS") && source.includes("restorePortalSession(session)") && !source.includes("localStorage."), "aal2 sessions survive same-tab refresh without creating a persistent trusted-device token");
 assertContract(source.includes("Reset MFA") && source.includes("resetUserMfa(user)") && admin.includes('action === "reset-mfa"') && admin.includes("deleteFactor"), "administrators have an audited factor recovery flow that prevents self-lockout");
+assertContract(source.includes("Save access") && source.includes("reactivateUser(effective)") && source.includes("loadUsers(true)"), "the protected user directory supports explicit role, store-scope, deactivation, reactivation, and immediate refresh actions");
+assertContract(kioskMigration.includes("token_hash") && kioskMigration.includes("revoke all on table public.portal_kiosk_link from public, anon, authenticated") && kioskMigration.includes("service_role"), "public kiosk capabilities store only a token hash and deny browser table access");
+assertContract(kiosk.includes("crypto.subtle.digest") && kiosk.includes("crypto.getRandomValues") && kiosk.includes('"users.manage"') && kiosk.includes("kiosk-link-revoked"), "kiosk links are unguessable, administrator-issued, revocable, and audited");
+assertContract(kiosk.includes('.eq("publication_state", "published")') && kiosk.includes("documentAvailable") && !kiosk.includes("portal_store_price") && !kiosk.includes("portal_inventory_commitment"), "anonymous kiosk resolution exposes published product education and lab summaries without price, quantity, order, or account tables");
+assertContract(source.includes("PUBLIC PRODUCT EDUCATION · READ ONLY") && source.includes("Public kiosk links") && source.includes("#kiosk=") && source.includes("onPublicKioskSignIn"), "the portal provides a store-specific login-free kiosk view plus protected link management");
+assertContract(source.includes("readinessGroups") && source.includes("Not Started") && source.includes("In Progress") && source.includes("Completed") && source.includes("toggleReadinessGroup"), "release readiness is organized into three collapsible status groups while retaining its current subsections");
 assertContract(siteBuild.includes("UX_MFA_REQUIRED") && siteBuild.includes('mfaRequired: env.UX_MFA_REQUIRED !== "false"'), "hosted MFA is on by default with an explicit emergency rollback switch");
 assertContract(mfaMigration.includes("as restrictive") && mfaMigration.includes("public.portal_mfa_verified()") && mfaMigration.includes("auth.jwt() ->> 'aal'"), "database profile and pending-profile access require an aal2 session");
 assertContract(mfaHelper.includes('?.aal === "aal2"'), "Edge Function assurance gate accepts only aal2 claims after Auth validation");
@@ -257,17 +267,19 @@ if (process.argv.includes("--remote")) {
     "portal-economic-ownership": "GET", "portal-intake": "POST", "portal-order-policy": "GET",
     "portal-orders": "GET", "portal-pricing": "GET", "portal-product-content": "GET",
     "portal-readiness": "GET", "portal-retailers": "GET", "quickbooks-financials": "GET",
-    "quickbooks-retailers": "GET", "monday-webhook": "POST",
+    "quickbooks-retailers": "GET", "monday-webhook": "POST", "portal-kiosk": "POST",
   };
   for (const name of functionNames) {
     const method = methods[name] || "GET";
-    const anonymousBody = name === "portal-intake" ? { kind: "order", payload: {} } : {};
+    const anonymousBody = name === "portal-intake" ? { kind: "order", payload: {} }
+      : name === "portal-kiosk" ? { action: "resolve", token: "invalid" } : {};
     const response = await fetch(`${url}/functions/v1/${name}`, {
       method,
       headers: { apikey: key, accept: "application/json", ...(method === "POST" ? { "content-type": "application/json" } : {}) },
       body: method === "POST" ? JSON.stringify(anonymousBody) : undefined,
     });
-    assertContract([401, 403].includes(response.status), `${name} denies an anonymous request (${response.status})`);
+    const denied = name === "portal-kiosk" ? response.status === 404 : [401, 403].includes(response.status);
+    assertContract(denied, `${name} denies an anonymous request without a valid capability (${response.status})`);
   }
 }
 

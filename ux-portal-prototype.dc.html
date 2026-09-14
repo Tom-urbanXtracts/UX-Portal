@@ -165,6 +165,45 @@ button{font-family:inherit}
 </div>
 </sc-if>
 
+<sc-if value="{{ isPublicKiosk }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1040px;margin:0 auto;width:100%">
+<div style="display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;border-bottom:2px solid var(--ux-ink);padding-bottom:20px;margin-bottom:22px">
+<div><div style="font:700 10px ui-monospace,monospace;letter-spacing:.09em;color:var(--ux-accent-text);margin-bottom:7px">PUBLIC PRODUCT EDUCATION · READ ONLY</div><h1 style="font:800 34px/1.08 Archivo,sans-serif;letter-spacing:-.025em;margin:0 0 7px">{{ publicKioskStore }}</h1><div style="font-size:13px;color:var(--ux-muted)">{{ publicKioskOrganization }} · {{ publicKioskLabel }}</div></div>
+<button type="button" onClick="{{ onPublicKioskSignIn }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:10px 13px;font:700 12px Archivo,sans-serif;cursor:pointer">Staff or retailer sign in</button>
+</div>
+<div style="background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 15px;margin-bottom:20px;font-size:12.5px;line-height:1.55">This store-specific link shows published product education and structured lab information without a login. It cannot show prices or quantities, place orders, open accounts, or reach administration.</div>
+<sc-if value="{{ publicKioskLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:20px;font-size:13px;color:var(--ux-muted)">Loading published product education…</div></sc-if>
+<sc-if value="{{ publicKioskHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:14px 0 14px 16px"><div style="font:700 10px ui-monospace,monospace;color:var(--ux-signal-text);margin-bottom:6px">KIOSK LINK UNAVAILABLE</div><div style="font-size:13px;line-height:1.55">{{ publicKioskError }}</div></div></sc-if>
+<sc-if value="{{ publicKioskReady }}" hint-placeholder-val="{{ false }}">
+<input type="search" value="{{ publicKioskSearch }}" onInput="{{ onPublicKioskSearch }}" placeholder="Search product, brand, category, strain, terpene or profile" aria-label="Search published products" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:12px 13px;font:13px Archivo,sans-serif;margin-bottom:15px">
+<div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:14px">{{ publicKioskCount }}</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:14px">
+<sc-for list="{{ publicKioskProducts }}" as="kp" hint-placeholder-count="6">
+<article style="border:1px solid rgba(23,14,11,.22);background:#fff;padding:16px;align-self:start;{{ kp.cardStyle }}">
+<sc-if value="{{ kp.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ kp.imageUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:180px;object-fit:cover;display:block;margin-bottom:14px;background:var(--ux-surface)"></sc-if>
+<div style="font:700 9px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);margin-bottom:6px">{{ kp.category }} · {{ kp.format }}</div>
+<h2 style="font:800 18px/1.22 Archivo,sans-serif;margin:0 0 5px">{{ kp.name }}</h2>
+<div style="font-size:12px;color:var(--ux-muted);margin-bottom:10px">{{ kp.brand }}<sc-if value="{{ kp.hasStrain }}" hint-placeholder-val="{{ false }}"> · {{ kp.strain }}</sc-if></div>
+<div style="font-size:12.5px;line-height:1.58;color:var(--ux-muted-strong);margin-bottom:13px">{{ kp.summary }}</div>
+<button type="button" onClick="{{ kp.onToggle }}" aria-expanded="{{ kp.expanded }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kp.toggleLabel }}</button>
+<sc-if value="{{ kp.open }}" hint-placeholder-val="{{ false }}">
+<div style="border-top:1px solid rgba(23,14,11,.18);margin-top:14px;padding-top:14px;display:grid;gap:13px">
+<sc-if value="{{ kp.hasLongDescription }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRODUCT INFORMATION</div><div style="font-size:12px;line-height:1.55">{{ kp.longDescription }}</div></div></sc-if>
+<sc-if value="{{ kp.hasSellingPoints }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SELLING POINTS</div><div style="display:grid;gap:5px"><sc-for list="{{ kp.sellingPoints }}" as="point" hint-placeholder-count="3"><div style="font-size:12px;line-height:1.45">• {{ point.text }}</div></sc-for></div></div></sc-if>
+<sc-if value="{{ kp.hasIngredients }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">INGREDIENTS</div><div style="font-size:12px;line-height:1.55">{{ kp.ingredients }}</div></div></sc-if>
+<sc-if value="{{ kp.hasUsage }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">USE INFORMATION</div><div style="font-size:12px;line-height:1.55">{{ kp.usageInformation }}</div></div></sc-if>
+<sc-if value="{{ kp.hasProfile }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRODUCT PROFILE</div><div style="font-size:12px;line-height:1.55">{{ kp.productProfile }}</div></div></sc-if>
+<div style="background:var(--ux-surface);padding:12px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px"><span style="font:700 9px ui-monospace,monospace;color:var(--ux-muted)">LAB / COA</span><span style="font:700 9px ui-monospace,monospace;{{ kp.coaStyle }}">{{ kp.coaStatus }}</span></div><div style="font-size:11px;color:var(--ux-muted);margin-bottom:8px">{{ kp.coaMeta }}</div><sc-if value="{{ kp.hasAnalytes }}" hint-placeholder-val="{{ false }}"><div style="display:grid;gap:4px"><sc-for list="{{ kp.analytes }}" as="analyte" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(23,14,11,.12);padding-top:4px;font-size:11.5px"><span>{{ analyte.name }}</span><strong>{{ analyte.value }}</strong></div></sc-for></div></sc-if><sc-if value="{{ kp.noAnalytes }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:var(--ux-muted)">No searchable cannabinoid or terpene results are published for this product.</div></sc-if></div>
+</div>
+</sc-if>
+</article>
+</sc-for>
+</div>
+<sc-if value="{{ publicKioskNoProducts }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:18px;font-size:12.5px;color:var(--ux-muted)">No published product education matches this search.</div></sc-if>
+</sc-if>
+</div>
+</sc-if>
+
 <sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:620px">
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Set a new password</h1>
@@ -1595,34 +1634,39 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 
 <sc-if value="{{ readinessHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 13px;margin-bottom:22px;font-size:13px;line-height:1.55"><strong>Live diagnostics unavailable.</strong> {{ readinessError }} The decision register below remains available.</div></sc-if>
-<sc-if value="{{ readinessHasData }}" hint-placeholder-val="{{ false }}">
-<div style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:20px 22px;margin-bottom:32px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">LIVE SERVER DIAGNOSTICS</div><div style="font:800 20px/1.2 Archivo,sans-serif">{{ readinessStatus }}</div></div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ readinessGenerated }}</div></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px"><sc-for list="{{ readinessSections }}" as="section" hint-placeholder-count="5"><div style="background:#fff;border:1px solid rgba(23,14,11,.17);padding:15px"><div style="font:800 13px Archivo,sans-serif;margin-bottom:9px">{{ section.label }}</div><sc-for list="{{ section.items }}" as="check" hint-placeholder-count="3"><div style="padding:8px 0;border-top:1px solid rgba(23,14,11,.1)"><div style="display:flex;gap:7px;align-items:center;margin-bottom:3px"><span style="font:700 8.5px ui-monospace,monospace;letter-spacing:.06em;padding:3px 5px;{{ check.style }}">{{ check.state }}</span><span style="font:700 11.5px Archivo,sans-serif">{{ check.label }}</span></div><div style="font-size:11px;color:var(--ux-muted);line-height:1.45">{{ check.detail }}</div></div></sc-for></div></sc-for></div></div>
-</sc-if>
+<div style="border:1px solid rgba(23,14,11,.24);background:var(--ux-surface);padding:18px 20px;margin-bottom:22px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap"><div><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">LIVE SERVER DIAGNOSTICS + DECISION REGISTER</div><div style="font:800 20px/1.2 Archivo,sans-serif">{{ readinessStatus }}</div></div><div style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ readinessGenerated }}</div></div></div>
 
-<sc-for list="{{ validationGroups }}" as="g" hint-placeholder-count="6">
-<div style="margin-bottom:36px">
-<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;border-bottom:2px solid rgba(23,14,11,.4);padding-bottom:10px;margin-bottom:4px">
-<span style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;background:var(--ux-ink);color:var(--ux-ground);padding:4px 7px">{{ g.cls }}</span>
-<span style="font:600 13px Archivo,sans-serif">{{ g.closedBy }}</span>
-<span style="flex:1"></span>
-<span style="font:600 11px ui-monospace,monospace;color:var(--ux-muted)">{{ g.countLabel }}</span>
-</div>
-<sc-for list="{{ g.items }}" as="v" hint-placeholder-count="3">
-<div style="padding:15px 0;border-bottom:1px solid rgba(23,14,11,.14)">
-<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:7px">
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ v.sevStyle }}">{{ v.severity }}</span>
-<span style="font:600 9.5px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ v.screen }}</span>
-</div>
-<div style="font:700 14.5px/1.4 Archivo,sans-serif;margin-bottom:6px">{{ v.question }}</div>
-<div style="font-size:13px;line-height:1.6;color:var(--ux-muted-strong);max-width:78ch">{{ v.detail }}</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:10px;font-size:11.5px;color:var(--ux-muted)">
-<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Blocks</span><br>{{ v.blocks }}</div>
-<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Proposed owner</span><br>{{ v.owner }}</div>
-<div><span style="font:600 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-faint)">Evidence needed</span><br>{{ v.evidence }}</div>
-</div>
+<sc-for list="{{ readinessGroups }}" as="group" hint-placeholder-count="3">
+<section style="border:1px solid rgba(23,14,11,.25);background:#fff;margin-bottom:18px;{{ group.sectionStyle }}">
+<button type="button" onClick="{{ group.onToggle }}" aria-expanded="{{ group.expanded }}" style="width:100%;background:transparent;border:0;padding:18px 20px;text-align:left;display:flex;align-items:center;gap:14px;cursor:pointer">
+<span style="font:800 22px/1.1 Archivo,sans-serif;letter-spacing:-.015em;flex:1">{{ group.label }}</span>
+<span style="font:700 10px ui-monospace,monospace;letter-spacing:.07em;padding:5px 8px;{{ group.countStyle }}">{{ group.countLabel }}</span>
+<span aria-hidden="true" style="font:800 20px Archivo,sans-serif">{{ group.chevron }}</span>
+</button>
+<sc-if value="{{ group.open }}" hint-placeholder-val="true">
+<div style="padding:0 20px 20px;display:grid;gap:10px">
+<sc-for list="{{ group.sections }}" as="section" hint-placeholder-count="4">
+<div style="border-top:2px solid rgba(23,14,11,.36);background:var(--ux-ground)">
+<button type="button" onClick="{{ section.onToggle }}" aria-expanded="{{ section.expanded }}" style="width:100%;background:transparent;border:0;padding:12px 0;text-align:left;display:flex;gap:12px;align-items:baseline;cursor:pointer">
+<span style="font:800 14px Archivo,sans-serif;flex:1">{{ section.label }}</span><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ section.countLabel }}</span><span aria-hidden="true" style="font:700 13px Archivo,sans-serif">{{ section.chevron }}</span>
+</button>
+<sc-if value="{{ section.open }}" hint-placeholder-val="true">
+<div>
+<sc-for list="{{ section.items }}" as="item" hint-placeholder-count="3">
+<div style="padding:13px 0;border-top:1px solid rgba(23,14,11,.13)">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><span style="font:700 9px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;{{ item.style }}">{{ item.state }}</span><span style="font:600 9px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:var(--ux-surface);color:var(--ux-muted-strong)">{{ item.screen }}</span></div>
+<div style="font:700 14px/1.4 Archivo,sans-serif;margin-bottom:5px">{{ item.label }}</div>
+<div style="font-size:12.5px;line-height:1.58;color:var(--ux-muted-strong);max-width:80ch">{{ item.detail }}</div>
+<sc-if value="{{ item.hasMeta }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:9px;font-size:11px;color:var(--ux-muted)"><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">BLOCKS</span><br>{{ item.blocks }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">OWNER</span><br>{{ item.owner }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">EVIDENCE</span><br>{{ item.evidence }}</div></div></sc-if>
 </div>
 </sc-for>
 </div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</section>
 </sc-for>
 
 <div style="margin-top:12px;background:var(--ux-ink);color:var(--ux-ground);padding:24px 26px">
@@ -1651,6 +1695,21 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 </div>
+</sc-if>
+<sc-if value="{{ showKioskLinks }}" hint-placeholder-val="{{ false }}">
+<section style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:18px 20px;margin:0 0 24px">
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px"><div><div style="font:700 14px Archivo,sans-serif;margin-bottom:5px">Public kiosk links</div><div style="font-size:12.5px;color:var(--ux-muted);line-height:1.55;max-width:70ch">Create a revocable, store-specific product-education link for a counter tablet or QR code. Anyone holding the link can open it without signing in, but it never exposes pricing, inventory quantities, orders, accounts, economic ownership, or administration.</div></div><button type="button" onClick="{{ onKioskLinksRefresh }}" aria-disabled="{{ kioskLinksLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kioskLinksRefreshLabel }}</button></div>
+<div style="display:grid;grid-template-columns:minmax(230px,1.2fr) minmax(190px,1fr) auto;gap:10px;align-items:end;margin-bottom:14px">
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">QUALIFIED STORE</span><select value="{{ kioskStoreDraft }}" onChange="{{ onKioskStoreDraft }}" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"><sc-for list="{{ kioskStoreOptions }}" as="ks" hint-placeholder-count="3"><option value="{{ ks.value }}" disabled="{{ ks.disabled }}">{{ ks.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">LINK LABEL</span><input type="text" value="{{ kioskLabelDraft }}" onInput="{{ onKioskLabelDraft }}" maxlength="120" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"></label>
+<button type="button" onClick="{{ onCreateKioskLink }}" aria-disabled="{{ kioskCreateDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kioskCreateLabel }}</button>
+</div>
+<sc-if value="{{ kioskCreated }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 14px;margin-bottom:14px"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:6px">COPY THIS LINK NOW · SHOWN ONCE</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" readonly value="{{ kioskCreatedUrl }}" aria-label="New public kiosk link" style="flex:1;min-width:240px;border:1px solid rgba(23,14,11,.25);background:#fff;padding:9px;font:11px ui-monospace,monospace"><button type="button" onClick="{{ onCopyKioskLink }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Copy link</button></div></div></sc-if>
+<sc-if value="{{ kioskLinksHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-bottom:13px;font-size:12px">{{ kioskLinksError }}</div></sc-if>
+<sc-if value="{{ kioskLinksLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:12px;margin-bottom:12px;font-size:12px;color:var(--ux-muted)">Loading kiosk links…</div></sc-if>
+<div style="border-top:2px solid rgba(23,14,11,.38)"><sc-for list="{{ kioskLinks }}" as="kl" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.2fr 1.5fr .85fr auto;gap:12px;align-items:center;border-bottom:1px solid rgba(23,14,11,.14);padding:11px 0;font-size:12px"><div><strong>{{ kl.label }}</strong><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">TOKEN {{ kl.tokenPrefix }}</div></div><div>{{ kl.storeName }}<div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kl.storeMeta }}</div></div><div><span style="{{ kl.stateStyle }}">{{ kl.state }}</span><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ kl.lastUsed }}</div></div><div><sc-if value="{{ kl.canRevoke }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ kl.onRevoke }}" aria-disabled="{{ kl.pending }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ kl.revokeLabel }}</button></sc-if></div></div></sc-for></div>
+<sc-if value="{{ kioskLinksEmpty }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:13px;font-size:12px;color:var(--ux-muted)">No kiosk links have been created. Create one only after the store is qualified.</div></sc-if>
+</section>
 </sc-if>
 <sc-if value="{{ auClosed }}" hint-placeholder-val="{{ true }}">
 <div style="margin:0 0 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" onClick="{{ onAuToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add a user</button><button type="button" onClick="{{ onUsersRefresh }}" aria-disabled="{{ usersLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer">{{ usersRefreshLabel }}</button><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ testUserSummary }}</span></div>
@@ -1709,7 +1768,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <button type="button" onClick="{{ u.onImpersonate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">View as</button>
 </sc-if>
 <sc-if value="{{ u.canChangeRole }}" hint-placeholder-val="{{ true }}">
-<button type="button" onClick="{{ u.onRoleChange }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Change role</button>
+<button type="button" onClick="{{ u.onManage }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">{{ u.manageLabel }}</button>
 </sc-if>
 <sc-if value="{{ u.canDeactivate }}" hint-placeholder-val="{{ true }}">
 <button type="button" onClick="{{ u.onDeactivate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text);border-color:rgba(163,49,22,.45)" style-hover="background:var(--ux-surface)">Deactivate</button>
@@ -1720,8 +1779,19 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ u.canResetMfa }}" hint-placeholder-val="{{ false }}">
 <button type="button" onClick="{{ u.onResetMfa }}" aria-label="Reset MFA for {{ u.email }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);padding:7px 10px;font:600 11.5px Archivo,sans-serif;cursor:pointer;color:var(--ux-signal-text)">Reset MFA</button>
 </sc-if>
+<sc-if value="{{ u.canReactivate }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ u.onReactivate }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 10px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Reactivate</button></sc-if>
 </div>
 </div>
+<sc-if value="{{ u.actionOpen }}" hint-placeholder-val="{{ false }}">
+<div style="border-bottom:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:15px 16px;margin-bottom:2px">
+<div style="display:grid;grid-template-columns:minmax(180px,.7fr) minmax(260px,1.5fr) auto;gap:14px;align-items:start">
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">ROLE</span><select value="{{ u.actionRole }}" onChange="{{ u.onActionRole }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="owner">Store Owner</option><option value="buyer">Buyer</option><option value="budtender">Budtender</option></select></label>
+<div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STORE ACCESS</div><sc-if value="{{ u.actionOwner }}" hint-placeholder-val="false"><div style="background:#fff;border:1px solid rgba(23,14,11,.2);padding:10px;font-size:12px">Store Owners automatically receive every active store in their retailer organization.</div></sc-if><sc-if value="{{ u.actionScoped }}" hint-placeholder-val="true"><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ u.actionStores }}" as="us" hint-placeholder-count="3"><button type="button" onClick="{{ us.onPick }}" aria-pressed="{{ us.pressed }}" style="{{ us.style }}">{{ us.name }} <span style="opacity:.65">{{ us.license }}</span></button></sc-for></div><sc-if value="{{ u.actionNoStores }}" hint-placeholder-val="false"><div style="font-size:12px;color:var(--ux-signal-text)">No qualified portal stores are available for this organization yet. Complete Store Onboarding first.</div></sc-if></sc-if></div>
+<div style="display:flex;gap:8px;align-items:center;padding-top:17px"><button type="button" onClick="{{ u.onActionSave }}" aria-disabled="{{ u.actionPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ u.actionSaveLabel }}</button><button type="button" onClick="{{ u.onManage }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Cancel</button></div>
+</div>
+<sc-if value="{{ u.actionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 12px;margin-top:10px;font-size:12px">{{ u.actionError }}</div></sc-if>
+</div>
+</sc-if>
 </sc-for>
 </div>
 <sc-if value="{{ usersNoRows }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:18px;margin-top:10px;font-size:12.5px;color:var(--ux-muted)">No portal users are available in this scope.</div></sc-if>
@@ -2369,7 +2439,27 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 
 <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px"><div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1><p style="font-size:13px;color:var(--ux-muted);margin:0;max-width:78ch">Move a QuickBooks-backed retailer through six controlled stages. Each section shows only the decisions needed now; licensing, accounting identity, access, and ordering remain separate gates.</p></div><button type="button" onClick="{{ onAccountsRefresh }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Refresh</button></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px"><div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store onboarding</h1><p style="font-size:13px;color:var(--ux-muted);margin:0;max-width:78ch">Move a QuickBooks-backed retailer through six controlled stages. Each section shows only the decisions needed now; licensing, accounting identity, access, and ordering remain separate gates.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onClick="{{ onOnboardingCreateToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ onboardingCreateToggleLabel }}</button><button type="button" onClick="{{ onAccountsRefresh }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Refresh</button></div></div>
+<sc-if value="{{ onboardingCreateOpen }}" hint-placeholder-val="false">
+<div style="border:1px solid rgba(23,14,11,.3);border-top:5px solid var(--ux-accent);background:#fff;padding:20px 22px;margin-bottom:20px">
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:17px"><div><div style="font:800 18px Archivo,sans-serif;margin-bottom:4px">Add a store to onboarding</div><div style="font-size:12px;line-height:1.55;color:var(--ux-muted);max-width:72ch">This creates the protected portal intake record first, then sends the same fields and the license document to Monday. It does not qualify the license, invite users, or enable ordering.</div></div><span style="font:700 9px ui-monospace,monospace;background:var(--ux-surface);padding:5px 8px">DURABLE INTAKE</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:14px">
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">QUICKBOOKS RETAILER *</span><select value="{{ onboardingCreateAccountId }}" onChange="{{ onOnboardingCreateAccount }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="">Choose a verified customer</option><sc-for list="{{ onboardingCreateAccountOptions }}" as="ca" hint-placeholder-count="5"><option value="{{ ca.value }}">{{ ca.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">REQUEST TYPE *</span><select value="{{ onboardingCreateType }}" onChange="{{ onOnboardingCreateType }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="new_store">New retailer store</option><option value="new_location">New location for existing retailer</option></select></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">LEGAL ENTITY *</span><input type="text" value="{{ onboardingCreateLegalEntity }}" onInput="{{ onOnboardingCreateLegalEntity }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">DBA / RETAILER NAME *</span><input type="text" value="{{ onboardingCreateDba }}" onInput="{{ onOnboardingCreateDba }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label>
+</div>
+<div style="font:700 11px Archivo,sans-serif;border-bottom:1px solid rgba(23,14,11,.2);padding-bottom:7px;margin:0 0 11px">Licensed store</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:11px"><input type="text" value="{{ onboardingCreateStoreName }}" onInput="{{ onOnboardingCreateStoreName }}" placeholder="Store name *" aria-label="Store name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateLicense }}" onInput="{{ onOnboardingCreateLicense }}" placeholder="License number *" aria-label="License number" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px ui-monospace,monospace"><input type="text" value="{{ onboardingCreateLicenseType }}" onInput="{{ onOnboardingCreateLicenseType }}" placeholder="License type *" aria-label="License type" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">ISSUED</span><input type="date" value="{{ onboardingCreateLicenseIssued }}" onInput="{{ onOnboardingCreateLicenseIssued }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">EXPIRES *</span><input type="date" value="{{ onboardingCreateLicenseExpires }}" onInput="{{ onOnboardingCreateLicenseExpires }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label></div>
+<div style="display:grid;grid-template-columns:2fr 1fr .5fr .8fr;gap:10px;margin-bottom:15px"><input type="text" value="{{ onboardingCreateAddress1 }}" onInput="{{ onOnboardingCreateAddress1 }}" placeholder="Street address *" aria-label="Street address" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateCity }}" onInput="{{ onOnboardingCreateCity }}" placeholder="City *" aria-label="City" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateState }}" onInput="{{ onOnboardingCreateState }}" maxlength="2" placeholder="NY" aria-label="State" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif;text-transform:uppercase"><input type="text" value="{{ onboardingCreatePostal }}" onInput="{{ onOnboardingCreatePostal }}" placeholder="ZIP *" aria-label="ZIP code" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></div>
+<div style="font:700 11px Archivo,sans-serif;border-bottom:1px solid rgba(23,14,11,.2);padding-bottom:7px;margin:0 0 11px">Owner and evidence</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px"><input type="text" value="{{ onboardingCreateOwnerName }}" onInput="{{ onOnboardingCreateOwnerName }}" placeholder="Owner name *" aria-label="Owner name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="email" value="{{ onboardingCreateOwnerEmail }}" onInput="{{ onOnboardingCreateOwnerEmail }}" placeholder="Owner email *" aria-label="Owner email" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="tel" value="{{ onboardingCreateOwnerPhone }}" onInput="{{ onOnboardingCreateOwnerPhone }}" placeholder="Owner phone *" aria-label="Owner phone" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></div>
+<textarea value="{{ onboardingCreateNote }}" onInput="{{ onOnboardingCreateNote }}" placeholder="Review note, source, or special onboarding instructions" aria-label="Onboarding note" style="width:100%;min-height:72px;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px/1.5 Archivo,sans-serif;margin-bottom:11px"></textarea>
+<label style="display:block;border:1px dashed rgba(23,14,11,.38);background:var(--ux-surface);padding:13px 14px;margin-bottom:12px"><span style="display:block;font:700 10px ui-monospace,monospace;margin-bottom:5px">LICENSE DOCUMENT *</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ onOnboardingCreateFile }}" style="width:100%;font:12px Archivo,sans-serif"><span style="display:block;font-size:10.5px;color:var(--ux-muted);margin-top:5px">{{ onboardingCreateFileLabel }}</span></label>
+<sc-if value="{{ onboardingCreateHasError }}" hint-placeholder-val="false"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;font-size:12px;line-height:1.5;margin-bottom:12px">{{ onboardingCreateError }}</div></sc-if>
+<div style="display:flex;gap:9px;flex-wrap:wrap"><button type="button" onClick="{{ onOnboardingCreateSubmit }}" aria-disabled="{{ onboardingCreateSubmitting }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 14px;font:700 12px Archivo,sans-serif;cursor:pointer;opacity:{{ onboardingCreateOpacity }}">{{ onboardingCreateSubmitLabel }}</button><button type="button" onClick="{{ onOnboardingCreateToggle }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:700 12px Archivo,sans-serif;cursor:pointer">Cancel</button></div>
+</div>
+</sc-if>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:1px;background:rgba(23,14,11,.16);margin-bottom:14px"><sc-for list="{{ onboardingKpis }}" as="k" hint-placeholder-count="4"><div style="background:var(--ux-ground);padding:11px 13px"><div style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-muted);margin-bottom:4px">{{ k.label }}</div><div style="font:800 18px Archivo,sans-serif">{{ k.value }}</div><div style="font-size:10px;line-height:1.4;color:var(--ux-muted);margin-top:3px">{{ k.note }}</div></div></sc-for></div>
 <nav aria-label="Store onboarding sections" style="display:flex;overflow:auto;border:1px solid rgba(23,14,11,.22);margin-bottom:18px"><sc-for list="{{ onboardingPanels }}" as="p" hint-placeholder-count="5"><button type="button" onClick="{{ p.onPick }}" aria-pressed="{{ p.pressed }}" aria-disabled="{{ p.disabled }}" style="{{ p.style }}">{{ p.label }} <span style="opacity:.62">{{ p.count }}</span></button></sc-for></nav>
 <sc-if value="{{ onboardingViewQueue }}" hint-placeholder-val="true">
@@ -3365,6 +3455,8 @@ const PORTAL_LOT_INTEGRITY_API = PORTAL_CONFIG.lotIntegrityUrl
   || SUPABASE_URL + '/functions/v1/portal-lot-integrity';
 const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
   || SUPABASE_URL + '/functions/v1/portal-product-content';
+const PORTAL_KIOSK_API = PORTAL_CONFIG.portalKioskUrl
+  || SUPABASE_URL + '/functions/v1/portal-kiosk';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3569,6 +3661,14 @@ function readSsoReturn() {
 }
 const SSO_RETURN = readSsoReturn();
 
+function readPublicKioskToken() {
+  if (typeof location === 'undefined' || !location.hash) return '';
+  const params = new URLSearchParams(location.hash.slice(1));
+  const token = String(params.get('kiosk') || '');
+  return /^[A-Za-z0-9_-]{40,80}$/.test(token) ? token : '';
+}
+const PUBLIC_KIOSK_TOKEN = readPublicKioskToken();
+
 function portalJwtClaims(token) {
   try {
     const part = String(token || '').split('.')[1];
@@ -3621,7 +3721,7 @@ function storePortalSession(accessToken, refreshToken, email, sso) {
   } catch (_) {}
 }
 
-const RESTORED_SESSION = !RECOVERY.active && !SSO_RETURN.token ? readStoredPortalSession() : null;
+const RESTORED_SESSION = !PUBLIC_KIOSK_TOKEN && !RECOVERY.active && !SSO_RETURN.token ? readStoredPortalSession() : null;
 
 function totpQrSource(value) {
   const qr = String(value || '');
@@ -3677,7 +3777,7 @@ class Component extends DCLogic {
     onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
     turnstileToken: '', turnstileError: null,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token || !!RESTORED_SESSION,
-    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
+    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', screen: PUBLIC_KIOSK_TOKEN ? 'public-kiosk' : RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
     rstStage: null, rstNote: null,
     fpBusy: false, fpMsg: null,
@@ -3720,6 +3820,7 @@ class Component extends DCLogic {
     orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false, orderPoliciesLoaded: false,
     orderPoliciesError: null, orderPolicyPending: false, orderPolicyAmount: '',
     readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+    readinessGroupOpen: { not_started: true, in_progress: true, completed: false }, readinessSectionOpen: {},
     quickBooksConnecting: false, quickBooksConnectionError: null,
     mondayConnecting: false, mondayCatalogSyncing: false, mondayConnectionError: null,
     catalogMappingData: null, catalogMappingLoading: false, catalogMappingError: null, catalogMappingPending: null,
@@ -3735,6 +3836,18 @@ class Component extends DCLogic {
     accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
     onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
     onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
+    onboardingCreateOpen: false, onboardingCreateType: 'new_store', onboardingCreateAccountId: '',
+    onboardingCreateLegalEntity: '', onboardingCreateDba: '', onboardingCreateStoreName: '', onboardingCreateLicense: '',
+    onboardingCreateLicenseType: 'Adult-use retail dispensary', onboardingCreateLicenseIssued: '', onboardingCreateLicenseExpires: '',
+    onboardingCreateAddress1: '', onboardingCreateCity: '', onboardingCreateState: 'NY', onboardingCreatePostal: '',
+    onboardingCreateOwnerName: '', onboardingCreateOwnerEmail: '', onboardingCreateOwnerPhone: '', onboardingCreateNote: '',
+    onboardingCreateFileName: '', onboardingCreateFileSize: 0, onboardingCreateFileType: '', onboardingCreateFileData: null,
+    onboardingCreateError: null, onboardingCreateSubmitting: false,
+    userActionEmail: null, userActionRole: 'buyer', userActionLocations: [], userActionError: null,
+    kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
+    kioskStoreDraft: '', kioskLabelDraft: 'Budtender kiosk', kioskLinkPending: null, kioskCreatedUrl: '',
+    publicKioskToken: PUBLIC_KIOSK_TOKEN, publicKioskData: null, publicKioskLoading: !!PUBLIC_KIOSK_TOKEN, publicKioskError: null,
+    publicKioskProductId: null,
     kioskMode: 'counter', kioskSearch: '', lineagePackage: null, lineageSearch: '', lineageCoa: 'all',
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
     metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
@@ -4349,6 +4462,7 @@ class Component extends DCLogic {
       orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false,
       orderPoliciesLoaded: false, orderPoliciesError: null,
       readinessData: null, readinessLoading: false, readinessLoaded: false, readinessError: null,
+      readinessGroupOpen: { not_started: true, in_progress: true, completed: false }, readinessSectionOpen: {},
       retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false,
       retailerAccountsLoaded: false, retailerAccountsError: null,
       financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -4359,7 +4473,12 @@ class Component extends DCLogic {
       accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
       accountStoreExpiryDrafts: {}, accountStoreQboDrafts: {},
       onboardingSelectedId: null, onboardingPanel: 'queue', onboardingAccountDraft: '', onboardingNote: '', onboardingActionPending: null,
-      onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {},
+      onboardingSearch: '', onboardingStageFilter: 'all', onboardingStoreDetailsDrafts: {}, onboardingCreateOpen: false,
+      onboardingCreateError: null, onboardingCreateSubmitting: false, onboardingCreateFileData: null,
+      userActionEmail: null, userActionLocations: [], userActionError: null,
+      kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
+      kioskLinkPending: null, kioskCreatedUrl: '', publicKioskToken: '', publicKioskData: null,
+      publicKioskLoading: false, publicKioskError: null,
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
       outbox: [], requests: [], account: null, accountsSearch: '', accountsFilter: 'all', accountsSort: 'priority'
     });
@@ -5277,10 +5396,121 @@ class Component extends DCLogic {
     if (!request || !person || this.state.onboardingActionPending || !this.requirePermission('accounts.manage', 'invite onboarding users')) return;
     this.set({ onboardingActionPending: 'person:' + person.id });
     this.portalAdmin('invite-onboarding-person', { requestId: request.id, personId: person.id })
-      .then(() => this.loadRetailerAccounts(false))
+      .then(() => Promise.all([this.loadRetailerAccounts(true), this.loadUsers(true)]))
       .then(() => this.set({ onboardingActionPending: null,
         toast: person.name + ' was invited with ' + person.role + ' access scoped from this onboarding request.', toastKind: 'INVITATION SENT' }))
       .catch(error => this.set({ onboardingActionPending: null, toast: error.message, toastKind: 'NOT SAVED' }));
+  }
+
+  toggleOnboardingCreate() {
+    if (this.state.onboardingCreateSubmitting) return;
+    this.setState(state => ({ onboardingCreateOpen: !state.onboardingCreateOpen,
+      onboardingCreateError: null }));
+  }
+
+  pickOnboardingCreateAccount(value) {
+    const account = (this.state.retailerAccounts || []).find(item =>
+      String(item.quickbooksCustomerId || '') === String(value || ''));
+    this.set({ onboardingCreateAccountId: String(value || ''),
+      onboardingCreateLegalEntity: account ? String(account.company || account.name || '') : '',
+      onboardingCreateDba: account ? String(account.name || account.company || '') : '',
+      onboardingCreateError: null });
+  }
+
+  pickOnboardingCreateFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const allowed = new Set(['application/pdf', 'image/png', 'image/jpeg']);
+    const extensionAllowed = /\.(pdf|png|jpe?g)$/i.test(file.name || '');
+    if (!allowed.has(String(file.type || '').toLowerCase()) || !extensionAllowed) {
+      this.set({ onboardingCreateFileName: '', onboardingCreateFileSize: 0,
+        onboardingCreateFileType: '', onboardingCreateFileData: null,
+        onboardingCreateError: 'Upload the current license as a PDF, PNG, or JPEG.' });
+      event.target.value = '';
+      return;
+    }
+    if (file.size > this.MAX_UPLOAD()) {
+      this.set({ onboardingCreateFileName: '', onboardingCreateFileSize: 0,
+        onboardingCreateFileType: '', onboardingCreateFileData: null,
+        onboardingCreateError: 'The license document must be 2 MB or smaller for the protected Monday intake route.' });
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.set({ onboardingCreateFileName: file.name, onboardingCreateFileSize: file.size,
+      onboardingCreateFileType: file.type, onboardingCreateFileData: String(reader.result || '').split(',').pop(),
+      onboardingCreateError: null });
+    reader.onerror = () => this.set({ onboardingCreateFileName: '', onboardingCreateFileSize: 0,
+      onboardingCreateFileType: '', onboardingCreateFileData: null,
+      onboardingCreateError: 'The license document could not be read.' });
+    reader.readAsDataURL(file);
+  }
+
+  submitOnboardingStore() {
+    const s = this.state;
+    if (s.onboardingCreateSubmitting || !this.requirePermission('accounts.manage', 'create a store onboarding request')) return;
+    const required = [
+      [s.onboardingCreateAccountId, 'a verified QuickBooks retailer'],
+      [s.onboardingCreateLegalEntity, 'the legal entity'], [s.onboardingCreateDba, 'the DBA or retailer name'],
+      [s.onboardingCreateStoreName, 'the store name'], [s.onboardingCreateLicense, 'the license number'],
+      [s.onboardingCreateLicenseType, 'the license type'], [s.onboardingCreateLicenseExpires, 'the license expiration date'],
+      [s.onboardingCreateAddress1, 'the street address'], [s.onboardingCreateCity, 'the city'],
+      [s.onboardingCreateState, 'the state'], [s.onboardingCreatePostal, 'the ZIP code'],
+      [s.onboardingCreateOwnerName, 'the owner name'], [s.onboardingCreateOwnerEmail, 'the owner email'],
+      [s.onboardingCreateOwnerPhone, 'the owner phone'], [s.onboardingCreateFileData, 'the current license document']
+    ];
+    const missing = required.filter(([value]) => !String(value || '').trim()).map(([, label]) => label);
+    if (missing.length) {
+      this.set({ onboardingCreateError: 'Still needed: ' + missing.join(', ') + '.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s.onboardingCreateOwnerEmail || '').trim())) {
+      this.set({ onboardingCreateError: 'Enter a valid owner email address.' }); return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s.onboardingCreateLicenseExpires)
+      || (s.onboardingCreateLicenseIssued && !/^\d{4}-\d{2}-\d{2}$/.test(s.onboardingCreateLicenseIssued))) {
+      this.set({ onboardingCreateError: 'Enter valid license issue and expiration dates.' }); return;
+    }
+    const account = (s.retailerAccounts || []).find(item =>
+      String(item.quickbooksCustomerId || '') === String(s.onboardingCreateAccountId));
+    if (!account || account.active === false || account.parentCustomerId) {
+      this.set({ onboardingCreateError: 'Choose an active, top-level QuickBooks retailer customer.' }); return;
+    }
+    const address = [s.onboardingCreateAddress1.trim(), s.onboardingCreateCity.trim(),
+      String(s.onboardingCreateState || '').trim().toUpperCase() + ' ' + s.onboardingCreatePostal.trim()].filter(Boolean).join(', ');
+    const clientRequestId = this.newClientRequestId();
+    this.set({ onboardingCreateSubmitting: true, onboardingCreateError: null });
+    this.post('onboarding', {
+      clientRequestId, internalStorePanel: true,
+      summary: s.onboardingCreateStoreName.trim() + ' · ' + s.onboardingCreateLicense.trim().toUpperCase(),
+      board: 'Store Onboarding', submissionType: s.onboardingCreateType,
+      retailerAccountId: account.portalAccountId || null,
+      quickbooksCustomerId: account.quickbooksCustomerId,
+      legalEntity: s.onboardingCreateLegalEntity.trim(), dba: s.onboardingCreateDba.trim(),
+      locations: [{ name: s.onboardingCreateStoreName.trim(), license: s.onboardingCreateLicense.trim().toUpperCase(),
+        licenseType: s.onboardingCreateLicenseType.trim(), licenseIssuedOn: s.onboardingCreateLicenseIssued || null,
+        licenseExpiresOn: s.onboardingCreateLicenseExpires, address }],
+      locationsText: [s.onboardingCreateStoreName.trim(), s.onboardingCreateLicense.trim().toUpperCase(),
+        s.onboardingCreateLicenseType.trim(), address].join(' · '),
+      owner: { name: s.onboardingCreateOwnerName.trim(), email: s.onboardingCreateOwnerEmail.trim().toLowerCase(),
+        phone: s.onboardingCreateOwnerPhone.trim() }, buyer: {}, budtenders: [], budtenderCount: 0,
+      documentType: 'Store license', reviewState: 'Submitted', reviewNote: s.onboardingCreateNote.trim(),
+      file: { name: s.onboardingCreateFileName, sizeBytes: s.onboardingCreateFileSize,
+        contentType: s.onboardingCreateFileType, base64: s.onboardingCreateFileData },
+      stage: '01 Intake', submittedBy: s.authUser ? s.authUser.name : 'urbanXtracts'
+    }, reply => {
+      this.set({ onboardingCreateSubmitting: false, onboardingCreateOpen: false, onboardingCreateError: null,
+        onboardingCreateStoreName: '', onboardingCreateLicense: '', onboardingCreateLicenseIssued: '',
+        onboardingCreateLicenseExpires: '', onboardingCreateAddress1: '', onboardingCreateCity: '', onboardingCreatePostal: '',
+        onboardingCreateOwnerName: '', onboardingCreateOwnerEmail: '', onboardingCreateOwnerPhone: '', onboardingCreateNote: '',
+        onboardingCreateFileName: '', onboardingCreateFileSize: 0, onboardingCreateFileType: '', onboardingCreateFileData: null,
+        toast: 'The store is recorded in onboarding and Monday received the complete intake package. License review and ordering are still pending.',
+        toastKind: 'STORE INTAKE CREATED' });
+      this.loadRetailerAccounts(true);
+    }, (why, detail) => this.set({ onboardingCreateSubmitting: false,
+      onboardingCreateError: detail && detail.reconciliationRequired
+        ? 'The portal saved this store, but Monday needs reconciliation. Reference ' + (detail.portalOnboardingRequestId || clientRequestId) + '; do not submit it again.'
+        : 'The store was not added: ' + why }));
   }
 
   portalAdmin(action, payload) {
@@ -5304,6 +5534,88 @@ class Component extends DCLogic {
         usersLoaded: true, usersError: null }))
       .catch(error => this.set({ liveUsers: [], usersLoading: false, usersLoaded: true,
         usersError: (error && error.message) || 'The protected user directory could not be loaded.' }));
+  }
+
+  kioskService(payload, authenticated) {
+    const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (authenticated && this.state.token) headers.Authorization = 'Bearer ' + this.state.token;
+    const request = { method: 'POST', headers, body: JSON.stringify(payload) };
+    const call = authenticated ? this.portalFetch(PORTAL_KIOSK_API, request) : fetch(PORTAL_KIOSK_API, request);
+    return call.then(response => response.json().catch(() => ({})).then(body => ({ ok: response.ok, status: response.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Kiosk service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  loadKioskLinks(force) {
+    const s = this.state;
+    if (!s.authUser || s.role !== 'internal' || !this.hasPermission('users.manage') || s.kioskLinksLoading
+      || (!force && s.kioskLinksLoaded)) return Promise.resolve();
+    this.set({ kioskLinksLoading: true, kioskLinksError: null });
+    return this.kioskService({ action: 'list' }, true)
+      .then(body => this.set({ kioskLinks: Array.isArray(body.links) ? body.links : [],
+        kioskStores: Array.isArray(body.stores) ? body.stores : [], kioskLinksLoading: false,
+        kioskLinksLoaded: true, kioskLinksError: null,
+        kioskStoreDraft: s.kioskStoreDraft || ((body.stores || []).find(store => store.active) || {}).license || '' }))
+      .catch(error => this.set({ kioskLinksLoading: false, kioskLinksLoaded: true,
+        kioskLinksError: error.message || 'Kiosk links could not be loaded.' }));
+  }
+
+  createKioskLink() {
+    const s = this.state;
+    if (s.kioskLinkPending || !this.requirePermission('users.manage', 'create kiosk links')) return;
+    if (!s.kioskStoreDraft) { this.set({ kioskLinksError: 'Choose an active, qualified store.' }); return; }
+    this.set({ kioskLinkPending: 'create', kioskLinksError: null, kioskCreatedUrl: '' });
+    this.kioskService({ action: 'create', storeLicense: s.kioskStoreDraft,
+      label: String(s.kioskLabelDraft || '').trim() || 'Budtender kiosk' }, true)
+      .then(body => {
+        if (!body.token) throw new Error('The kiosk service did not return the one-time link token.');
+        const url = location.origin + location.pathname + '#kiosk=' + body.token;
+        this.set({ kioskLinks: Array.isArray(body.links) ? body.links : s.kioskLinks,
+          kioskStores: Array.isArray(body.stores) ? body.stores : s.kioskStores,
+          kioskLinkPending: null, kioskCreatedUrl: url,
+          toast: 'A new read-only kiosk link was created. Copy it now; the raw link is not stored and cannot be shown again.',
+          toastKind: 'KIOSK LINK CREATED' });
+      })
+      .catch(error => this.set({ kioskLinkPending: null, kioskLinksError: error.message || 'The kiosk link was not created.' }));
+  }
+
+  revokeKioskLink(link) {
+    if (!link || this.state.kioskLinkPending || !this.requirePermission('users.manage', 'revoke kiosk links')) return;
+    if (!window.confirm('Revoke the kiosk link “' + link.label + '”? Devices using it will stop loading product education immediately.')) return;
+    this.set({ kioskLinkPending: link.id, kioskLinksError: null });
+    this.kioskService({ action: 'revoke', linkId: link.id }, true)
+      .then(body => this.set({ kioskLinks: Array.isArray(body.links) ? body.links : this.state.kioskLinks,
+        kioskStores: Array.isArray(body.stores) ? body.stores : this.state.kioskStores,
+        kioskLinkPending: null, kioskCreatedUrl: '', toast: 'The kiosk link was revoked.', toastKind: 'KIOSK LINK REVOKED' }))
+      .catch(error => this.set({ kioskLinkPending: null, kioskLinksError: error.message || 'The kiosk link was not revoked.' }));
+  }
+
+  copyKioskLink() {
+    const value = this.state.kioskCreatedUrl;
+    if (!value || !navigator.clipboard || !navigator.clipboard.writeText) {
+      this.set({ toast: 'Select and copy the kiosk link manually.', toastKind: 'COPY LINK' }); return;
+    }
+    navigator.clipboard.writeText(value)
+      .then(() => this.set({ toast: 'Kiosk link copied.', toastKind: 'COPIED' }))
+      .catch(() => this.set({ toast: 'Select and copy the kiosk link manually.', toastKind: 'COPY LINK' }));
+  }
+
+  loadPublicKiosk(token) {
+    if (!token) return;
+    this.set({ screen: 'public-kiosk', publicKioskToken: token, publicKioskLoading: true,
+      publicKioskError: null, publicKioskData: null });
+    this.kioskService({ action: 'resolve', token }, false)
+      .then(body => this.set({ publicKioskData: body, publicKioskLoading: false, publicKioskError: null }))
+      .catch(error => this.set({ publicKioskData: null, publicKioskLoading: false,
+        publicKioskError: error.message || 'This kiosk link is invalid or no longer active.' }));
+  }
+
+  leavePublicKiosk() {
+    if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
+    this.set({ screen: 'signin', publicKioskToken: '', publicKioskData: null, publicKioskError: null,
+      publicKioskLoading: false, publicKioskProductId: null, kioskSearch: '' });
   }
 
   removeTestUser(user) {
@@ -5375,6 +5687,18 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ readinessLoading: false, readinessLoaded: true,
         readinessError: (error && error.message) || 'Live release diagnostics could not be loaded.' }));
+  }
+
+  toggleReadinessGroup(id) {
+    this.setState(state => ({ readinessGroupOpen: {
+      ...(state.readinessGroupOpen || {}), [id]: !(state.readinessGroupOpen || {})[id]
+    } }));
+  }
+
+  toggleReadinessSection(id) {
+    this.setState(state => ({ readinessSectionOpen: {
+      ...(state.readinessSectionOpen || {}), [id]: (state.readinessSectionOpen || {})[id] === false
+    } }));
   }
 
   connectQuickBooks() {
@@ -6150,6 +6474,67 @@ class Component extends DCLogic {
       .catch(error => this.set({ accessPending: null, toast: 'Access was not changed: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
+  openUserActions(user) {
+    if (!user || this.state.accessPending || this.state.impersonating) return;
+    if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'manage user access')) return;
+    const role = ['owner', 'buyer', 'budtender'].includes(user.sourceRole)
+      ? user.sourceRole : ({ 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender' }[user.role] || 'buyer');
+    const stores = (this.state.retailerAccounts || []).filter(account =>
+      String(account.organizationName || account.company || account.name || '') === String(user.org || ''))
+      .flatMap(account => Array.isArray(account.stores) ? account.stores : []);
+    const locationText = String(user.locs || '').toLowerCase();
+    const selected = role === 'owner' ? stores.map(store => store.license)
+      : stores.filter(store => locationText.includes(String(store.license || '').toLowerCase())
+        || locationText.includes(String(store.name || '').toLowerCase())).map(store => store.license);
+    this.set({ userActionEmail: user.email, userActionRole: role, userActionLocations: selected,
+      userActionError: null });
+  }
+
+  toggleUserActionLocation(license) {
+    this.setState(state => {
+      const current = state.userActionLocations || [];
+      const next = current.includes(license) ? current.filter(value => value !== license) : current.concat([license]);
+      return { userActionLocations: state.userActionRole === 'budtender' ? next.slice(-1) : next, userActionError: null };
+    });
+  }
+
+  saveUserActions(user) {
+    const s = this.state;
+    if (!user || s.accessPending || s.impersonating || s.userActionEmail !== user.email) return;
+    if (s.role !== 'internal' || !this.requirePermission('users.manage', 'manage user access')) return;
+    const role = s.userActionRole;
+    const selected = s.userActionLocations || [];
+    if (role === 'buyer' && !selected.length) {
+      this.set({ userActionError: 'A Buyer must have at least one store.' }); return;
+    }
+    if (role === 'budtender' && selected.length !== 1) {
+      this.set({ userActionError: 'A Budtender must have exactly one store.' }); return;
+    }
+    const stores = (s.retailerAccounts || []).filter(account =>
+      String(account.organizationName || account.company || account.name || '') === String(user.org || ''))
+      .flatMap(account => Array.isArray(account.stores) ? account.stores : []);
+    const locations = role === 'owner' ? 'All ' + stores.length + ' locations' : selected.join(', ');
+    this.set({ accessPending: user.email, userActionError: null });
+    this.portalAdmin('update-user', { email: user.email, org: user.org, role, locations, active: true })
+      .then(() => this.loadUsers(true))
+      .then(() => this.set({ accessPending: null, userActionEmail: null, userActionLocations: [],
+        toast: user.name + ' now has ' + ({ owner: 'Store Owner', buyer: 'Buyer', budtender: 'Budtender' }[role])
+          + ' access for ' + locations + '.', toastKind: 'ACCESS UPDATED' }))
+      .catch(error => this.set({ accessPending: null, userActionError: 'Access was not changed: ' + error.message }));
+  }
+
+  reactivateUser(user) {
+    if (!user || this.state.accessPending || this.state.impersonating) return;
+    if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'reactivate users')) return;
+    const role = user.sourceRole || ({ 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender' }[user.role]);
+    if (!role) return;
+    this.set({ accessPending: user.email });
+    this.portalAdmin('update-user', { email: user.email, org: user.org, role, locations: user.locs, active: true })
+      .then(() => this.loadUsers(true))
+      .then(() => this.set({ accessPending: null, toast: user.name + ' can sign in again.', toastKind: 'ACCESS RESTORED' }))
+      .catch(error => this.set({ accessPending: null, toast: 'Access was not restored: ' + error.message, toastKind: 'NOT SAVED' }));
+  }
+
   deactivateUser(user) {
     if (!user || this.state.accessPending) return;
     if (this.state.role === 'internal' && !this.requirePermission('users.manage', 'deactivate users')) return;
@@ -6172,7 +6557,9 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._onResize();
     this.mountTurnstile();
-    if (SSO_RETURN.token && !RECOVERY.active) {
+    if (PUBLIC_KIOSK_TOKEN) {
+      this.loadPublicKiosk(PUBLIC_KIOSK_TOKEN);
+    } else if (SSO_RETURN.token && !RECOVERY.active) {
       if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', location.pathname);
       this.beginAuthenticatedSession(SSO_RETURN.token, null, null, true, SSO_RETURN.refreshToken)
         .catch(e => this.setState({ loginBusy: false, ssoBusy: false,
@@ -6208,7 +6595,7 @@ class Component extends DCLogic {
       && prior.screen !== this.state.screen && !this.loc().demo && !this.state.catalogLoaded && !this.state.catalogLoading) {
       this.loadCatalog();
     }
-    if (this.state.role === 'internal' && this.hasPermission('accounts.manage') && ['accounts', 'onboarding'].includes(this.state.screen)
+    if (this.state.role === 'internal' && this.hasPermission('accounts.manage') && ['accounts', 'onboarding', 'admin'].includes(this.state.screen)
       && prior.screen !== this.state.screen && !this.state.retailerAccountsLoaded && !this.state.retailerAccountsLoading) {
       this.loadRetailerAccounts();
     }
@@ -6254,6 +6641,11 @@ class Component extends DCLogic {
       && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
       && !this.state.usersLoaded && !this.state.usersLoading) {
       this.loadUsers();
+    }
+    if (this.state.authUser && this.state.role === 'internal' && this.hasPermission('users.manage')
+      && this.state.screen === 'admin' && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.kioskLinksLoaded && !this.state.kioskLinksLoading) {
+      this.loadKioskLinks();
     }
   }
 
@@ -7757,11 +8149,17 @@ class Component extends DCLogic {
       const retailerIdentity = ['owner', 'buyer', 'budtender'].includes(effective.sourceRole)
         || ['Store owner', 'Buyer', 'Budtender'].includes(effective.role);
       const testLabel = effective.testDemo ? ' \u00b7 test/demo' : '';
+      const actionOpen = s.userActionEmail === effective.email;
+      const actionStores = (s.retailerAccounts || []).filter(account =>
+        String(account.organizationName || account.company || account.name || '') === String(effective.org || ''))
+        .flatMap(account => Array.isArray(account.stores) ? account.stores : [])
+        .filter(store => store.active !== false && store.licenseStatus === 'active');
       return {
         ...effective,
         canImpersonate: canStaff('users.manage') && !s.impersonating && retailerIdentity && !isDeactivated,
-        canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
+        canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity,
         canDeactivate: (isInternal ? canStaff('users.manage') : role === 'owner') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
+        canReactivate: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity && isDeactivated,
         canRemoveTest: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !!effective.testDemo,
         canResetMfa: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !isDeactivated && !!effective.mfaEnrolled
           && (!s.authUser || String(s.authUser.email || '').toLowerCase() !== String(effective.email || '').toLowerCase()),
@@ -7771,8 +8169,90 @@ class Component extends DCLogic {
         onDeactivate: () => this.deactivateUser(effective),
         onImpersonate: () => this.impersonate(effective),
         onRoleChange: () => this.changeUserRole(effective),
+        onManage: () => actionOpen ? this.set({ userActionEmail: null, userActionLocations: [], userActionError: null }) : this.openUserActions(effective),
+        manageLabel: actionOpen ? 'Close actions' : 'Manage', actionOpen,
+        actionRole: s.userActionRole, actionOwner: s.userActionRole === 'owner', actionScoped: s.userActionRole !== 'owner',
+        actionNoStores: actionStores.length === 0,
+        actionStores: actionStores.map(store => {
+          const on = (s.userActionLocations || []).includes(store.license);
+          return { name: store.name, license: store.license, pressed: on ? 'true' : 'false',
+            style: 'background:' + (on ? 'var(--ux-ink)' : '#fff') + ';color:' + (on ? 'var(--ux-ground)' : 'var(--ux-ink)')
+              + ';border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer',
+            onPick: () => this.toggleUserActionLocation(store.license) };
+        }),
+        onActionRole: event => this.set({ userActionRole: event.target.value,
+          userActionLocations: event.target.value === 'budtender' ? (s.userActionLocations || []).slice(0, 1) : s.userActionLocations,
+          userActionError: null }),
+        actionHasError: actionOpen && !!s.userActionError, actionError: actionOpen ? (s.userActionError || '') : '',
+        actionPending: s.accessPending === effective.email ? 'true' : 'false',
+        actionSaveLabel: s.accessPending === effective.email ? 'Saving…' : 'Save access',
+        onActionSave: () => this.saveUserActions(effective),
+        onReactivate: () => this.reactivateUser(effective),
         onRemoveTest: () => this.removeTestUser(effective),
         onResetMfa: () => this.resetUserMfa(effective)
+      };
+    });
+
+    const publicKioskData = s.publicKioskData && typeof s.publicKioskData === 'object' ? s.publicKioskData : {};
+    const publicKioskNeedle = String(s.kioskSearch || '').trim().toLowerCase();
+    const publicKioskProducts = (Array.isArray(publicKioskData.products) ? publicKioskData.products : []).filter(product => {
+      if (!publicKioskNeedle) return true;
+      const coa = product.coa && typeof product.coa === 'object' ? product.coa : {};
+      return [product.name, product.brand, product.category, product.format, product.sku, product.strain,
+        product.shortDescription, product.longDescription, product.productProfile,
+        ...(Array.isArray(product.sellingPoints) ? product.sellingPoints : []),
+        ...(Array.isArray(product.keywords) ? product.keywords : []),
+        ...(Array.isArray(coa.cannabinoids) ? coa.cannabinoids.map(row => row && row.name) : []),
+        ...(Array.isArray(coa.terpenes) ? coa.terpenes.map(row => row && row.name) : []),
+        ...Object.keys(coa.profile && typeof coa.profile === 'object' ? coa.profile : {})
+      ].join(' ').toLowerCase().includes(publicKioskNeedle);
+    }).map(product => {
+      const coa = product.coa && typeof product.coa === 'object' ? product.coa : {};
+      const cannabinoids = Array.isArray(coa.cannabinoids) ? coa.cannabinoids : [];
+      const terpenes = Array.isArray(coa.terpenes) ? coa.terpenes : [];
+      const profileRows = Object.entries(coa.profile && typeof coa.profile === 'object' ? coa.profile : {}).map(([name, value]) => ({ name, value }));
+      const analytes = cannabinoids.map(row => ({ name: 'Cannabinoid · ' + row.name,
+        value: [row.value, row.unit].filter(Boolean).join(' ') }))
+        .concat(terpenes.map(row => ({ name: 'Terpene · ' + row.name,
+          value: [row.value, row.unit].filter(Boolean).join(' ') })))
+        .concat(profileRows).filter(row => row.name && row.value).slice(0, 30);
+      const open = s.publicKioskProductId === product.id;
+      const coaAvailable = coa.available === true;
+      return {
+        ...product, open, expanded: open ? 'true' : 'false', toggleLabel: open ? 'Hide details' : 'Product details',
+        onToggle: () => this.set({ publicKioskProductId: open ? null : product.id }),
+        cardStyle: open ? 'border-top:4px solid var(--ux-accent)' : '',
+        hasImage: !!product.imageUrl, hasStrain: !!product.strain,
+        summary: product.shortDescription || 'Published product education has not been added yet.',
+        hasLongDescription: !!product.longDescription, hasSellingPoints: Array.isArray(product.sellingPoints) && product.sellingPoints.length > 0,
+        sellingPoints: (Array.isArray(product.sellingPoints) ? product.sellingPoints : []).map(text => ({ text })),
+        hasIngredients: !!product.ingredients, hasUsage: !!product.usageInformation, hasProfile: !!product.productProfile,
+        coaStatus: coaAvailable ? (coa.resultStatus || 'COA AVAILABLE') : 'NO COA PUBLISHED',
+        coaStyle: 'color:' + (coaAvailable ? 'var(--ux-accent-text)' : 'var(--ux-muted)'),
+        coaMeta: coaAvailable
+          ? [coa.testedAt ? 'Tested ' + String(coa.testedAt).slice(0, 10) : '', coa.documentAvailable ? 'document retained in protected traceability' : 'document not in the feed'].filter(Boolean).join(' · ')
+          : 'No structured lab record is published for this product.',
+        analytes, hasAnalytes: analytes.length > 0, noAnalytes: analytes.length === 0
+      };
+    });
+    const kioskStoreMap = new Map((s.kioskStores || []).map(store => [String(store.license || '').toUpperCase(), store]));
+    const kioskStoreOptions = (s.kioskStores || []).filter(store => store.active !== false).map(store => ({
+      value: store.license, disabled: 'false', label: store.organization + ' · ' + store.name + ' · ' + store.license
+    }));
+    if (!kioskStoreOptions.length) kioskStoreOptions.push({ value: '', disabled: 'true', label: 'No qualified stores available' });
+    const kioskLinks = (s.kioskLinks || []).map(link => {
+      const store = kioskStoreMap.get(String(link.store_license || '').toUpperCase()) || {};
+      const active = link.active !== false;
+      const pending = s.kioskLinkPending === link.id;
+      return {
+        ...link, tokenPrefix: (link.token_prefix || '') + '…', storeName: store.name || link.store_license,
+        storeMeta: [store.organization, link.store_license].filter(Boolean).join(' · '),
+        state: active ? 'ACTIVE' : 'REVOKED',
+        stateStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;padding:3px 6px;background:'
+          + (active ? 'var(--ux-accent);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
+        lastUsed: link.last_used_at ? 'Used ' + String(link.last_used_at).slice(0, 10) : 'Never opened',
+        canRevoke: active, pending: pending ? 'true' : 'false', revokeLabel: pending ? 'Revoking…' : 'Revoke',
+        onRevoke: () => this.revokeKioskLink(link)
       };
     });
 
@@ -8100,11 +8580,45 @@ class Component extends DCLogic {
       ? 'background:var(--ux-accent);color:#fff' : state === 'block'
         ? 'background:var(--ux-signal);color:#fff' : state === 'warn'
           ? 'background:#e5c968;color:var(--ux-ink)' : 'background:var(--ux-ink);color:var(--ux-ground)';
-    const readinessSections = ((s.readinessData && s.readinessData.checks) || []).map(section => ({
-      label: section.label,
-      items: (section.checks || []).map(check => ({ ...check, state: String(check.state || 'unknown').toUpperCase(),
-        style: readinessStateStyle(check.state) }))
-    }));
+    const readinessBucket = value => value === 'pass' || value === 'DECIDED' ? 'completed'
+      : value === 'warn' || (!['block', 'deferred', 'BLOCKING'].includes(value)) ? 'in_progress' : 'not_started';
+    const readinessSectionSource = [];
+    ((s.readinessData && s.readinessData.checks) || []).forEach((section, sectionIndex) => {
+      ['not_started', 'in_progress', 'completed'].forEach(bucket => {
+        const items = (section.checks || []).filter(check => readinessBucket(String(check.state || 'unknown')) === bucket)
+          .map(check => ({ state: String(check.state || 'unknown').toUpperCase(), screen: 'LIVE CHECK',
+            label: check.label, detail: check.detail, style: readinessStateStyle(check.state), hasMeta: false,
+            blocks: '', owner: '', evidence: '' }));
+        if (items.length) readinessSectionSource.push({ bucket, id: 'live-' + sectionIndex + '-' + bucket,
+          label: section.label, items });
+      });
+    });
+    validationGroups.forEach((group, groupIndex) => {
+      ['not_started', 'in_progress', 'completed'].forEach(bucket => {
+        const items = group.items.filter(item => readinessBucket(String(item.severity || '')) === bucket).map(item => ({
+          state: item.severity, screen: item.screen, label: item.question, detail: item.detail, style: item.sevStyle,
+          hasMeta: true, blocks: item.blocks, owner: item.owner, evidence: item.evidence
+        }));
+        if (items.length) readinessSectionSource.push({ bucket, id: 'decision-' + groupIndex + '-' + bucket,
+          label: group.cls + ' · ' + group.closedBy, items });
+      });
+    });
+    const readinessGroups = [
+      { id: 'not_started', label: 'Not Started', countStyle: 'background:var(--ux-signal);color:#fff', sectionStyle: 'border-top:5px solid var(--ux-signal)' },
+      { id: 'in_progress', label: 'In Progress', countStyle: 'background:#e5c968;color:var(--ux-ink)', sectionStyle: 'border-top:5px solid #b49625' },
+      { id: 'completed', label: 'Completed', countStyle: 'background:var(--ux-accent);color:#fff', sectionStyle: 'border-top:5px solid var(--ux-accent)' }
+    ].map(group => {
+      const sections = readinessSectionSource.filter(section => section.bucket === group.id).map(section => {
+        const open = (s.readinessSectionOpen || {})[section.id] !== false;
+        return { ...section, open, expanded: open ? 'true' : 'false', chevron: open ? '−' : '+',
+          countLabel: section.items.length + ' item' + (section.items.length === 1 ? '' : 's'),
+          onToggle: () => this.toggleReadinessSection(section.id) };
+      });
+      const count = sections.reduce((total, section) => total + section.items.length, 0);
+      const open = !!(s.readinessGroupOpen || {})[group.id];
+      return { ...group, sections, open, expanded: open ? 'true' : 'false', chevron: open ? '−' : '+',
+        countLabel: count + ' item' + (count === 1 ? '' : 's'), onToggle: () => this.toggleReadinessGroup(group.id) };
+    });
 
     const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
     const demoTourStep = DEMO_TOUR_STEPS[Math.max(0, Math.min(s.demoTourStep, DEMO_TOUR_STEPS.length - 1))];
@@ -8169,8 +8683,18 @@ class Component extends DCLogic {
     });
 
     return {
-      roleBadge: !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
-      roleBadgeStyle: !s.authUser ? 'display:none' : '',
+      roleBadge: s.screen === 'public-kiosk' ? 'PUBLIC KIOSK' : !s.authUser ? '' : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
+      roleBadgeStyle: !s.authUser && s.screen !== 'public-kiosk' ? 'display:none' : '',
+      isPublicKiosk: !s.authUser && s.screen === 'public-kiosk',
+      publicKioskLoading: s.publicKioskLoading, publicKioskHasError: !!s.publicKioskError,
+      publicKioskError: s.publicKioskError || '', publicKioskReady: !!s.publicKioskData && !s.publicKioskLoading && !s.publicKioskError,
+      publicKioskStore: (publicKioskData.store && publicKioskData.store.name) || 'Store product kiosk',
+      publicKioskOrganization: (publicKioskData.store && publicKioskData.store.organization) || 'urbanXtracts retail partner',
+      publicKioskLabel: publicKioskData.label || 'Budtender kiosk', publicKioskSearch: s.kioskSearch,
+      onPublicKioskSearch: event => this.set({ kioskSearch: event.target.value, publicKioskProductId: null }),
+      publicKioskProducts, publicKioskCount: publicKioskProducts.length + (publicKioskProducts.length === 1 ? ' published product' : ' published products'),
+      publicKioskNoProducts: !!s.publicKioskData && publicKioskProducts.length === 0,
+      onPublicKioskSignIn: () => this.leavePublicKiosk(),
       isLicense: s.screen === 'license' && !!s.authUser,
       isOnboard: s.screen === 'onboard',
       goLicense: () => this.set({ screen: 'license', licSent: false, licErr: null }),
@@ -8239,7 +8763,7 @@ class Component extends DCLogic {
       onbReceipt: s.onbReceipt || '', onOnbSubmit: () => this.onbSubmit(),
       pwNoticeShown: !!s.pwNotice && !!s.authUser, pwNotice: s.pwNotice || '',
       onPwFix: () => this.fixPassword(), onPwDismiss: () => this.set({ pwNotice: null }),
-      isSignIn: !s.authUser && s.screen !== 'onboard' && s.screen !== 'reset' && s.screen !== 'mfa',
+      isSignIn: !s.authUser && s.screen === 'signin',
       isMfa: !s.authUser && s.screen === 'mfa',
       mfaIsEnroll: s.mfaStage === 'enroll',
       mfaTitle: s.mfaStage === 'enroll' ? 'Secure your account' : 'Verify it is you',
@@ -9644,6 +10168,58 @@ class Component extends DCLogic {
         { label: 'PEOPLE', value: String(onboardingPeopleCount), note: 'Requested portal access' },
         { label: 'NEEDS RECONCILIATION', value: String(onboardingReconciliationCount), note: 'Monday response incomplete' }
       ],
+      onboardingCreateOpen: s.onboardingCreateOpen,
+      onboardingCreateToggleLabel: s.onboardingCreateOpen ? 'Close store form' : 'Add a store',
+      onOnboardingCreateToggle: () => this.toggleOnboardingCreate(),
+      onboardingCreateType: s.onboardingCreateType,
+      onOnboardingCreateType: e => this.set({ onboardingCreateType: e.target.value, onboardingCreateError: null }),
+      onboardingCreateAccountId: s.onboardingCreateAccountId,
+      onOnboardingCreateAccount: e => this.pickOnboardingCreateAccount(e.target.value),
+      onboardingCreateAccountOptions: (s.retailerAccounts || []).filter(account => !account.demo && account.active !== false
+        && !account.parentCustomerId && account.quickbooksCustomerId).map(account => ({
+          value: String(account.quickbooksCustomerId),
+          label: (account.name || account.company || 'Unnamed QuickBooks customer')
+            + (account.portalAccountId ? ' · portal account linked' : ' · qualification not started')
+        })),
+      onboardingCreateLegalEntity: s.onboardingCreateLegalEntity,
+      onOnboardingCreateLegalEntity: e => this.set({ onboardingCreateLegalEntity: e.target.value, onboardingCreateError: null }),
+      onboardingCreateDba: s.onboardingCreateDba,
+      onOnboardingCreateDba: e => this.set({ onboardingCreateDba: e.target.value, onboardingCreateError: null }),
+      onboardingCreateStoreName: s.onboardingCreateStoreName,
+      onOnboardingCreateStoreName: e => this.set({ onboardingCreateStoreName: e.target.value, onboardingCreateError: null }),
+      onboardingCreateLicense: s.onboardingCreateLicense,
+      onOnboardingCreateLicense: e => this.set({ onboardingCreateLicense: e.target.value.toUpperCase(), onboardingCreateError: null }),
+      onboardingCreateLicenseType: s.onboardingCreateLicenseType,
+      onOnboardingCreateLicenseType: e => this.set({ onboardingCreateLicenseType: e.target.value, onboardingCreateError: null }),
+      onboardingCreateLicenseIssued: s.onboardingCreateLicenseIssued,
+      onOnboardingCreateLicenseIssued: e => this.set({ onboardingCreateLicenseIssued: e.target.value, onboardingCreateError: null }),
+      onboardingCreateLicenseExpires: s.onboardingCreateLicenseExpires,
+      onOnboardingCreateLicenseExpires: e => this.set({ onboardingCreateLicenseExpires: e.target.value, onboardingCreateError: null }),
+      onboardingCreateAddress1: s.onboardingCreateAddress1,
+      onOnboardingCreateAddress1: e => this.set({ onboardingCreateAddress1: e.target.value, onboardingCreateError: null }),
+      onboardingCreateCity: s.onboardingCreateCity,
+      onOnboardingCreateCity: e => this.set({ onboardingCreateCity: e.target.value, onboardingCreateError: null }),
+      onboardingCreateState: s.onboardingCreateState,
+      onOnboardingCreateState: e => this.set({ onboardingCreateState: String(e.target.value || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2), onboardingCreateError: null }),
+      onboardingCreatePostal: s.onboardingCreatePostal,
+      onOnboardingCreatePostal: e => this.set({ onboardingCreatePostal: e.target.value, onboardingCreateError: null }),
+      onboardingCreateOwnerName: s.onboardingCreateOwnerName,
+      onOnboardingCreateOwnerName: e => this.set({ onboardingCreateOwnerName: e.target.value, onboardingCreateError: null }),
+      onboardingCreateOwnerEmail: s.onboardingCreateOwnerEmail,
+      onOnboardingCreateOwnerEmail: e => this.set({ onboardingCreateOwnerEmail: e.target.value, onboardingCreateError: null }),
+      onboardingCreateOwnerPhone: s.onboardingCreateOwnerPhone,
+      onOnboardingCreateOwnerPhone: e => this.set({ onboardingCreateOwnerPhone: e.target.value, onboardingCreateError: null }),
+      onboardingCreateNote: s.onboardingCreateNote,
+      onOnboardingCreateNote: e => this.set({ onboardingCreateNote: e.target.value, onboardingCreateError: null }),
+      onOnboardingCreateFile: e => this.pickOnboardingCreateFile(e),
+      onboardingCreateFileLabel: s.onboardingCreateFileName
+        ? s.onboardingCreateFileName + ' · ' + Math.max(1, Math.round(s.onboardingCreateFileSize / 1024)) + ' KB ready for Monday'
+        : 'PDF, PNG, or JPEG · 2 MB maximum',
+      onboardingCreateHasError: !!s.onboardingCreateError,
+      onboardingCreateError: s.onboardingCreateError || '', onboardingCreateSubmitting: s.onboardingCreateSubmitting ? 'true' : 'false',
+      onboardingCreateOpacity: s.onboardingCreateSubmitting ? '.55' : '1',
+      onboardingCreateSubmitLabel: s.onboardingCreateSubmitting ? 'Recording and sending…' : 'Create store intake',
+      onOnboardingCreateSubmit: () => this.submitOnboardingStore(),
       onboardingPanels: [
         ['queue', 'Requests', onboardingSourceAll.length],
         ['workflow', 'Workflow', selectedOnboarding ? String(selectedStageNumber).padStart(2, '0') : '\u2014'],
@@ -9788,6 +10364,16 @@ class Component extends DCLogic {
         { id: 'quality', label: 'Quality', summary: 'Inventory, release, recall, lineage, audit, and readiness.' },
         { id: 'viewer', label: 'Viewer', summary: 'Read-only inventory and lineage alongside the shared dashboard and catalog.' }
       ].map(p => ({ ...p, style: (s.authUser && s.authUser.staffRole === p.id) ? 'border-left:3px solid var(--ux-accent);background:var(--ux-accent-wash)' : '' })),
+      showKioskLinks: isInternal && canStaff('users.manage'),
+      kioskStoreDraft: s.kioskStoreDraft, onKioskStoreDraft: event => this.set({ kioskStoreDraft: event.target.value, kioskLinksError: null }),
+      kioskLabelDraft: s.kioskLabelDraft, onKioskLabelDraft: event => this.set({ kioskLabelDraft: event.target.value, kioskLinksError: null }),
+      kioskStoreOptions, kioskLinks,
+      kioskLinksLoading: s.kioskLinksLoading, kioskLinksHasError: !!s.kioskLinksError, kioskLinksError: s.kioskLinksError || '',
+      kioskLinksRefreshLabel: s.kioskLinksLoading ? 'Refreshing…' : 'Refresh links', onKioskLinksRefresh: () => this.loadKioskLinks(true),
+      kioskCreateDisabled: s.kioskLinkPending || !s.kioskStoreDraft ? 'true' : 'false',
+      kioskCreateLabel: s.kioskLinkPending === 'create' ? 'Creating…' : 'Create kiosk link', onCreateKioskLink: () => this.createKioskLink(),
+      kioskCreated: !!s.kioskCreatedUrl, kioskCreatedUrl: s.kioskCreatedUrl || '', onCopyKioskLink: () => this.copyKioskLink(),
+      kioskLinksEmpty: s.kioskLinksLoaded && !s.kioskLinksLoading && kioskLinks.length === 0,
       auOpen: s.auOpen, auClosed: !s.auOpen,
       onAuToggle: () => this.auToggle(),
       auName: s.auName, onAuName: e => this.set({ auName: e.target.value }),
@@ -10113,7 +10699,7 @@ class Component extends DCLogic {
 
       validationGroups,
       validationSummary: totalItems + ' tracked decisions across six validation types · ' + (totalItems - totalDecided) + ' open · ' + totalBlocking + ' capability-specific blocks · ' + totalDecided + ' resolved',
-      readinessSections, readinessHasData: readinessSections.length > 0,
+      readinessGroups,
       readinessHasError: !!s.readinessError, readinessError: s.readinessError || '', readinessLoading: s.readinessLoading,
       readinessRefreshLabel: s.readinessLoading ? 'Refreshing…' : 'Refresh diagnostics',
       onReadinessRefresh: () => this.loadReadiness(true),

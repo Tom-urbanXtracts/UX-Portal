@@ -74,6 +74,8 @@ The Monday scenario must return JSON containing `mondayItemId` (or `itemId`/`id`
 
 Public onboarding intake never chooses a QuickBooks customer or retailer-account link. Staff makes that association after source identity and licenses are verified.
 
+Authorized Operations and Administrator users can also start a store request directly from the internal **Store onboarding** panel. The form requires a verified active parent QuickBooks retailer, legal and DBA identity, store and license details, full address, owner contact, and a PDF, PNG, or JPEG license document up to 2 MB. The portal stores the request and child store first, then sends the same fields and document payload to the existing Monday onboarding path. If Monday does not confirm an item, the request remains visible as `needs_reconciliation`; operators use the displayed portal reference and do not submit it again.
+
 ## Six-stage operator workflow
 
 The internal **Store onboarding** queue is operational, not just a report:
@@ -120,6 +122,7 @@ The Retailer accounts list is an operational queue rather than a raw QuickBooks 
 - Confirm an account cannot become `ready_to_order` until at least one store is active and ready.
 - Confirm an inactive QuickBooks customer cannot become `ready_to_order`.
 - Submit a three-store onboarding request and confirm one portal request, three child-store rows, the people rows, and one Monday item exist.
+- Submit one store from the internal panel and confirm its chosen QuickBooks parent, license type and dates, full address, owner contact, notes, and uploaded license document arrive on the Monday onboarding item.
 - Repeat the same `clientRequestId` and confirm no duplicate portal or Monday record is created.
 - Simulate a Monday timeout and confirm the request appears in the internal onboarding queue as needing reconciliation.
 - Attempt to skip each onboarding stage and confirm the server rejects it.

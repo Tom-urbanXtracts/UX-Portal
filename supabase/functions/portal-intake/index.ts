@@ -313,6 +313,9 @@ async function canSubmit(kind: string, profile: Row): Promise<boolean> {
     return profile.role === "internal" &&
       await hasPermission(profile, "quality.manage");
   }
+  if (kind === "onboarding" && profile.role === "internal") {
+    return await hasPermission(profile, "accounts.manage");
+  }
   return true;
 }
 
@@ -867,7 +870,72 @@ async function createDurableOnboarding(
     name: String(store.name || "").trim().slice(0, 200),
     license: String(store.license || "").trim().toUpperCase().slice(0, 120),
     address: String(store.address || "").trim().slice(0, 500),
+    licenseType: String(store.licenseType || "").trim().slice(0, 160) || null,
+    licenseIssuedOn: String(store.licenseIssuedOn || "").trim().slice(0, 10) || null,
+    licenseExpiresOn: String(store.licenseExpiresOn || "").trim().slice(0, 10) || null,
   }));
+  const internalStorePanel = payload.internalStorePanel === true &&
+    caller?.profile.role === "internal" &&
+    await hasPermission(caller.profile, "accounts.manage");
+  let retailerAccountId: string | null = null;
+  let quickbooksCustomerId: string | null = null;
+  if (internalStorePanel) {
+    retailerAccountId = String(payload.retailerAccountId || "").trim() || null;
+    quickbooksCustomerId = String(payload.quickbooksCustomerId || "").trim()
+      .slice(0, 160) || null;
+    if (!quickbooksCustomerId) {
+      throw new IntakeError(
+        400,
+        "Choose a verified QuickBooks retailer before adding a store.",
+      );
+    }
+    const { data: qboCustomer, error: qboError } = await service.from(
+      "quickbooks_customer_cache",
+    ).select("quickbooks_customer_id,parent_customer_id,active").eq(
+      "quickbooks_customer_id",
+      quickbooksCustomerId,
+    ).maybeSingle();
+    if (qboError) throw qboError;
+    if (!qboCustomer || qboCustomer.active === false || qboCustomer.parent_customer_id) {
+      throw new IntakeError(
+        409,
+        "The selected QuickBooks retailer must be an active top-level customer.",
+      );
+    }
+    if (retailerAccountId) {
+      const { data: account, error: accountError } = await service.from(
+        "portal_retailer_account",
+      ).select("id,quickbooks_customer_id").eq("id", retailerAccountId)
+        .maybeSingle();
+      if (accountError) throw accountError;
+      if (!account || account.quickbooks_customer_id !== quickbooksCustomerId) {
+        throw new IntakeError(
+          409,
+          "The portal retailer and QuickBooks customer do not match.",
+        );
+      }
+    }
+    const file = payload.file && typeof payload.file === "object" &&
+        !Array.isArray(payload.file)
+      ? payload.file as Row
+      : {};
+    const fileName = String(file.name || "").trim().slice(0, 240);
+    const fileType = String(file.contentType || "").trim().toLowerCase();
+    const fileSize = Number(file.sizeBytes || 0);
+    const fileBody = String(file.base64 || "");
+    if (
+      !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
+      !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
+      !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 2 * 1024 * 1024 ||
+      fileBody.length < 4 || fileBody.length > 2_800_000 ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+    ) {
+      throw new IntakeError(
+        400,
+        "Attach a PDF, PNG, or JPEG license document no larger than 2 MB.",
+      );
+    }
+  }
   const storeLicense = (location: unknown): string | null => {
     const target = String(location || "").trim().toLowerCase();
     if (!target) return null;
@@ -923,10 +991,10 @@ async function createDurableOnboarding(
     "portal_create_onboarding_request",
     {
       p_client_request_id: clientRequestId,
-      // Public intake never chooses authoritative account links. Internal staff
-      // establish those after QuickBooks identity and license qualification.
-      p_retailer_account_id: null,
-      p_quickbooks_customer_id: null,
+      // Public intake never chooses authoritative account links. The protected
+      // internal Store Onboarding panel may pin a verified QuickBooks identity.
+      p_retailer_account_id: retailerAccountId,
+      p_quickbooks_customer_id: quickbooksCustomerId,
       p_submission_type: onboardingSubmissionType(payload.submissionType),
       p_legal_entity: String(payload.legalEntity || "").trim().slice(0, 300),
       p_dba: String(payload.dba || "").trim().slice(0, 300),
@@ -939,6 +1007,21 @@ async function createDurableOnboarding(
         summary: String(payload.summary || "").slice(0, 500),
         submittedVia: "UX Store Portal",
         submittedByLabel: String(payload.submittedBy || "").slice(0, 300),
+        internalStorePanel,
+        storeEvidence: normalizedStores.map((store) => ({
+          license: store.license,
+          licenseType: store.licenseType,
+          licenseIssuedOn: store.licenseIssuedOn,
+          licenseExpiresOn: store.licenseExpiresOn,
+        })),
+        reviewNote: String(payload.reviewNote || "").trim().slice(0, 2000) || null,
+        document: internalStorePanel && payload.file && typeof payload.file === "object"
+          ? {
+            name: String((payload.file as Row).name || "").trim().slice(0, 240),
+            sizeBytes: Number((payload.file as Row).sizeBytes || 0),
+            contentType: String((payload.file as Row).contentType || "").trim().slice(0, 120),
+          }
+          : null,
       },
     },
   );
@@ -957,7 +1040,19 @@ async function createDurableOnboarding(
     if (safe) throw new IntakeError(409, safe);
     throw error;
   }
-  return data as unknown as Row;
+  const durable = data as unknown as Row;
+  if (internalStorePanel && durable.created !== false && durable.id) {
+    for (const store of normalizedStores) {
+      const expires = store.licenseExpiresOn && /^\d{4}-\d{2}-\d{2}$/.test(store.licenseExpiresOn)
+        ? store.licenseExpiresOn
+        : null;
+      const { error: storeError } = await service.from("portal_onboarding_store")
+        .update({ license_expires_on: expires }).eq("onboarding_request_id", durable.id)
+        .eq("license_number", store.license);
+      if (storeError) throw storeError;
+    }
+  }
+  return durable;
 }
 
 async function markDurableOnboarding(

@@ -42,3 +42,8 @@ verify_jwt = false
 
 [functions.portal-lot-integrity]
 verify_jwt = false
+
+# Public kiosk resolution uses a revocable opaque capability token; all link
+# management actions independently require an aal2 users.manage grant.
+[functions.portal-kiosk]
+verify_jwt = false
