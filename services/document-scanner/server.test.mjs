@@ -4,7 +4,10 @@ import { scanBuffer } from "./server.mjs";
 
 test("scanner wrapper treats exit zero as clean", async () => {
   const result = await scanBuffer(Buffer.from("safe"), {
-    binary: "/usr/bin/true",
+    // `cat` consumes the complete stdin payload before exiting successfully,
+    // which models the scanner process contract without racing the pipe close.
+    binary: "/bin/cat",
+    args: [],
     timeoutMs: 1_000,
   });
   assert.equal(result.clean, true);

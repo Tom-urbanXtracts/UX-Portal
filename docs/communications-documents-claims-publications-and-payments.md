@@ -10,13 +10,15 @@ Clean onboarding documents may be archived privately and transferred to the exac
 
 ClamAV software is free. Hosting is not guaranteed to be free: the production container needs at least 2 GiB memory and incurs the hosting provider's normal usage charges beyond any free allowance. Signature updates are included when the image is rebuilt; Operations should rebuild on a regular schedule and immediately for an urgent signature release.
 
+Production deployment completed on 14 September 2026. Cloud Run service `ux-portal-document-scanner` runs in `us-west1` with a dedicated service account, one-request concurrency, zero minimum instances, two maximum instances, and its bearer credential supplied from Secret Manager. The portal URL and matching credential are stored only as Supabase function secrets. Acceptance returned the required results: health `200`, clean file `200`, EICAR `422`, invalid credential `401`, digest mismatch `409`, and oversized body `413`.
+
 Production variables:
 
 - `DOCUMENT_SCANNER_URL`
 - `DOCUMENT_SCANNER_SHARED_SECRET`
 - `PORTAL_ASSET_UPLOADS_ENABLED` remains `false` while product images are on hold
 
-Acceptance requires a clean PDF/image test, an EICAR test-file rejection, an unavailable-engine test, a too-large-file rejection, and confirmation that no unscanned active asset is returned.
+The direct production service acceptance is complete. Portal behavior remains fail-closed when the scanner is unavailable, and the asset query returns only active, scan-cleared records. Product-image and portal-managed COA uploads remain disabled by the separate release flag.
 
 ## Notification sender and channel policy
 

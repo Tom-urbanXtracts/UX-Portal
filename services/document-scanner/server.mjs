@@ -45,9 +45,10 @@ async function readBody(request) {
 
 export function scanBuffer(bytes, options = {}) {
   const binary = options.binary || BINARY;
+  const args = options.args || ["--stdout", "--no-summary", "-"];
   const timeoutMs = options.timeoutMs || TIMEOUT_MS;
   return new Promise((resolve, reject) => {
-    const child = spawn(binary, ["--stdout", "--no-summary", "-"], {
+    const child = spawn(binary, args, {
       stdio: ["pipe", "pipe", "pipe"],
       env: { ...process.env, LC_ALL: "C" },
     });
