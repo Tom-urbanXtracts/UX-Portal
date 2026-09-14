@@ -223,6 +223,7 @@ async function accessibleStores(caller: Caller): Promise<Row[]> {
 
 function serializeLine(row: Row): Row {
   return {
+    id: Number(row.id),
     lineNumber: Number(row.line_number),
     productId: row.product_id,
     productName: row.product_name,

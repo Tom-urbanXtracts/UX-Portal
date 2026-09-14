@@ -195,6 +195,7 @@
     "https://esm.sh/pngjs@5.0.0/deno/pngjs.mjs": "2ca9f54c5a64aefa4d298b2e188fa7f310767795a569cab73fff804385828ad5",
     "https://esm.sh/pngjs@5.0.0?target=deno": "f3ca75efe0b6a1e0a14c4a389ec6899c03c78ce8e9d0a40f7fe6d59bd10f6931",
     "https://esm.sh/qrcode@1.5.4/deno/qrcode.mjs": "c82e63252d64a12a6f066e743e54de60933aa655f42a62b8327d44142c06289a",
-    "https://esm.sh/qrcode@1.5.4?target=deno&no-dts": "187bc004bf02244c93bffb1148180cf41c116f91649150f9a28671933677d295"
+    "https://esm.sh/qrcode@1.5.4?target=deno&no-dts": "187bc004bf02244c93bffb1148180cf41c116f91649150f9a28671933677d295",
+    "https://esm.sh/svix@1.81.0?target=denonext": "626116f84ec7ff92744d80e51b6e1ec8a6f18b246e8553350510d84d5a512195"
   }
 }

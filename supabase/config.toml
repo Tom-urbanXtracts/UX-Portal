@@ -47,3 +47,15 @@ verify_jwt = false
 # management actions independently require an aal2 users.manage grant.
 [functions.portal-kiosk]
 verify_jwt = false
+
+[functions.portal-notifications]
+verify_jwt = false
+
+[functions.portal-claims]
+verify_jwt = false
+
+[functions.portal-payments]
+verify_jwt = false
+
+[functions.portal-publications]
+verify_jwt = false

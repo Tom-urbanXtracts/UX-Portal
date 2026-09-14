@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import {
+  ContentScanError,
+  contentScannerConfigured,
+  scanContent,
+} from "../_shared/content-scanner.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -261,12 +266,45 @@ async function completeUpload(caller: Caller, assetId: string): Promise<Row> {
     }).eq("id", assetId);
     throw new AssetError(409, "The uploaded file failed metadata validation.");
   }
+  const { data: object, error: downloadError } = await service.storage.from(BUCKET)
+    .download(path);
+  if (downloadError || !object) {
+    throw new AssetError(503, "The uploaded file could not be read for malware scanning.");
+  }
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  if (bytes.byteLength !== observedSize) {
+    await service.from("portal_asset").update({
+      state: "quarantined",
+      scan_state: "failed",
+      review_note: "Stored object size changed before malware scanning.",
+      updated_at: new Date().toISOString(),
+    }).eq("id", assetId);
+    throw new AssetError(409, "The uploaded file changed before malware scanning.");
+  }
+  let scan;
+  try {
+    scan = await scanContent(bytes);
+  } catch (error) {
+    const infected = error instanceof ContentScanError && error.verdict === "infected";
+    await service.from("portal_asset").update({
+      state: infected ? "quarantined" : "pending_upload",
+      scan_state: infected ? "quarantined" : "failed",
+      review_note: infected ? "Malware scanner returned an infected verdict." : "Malware scanner unavailable; retry completion before review.",
+      updated_at: new Date().toISOString(),
+    }).eq("id", assetId);
+    throw new AssetError(infected ? 422 : 503, error instanceof Error ? error.message : "Malware scanning failed.");
+  }
   const now = new Date().toISOString();
   const { data: updated, error: updateError } = await service.from(
     "portal_asset",
   ).update({
     state: "pending_review",
+    scan_state: "clean",
+    scanned_at: now,
+    scanner_provider: scan.engine,
+    sha256: scan.sha256,
     observed_size_bytes: observedSize,
+    review_note: null,
     updated_at: now,
   }).eq("id", assetId).select("*").single();
   if (updateError) throw updateError;
@@ -285,6 +323,9 @@ async function reviewAsset(
       409,
       "Only an uploaded asset awaiting review can be decided.",
     );
+  }
+  if (asset.scan_state !== "clean") {
+    throw new AssetError(409, "Only a file with a verified clean malware scan can be reviewed.");
   }
   if (!new Set(["approve", "quarantine"]).has(decision)) {
     throw new AssetError(400, "Choose approve or quarantine.");
@@ -314,7 +355,7 @@ async function listAssets(caller: Caller, request: Request): Promise<Row[]> {
   const purpose = clean(url.searchParams.get("purpose"), 40);
   if (purpose) requirePurposeAccess(caller, purpose);
   let query = service.from("portal_asset").select(
-    "id,purpose,owner_type,owner_id,original_filename,content_type,declared_size_bytes,observed_size_bytes,state,review_note,created_by_email,reviewed_by_email,reviewed_at,created_at,updated_at",
+    "id,purpose,owner_type,owner_id,original_filename,content_type,declared_size_bytes,observed_size_bytes,state,scan_state,scanner_provider,scanned_at,review_note,created_by_email,reviewed_by_email,reviewed_at,created_at,updated_at",
   ).order("updated_at", { ascending: false }).limit(250);
   if (purpose) query = query.eq("purpose", purpose);
   const ownerId = url.searchParams.get("ownerId");
@@ -335,7 +376,10 @@ Deno.serve(async (request) => {
     const caller = await callerFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
     if (request.method === "GET") {
-      return json(request, { assets: await listAssets(caller, request) });
+      return json(request, {
+        assets: await listAssets(caller, request),
+        scanner: { configured: contentScannerConfigured(), provider: "ClamAV" },
+      });
     }
     const body = await request.json() as Row;
     const action = clean(body.action, 40);

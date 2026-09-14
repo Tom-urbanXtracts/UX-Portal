@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { labFailed, labPassed } from "../_shared/security-contract.ts";
 import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { ContentScanError, scanContent, sha256Hex } from "../_shared/content-scanner.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -194,14 +195,16 @@ async function archiveOnboardingDocument(
   caller: { user: Row; profile: Row } | null,
 ): Promise<Row> {
   const bytes = mondayFileBytes(file);
-  const buffer = bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-  const digestBytes = new Uint8Array(
-    await crypto.subtle.digest("SHA-256", buffer),
-  );
-  const digest = Array.from(digestBytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const digest = await sha256Hex(bytes);
+  let scan;
+  try {
+    scan = await scanContent(bytes, digest);
+  } catch (error) {
+    if (error instanceof ContentScanError && error.verdict === "infected") {
+      throw new IntakeError(422, "The onboarding document was blocked by malware scanning and was not sent to Monday.");
+    }
+    throw new IntakeError(503, "The onboarding document could not be verified as clean. Nothing was sent to Monday; try again later.");
+  }
   const contentType = mondayText(file.contentType, 120).toLowerCase();
   const extension = contentType === "application/pdf" ? "pdf" : contentType === "image/png" ? "png" : "jpg";
   const objectPath = `${requestId}/${digest}.${extension}`;
@@ -224,7 +227,9 @@ async function archiveOnboardingDocument(
     content_type: contentType,
     size_bytes: bytes.byteLength,
     sha256: digest,
-    scan_state: "pending_provider",
+    scan_state: "clean",
+    scanner_provider: scan.engine,
+    scanned_at: new Date().toISOString(),
     transfer_state: "pending",
     uploaded_by: caller?.profile.id ?? null,
   }).select("*").single();

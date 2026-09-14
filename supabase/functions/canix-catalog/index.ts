@@ -182,7 +182,10 @@ async function activeAssetUrls(
   for (let start = 0; start < uniqueIds.length; start += 500) {
     const { data, error } = await service.from("portal_asset").select(
       "id,storage_path",
-    ).eq("state", "active").in("id", uniqueIds.slice(start, start + 500));
+    ).eq("state", "active").eq("scan_state", "clean").in(
+      "id",
+      uniqueIds.slice(start, start + 500),
+    );
     if (error) throw error;
     assets.push(...(data ?? []) as unknown as Row[]);
   }

@@ -12,6 +12,19 @@ const QBO_ENVIRONMENT = (Deno.env.get("QBO_ENVIRONMENT") ?? "").trim()
   .toLowerCase();
 const ASSET_UPLOADS_ENABLED = Deno.env.get("PORTAL_ASSET_UPLOADS_ENABLED") ===
   "true";
+const DOCUMENT_SCANNER_CONFIGURED = /^https:\/\//.test(
+  Deno.env.get("DOCUMENT_SCANNER_URL") ?? "",
+) && (Deno.env.get("DOCUMENT_SCANNER_SHARED_SECRET") ?? "").length >= 32;
+const NOTIFICATION_SENDER_CONFIGURED = /^re_/.test(
+  Deno.env.get("RESEND_API_KEY") ?? "",
+);
+const PAYMENT_COLLECTION_CONFIGURED =
+  Deno.env.get("PAYMENT_COLLECTION_ENABLED") === "true" &&
+  /^sk_/.test(Deno.env.get("STRIPE_SECRET_KEY") ?? "") &&
+  (Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "").length >= 16;
+const PUBLICATION_RELEASE_CONFIGURED =
+  Deno.env.get("PUBLICATION_RELEASE_ENABLED") === "true" &&
+  (Deno.env.get("PUBLIC_RESOLVER_RATE_SECRET") ?? "").length >= 32;
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -914,11 +927,17 @@ Deno.serve(async (request) => {
               `${activeAssets} active; ${pendingAssetReviews} awaiting review; ${quarantinedAssets} quarantined. Only active assets receive five-minute signed URLs.`,
           },
           {
-            state: ASSET_UPLOADS_ENABLED ? "warn" : "deferred",
-            label: "Portal-managed uploads",
-            detail: ASSET_UPLOADS_ENABLED
-              ? "Uploads are enabled and require a separate authorized reviewer; confirm the approved scanner is operating before production use."
-              : "Product-image and portal-managed COA uploads are intentionally on hold until an approved content scanner is connected. Canix-supplied COA data remains available.",
+            state: DOCUMENT_SCANNER_CONFIGURED
+              ? ASSET_UPLOADS_ENABLED
+                ? "pass"
+                : "deferred"
+              : "block",
+            label: "Malware-scanned portal uploads",
+            detail: DOCUMENT_SCANNER_CONFIGURED
+              ? ASSET_UPLOADS_ENABLED
+                ? "Every portal-managed upload must receive a verified clean scanner result before separate-human review; failures remain unavailable or quarantined."
+                : "The private scanner is configured, while product-image and portal-managed COA uploads remain intentionally held by the product release flag. Onboarding documents still scan before transfer."
+              : "The approved scanner endpoint and shared credential are incomplete. Onboarding files and asset review fail closed.",
           },
         ],
       },
@@ -1001,16 +1020,37 @@ Deno.serve(async (request) => {
               "This diagnostics request arrived with an aal2 session. Browser sign-in, authenticated Edge Functions, and restrictive profile policies require the same MFA assurance level.",
           },
           {
-            state: "deferred",
-            label: "Payment collection",
-            detail:
-              "The current release displays invoices and payments but does not collect funds.",
+            state: NOTIFICATION_SENDER_CONFIGURED ? "pass" : "deferred",
+            label: "Notification sender",
+            detail: NOTIFICATION_SENDER_CONFIGURED
+              ? "The transactional email provider is configured. Templates, recipient scope, delivery events, and idempotency remain server-controlled."
+              : "The template library and durable outbox are ready, but outbound email remains held until the verified sender domain and RESEND_API_KEY are configured.",
           },
           {
-            state: "deferred",
-            label: "Public COA and recall notices",
+            state: "pass",
+            label: "Receiving claims",
             detail:
-              "Publication remains disabled pending CCO-approved content, retention, trigger, and anti-enumeration policy.",
+              "Owners and assigned Buyers can submit delivered-line claims without exceeding delivered quantity. Internal disposition remains permissioned and creates no automatic credit or refund.",
+          },
+          {
+            state: "warn",
+            label: "Document retention",
+            detail:
+              "The retention register, legal holds, and five-year regulatory floors are implemented. Automatic deletion remains disabled until Compliance approves each policy row and wind-down procedure.",
+          },
+          {
+            state: PAYMENT_COLLECTION_CONFIGURED ? "pass" : "deferred",
+            label: "Payment collection",
+            detail: PAYMENT_COLLECTION_CONFIGURED
+              ? "Hosted Stripe Checkout is enabled for exact open QuickBooks balances. Card data never enters the portal and completed payment events do not mutate QuickBooks automatically."
+              : "The hosted Checkout workflow and payment ledger are ready, but collection remains off until Finance approves the processor account and Stripe production secrets are configured.",
+          },
+          {
+            state: PUBLICATION_RELEASE_CONFIGURED ? "pass" : "deferred",
+            label: "Public COA and recall notices",
+            detail: PUBLICATION_RELEASE_CONFIGURED
+              ? "Separate-user approval, opaque codes, rate limiting, non-enumerating responses, and revocation are enabled for approved public records."
+              : "The controlled draft/approval/revoke workflow exists, but public resolution remains disabled pending CCO-approved fields, retention, and recall language.",
           },
           {
             state: Deno.env.get("TURNSTILE_REQUIRED") === "true"

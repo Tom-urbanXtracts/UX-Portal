@@ -1859,6 +1859,43 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-if>
 
+<sc-if value="{{ isCommunications }}" hint-placeholder-val="{{ false }}">
+<div>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Communications and controls</h1>
+<p style="font-size:14px;color:var(--ux-muted);margin:0 0 20px;max-width:78ch">One operational center for approved email copy, delivery evidence, receiving claims, retention policy, public COA/recall publication, and payment readiness. Provider credentials stay server-side and every release gate fails closed.</p>
+<sc-if value="{{ communicationsHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:10px 0 10px 14px;margin-bottom:18px;font-size:13px">{{ communicationsError }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:24px">
+<sc-for list="{{ controlCards }}" as="card" hint-placeholder-count="5"><div style="border-top:3px solid {{ card.color }};background:var(--ux-surface);padding:14px 15px;min-height:105px"><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.07em;color:{{ card.color }};margin-bottom:8px">{{ card.state }}</div><div style="font:800 15px Archivo,sans-serif;margin-bottom:5px">{{ card.title }}</div><div style="font-size:11.5px;line-height:1.5;color:var(--ux-muted)">{{ card.detail }}</div></div></sc-for>
+</div>
+
+<details open style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Message library and sender</summary>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Mandatory account, order, payment-receipt, claim, and quality notices cannot be muted. Invoice reminders and Kiosk, ordering, and user-management guides are optional. Select an active portal user once, then send the matching approved guide with one click.</p>
+<div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:14px"><label style="min-width:300px"><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">RECIPIENT</span><select value="{{ communicationRecipient }}" onChange="{{ onCommunicationRecipient }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="">Select an active portal user</option><sc-for list="{{ communicationRecipients }}" as="recipient" hint-placeholder-count="5"><option value="{{ recipient.id }}">{{ recipient.label }}</option></sc-for></select></label><button type="button" onClick="{{ onCommunicationsRefresh }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Refresh</button></div>
+<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ communicationTemplates }}" as="template" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(190px,1fr) minmax(260px,1.5fr) auto;gap:14px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);align-items:center"><div><div style="font:700 14px Archivo,sans-serif">{{ template.title }}</div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:5px">{{ template.meta }}</div></div><div style="font-size:12px;line-height:1.5;color:var(--ux-muted-strong)">{{ template.subject }}</div><button type="button" onClick="{{ template.onSend }}" aria-disabled="{{ template.disabled }}" style="{{ template.buttonStyle }}">{{ template.buttonLabel }}</button></div></sc-for></div>
+</details>
+
+<details open style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Receiving claims</summary>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Owners and assigned Buyers can record a short, damaged, wrong, refused, or other issue against a delivered order line. The portal caps the cumulative claimed quantity and never creates a credit, refund, or invoice change automatically.</p>
+<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ communicationsClaims }}" as="claim" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:.8fr 1fr .8fr 1.5fr auto;gap:12px;padding:13px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px;align-items:center"><div><strong>{{ claim.number }}</strong><div style="color:var(--ux-muted);font-size:11px;margin-top:3px">{{ claim.when }}</div></div><div>{{ claim.store }}</div><div><span style="{{ claim.stateStyle }}">{{ claim.state }}</span></div><div>{{ claim.detail }}</div><div style="display:flex;gap:6px"><sc-if value="{{ claim.canReview }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ claim.onReview }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Review</button><button type="button" onClick="{{ claim.onResolve }}" style="border:0;background:var(--ux-accent);color:#fff;padding:8px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Resolve</button></sc-if></div></div></sc-for><sc-if value="{{ communicationsNoClaims }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 0;color:var(--ux-muted);font-size:12.5px">No live receiving claims are in scope.</div></sc-if></div>
+</details>
+
+<details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Document retention policy register</summary>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Five years is recorded as the regulatory floor for applicable distribution books, records, invoices, COAs, lot traceability, and recall evidence. All schedules remain pending approval and automatic deletion remains off; an active legal hold always wins.</p>
+<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ retentionRules }}" as="rule" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:1.25fr .55fr .8fr 1.5fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px;align-items:baseline"><div style="font-weight:700">{{ rule.name }}</div><div>{{ rule.duration }}</div><div><span style="{{ rule.stateStyle }}">{{ rule.state }}</span></div><div style="color:var(--ux-muted)">{{ rule.basis }}</div></div></sc-for></div>
+</details>
+
+<details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Public COA and recall publishing</summary>
+<p style="font-size:12.5px;color:var(--ux-muted);line-height:1.6;margin:10px 0 14px;max-width:80ch">Drafts are durable, approval requires a different authorized user, and public codes are opaque and non-enumerable. Publishing remains off until Compliance approves display/recall copy and Security enables the public resolver.</p>
+<div style="display:flex;gap:9px;align-items:end;flex-wrap:wrap;margin-bottom:14px"><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">CANIX PACKAGE ID</span><input type="text" value="{{ publicationPackage }}" onInput="{{ onPublicationPackage }}" placeholder="Numeric package ID" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label><button type="button" onClick="{{ onPublicationDraft }}" style="border:0;background:var(--ux-ink);color:var(--ux-ground);padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Create COA draft</button></div>
+<div style="border-top:1px solid rgba(23,14,11,.25)"><sc-for list="{{ publicationRows }}" as="publication" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:.7fr 1.4fr .7fr auto;gap:12px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px;align-items:center"><div style="font:600 10px ui-monospace,monospace">{{ publication.type }}</div><div>{{ publication.subject }}</div><div><span style="{{ publication.stateStyle }}">{{ publication.state }}</span></div><div style="display:flex;gap:6px"><sc-if value="{{ publication.canApprove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ publication.onApprove }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Approve</button></sc-if><sc-if value="{{ publication.canPublish }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ publication.onPublish }}" style="border:0;background:var(--ux-accent);color:#fff;padding:8px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Publish</button></sc-if></div></div></sc-for></div>
+</details>
+
+<details style="border-top:2px solid rgba(23,14,11,.4);padding:15px 0 22px"><summary style="cursor:pointer;font:800 19px Archivo,sans-serif">Delivery history</summary>
+<div style="border-top:1px solid rgba(23,14,11,.25);margin-top:12px"><sc-for list="{{ communicationOutbox }}" as="message" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:1fr 1.2fr .7fr .8fr;gap:12px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:11.5px;align-items:baseline"><div>{{ message.recipient }}</div><div>{{ message.template }}</div><div><span style="{{ message.stateStyle }}">{{ message.state }}</span></div><div style="color:var(--ux-muted)">{{ message.when }}</div></div></sc-for></div>
+</details>
+</div>
+</sc-if>
+
 <sc-if value="{{ isCompare }}" hint-placeholder-val="{{ false }}">
 <div>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Compare products</h1>
@@ -2057,12 +2094,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 <h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Invoices</h2>
+<sc-if value="{{ paymentHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 13px;margin-bottom:12px;font-size:12px">{{ paymentError }}</div></sc-if>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:.8fr .9fr .8fr .8fr .7fr .7fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
-<div>Invoice</div><div>Location</div><div>Issued</div><div>Due</div><div>Original</div><div>Balance</div><div>State</div>
+<div style="display:grid;grid-template-columns:.8fr .9fr .7fr .7fr .7fr .7fr .65fr 1fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
+<div>Invoice</div><div>Location</div><div>Issued</div><div>Due</div><div>Original</div><div>Balance</div><div>State</div><div>Actions</div>
 </div>
 <sc-for list="{{ arInvoices }}" as="i" hint-placeholder-count="7">
-<div style="display:grid;grid-template-columns:.8fr .9fr .8fr .8fr .7fr .7fr .8fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline">
+<div style="display:grid;grid-template-columns:.8fr .9fr .7fr .7fr .7fr .7fr .65fr 1fr;gap:12px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
 <div style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600">{{ i.id }}</div>
 <div>{{ i.loc }}</div>
 <div style="color:var(--ux-muted)">{{ i.issued }}</div>
@@ -2070,6 +2108,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font-weight:600"><span style="background:transparent">{{ i.amount }}</span></div>
 <div style="font-weight:600"><span style="background:transparent">{{ i.balance }}</span></div>
 <div><span style="{{ i.stateStyle }}">{{ i.state }}</span></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-if value="{{ i.canSendNotice }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ i.onSendNotice }}" style="border:1px solid rgba(23,14,11,.3);background:transparent;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">Send notice</button></sc-if><sc-if value="{{ i.canPay }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ i.onPay }}" style="border:0;background:var(--ux-accent);color:#fff;padding:8px 9px;font:700 10px Archivo,sans-serif;cursor:pointer">Pay securely</button></sc-if><sc-if value="{{ i.paymentHeld }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:var(--ux-muted)">Online payment not enabled</span></sc-if></div>
 </div>
 </sc-for>
 </div>
@@ -2083,12 +2122,12 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Separate controls</div><div>A non-zero or past-due QuickBooks balance is displayed here but never creates an order hold by itself. The portal&rsquo;s explicit store ordering status remains the only receivables-related gate.</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Buyer scope</div><div>Buyers see invoices and payments only for stores assigned to their profile. A store without a direct QuickBooks customer mapping stays blank instead of falling back to an organisation-wide customer and leaking another store.</div></div>
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payments</div><div>This release displays accounting history only. It does not collect a payment, store a bank account, or create a QuickBooks transaction.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payments</div><div>{{ paymentPolicyText }}</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Source</div><div>Every live figure comes from the last fully successful server-side QuickBooks snapshot. A failed refresh leaves the prior complete snapshot visible with a stale warning.</div></div>
 </div>
 <div style="margin-top:26px;border-left:3px solid var(--ux-signal);padding:12px 0 12px 16px;max-width:78ch">
-<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">HOW TO PAY IS NOT ON THIS SCREEN</div>
-<div style="font-size:13px;line-height:1.62">Banking, remittance and signatory details live in the onboarding record and are not rendered anywhere in the portal, here included. Settling an invoice goes through the contact on your account, and this screen tells you what is owed rather than how to send money.</div>
+<div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-signal-text);margin-bottom:6px">{{ paymentBannerLabel }}</div>
+<div style="font-size:13px;line-height:1.62">{{ paymentBannerText }}</div>
 </div>
 </sc-if>
 
@@ -3102,7 +3141,6 @@ const VALIDATION = [
     { severity: 'Record and continue', screen: 'Inventory · Internal lot view', question: 'How does Canix Package Owner reach the portal without becoming Economic Owner?', detail: 'Brand is the market identity; Canix Owner is the operational Canix user assigned to a package; Economic Owner is the entity carrying production risk. Canix Reporting supplies owner_id and owner_name, but the public REST Package schema does not document them and the latest REST-backed portal snapshot returned no assignments. The portal fields and filters remain ready but blank until IT connects a supported Reporting bridge or Canix documents the REST property. Economic Owner remains effective-dated, may be blank, and never inherits Brand or Canix Owner.', blocks: 'Only Canix operational-owner filtering and reporting; Economic Owner classification remains independent', owner: 'IT / Data, with Canix', evidence: 'A supported server-side Reporting route or documented REST property, a five-minute sync, and package-ID coverage/removal tests' },
     { severity: 'Record and continue', screen: 'Financials · Store performance', question: 'Is the portal authorized to read the production QuickBooks company?', detail: 'The encrypted OAuth broker and read-only Customer, Invoice, and Payment snapshot functions are deployed, but the portal connection is disconnected and no successful snapshot exists. Development credentials must not be used to authorize the live company.', blocks: 'Live QuickBooks financial views', owner: 'Finance and IT', evidence: 'Intuit production approval, read-only authorization, successful snapshot, and Owner/Buyer/Budtender scope tests' },
     { severity: 'Record and continue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' },
-    { severity: 'Record and continue', screen: 'Account · API access', question: 'What scope, credential model and rate limits does the store API carry?', detail: 'A read-only endpoint over the store records surface, for chains running their own tooling. It is a second renderer of the same authorization, never a second authorization, and it depends on the unresolved multi-license question above.', blocks: 'The store API', owner: 'Administration', evidence: 'A scope, a credential model and a rate limit' }
   ] },
   { cls: 'FINANCE DECISION', closedBy: 'Closed by the finance owner', items: [
     { severity: 'Record and continue', screen: 'Inventory · Flower intake', question: 'Which approved Cost Object applies to each flower-intake department and processing line?', detail: 'No approved Knowledge Base source assigns a Cost Object to flower intake. UX OS therefore leaves it blank and never derives it from a sales-order line, Lot ID, ownership code, Brand, or potency. Cost Object and Lot ID have independent missing states and separate queues; neither blank is substituted for the other. If Finance requires a Cost Object, it must follow the immutable DEPT-LINE[-VARIANT] format and come from an approved intake-stream register.', blocks: 'Cost-object enforcement, owner-level cost allocation, and margin reporting for affected intake streams; it does not block Lot ID capture', owner: 'Amrit Kharas (Finance/Controller), with Jonathan DeMart (Operations) for department and line assignment', evidence: 'An approved register mapping facility/intake stream to Cost Object, or a written decision that flower intake requires no Cost Object' },
@@ -3216,7 +3254,7 @@ const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 const STAFF_PERMISSIONS = [
   'inventory.read', 'inventory.sync', 'orders.manage', 'accounts.manage',
   'pricing.manage', 'catalog.manage', 'financials.read', 'economics.manage', 'quality.manage', 'lineage.read', 'users.manage', 'audit.read', 'readiness.read'
-  , 'readiness.manage'
+  , 'readiness.manage', 'notifications.manage', 'claims.manage', 'publications.manage'
 ];
 const STAFF_ROLE_LABELS = {
   administrator: 'Administrator', operations: 'Operations', sales: 'Sales',
@@ -3227,7 +3265,7 @@ const INTERNAL_ROUTE_PERMISSION = {
   pricing: 'pricing.manage', receivables: 'financials.read',
   field: 'accounts.manage', onboarding: 'accounts.manage', recall: 'quality.manage',
   qa: 'quality.manage', lineage: 'lineage.read', admin: 'users.manage', access: 'users.manage',
-  auditlog: 'audit.read', validation: 'readiness.read'
+  auditlog: 'audit.read', validation: 'readiness.read', communications: 'notifications.manage'
 };
 
 const REP_BOOK = [
@@ -3446,6 +3484,14 @@ const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
   || SUPABASE_URL + '/functions/v1/portal-product-content';
 const PORTAL_KIOSK_API = PORTAL_CONFIG.portalKioskUrl
   || SUPABASE_URL + '/functions/v1/portal-kiosk';
+const PORTAL_NOTIFICATIONS_API = PORTAL_CONFIG.portalNotificationsUrl
+  || SUPABASE_URL + '/functions/v1/portal-notifications';
+const PORTAL_CLAIMS_API = PORTAL_CONFIG.portalClaimsUrl
+  || SUPABASE_URL + '/functions/v1/portal-claims';
+const PORTAL_PAYMENTS_API = PORTAL_CONFIG.portalPaymentsUrl
+  || SUPABASE_URL + '/functions/v1/portal-payments';
+const PORTAL_PUBLICATIONS_API = PORTAL_CONFIG.portalPublicationsUrl
+  || SUPABASE_URL + '/functions/v1/portal-publications';
 const CANIX_INVENTORY_SNAPSHOT = {
   source: { system: 'Canix', domain: 'REST API', table: 'GET /packages + GET /sales_orders',
     grain: 'one row per package', refresh: 'server-side five-minute target',
@@ -3823,6 +3869,12 @@ class Component extends DCLogic {
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
     financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
+    paymentData: null, paymentLoading: false, paymentLoaded: false, paymentError: null, paymentPending: null,
+    communicationsData: null, communicationsLoading: false, communicationsLoaded: false, communicationsError: null,
+    communicationRecipient: '', communicationPending: null,
+    claimsData: null, claimsLoading: false, claimsLoaded: false, claimsError: null, claimPending: null,
+    publicationsData: null, publicationsLoading: false, publicationsLoaded: false, publicationsError: null,
+    publicationPackage: '', publicationPending: null,
     retailerOnboarding: [], retailerOnboardingError: null,
     retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
     accountStoreName: '', accountStoreLicense: '', accountStoreAddress: '', accountStoreQbo: '',
@@ -4427,6 +4479,10 @@ class Component extends DCLogic {
       ordersLoaded: false, ordersError: null, orderTransitioning: null,
       liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: false, usersError: null,
       financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all',
+      paymentData: null, paymentLoaded: false, paymentError: null, paymentPending: null,
+      communicationsData: null, communicationsLoaded: false, communicationsError: null, communicationRecipient: '', communicationPending: null,
+      claimsData: null, claimsLoaded: false, claimsError: null, claimPending: null,
+      publicationsData: null, publicationsLoaded: false, publicationsError: null, publicationPackage: '', publicationPending: null,
       toast: 'Signed in as ' + u.name + '. Your ' + accessLabel.toLowerCase() + ' access determines which sections and actions are available.', toastKind: 'SIGNED IN' });
   }
 
@@ -4475,6 +4531,12 @@ class Component extends DCLogic {
       retailerAccountsLoaded: false, retailerAccountsError: null,
       financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
       financialStatus: 'all', financialLicense: 'all', financialSort: 'txnDate', financialSortDir: 'desc',
+      paymentData: null, paymentLoading: false, paymentLoaded: false, paymentError: null, paymentPending: null,
+      communicationsData: null, communicationsLoading: false, communicationsLoaded: false, communicationsError: null,
+      communicationRecipient: '', communicationPending: null,
+      claimsData: null, claimsLoading: false, claimsLoaded: false, claimsError: null, claimPending: null,
+      publicationsData: null, publicationsLoading: false, publicationsLoaded: false, publicationsError: null,
+      publicationPackage: '', publicationPending: null,
       liveUsers: [], usersLoading: false, usersLoaded: false, usersError: null,
       retailerOnboarding: [], retailerOnboardingError: null,
       retailerActionPending: null, accountStatusDraft: '', accountStatusNote: '',
@@ -4583,12 +4645,35 @@ class Component extends DCLogic {
       this.set({ toast: 'Refused: you cannot claim ' + s.claimQty + ' units against a line of ' + line.qty + '. The claim is capped at what was ordered.', toastKind: 'BLOCKED \u2014 QUANTITY' });
       return;
     }
+    if (!od.demo && od.durableId && line.durableLineId) {
+      const kind = ({ Short: 'short', Damaged: 'damaged', Refused: 'refused', 'Wrong item': 'wrong_item', Other: 'other' })[s.claimKind] || 'other';
+      this.set({ claimPending: od.durableId, claimsError: null });
+      this.securedPortalCall(PORTAL_CLAIMS_API, 'POST', {
+        action: 'create', orderId: od.durableId, orderLineId: line.durableLineId,
+        claimType: kind, quantity: s.claimQty, narrative: s.claimReason.trim()
+      }).then(body => {
+        const record = body.claim || {};
+        const claim = { id: record.claimNumber, durableClaimId: record.id, order: od.id,
+          durableOrderId: od.durableId, loc: od.loc, line: pp ? pp.name : line.id,
+          reason: s.claimKind + ' \u2014 ' + s.claimQty + ' of ' + line.qty + ' \u00b7 ' + s.claimReason.trim(),
+          raised: this.orderEventDate(record.submittedAt), state: 'Submitted',
+          owner: 'Operations review', clock: 'No response time is approved yet' };
+        this.logAudit('Receiving claim raised', record.claimNumber + ' on ' + od.id,
+          s.claimKind + ' on ' + (pp ? pp.name : line.id) + '. No credit or invoice change was created.');
+        this.setState(current => ({ claims: [claim].concat(current.claims), claimFor: null,
+          claimPending: null, claimsLoaded: false,
+          toast: record.claimNumber + ' was recorded for human review. No credit, refund, or invoice change was created automatically.',
+          toastKind: 'CLAIM RECEIVED' }));
+      }).catch(error => this.set({ claimPending: null, claimsError: error.message || 'The receiving claim was not saved.',
+        toast: error.message || 'The receiving claim was not saved.', toastKind: 'CLAIM NOT SAVED' }));
+      return;
+    }
     const id = 'CLM-' + (240 + s.claimSeq);
     const claim = {
       id, order: od.id, loc: od.loc, line: pp ? pp.name : line.id,
-      reason: s.claimKind + ' \u2014 ' + s.claimQty + ' of ' + line.qty + ' \u00b7 ' + s.claimReason.trim() + (s.claimPhoto ? ' \u00b7 photo attached' : ''),
+      reason: s.claimKind + ' \u2014 ' + s.claimQty + ' of ' + line.qty + ' \u00b7 ' + s.claimReason.trim(),
       raised: TODAY, state: 'Open',
-      owner: 'Operations \u2014 fulfilment', clock: 'Target: two working days', internalNote: 'Raised from the order by the store. Owner and clock are internal; the store sees state only.'
+      owner: 'Operations \u2014 fulfilment', clock: 'No response time is approved yet', internalNote: 'Raised from the order by the store. No automatic credit or invoice change.'
     };
     this.logAudit('Receiving claim raised', id + ' on ' + od.id, s.claimKind + ' on ' + (pp ? pp.name : line.id) + '. Visible to your organisation as a state, and to us as an exception.');
     this.setState(st => ({ claims: [claim].concat(st.claims), claimFor: null, claimSeq: st.claimSeq + 1,
@@ -5288,6 +5373,127 @@ class Component extends DCLogic {
       })
       .catch(error => this.set({ financialLoading: false, financialLoaded: true,
         financialError: (error && error.message) || 'QuickBooks financial history could not be loaded.' }));
+  }
+
+  securedPortalCall(url, method, payload) {
+    const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (this.state.token || '') };
+    if (payload) headers['Content-Type'] = 'application/json';
+    return this.portalFetch(url, { method: method || 'GET', headers,
+      body: payload ? JSON.stringify(payload) : undefined })
+      .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, status: r.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Portal service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  loadCommunications(force) {
+    const s = this.state;
+    if (!s.authUser || !s.token || s.role !== 'internal' || !this.hasPermission('notifications.manage')
+      || s.communicationsLoading || (!force && s.communicationsLoaded)) return Promise.resolve();
+    this.set({ communicationsLoading: true, communicationsError: null });
+    return Promise.all([
+      this.securedPortalCall(PORTAL_NOTIFICATIONS_API, 'GET'),
+      this.securedPortalCall(PORTAL_CLAIMS_API, 'GET'),
+      this.hasPermission('publications.manage') ? this.securedPortalCall(PORTAL_PUBLICATIONS_API, 'GET') : Promise.resolve({ publications: [], releaseEnabled: false })
+    ]).then(([communications, claims, publications]) => this.set({
+      communicationsData: communications, communicationsLoading: false, communicationsLoaded: true,
+      claimsData: claims, claimsLoaded: true, claimsError: null,
+      publicationsData: publications, publicationsLoaded: true, publicationsError: null,
+      communicationsError: null
+    })).catch(error => this.set({ communicationsLoading: false, communicationsLoaded: true,
+      communicationsError: error.message || 'Communications and controls could not be loaded.' }));
+  }
+
+  sendCommunicationTemplate(template) {
+    const s = this.state;
+    if (!template || s.communicationPending || !s.communicationRecipient) {
+      if (!s.communicationRecipient) this.set({ communicationsError: 'Select an active portal user before sending a guide.' });
+      return;
+    }
+    const recipient = ((s.communicationsData && s.communicationsData.profiles) || [])
+      .find(profile => String(profile.id) === String(s.communicationRecipient));
+    this.set({ communicationPending: template.template_key, communicationsError: null });
+    this.securedPortalCall(PORTAL_NOTIFICATIONS_API, 'POST', {
+      action: 'send-template', templateKey: template.template_key,
+      recipientProfileId: s.communicationRecipient,
+      variables: { recipientName: recipient && recipient.full_name || 'there', storeName: recipient && recipient.org || 'your store' }
+    }).then(() => this.set({ communicationPending: null, communicationsLoaded: false,
+      toast: template.title + ' was accepted by the communication workflow.', toastKind: 'MESSAGE QUEUED' }))
+      .then(() => this.loadCommunications(true))
+      .catch(error => this.set({ communicationPending: null, communicationsError: error.message || 'The message was not sent.' }));
+  }
+
+  sendInvoiceNotice(invoice) {
+    if (!invoice || this.state.communicationPending) return;
+    this.set({ communicationPending: 'invoice:' + invoice.rawId, paymentError: null });
+    this.securedPortalCall(PORTAL_NOTIFICATIONS_API, 'POST', { action: 'send-invoice-notice', invoiceId: invoice.rawId })
+      .then(body => this.set({ communicationPending: null,
+        toast: (body.messages || []).length + ' Owner/Buyer invoice notice' + ((body.messages || []).length === 1 ? '' : 's') + ' accepted.',
+        toastKind: 'INVOICE NOTICE' }))
+      .catch(error => this.set({ communicationPending: null, paymentError: error.message || 'The invoice notice was not sent.' }));
+  }
+
+  loadPayments(force) {
+    const s = this.state;
+    const allowed = ['owner', 'buyer'].includes(s.role) || (s.role === 'internal' && this.hasPermission('financials.read'));
+    if (!s.authUser || !s.token || !allowed || this.loc().demo || s.paymentLoading || (!force && s.paymentLoaded)) return Promise.resolve();
+    this.set({ paymentLoading: true, paymentError: null });
+    return this.securedPortalCall(PORTAL_PAYMENTS_API, 'GET')
+      .then(body => this.set({ paymentData: body, paymentLoading: false, paymentLoaded: true, paymentError: null }))
+      .catch(error => this.set({ paymentLoading: false, paymentLoaded: true, paymentError: error.message || 'Payment readiness could not be loaded.' }));
+  }
+
+  beginInvoicePayment(invoice) {
+    if (!invoice || this.state.paymentPending) return;
+    this.set({ paymentPending: invoice.rawId, paymentError: null });
+    this.securedPortalCall(PORTAL_PAYMENTS_API, 'POST', { action: 'create-checkout', invoiceId: invoice.rawId })
+      .then(body => {
+        const url = new URL(body.checkoutUrl);
+        if (url.protocol !== 'https:' || !/(^|\.)stripe\.com$/i.test(url.hostname)) throw new Error('The payment provider returned an unexpected destination.');
+        window.location.assign(url.toString());
+      })
+      .catch(error => this.set({ paymentPending: null, paymentError: error.message || 'Secure checkout could not be started.' }));
+  }
+
+  loadClaims(force) {
+    const s = this.state;
+    const allowed = ['owner', 'buyer'].includes(s.role) || (s.role === 'internal' && this.hasPermission('claims.manage'));
+    if (!s.authUser || !s.token || !allowed || this.loc().demo || s.claimsLoading || (!force && s.claimsLoaded)) return Promise.resolve();
+    this.set({ claimsLoading: true, claimsError: null });
+    return this.securedPortalCall(PORTAL_CLAIMS_API, 'GET')
+      .then(body => this.set({ claimsData: body, claimsLoading: false, claimsLoaded: true, claimsError: null }))
+      .catch(error => this.set({ claimsLoading: false, claimsLoaded: true, claimsError: error.message || 'Receiving claims could not be loaded.' }));
+  }
+
+  decideClaim(claim, state) {
+    if (!claim || this.state.claimPending) return;
+    const note = window.prompt(state === 'under_review' ? 'Optional review note:' : 'Required decision note:');
+    if (note === null || (state !== 'under_review' && note.trim().length < 3)) return;
+    this.set({ claimPending: claim.id, communicationsError: null });
+    this.securedPortalCall(PORTAL_CLAIMS_API, 'POST', { action: 'decide', claimId: claim.id, state, resolutionNote: note })
+      .then(() => this.set({ claimPending: null, claimsLoaded: false, communicationsLoaded: false,
+        toast: claim.claimNumber + ' is now ' + state.replace(/_/g, ' ') + '.', toastKind: 'CLAIM UPDATED' }))
+      .then(() => this.loadCommunications(true))
+      .catch(error => this.set({ claimPending: null, communicationsError: error.message || 'The claim was not updated.' }));
+  }
+
+  publicationAction(action, publication) {
+    if (this.state.publicationPending) return;
+    const payload = action === 'draft-coa'
+      ? { action, packageId: Number(this.state.publicationPackage) }
+      : { action, publicationId: publication && publication.id };
+    this.set({ publicationPending: action + ':' + (publication && publication.id || 'new'), communicationsError: null });
+    this.securedPortalCall(PORTAL_PUBLICATIONS_API, 'POST', payload)
+      .then(body => this.set({ publicationPending: null, publicationsLoaded: false, communicationsLoaded: false,
+        publicationPackage: action === 'draft-coa' ? '' : this.state.publicationPackage,
+        toast: body.publication && body.publication.publicCode
+          ? 'Published. Copy this one-time public code now: ' + body.publication.publicCode
+          : 'Publication record moved to ' + action.replace(/-/g, ' ') + '.',
+        toastKind: action === 'publish' ? 'PUBLIC CODE CREATED' : 'PUBLICATION UPDATED' }))
+      .then(() => this.loadCommunications(true))
+      .catch(error => this.set({ publicationPending: null, communicationsError: error.message || 'The publication record was not changed.' }));
   }
 
   retailerCall(action, payload) {
@@ -6210,7 +6416,7 @@ class Component extends DCLogic {
     const location = LOCATIONS.find(item => item.license === row.locationLicense);
     const lines = (row.lines || []).map(line => {
       const resolved = this.orderProductFor(line);
-      return { id: resolved.product.id, lot: resolved.lotIndex, qty: Number(line.quantity), price: Number(line.unitPriceCents) };
+      return { id: resolved.product.id, durableLineId: Number(line.id), lot: resolved.lotIndex, qty: Number(line.quantity), price: Number(line.unitPriceCents) };
     });
     const history = {};
     (row.events || []).forEach(event => {
@@ -6869,6 +7075,24 @@ class Component extends DCLogic {
       && !this.state.financialLoaded && !this.state.financialLoading) {
       this.loadFinancials();
     }
+    if (this.state.authUser && this.state.token && financialRoleAllowed && this.state.screen === 'receivables'
+      && !this.loc().demo && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.paymentLoaded && !this.state.paymentLoading) {
+      this.loadPayments();
+    }
+    const claimsRoleAllowed = ['owner', 'buyer'].includes(this.state.role)
+      || (this.state.role === 'internal' && this.hasPermission('claims.manage'));
+    if (this.state.authUser && this.state.token && claimsRoleAllowed && ['orders', 'order', 'records', 'communications'].includes(this.state.screen)
+      && !this.loc().demo && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.claimsLoaded && !this.state.claimsLoading) {
+      this.loadClaims();
+    }
+    if (this.state.authUser && this.state.token && this.state.role === 'internal'
+      && this.hasPermission('notifications.manage') && this.state.screen === 'communications'
+      && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.communicationsLoaded && !this.state.communicationsLoading) {
+      this.loadCommunications();
+    }
     if (this.state.role === 'internal' && this.hasPermission('readiness.read') && this.state.screen === 'validation'
       && prior.screen !== this.state.screen && !this.state.readinessLoaded && !this.state.readinessLoading) {
       this.loadReadiness();
@@ -7512,7 +7736,7 @@ class Component extends DCLogic {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training'], ['coalookup', 'Public COA page', 'coa']];
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
-      return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['recall', 'Recall and lot impact', 'lineage'], ['lineage', 'Lots, COAs and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['onboarding', 'Store onboarding', 'accounts'], ['admin', 'Users and access', 'admin'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
+      return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['accounts', 'Retailer accounts', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['recall', 'Recall and lot impact', 'lineage'], ['lineage', 'Lots, COAs and lineage', 'lineage'], ['qa', 'Release and quality', 'qa'], ['onboarding', 'Store onboarding', 'accounts'], ['admin', 'Users and access', 'admin'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
         .filter(([id]) => !INTERNAL_ROUTE_PERMISSION[id] || grants.has(INTERNAL_ROUTE_PERMISSION[id]));
     }
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training']];
@@ -8345,13 +8569,18 @@ class Component extends DCLogic {
         }),
         odUnits: String(this.orderUnits(od)), odValue: MONEY(this.orderValue(od)),
         odNotes: notes, odHasNotes: notes.length > 0,
-        odClaims: s.claims.filter(c => c.order === od.id).map(c => ({
+        odClaims: s.claims.filter(c => c.order === od.id).concat(((s.claimsData && s.claimsData.claims) || [])
+          .filter(c => String(c.orderId) === String(od.durableId)).map(c => ({
+            id: c.claimNumber, line: 'Order line ' + c.orderLineId,
+            reason: String(c.claimType || '').replace(/_/g, ' ') + ' \u2014 ' + c.quantity + ' \u00b7 ' + c.narrative,
+            raised: this.orderEventDate(c.submittedAt), state: String(c.state || '').replace(/_/g, ' ')
+          }))).map(c => ({
           id: c.id || '\u2014', line: c.line, reason: c.reason, raised: c.raised, state: c.state,
-          owner: c.owner || 'Operations \u2014 fulfilment', clock: c.clock || 'Target: two working days',
+          owner: c.owner || 'Operations review', clock: c.clock || 'No response time is approved yet',
           stateStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;'
-            + (c.state === 'Open' ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
+            + (['Open', 'Submitted', 'under review'].includes(c.state) ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
         })),
-        odHasClaims: s.claims.some(c => c.order === od.id),
+        odHasClaims: s.claims.some(c => c.order === od.id) || ((s.claimsData && s.claimsData.claims) || []).some(c => String(c.orderId) === String(od.durableId)),
         odInternal: isInternal,
         odClaimOpen: s.claimFor === od.id,
         odClaimLines: od.lines.map((l, i) => {
@@ -8361,7 +8590,7 @@ class Component extends DCLogic {
               + (s.claimLine === i ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
             onPick: () => this.set({ claimLine: i, claimQty: 1 }) };
         }),
-        odClaimKinds: ['Short', 'Damaged', 'Refused'].map(k => ({ label: k,
+        odClaimKinds: ['Short', 'Damaged', 'Wrong item', 'Refused', 'Other'].map(k => ({ label: k,
           style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
             + (s.claimKind === k ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
           onPick: () => this.set({ claimKind: k }) })),
@@ -8370,10 +8599,9 @@ class Component extends DCLogic {
         onClaimQtyUp: () => this.setState(st => ({ claimQty: st.claimQty + 1 })),
         claimReason: s.claimReason,
         onClaimReason: e => this.set({ claimReason: e.target.value }),
-        claimPhotoLabel: s.claimPhoto ? 'Photo attached' : 'Attach a photo',
-        claimPhotoStyle: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
-          + (s.claimPhoto ? 'background:var(--ux-accent);color:#fff' : 'background:transparent'),
-        onClaimPhoto: () => this.setState(st => ({ claimPhoto: !st.claimPhoto })),
+        claimPhotoLabel: 'Evidence upload follows scanner release',
+        claimPhotoStyle: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:not-allowed;border:1px solid rgba(23,14,11,.2);background:var(--ux-faint);color:var(--ux-muted)',
+        onClaimPhoto: () => this.set({ toast: 'Claim evidence upload remains off until the malware scanner is deployed and validated.', toastKind: 'CONTROLLED OFF' }),
         onClaimSubmit: () => this.submitClaim(od),
         onClaimCancel: () => this.closeClaim(),
         odFooter: isInternal
@@ -10099,6 +10327,94 @@ class Component extends DCLogic {
       isAdmin: (s.screen === 'admin' && canStaff('users.manage')) || (s.screen === 'users' && role === 'owner'),
       isAuditLog: s.screen === 'auditlog' && canStaff('audit.read'),
       isNotifications: s.screen === 'notifications', isCompare: s.screen === 'compare',
+      isCommunications: s.screen === 'communications' && isInternal && canStaff('notifications.manage'),
+      ...(() => {
+        const data = s.communicationsData || { templates: [], profiles: [], outbox: [], retentionRules: [], sender: {}, controls: {} };
+        const dateSafe = value => {
+          if (!value) return '\u2014';
+          const parsed = new Date(value);
+          return isNaN(parsed.getTime()) ? String(value) : new Intl.DateTimeFormat('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/New_York'
+          }).format(parsed);
+        };
+        const controls = data.controls || {};
+        const sender = data.sender || {};
+        const good = 'var(--ux-accent-text)';
+        const held = 'var(--ux-signal-text)';
+        const controlCards = [
+          { title: 'Email sender', state: sender.configured ? 'READY' : 'PROVIDER SETUP', color: sender.configured ? good : held,
+            detail: sender.configured ? 'Resend is connected through ' + sender.from + '.' : 'Templates and outbox are live; verify the sending subdomain and add the server API key.' },
+          { title: 'Malware scanner', state: controls.documentScannerConfigured ? 'READY' : 'DEPLOYMENT REQUIRED', color: controls.documentScannerConfigured ? good : held,
+            detail: controls.documentScannerConfigured ? 'ClamAV must return a digest-bound clean verdict before review.' : 'Uploads remain fail-closed until the private ClamAV service is deployed and connected.' },
+          { title: 'Payment collection', state: controls.paymentCollectionConfigured ? 'READY' : 'CONTROLLED OFF', color: controls.paymentCollectionConfigured ? good : held,
+            detail: controls.paymentCollectionConfigured ? 'Stripe Checkout is bound to the latest verified open QuickBooks balance.' : 'Invoice display remains live; checkout waits for the merchant keys and Finance release.' },
+          { title: 'Public publishing', state: controls.publicationReleaseEnabled ? 'RELEASED' : 'CONTROLLED OFF', color: controls.publicationReleaseEnabled ? good : held,
+            detail: 'Draft and two-person approval are available. Public resolution stays off until Compliance and Security release it.' },
+          { title: 'Automatic deletion', state: controls.automaticDocumentDeletionEnabled ? 'ENABLED' : 'DISABLED', color: controls.automaticDocumentDeletionEnabled ? held : good,
+            detail: 'Retention rules are visible, but nothing is destroyed until policy approval and legal-hold checks exist.' }
+        ];
+        const recipients = (data.profiles || []).map(profile => ({ id: String(profile.id),
+          label: (profile.full_name || 'Unnamed user') + ' \u00b7 ' + (profile.org || 'No organization') + ' \u00b7 ' + (profile.role === 'internal' ? STAFF_ROLE_LABELS[profile.staff_role] || 'Workforce' : profile.role) }));
+        const selected = (data.profiles || []).find(profile => String(profile.id) === String(s.communicationRecipient));
+        const directKeys = new Set(['store_welcome', 'kiosk_mode_guide', 'order_how_to', 'user_how_to']);
+        const templates = (data.templates || []).map(template => {
+          const audienceMatch = selected && ((template.audience === 'internal') === (selected.role === 'internal'));
+          const direct = directKeys.has(template.template_key);
+          const disabled = !direct || !audienceMatch || !!s.communicationPending || !sender.configured;
+          return { ...template, meta: String(template.audience || '').toUpperCase() + ' \u00b7 ' + String(template.category || '').toUpperCase()
+              + (template.mandatory ? ' \u00b7 MANDATORY' : ' \u00b7 OPTIONAL GUIDE'),
+            subject: template.subject_template, disabled,
+            buttonLabel: !direct ? 'Workflow triggered' : !sender.configured ? 'Sender setup' : 'Send',
+            buttonStyle: 'border:0;padding:9px 11px;font:700 10.5px Archivo,sans-serif;cursor:' + (disabled ? 'not-allowed' : 'pointer') + ';background:'
+              + (disabled ? 'var(--ux-faint)' : 'var(--ux-ink)') + ';color:' + (disabled ? 'var(--ux-muted)' : 'var(--ux-ground)'),
+            onSend: () => { if (!disabled) this.sendCommunicationTemplate(template); }
+          };
+        });
+        const liveClaims = (s.claimsData && s.claimsData.claims) || [];
+        const claims = liveClaims.map(claim => ({
+          id: claim.id, number: claim.claimNumber, store: claim.storeLicense,
+          when: dateSafe(claim.submittedAt), state: String(claim.state || '').replace(/_/g, ' '),
+          detail: String(claim.claimType || '').replace(/_/g, ' ') + ' \u00b7 ' + claim.quantity + ' \u00b7 ' + claim.narrative,
+          stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
+            + (['resolved', 'denied'].includes(claim.state) ? 'var(--ux-surface);color:var(--ux-muted-strong)' : 'var(--ux-signal);color:#fff'),
+          canReview: !['resolved', 'denied', 'withdrawn'].includes(claim.state) && !s.claimPending,
+          onReview: () => this.decideClaim(claim, 'under_review'), onResolve: () => this.decideClaim(claim, 'resolved')
+        }));
+        const retention = (data.retentionRules || []).map(rule => ({ name: rule.display_name,
+          duration: rule.proposed_retention_days ? rule.proposed_retention_days + ' days' : rule.proposed_retention_years ? rule.proposed_retention_years + ' years' : 'Not set',
+          state: String(rule.policy_state || '').replace(/_/g, ' '), basis: rule.legal_basis || rule.notes || 'Business policy approval required',
+          stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
+            + (rule.policy_state === 'approved' ? 'var(--ux-accent);color:#fff' : 'var(--ux-signal-tint);color:var(--ux-signal-text)') }));
+        const publicationRows = ((s.publicationsData && s.publicationsData.publications) || []).map(publication => ({
+          id: publication.id, type: String(publication.publication_type || '').toUpperCase(),
+          subject: publication.source_compliance_tag || ('Package ' + (publication.source_package_id || '\u2014')),
+          state: String(publication.state || '').toUpperCase(),
+          stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
+            + (publication.state === 'published' ? 'var(--ux-accent);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)'),
+          canApprove: publication.state === 'draft' && !s.publicationPending,
+          canPublish: publication.state === 'approved' && !s.publicationPending,
+          onApprove: () => this.publicationAction('approve', publication),
+          onPublish: () => this.publicationAction('publish', publication)
+        }));
+        const outbox = (data.outbox || []).map(message => ({ recipient: message.recipient_email,
+          template: message.template_key || message.event_type, state: String(message.state || '').replace(/_/g, ' '),
+          when: dateSafe(message.sent_at || message.created_at),
+          stateStyle: 'display:inline-block;font:600 9.5px ui-monospace,monospace;padding:3px 6px;background:'
+            + (['sent', 'delivered'].includes(message.state) ? 'var(--ux-accent);color:#fff'
+              : ['failed', 'bounced'].includes(message.state) ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)') }));
+        return {
+          communicationsHasError: !!s.communicationsError, communicationsError: s.communicationsError || '',
+          controlCards, communicationRecipient: s.communicationRecipient,
+          onCommunicationRecipient: event => this.set({ communicationRecipient: event.target.value, communicationsError: null }),
+          communicationRecipients: recipients, communicationTemplates: templates,
+          onCommunicationsRefresh: () => { this.set({ communicationsLoaded: false }); this.loadCommunications(true); },
+          communicationsClaims: claims, communicationsNoClaims: claims.length === 0,
+          retentionRules: retention, publicationPackage: s.publicationPackage,
+          onPublicationPackage: event => this.set({ publicationPackage: event.target.value }),
+          onPublicationDraft: () => this.publicationAction('draft-coa'), publicationRows,
+          communicationOutbox: outbox
+        };
+      })(),
       isDocuments: s.screen === 'documents',
       docs: scopedDocs.map(d => ({ ...d, stateStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:'
         + (d.state === 'Accepted' ? 'var(--ux-accent);color:#fff' : d.state === 'Rejected' ? 'var(--ux-signal);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)') })),
@@ -10155,7 +10471,8 @@ class Component extends DCLogic {
       isRecall: s.screen === 'recall' && canStaff('quality.manage'),
       isRecords: s.screen === 'records',
       isReceivables: s.screen === 'receivables' && (role === 'owner' || role === 'buyer' || canStaff('financials.read')),
-      isApi: s.screen === 'api' && role === 'owner',
+      // Customer Store API is intentionally excluded from the product.
+      isApi: false,
       isApproval: s.screen === 'approval' && role === 'owner',
       isAccountSettings: s.screen === 'account' && role === 'owner',
       ownerProfileName: this.actingOrg(),
@@ -10280,6 +10597,10 @@ class Component extends DCLogic {
           return (result || String(a.id).localeCompare(String(b.id))) * (s.financialSortDir === 'asc' ? 1 : -1);
         });
         const open = invoiceFiltered.filter(i => i.state !== 'paid');
+        const paymentReady = !loc.demo && !!(s.paymentData && s.paymentData.enabled);
+        const paymentPolicyText = paymentReady
+          ? 'Secure payment uses Stripe-hosted Checkout for the exact open balance in the latest production QuickBooks snapshot. The portal stores no card or bank details and never changes QuickBooks automatically.'
+          : 'Invoice and payment history remain read-only until Finance enables Stripe Checkout. The portal does not collect bank or card details, and no QuickBooks transaction is created.';
         const source = data.source || {};
         const mappingMissing = Array.isArray(data.mappingIncomplete) ? data.mappingIncomplete : [];
         const notice = loc.demo
@@ -10333,15 +10654,23 @@ class Component extends DCLogic {
             gateStyle: chip + (Number(r.pastDueCents || 0) > 0
               ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-accent);color:#fff')
           })),
-          arInvoices: invoiceSorted.map(i => ({
-            id: i.docNumber || i.id, loc: i.locationName || this.locName(i.loc),
-            issued: dateLabel(i.txnDate), due: dateLabel(i.dueDate),
-            amount: MONEY(Number(i.totalAmountCents || 0)), balance: MONEY(Number(i.balanceCents || 0)),
-            state: i.state === 'past_due' ? 'Past due' : i.state === 'paid' ? 'Paid' : 'Open',
-            stateStyle: chip + (i.state === 'past_due' ? 'background:var(--ux-signal);color:#fff'
-              : i.state === 'paid' ? 'background:var(--ux-accent);color:#fff'
-              : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
-          })),
+          arInvoices: invoiceSorted.map(i => {
+            const view = {
+              rawId: i.id, id: i.docNumber || i.id, loc: i.locationName || this.locName(i.loc),
+              issued: dateLabel(i.txnDate), due: dateLabel(i.dueDate),
+              amount: MONEY(Number(i.totalAmountCents || 0)), balance: MONEY(Number(i.balanceCents || 0)),
+              state: i.state === 'past_due' ? 'Past due' : i.state === 'paid' ? 'Paid' : 'Open',
+              stateStyle: chip + (i.state === 'past_due' ? 'background:var(--ux-signal);color:#fff'
+                : i.state === 'paid' ? 'background:var(--ux-accent);color:#fff'
+                : 'background:var(--ux-surface);color:var(--ux-muted-strong)')
+            };
+            view.canSendNotice = isInternal && canStaff('notifications.manage') && i.state !== 'paid' && !s.communicationPending;
+            view.canPay = !isInternal && paymentReady && i.state !== 'paid' && !s.paymentPending;
+            view.paymentHeld = !isInternal && !loc.demo && !paymentReady && i.state !== 'paid';
+            view.onSendNotice = () => this.sendInvoiceNotice(view);
+            view.onPay = () => this.beginInvoicePayment(view);
+            return view;
+          }),
           arPayments: paymentsFiltered.map(p => ({
             id: p.id, loc: p.locationName || this.locName(p.loc), date: dateLabel(p.txnDate),
             amount: MONEY(Number(p.totalAmountCents || 0)), method: p.paymentMethod || 'Not recorded'
@@ -10353,7 +10682,12 @@ class Component extends DCLogic {
           arPaidAmount: MONEY(paymentsFiltered.reduce((a, p) => a + Number(p.totalAmountCents || 0), 0)),
           arCreditLimit: data.summary && data.summary.creditLimitCents !== null && data.summary.creditLimitCents !== undefined
             ? MONEY(Number(data.summary.creditLimitCents)) : 'Not recorded',
-          arPaymentCount: String(paymentsFiltered.length), arOpenCount: String(open.length)
+          arPaymentCount: String(paymentsFiltered.length), arOpenCount: String(open.length),
+          paymentHasError: !!(s.paymentError), paymentError: s.paymentError || '', paymentPolicyText,
+          paymentBannerLabel: paymentReady ? 'SECURE ONLINE PAYMENT AVAILABLE' : 'ONLINE PAYMENT CONTROLLED OFF',
+          paymentBannerText: paymentReady
+            ? 'Owners and assigned Buyers may open Stripe-hosted Checkout from an unpaid invoice. The amount is fixed to the latest QuickBooks balance; successful payment is recorded in the portal and reconciled back to QuickBooks through the normal accounting process.'
+            : 'Banking, remittance and signatory details are never rendered here. Until Finance supplies and approves the production Stripe configuration, settle invoices through the existing approved process.'
         };
       })(),
       ...(() => {

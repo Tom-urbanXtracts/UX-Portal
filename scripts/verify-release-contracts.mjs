@@ -19,6 +19,11 @@ const lotIntegrity = await readFile(resolve(root, "supabase/functions/portal-lot
 const economicOwnership = await readFile(resolve(root, "supabase/functions/portal-economic-ownership/index.ts"), "utf8");
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
+const notifications = await readFile(resolve(root, "supabase/functions/portal-notifications/index.ts"), "utf8");
+const claims = await readFile(resolve(root, "supabase/functions/portal-claims/index.ts"), "utf8");
+const payments = await readFile(resolve(root, "supabase/functions/portal-payments/index.ts"), "utf8");
+const publications = await readFile(resolve(root, "supabase/functions/portal-publications/index.ts"), "utf8");
+const scanner = await readFile(resolve(root, "services/document-scanner/server.mjs"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
 const quickbooksRetailers = await readFile(resolve(root, "supabase/functions/quickbooks-retailers/index.ts"), "utf8");
 const portalRetailers = await readFile(resolve(root, "supabase/functions/portal-retailers/index.ts"), "utf8");
@@ -32,6 +37,7 @@ const migration = await readFile(resolve(root, "supabase/migrations/202609012400
 const securityMigration = await readFile(resolve(root, "supabase/migrations/20260901250000_security_and_inventory_commitments.sql"), "utf8");
 const assetMigration = await readFile(resolve(root, "supabase/migrations/20260901280000_private_portal_assets.sql"), "utf8");
 const assetPolicyMigration = await readFile(resolve(root, "supabase/migrations/20260905120000_asset_review_retention_policy.sql"), "utf8");
+const communicationsMigration = await readFile(resolve(root, "supabase/migrations/20260914233000_trusted_documents_communications_claims_and_payments.sql"), "utf8");
 const quickbooksOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901290000_quickbooks_oauth_broker.sql"), "utf8");
 const orderCronMigration = await readFile(resolve(root, "supabase/migrations/20260901300000_order_outbox_cron.sql"), "utf8");
 const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
@@ -174,6 +180,14 @@ assertContract(assetMigration.includes("'portal-assets'") && assetMigration.incl
 assertContract(assets.includes('state: "pending_review"') && assets.includes('"portal_review_asset"') && assetMigration.includes("target.state <> 'pending_review'") && assetMigration.includes("p_decision = 'approve'"), "portal assets fail closed until an authorized review activates them");
 assertContract(assets.includes("PORTAL_ASSET_UPLOADS_ENABLED") && assets.includes("A different authorized reviewer") && assetPolicyMigration.includes("interval '90 days'") && assetPolicyMigration.includes("interval '365 days'"), "portal-managed assets stay held until scanning is enabled and enforce reviewer separation plus retention");
 assertContract(catalog.includes('createSignedUrls(paths, 300)') && catalog.includes('.eq("state", "active")'), "catalog assets use short-lived URLs for active records only");
+assertContract(scanner.includes("timingSafeEqual") && scanner.includes("SCANNER_MAX_BYTES") && scanner.includes("SCAN_TIMEOUT") && scanner.includes('request.url !== "/scan"'), "the ClamAV wrapper is secret-authenticated, size-limited, timeout-bound, and exposes only the scan route");
+assertContract(assets.includes("scanContent(bytes)") && intake.includes("scanContent(bytes, digest)") && catalog.includes('.eq("scan_state", "clean")'), "onboarding and catalog documents fail closed on scanning and only clean assets can render");
+assertContract(communicationsMigration.includes("target.scan_state <> 'clean'") && communicationsMigration.includes("A different authorized reviewer") && communicationsMigration.includes("portal_document_retention_rule") && communicationsMigration.includes("automatic_deletion_enabled boolean not null default false"), "document review requires clean scanning and separation while retention deletion remains off by default");
+assertContract(notifications.includes("idempotency-key") && notifications.includes("RESEND_WEBHOOK_SECRET") && notifications.includes("email.delivered") && notifications.includes("email.bounced") && notifications.includes("recall_copy_approved"), "notifications are idempotent, use signed delivery evidence, and keep recall copy policy-gated");
+assertContract(claims.includes('new Set(["owner", "buyer"])') && claims.includes("portal_create_receiving_claim") && communicationsMigration.includes("claimed + p_quantity > target_line.quantity"), "receiving claims are retailer-scoped and cannot cumulatively exceed the delivered line");
+assertContract(payments.includes("PAYMENT_COLLECTION_ENABLED") && payments.includes("connection_environment !== \"production\"") && payments.includes("stripe-signature") && payments.includes("automaticQuickBooksWrite: false"), "hosted payment collection is release-gated, production-snapshot-bound, signed, and never auto-writes QuickBooks");
+assertContract(publications.includes("String(current.created_by) === String(caller.profile.id)") && publications.includes("public_code_hash") && publications.includes("PUBLIC_RESOLVER_RATE_SECRET") && publications.includes('state: "unavailable"'), "public COA and recall publishing uses two-person approval, hashed opaque codes, rate limits, and non-enumerating responses");
+assertContract(source.includes("Customer Store API is intentionally excluded") && !source.includes("What scope, credential model and rate limits does the store API carry?"), "the customer Store API is excluded from the product and decision queue");
 assertContract(intake.includes("TURNSTILE_REQUIRED") && intake.includes("siteverify") && !intake.includes('form.set("remoteip"'), "public onboarding supports Turnstile without sending visitor IP addresses");
 assertContract(intake.includes("PUBLIC_INTAKE_RATE_SECRET") && intake.includes("portal_claim_public_intake_rate") && intake.includes("delete verifiedPayload.antiAbuseToken"), "public onboarding rate scope is HMAC-protected and the anti-bot token is not forwarded");
 assertContract(source.includes("TURNSTILE_SITE_KEY") && source.includes("action: 'retailer_onboarding'") && source.includes("antiAbuseToken:"), "public onboarding renders Turnstile and sends its single-use token");
