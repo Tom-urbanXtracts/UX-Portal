@@ -1633,7 +1633,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:700 14px/1.4 Archivo,sans-serif;margin-bottom:5px">{{ item.label }}</div>
 <div style="font-size:12.5px;line-height:1.58;color:var(--ux-muted-strong);max-width:80ch">{{ item.detail }}</div>
 <sc-if value="{{ item.hasMeta }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:9px;font-size:11px;color:var(--ux-muted)"><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">BLOCKS</span><br>{{ item.blocks }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">OWNER</span><br>{{ item.owner }}</div><div><span style="font:600 8.5px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-faint)">EVIDENCE</span><br>{{ item.evidence }}</div></div></sc-if>
-<sc-if value="{{ item.durable }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:minmax(145px,.7fr) minmax(180px,1fr) minmax(145px,.7fr);gap:8px;margin-top:12px"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.taskStatus }}" onChange="{{ item.onStatus }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="controlled_hold">Controlled hold</option></select></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</span><input type="text" value="{{ item.taskOwner }}" onInput="{{ item.onOwner }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE DATE</span><input type="date" value="{{ item.taskDueOn }}" onChange="{{ item.onDueOn }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:7px;font:11.5px Archivo,sans-serif"></label><label style="grid-column:1/-1"><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">EVIDENCE SUMMARY</span><input type="text" value="{{ item.taskEvidenceSummary }}" onInput="{{ item.onEvidenceSummary }}" disabled="{{ item.pending }}" placeholder="What proves this is complete?" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px"><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button><button type="button" onClick="{{ item.onComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add comment</button><button type="button" onClick="{{ item.onEvidence }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add evidence</button></div></sc-if>
+<sc-if value="{{ item.durable }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:minmax(145px,.7fr) minmax(180px,1fr) minmax(145px,.7fr);gap:8px;margin-top:12px"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.taskStatus }}" onChange="{{ item.onStatus }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"><option value="not_started">Not started</option><option value="in_progress">In progress</option><option value="completed">Completed</option><option value="controlled_hold">Controlled hold</option></select></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</span><input type="text" value="{{ item.taskOwner }}" onInput="{{ item.onOwner }}" disabled="{{ item.pending }}" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE DATE</span><input type="text" inputMode="numeric" placeholder="MM/DD/YYYY" maxLength="10" value="{{ item.taskDueOn }}" onInput="{{ item.onDueOn }}" disabled="{{ item.pending }}" aria-label="Due date in MM/DD/YYYY format" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:7px;font:11.5px Archivo,sans-serif"></label><label style="grid-column:1/-1"><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">EVIDENCE SUMMARY</span><input type="text" value="{{ item.taskEvidenceSummary }}" onInput="{{ item.onEvidenceSummary }}" disabled="{{ item.pending }}" placeholder="What proves this is complete?" style="width:100%;border:1px solid rgba(23,14,11,.25);background:#fff;padding:8px;font:11.5px Archivo,sans-serif"></label></div><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px"><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button><button type="button" onClick="{{ item.onComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add comment</button><button type="button" onClick="{{ item.onEvidence }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Add evidence</button></div></sc-if>
 </div>
 </sc-for>
 </div>
@@ -2434,7 +2434,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">DBA / RETAILER NAME *</span><input type="text" value="{{ onboardingCreateDba }}" onInput="{{ onOnboardingCreateDba }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></label>
 </div>
 <div style="font:700 11px Archivo,sans-serif;border-bottom:1px solid rgba(23,14,11,.2);padding-bottom:7px;margin:0 0 11px">Licensed store</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:11px"><input type="text" value="{{ onboardingCreateStoreName }}" onInput="{{ onOnboardingCreateStoreName }}" placeholder="Store name *" aria-label="Store name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateLicense }}" onInput="{{ onOnboardingCreateLicense }}" placeholder="License number *" aria-label="License number" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px ui-monospace,monospace"><input type="text" value="{{ onboardingCreateLicenseType }}" onInput="{{ onOnboardingCreateLicenseType }}" placeholder="License type *" aria-label="License type" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">ISSUED</span><input type="date" value="{{ onboardingCreateLicenseIssued }}" onChange="{{ onOnboardingCreateLicenseIssued }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">EXPIRES *</span><input type="date" value="{{ onboardingCreateLicenseExpires }}" onChange="{{ onOnboardingCreateLicenseExpires }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:11px"><input type="text" value="{{ onboardingCreateStoreName }}" onInput="{{ onOnboardingCreateStoreName }}" placeholder="Store name *" aria-label="Store name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateLicense }}" onInput="{{ onOnboardingCreateLicense }}" placeholder="License number *" aria-label="License number" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px ui-monospace,monospace"><input type="text" value="{{ onboardingCreateLicenseType }}" onInput="{{ onOnboardingCreateLicenseType }}" placeholder="License type *" aria-label="License type" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">ISSUED</span><input type="text" inputMode="numeric" placeholder="MM/DD/YYYY" maxLength="10" value="{{ onboardingCreateLicenseIssued }}" onInput="{{ onOnboardingCreateLicenseIssued }}" aria-label="License issued date in MM/DD/YYYY format" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:600 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">EXPIRES *</span><input type="text" inputMode="numeric" placeholder="MM/DD/YYYY" maxLength="10" value="{{ onboardingCreateLicenseExpires }}" onInput="{{ onOnboardingCreateLicenseExpires }}" aria-label="License expiration date in MM/DD/YYYY format" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"></label></div>
 <div style="display:grid;grid-template-columns:2fr 1fr .5fr .8fr;gap:10px;margin-bottom:15px"><input type="text" value="{{ onboardingCreateAddress1 }}" onInput="{{ onOnboardingCreateAddress1 }}" placeholder="Street address *" aria-label="Street address" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateCity }}" onInput="{{ onOnboardingCreateCity }}" placeholder="City *" aria-label="City" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="text" value="{{ onboardingCreateState }}" onInput="{{ onOnboardingCreateState }}" maxlength="2" placeholder="NY" aria-label="State" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif;text-transform:uppercase"><input type="text" value="{{ onboardingCreatePostal }}" onInput="{{ onOnboardingCreatePostal }}" placeholder="ZIP *" aria-label="ZIP code" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></div>
 <div style="font:700 11px Archivo,sans-serif;border-bottom:1px solid rgba(23,14,11,.2);padding-bottom:7px;margin:0 0 11px">Owner and evidence</div>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:12px"><input type="text" value="{{ onboardingCreateOwnerName }}" onInput="{{ onOnboardingCreateOwnerName }}" placeholder="Owner name *" aria-label="Owner name" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="email" value="{{ onboardingCreateOwnerEmail }}" onInput="{{ onOnboardingCreateOwnerEmail }}" placeholder="Owner email *" aria-label="Owner email" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><input type="tel" value="{{ onboardingCreateOwnerPhone }}" onInput="{{ onOnboardingCreateOwnerPhone }}" placeholder="Owner phone *" aria-label="Owner phone" style="padding:10px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"></div>
@@ -2476,7 +2476,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 <sc-if value="{{ onboardingViewStores }}" hint-placeholder-val="false">
 <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:7px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-muted)">STORES AND LICENSE REVIEW</div><div style="font:700 10.5px ui-monospace,monospace;color:var(--ux-muted)">{{ onboardingStoreSummary }}</div></div>
-<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px;overflow:auto"><div style="min-width:940px"><sc-for list="{{ onboardingDetailStores }}" as="os" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.15fr .75fr 1.7fr auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div><div style="font-weight:700">{{ os.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ os.address }}</div></div><div><div style="font:500 11px ui-monospace,monospace">{{ os.license }}</div><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">QBO {{ os.qboLabel }}</div></div><div><sc-if value="{{ os.canSetup }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 128px auto;gap:6px"><select value="{{ os.qboValue }}" onChange="{{ os.onQbo }}" aria-label="QuickBooks customer for {{ os.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ os.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select><input type="date" value="{{ os.expiresValue }}" onChange="{{ os.onExpires }}" aria-label="License expiration for {{ os.name }}" style="padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><button type="button" onClick="{{ os.onSaveSetup }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ os.setupLabel }}</button></div></sc-if><sc-if value="{{ os.setupReadOnly }}" hint-placeholder-val="true"><div style="font-size:10.5px;color:var(--ux-muted)">License expires {{ os.expiresLabel }}</div></sc-if></div><span style="{{ os.statusStyle }}">{{ os.statusLabel }}</span><div style="display:flex;gap:6px"><sc-if value="{{ os.canReview }}" hint-placeholder-val="false"><button type="button" onClick="{{ os.onQualify }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Qualify</button><button type="button" onClick="{{ os.onReject }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Reject</button></sc-if></div></div></sc-for></div></div>
+<div style="border-top:2px solid rgba(23,14,11,.4);margin-bottom:18px;overflow:auto"><div style="min-width:940px"><sc-for list="{{ onboardingDetailStores }}" as="os" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.15fr .75fr 1.7fr auto auto;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12.5px"><div><div style="font-weight:700">{{ os.name }}</div><div style="font-size:11px;color:var(--ux-muted)">{{ os.address }}</div></div><div><div style="font:500 11px ui-monospace,monospace">{{ os.license }}</div><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">QBO {{ os.qboLabel }}</div></div><div><sc-if value="{{ os.canSetup }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:1fr 128px auto;gap:6px"><select value="{{ os.qboValue }}" onChange="{{ os.onQbo }}" aria-label="QuickBooks customer for {{ os.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ os.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select><input type="text" inputMode="numeric" placeholder="MM/DD/YYYY" maxLength="10" value="{{ os.expiresValue }}" onInput="{{ os.onExpires }}" aria-label="License expiration for {{ os.name }} in MM/DD/YYYY format" style="padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><button type="button" onClick="{{ os.onSaveSetup }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 8px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ os.setupLabel }}</button></div></sc-if><sc-if value="{{ os.setupReadOnly }}" hint-placeholder-val="true"><div style="font-size:10.5px;color:var(--ux-muted)">License expires {{ os.expiresLabel }}</div></sc-if></div><span style="{{ os.statusStyle }}">{{ os.statusLabel }}</span><div style="display:flex;gap:6px"><sc-if value="{{ os.canReview }}" hint-placeholder-val="false"><button type="button" onClick="{{ os.onQualify }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Qualify</button><button type="button" onClick="{{ os.onReject }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:6px 8px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Reject</button></sc-if></div></div></sc-for></div></div>
 </sc-if>
 <sc-if value="{{ onboardingViewAccess }}" hint-placeholder-val="false">
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:rgba(23,14,11,.16);margin-bottom:14px"><sc-for list="{{ onboardingRoleRules }}" as="r" hint-placeholder-count="3"><div style="background:var(--ux-ground);padding:11px 12px"><div style="font:700 11px Archivo,sans-serif;margin-bottom:3px">{{ r.role }}</div><div style="font-size:10.5px;line-height:1.4;color:var(--ux-muted)">{{ r.scope }}</div></div></sc-for></div>
@@ -2647,7 +2647,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:grid;grid-template-columns:1.15fr 1.25fr 145px auto auto;gap:10px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:center">
 <div><div style="font-weight:600"><span style="background:transparent">{{ l.name }}</span></div><div style="font-family:ui-monospace,monospace;font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ l.license }}</div></div>
 <select value="{{ l.qboValue }}" onChange="{{ l.onQbo }}" aria-label="QuickBooks customer for {{ l.name }}" style="min-width:0;padding:7px;border:1px solid rgba(23,14,11,.28);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose QuickBooks customer</option><sc-for list="{{ l.qboOptions }}" as="qo" hint-placeholder-count="3"><option value="{{ qo.value }}">{{ qo.label }}</option></sc-for></select>
-<input type="date" value="{{ l.expiryDraft }}" onInput="{{ l.onExpiry }}" onChange="{{ l.onExpiry }}" aria-label="License expiration for {{ l.name }}" style="width:100%;padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11px Archivo,sans-serif">
+<input type="text" inputMode="numeric" placeholder="MM/DD/YYYY" maxLength="10" value="{{ l.expiryDraft }}" onInput="{{ l.onExpiry }}" aria-label="License expiration for {{ l.name }} in MM/DD/YYYY format" style="width:100%;padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11px Archivo,sans-serif">
 <div><span style="{{ l.style }}">{{ l.status }}</span><div style="font-size:10.5px;color:var(--ux-muted);line-height:1.4;margin-top:5px">{{ l.gateNote }}</div></div>
 <div style="display:flex;gap:6px"><sc-if value="{{ l.canAct }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onSaveDetails }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:7px 9px;font:700 10px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.detailsLabel }}</button></sc-if><sc-if value="{{ l.canStatusAction }}" hint-placeholder-val="false"><button type="button" onClick="{{ l.onAction }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap">{{ l.actionLabel }}</button></sc-if></div>
 </div>
@@ -2772,6 +2772,24 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <script type="text/x-dc" data-dc-script data-props="{}">
 const MONEY = c => '$' + (c / 100).toFixed(2);
 const TODAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/New_York' }).format(new Date());
+const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const US_DATE_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+const validCalendarDate = (year, month, day) => {
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  return date.getUTCFullYear() === Number(year) && date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day);
+};
+const isoDateToUs = value => {
+  const text = String(value || '').trim();
+  const match = ISO_DATE_PATTERN.exec(text);
+  return match && validCalendarDate(match[1], match[2], match[3]) ? match[2] + '/' + match[3] + '/' + match[1] : text;
+};
+const usDateToIso = value => {
+  const text = String(value || '').trim();
+  const iso = ISO_DATE_PATTERN.exec(text);
+  if (iso && validCalendarDate(iso[1], iso[2], iso[3])) return text;
+  const us = US_DATE_PATTERN.exec(text);
+  return us && validCalendarDate(us[3], us[1], us[2]) ? us[3] + '-' + us[1] + '-' + us[2] : '';
+};
 
 const PRODUCTS = [
   { id: 'p1', name: 'Apple Motorbreath 1g Cart', brand: 'Halcyon', cat: 'Vape cartridge', format: '1 g cartridge, 30 per case', sku: 'HLNV-000001', strain: 'Apple Motorbreath · hybrid', band: 'In stock', price: 1850, priceFrom: '2 Jul 2026',
@@ -5372,9 +5390,9 @@ class Component extends DCLogic {
     if (!account || !store || account.demo || !account.portalAccountId || !this.requirePermission('accounts.manage', 'change store readiness')) return;
     const licenseStatus = store.licenseStatus !== 'active' ? 'active' : 'active';
     const orderingStatus = store.licenseStatus !== 'active' ? 'pending' : store.orderingStatus === 'ready' ? 'paused' : 'ready';
-    const expiresOn = String((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '').trim();
-    if (store.licenseStatus !== 'active' && !/^\d{4}-\d{2}-\d{2}$/.test(expiresOn)) {
-      this.set({ toast: 'Record the current license expiration date before qualifying this store.', toastKind: 'LICENSE DATE REQUIRED' });
+    const expiresOn = usDateToIso((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '');
+    if (store.licenseStatus !== 'active' && !expiresOn) {
+      this.set({ toast: 'Record the current license expiration as MM/DD/YYYY before qualifying this store.', toastKind: 'LICENSE DATE REQUIRED' });
       return;
     }
     const label = store.licenseStatus !== 'active' ? 'License qualified; ordering is still pending.'
@@ -5390,9 +5408,9 @@ class Component extends DCLogic {
   saveRetailerStoreDetails(account, store) {
     if (!account || !store || account.demo || !account.portalAccountId || !this.requirePermission('accounts.manage', 'record store source evidence')) return;
     const quickbooksCustomerId = String((this.state.accountStoreQboDrafts || {})[store.license] || store.quickbooksCustomerId || '').trim();
-    const licenseExpiresOn = String((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '').trim();
-    if (!quickbooksCustomerId || !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiresOn)) {
-      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration.', toastKind: 'SOURCE EVIDENCE REQUIRED' });
+    const licenseExpiresOn = usDateToIso((this.state.accountStoreExpiryDrafts || {})[store.license] || store.licenseExpiresOn || '');
+    if (!quickbooksCustomerId || !licenseExpiresOn) {
+      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration as MM/DD/YYYY.', toastKind: 'SOURCE EVIDENCE REQUIRED' });
       return;
     }
     this.set({ retailerActionPending: 'details:' + store.license });
@@ -5408,9 +5426,9 @@ class Component extends DCLogic {
     if (!request || !store) return;
     const draft = (this.state.onboardingStoreDetailsDrafts || {})[store.license] || {};
     const quickbooksCustomerId = String(draft.quickbooksCustomerId || store.quickbooksCustomerId || '').trim();
-    const licenseExpiresOn = String(draft.licenseExpiresOn || store.licenseExpiresOn || '').trim();
-    if (!quickbooksCustomerId || !/^\d{4}-\d{2}-\d{2}$/.test(licenseExpiresOn)) {
-      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration.', toastKind: 'STORE SETUP INCOMPLETE' });
+    const licenseExpiresOn = usDateToIso(draft.licenseExpiresOn || store.licenseExpiresOn || '');
+    if (!quickbooksCustomerId || !licenseExpiresOn) {
+      this.set({ toast: 'Choose the store’s QuickBooks customer and enter its current license expiration as MM/DD/YYYY.', toastKind: 'STORE SETUP INCOMPLETE' });
       return;
     }
     this.onboardingAction('set-onboarding-store-details', {
@@ -5549,9 +5567,10 @@ class Component extends DCLogic {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s.onboardingCreateOwnerEmail || '').trim())) {
       this.set({ onboardingCreateError: 'Enter a valid owner email address.' }); return;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s.onboardingCreateLicenseExpires)
-      || (s.onboardingCreateLicenseIssued && !/^\d{4}-\d{2}-\d{2}$/.test(s.onboardingCreateLicenseIssued))) {
-      this.set({ onboardingCreateError: 'Enter valid license issue and expiration dates.' }); return;
+    const licenseIssuedOn = s.onboardingCreateLicenseIssued ? usDateToIso(s.onboardingCreateLicenseIssued) : '';
+    const licenseExpiresOn = usDateToIso(s.onboardingCreateLicenseExpires);
+    if (!licenseExpiresOn || (s.onboardingCreateLicenseIssued && !licenseIssuedOn)) {
+      this.set({ onboardingCreateError: 'Enter license dates as MM/DD/YYYY.' }); return;
     }
     const account = (s.retailerAccounts || []).find(item =>
       String(item.quickbooksCustomerId || '') === String(s.onboardingCreateAccountId));
@@ -5570,8 +5589,8 @@ class Component extends DCLogic {
       quickbooksCustomerId: account.quickbooksCustomerId,
       legalEntity: s.onboardingCreateLegalEntity.trim(), dba: s.onboardingCreateDba.trim(),
       locations: [{ name: s.onboardingCreateStoreName.trim(), license: s.onboardingCreateLicense.trim().toUpperCase(),
-        licenseType: s.onboardingCreateLicenseType.trim(), licenseIssuedOn: s.onboardingCreateLicenseIssued || null,
-        licenseExpiresOn: s.onboardingCreateLicenseExpires, address }],
+        licenseType: s.onboardingCreateLicenseType.trim(), licenseIssuedOn: licenseIssuedOn || null,
+        licenseExpiresOn, address }],
       locationsText: [s.onboardingCreateStoreName.trim(), s.onboardingCreateLicense.trim().toUpperCase(),
         s.onboardingCreateLicenseType.trim(), address].join(' · '),
       owner: { name: s.onboardingCreateOwnerName.trim(), email: s.onboardingCreateOwnerEmail.trim().toLowerCase(),
@@ -5849,9 +5868,14 @@ class Component extends DCLogic {
   saveReadinessTask(task) {
     if (!task || this.state.readinessTaskPending || !this.requirePermission('readiness.manage', 'manage release-readiness work')) return;
     const draft = (this.state.readinessTaskDrafts || {})[task.id] || task;
+    const dueOn = draft.dueOn ? usDateToIso(draft.dueOn) : '';
+    if (draft.dueOn && !dueOn) {
+      this.set({ readinessError: 'Enter the due date as MM/DD/YYYY.' });
+      return;
+    }
     this.set({ readinessTaskPending: task.id, readinessError: null });
     this.readinessAction('update-task', { taskId: task.id, status: draft.status || task.status,
-      owner: draft.owner || '', dueOn: draft.dueOn || '', evidenceSummary: draft.evidenceSummary || '' })
+      owner: draft.owner || '', dueOn, evidenceSummary: draft.evidenceSummary || '' })
       .then(body => this.set({ readinessData: { ...(this.state.readinessData || {}), tasks: body.tasks || [] },
         readinessTaskPending: null, toast: task.title + ' was updated.', toastKind: 'READINESS UPDATED' }))
       .catch(error => this.set({ readinessTaskPending: null, readinessError: error.message || 'The readiness task was not saved.' }));
@@ -8913,7 +8937,7 @@ class Component extends DCLogic {
           durable: !!(s.readinessData && s.readinessData.canManageTasks),
           task, taskStatus: draft.status || task.status || 'not_started',
           taskOwner: draft.owner !== undefined ? draft.owner : (task.owner || ''),
-          taskDueOn: draft.dueOn !== undefined ? draft.dueOn : (task.dueOn || ''),
+          taskDueOn: isoDateToUs(draft.dueOn !== undefined ? draft.dueOn : (task.dueOn || '')),
           taskEvidenceSummary: draft.evidenceSummary !== undefined ? draft.evidenceSummary : (task.evidenceSummary || ''),
           pending: s.readinessTaskPending === task.id,
           saveLabel: s.readinessTaskPending === task.id ? 'Saving…' : 'Save work item',
@@ -10734,9 +10758,9 @@ class Component extends DCLogic {
         ...store,
         address: store.address || 'Address not recorded',
         qboLabel: store.quickbooksCustomerId || 'not mapped',
-        expiresLabel: store.licenseExpiresOn || 'not recorded',
+        expiresLabel: store.licenseExpiresOn ? isoDateToUs(store.licenseExpiresOn) : 'not recorded',
         qboValue: String((((s.onboardingStoreDetailsDrafts || {})[store.license] || {}).quickbooksCustomerId) || store.quickbooksCustomerId || ''),
-        expiresValue: String((((s.onboardingStoreDetailsDrafts || {})[store.license] || {}).licenseExpiresOn) || store.licenseExpiresOn || ''),
+        expiresValue: isoDateToUs((((s.onboardingStoreDetailsDrafts || {})[store.license] || {}).licenseExpiresOn) || store.licenseExpiresOn || ''),
         qboOptions: onboardingQboOptions,
         canSetup: !!selectedOnboarding.retailerAccountId && selectedOnboarding.workflowState === 'accepted'
           && ['qualification', 'terms', 'account_creation'].includes(selectedOnboarding.stage) && !s.onboardingActionPending,
@@ -10937,7 +10961,7 @@ class Component extends DCLogic {
         qboValue: String((s.accountStoreQboDrafts || {})[l.license] || l.quickbooksCustomerId || ''),
         qboOptions: selectedRetailerQboOptions,
         onQbo: e => this.set({ accountStoreQboDrafts: { ...(s.accountStoreQboDrafts || {}), [l.license]: e.target.value } }),
-        expiryDraft: String((s.accountStoreExpiryDrafts || {})[l.license] || l.licenseExpiresOn || ''),
+        expiryDraft: isoDateToUs((s.accountStoreExpiryDrafts || {})[l.license] || l.licenseExpiresOn || ''),
         onExpiry: e => this.set({ accountStoreExpiryDrafts: { ...(s.accountStoreExpiryDrafts || {}), [l.license]: e.target.value } }),
         canAct: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId && !!l.licenseStatus,
         canStatusAction: !!selectedRetailer && !selectedIsDemo && !!selectedRetailer.portalAccountId && !!l.licenseStatus && l.evidenceReady,
