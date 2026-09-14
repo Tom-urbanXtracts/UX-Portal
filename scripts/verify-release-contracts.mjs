@@ -40,6 +40,7 @@ const communicationsScopeMigration = await readFile(resolve(root, "supabase/migr
 const quickbooksOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901290000_quickbooks_oauth_broker.sql"), "utf8");
 const orderCronMigration = await readFile(resolve(root, "supabase/migrations/20260901300000_order_outbox_cron.sql"), "utf8");
 const mondayOAuthMigration = await readFile(resolve(root, "supabase/migrations/20260901310000_monday_oauth_and_signed_webhooks.sql"), "utf8");
+const retailerEvidenceEventMigration = await readFile(resolve(root, "supabase/migrations/20260915000000_retailer_source_evidence_event.sql"), "utf8");
 const economicPartnerMigration = await readFile(resolve(root, "supabase/migrations/20260901320000_canix_brand_economic_partners.sql"), "utf8");
 const wholesaleMigration = await readFile(resolve(root, "supabase/migrations/20260902010000_wholesale_default_pricing.sql"), "utf8");
 const quickbooksTraceMigration = await readFile(resolve(root, "supabase/migrations/20260902020000_quickbooks_intuit_trace_ids.sql"), "utf8");
@@ -169,6 +170,7 @@ assertContract(source.includes("Isolated demo result") && source.includes("Exter
 assertContract(source.includes("acctPilotChecks") && source.includes("QuickBooks customer") && source.includes("Store ordering") && source.includes("Account ordering"), "QuickBooks retailer detail exposes the independent pilot-readiness gates");
 assertContract(source.includes("acctQualificationBlocked") && source.includes("inactive in QuickBooks") && source.includes("Reactivate or replace"), "inactive QuickBooks customers cannot start portal qualification from the UI");
 assertContract(source.includes("gateNote:") && source.includes("compatible QuickBooks customer") && source.includes("Renewal is required before ordering"), "each retailer store explains its next missing readiness requirement");
+assertContract(retailerEvidenceEventMigration.includes("store_source_evidence_changed") && retailerEvidenceEventMigration.includes("portal_retailer_event_event_type_check"), "retailer source-evidence saves are permitted by the audit event constraint");
 const dateInputBindings = [...source.matchAll(/<input type="date"[^>]*>/g)].map((match) => match[0]);
 assertContract(dateInputBindings.length >= 4 && dateInputBindings.every((input) => input.includes("onChange=")), "date pickers commit their ISO value before evidence and readiness actions validate it");
 assertContract(dateInputBindings.some((input) => input.includes('value="{{ l.expiryDraft }}"') && input.includes('onInput="{{ l.onExpiry }}"') && input.includes('onChange="{{ l.onExpiry }}"')), "retailer source-evidence dates handle both typed values and browser calendar selections");
