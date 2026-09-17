@@ -162,7 +162,7 @@ async function resolveKiosk(token: string, requestUserAgentFamily: string): Prom
   const tokenHash = await sha256(token);
   const { data: link, error: linkError } = await service.from(
     "portal_kiosk_link",
-  ).select("id,store_license,label,last_used_at,expires_at,allowed_categories,allowed_item_ids,access_count").eq("token_hash", tokenHash)
+  ).select("id,store_license,label,last_used_at,expires_at,allowed_brand_name,allowed_categories,allowed_item_ids,access_count").eq("token_hash", tokenHash)
     .eq("active", true).maybeSingle();
   if (linkError) throw linkError;
   if (!link) throw new KioskError(404, "This kiosk link is invalid or no longer active.");
@@ -222,6 +222,8 @@ async function resolveKiosk(token: string, requestUserAgentFamily: string): Prom
     if (!item) return null;
     const coa = coaByItem.get(itemId) ?? {};
     const category = clean(item.item_category_name, 160) || "Other";
+    if (link.allowed_brand_name && clean(item.brand_name, 200).toLowerCase() !==
+      clean(link.allowed_brand_name, 200).toLowerCase()) return null;
     if (categoryScope.size && !categoryScope.has(category.toLowerCase())) return null;
     if (itemScope.size && !itemScope.has(itemId)) return null;
     return {
@@ -287,6 +289,30 @@ async function resolveKiosk(token: string, requestUserAgentFamily: string): Prom
   };
 }
 
+async function kioskProductOptions(): Promise<Row[]> {
+  // Match the published-content window used by anonymous kiosk resolution.
+  const { data: content, error: contentError } = await service.from(
+    "portal_product_content",
+  ).select("canix_item_id").eq("publication_state", "published")
+    .order("updated_at", { ascending: false }).limit(500);
+  if (contentError) throw contentError;
+  const itemIds = Array.from(new Set((content ?? []).map((row) =>
+    Number(row.canix_item_id)).filter((id) => Number.isSafeInteger(id) && id > 0)));
+  if (!itemIds.length) return [];
+  const { data: items, error: itemError } = await service.from("canix_item_current")
+    .select("item_id,name,brand_name,item_category_name,sku")
+    .in("item_id", itemIds).eq("is_active", true);
+  if (itemError) throw itemError;
+  return (items ?? []).filter((item) => Boolean(clean(item.brand_name, 200))).map((item) => ({
+    itemId: Number(item.item_id),
+    name: clean(item.name, 300) || "Unnamed product",
+    brand: clean(item.brand_name, 200),
+    category: clean(item.item_category_name, 160) || "Other",
+    sku: clean(item.sku, 120),
+  })).sort((a, b) => String(a.brand).localeCompare(String(b.brand)) ||
+    String(a.name).localeCompare(String(b.name)));
+}
+
 async function adminSnapshot(): Promise<Row> {
   const [{ data: stores, error: storesError }, { data: links, error: linksError }] =
     await Promise.all([
@@ -294,7 +320,7 @@ async function adminSnapshot(): Promise<Row> {
         "license_number,display_name,organization,active,license_status",
       ).eq("active", true).order("organization").order("display_name"),
       service.from("portal_kiosk_link").select(
-        "id,store_license,label,device_label,token_prefix,active,created_at,revoked_at,last_used_at,expires_at,allowed_categories,allowed_item_ids,access_count,last_rotated_at,rotated_from_id",
+        "id,store_license,label,device_label,token_prefix,active,created_at,revoked_at,last_used_at,expires_at,allowed_brand_name,allowed_categories,allowed_item_ids,access_count,last_rotated_at,rotated_from_id",
       ).order("created_at", { ascending: false }).limit(500),
     ]);
   if (storesError) throw storesError;
@@ -307,6 +333,7 @@ async function adminSnapshot(): Promise<Row> {
       active: store.active !== false && store.license_status === "active",
     })),
     links: links ?? [],
+    products: await kioskProductOptions(),
   };
 }
 
@@ -342,6 +369,18 @@ Deno.serve(async (request) => {
       const allowedItemIds = Array.isArray(body.allowedItemIds)
         ? Array.from(new Set(body.allowedItemIds.map(Number).filter((value) => Number.isSafeInteger(value) && value > 0))).slice(0, 500)
         : [];
+      const allowedBrandName = clean(body.allowedBrandName, 200);
+      if (!allowedBrandName) throw new KioskError(400, "Choose a brand.");
+      if (!allowedItemIds.length) {
+        throw new KioskError(400, "Select at least one product from the chosen brand.");
+      }
+      const eligible = await kioskProductOptions();
+      const eligibleIds = new Set(eligible.filter((item) =>
+        String(item.brand).toLowerCase() === allowedBrandName.toLowerCase()
+      ).map((item) => Number(item.itemId)));
+      if (allowedItemIds.some((id) => !eligibleIds.has(id))) {
+        throw new KioskError(409, "A selected product is no longer published under that brand. Refresh the product list.");
+      }
       const { data: store, error: storeError } = await service.from("portal_store")
         .select("license_number,display_name,organization,active,license_status")
         .eq("license_number", storeLicense).maybeSingle();
@@ -358,10 +397,11 @@ Deno.serve(async (request) => {
           token_hash: await sha256(token),
           token_prefix: token.slice(0, 8),
           expires_at: new Date(Date.now() + expiresInDays * 86400000).toISOString(),
+          allowed_brand_name: allowedBrandName,
           allowed_categories: allowedCategories,
           allowed_item_ids: allowedItemIds,
           created_by: actor.profile.id,
-        }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_categories,allowed_item_ids,access_count").single();
+        }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_brand_name,allowed_categories,allowed_item_ids,access_count").single();
       if (error) throw error;
       await audit(actor, "kiosk-link-created", {
         kioskLinkId: link.id,
@@ -369,6 +409,7 @@ Deno.serve(async (request) => {
         storeName: store.display_name,
         organization: store.organization,
         expiresInDays,
+        brand: allowedBrandName || null,
         categoryRestrictionCount: allowedCategories.length,
         itemRestrictionCount: allowedItemIds.length,
       });
@@ -404,12 +445,13 @@ Deno.serve(async (request) => {
         token_hash: await sha256(token),
         token_prefix: token.slice(0, 8),
         expires_at: new Date(Date.now() + expiresInDays * 86400000).toISOString(),
+        allowed_brand_name: existing.allowed_brand_name ?? null,
         allowed_categories: existing.allowed_categories ?? [],
         allowed_item_ids: existing.allowed_item_ids ?? [],
         rotated_from_id: existing.id,
         last_rotated_at: now,
         created_by: actor.profile.id,
-      }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_categories,allowed_item_ids,access_count").single();
+      }).select("id,store_license,label,device_label,token_prefix,active,created_at,expires_at,allowed_brand_name,allowed_categories,allowed_item_ids,access_count").single();
       if (createError) throw createError;
       const { error: revokeError } = await service.from("portal_kiosk_link").update({
         active: false,

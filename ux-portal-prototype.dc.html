@@ -1682,11 +1682,13 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">EXPIRES</span><select value="{{ kioskExpiryDraft }}" onChange="{{ onKioskExpiryDraft }}" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"><option value="30">30 days</option><option value="90">90 days</option><option value="180">180 days</option><option value="365">1 year</option></select></label>
 <button type="button" onClick="{{ onCreateKioskLink }}" aria-disabled="{{ kioskCreateDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ kioskCreateLabel }}</button>
 </div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">OPTIONAL CATEGORIES · COMMA SEPARATED</span><input type="text" value="{{ kioskCategoriesDraft }}" onInput="{{ onKioskCategoriesDraft }}" placeholder="Flower, Edibles" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px;font:12px Archivo,sans-serif"></label><label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">OPTIONAL CANIX ITEM IDS</span><input type="text" value="{{ kioskItemsDraft }}" onInput="{{ onKioskItemsDraft }}" placeholder="2867738, 2806248" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px;font:12px Archivo,sans-serif"></label></div>
+<div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px"><label style="flex:1;min-width:220px;max-width:390px"><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">BRAND</span><select value="{{ kioskBrandDraft }}" onChange="{{ onKioskBrandDraft }}" style="width:100%;border:1px solid rgba(23,14,11,.3);background:#fff;padding:10px;font:12px Archivo,sans-serif"><option value="">Choose a brand</option><sc-for list="{{ kioskBrandOptions }}" as="brand" hint-placeholder-count="6"><option value="{{ brand.value }}">{{ brand.label }}</option></sc-for></select></label><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted);padding-bottom:11px">{{ kioskSelectionSummary }}</span></div>
+<sc-if value="{{ kioskHasBrand }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:12px;margin-bottom:14px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px"><input type="search" value="{{ kioskProductQuery }}" onInput="{{ onKioskProductQuery }}" placeholder="Search products in this brand" aria-label="Search kiosk products" style="flex:1;min-width:190px;border:1px solid rgba(23,14,11,.3);background:#fff;padding:9px 10px;font:12px Archivo,sans-serif"><button type="button" onClick="{{ onKioskSelectAllBrand }}" style="background:#fff;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Select all brand products</button><button type="button" onClick="{{ onKioskClearProducts }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Clear</button></div><div style="max-height:250px;overflow-y:auto;background:#fff;border-top:1px solid rgba(23,14,11,.18)"><sc-for list="{{ kioskProductRows }}" as="kp" hint-placeholder-count="6"><button type="button" onClick="{{ kp.onPick }}" aria-pressed="{{ kp.pressed }}" style="{{ kp.style }}"><span style="{{ kp.boxStyle }}">{{ kp.mark }}</span><span><strong>{{ kp.name }}</strong><span style="display:block;font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kp.meta }}</span></span></button></sc-for><sc-if value="{{ kioskNoProductResults }}" hint-placeholder-val="{{ false }}"><div style="padding:13px;font-size:12px;color:var(--ux-muted)">No products match this search.</div></sc-if></div></div></sc-if>
+<sc-if value="{{ kioskNoBrands }}" hint-placeholder-val="{{ false }}"><div style="border-left:3px solid var(--ux-signal);padding:9px 12px;margin-bottom:14px;font-size:12px">No active products with published kiosk content are available yet. Publish product content before creating a link.</div></sc-if>
 <sc-if value="{{ kioskCreated }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 14px;margin-bottom:14px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center"><sc-if value="{{ kioskCreatedHasQr }}" hint-placeholder-val="{{ true }}"><img src="{{ kioskCreatedQr }}" alt="Kiosk QR code" style="width:132px;height:132px;background:#fff;padding:7px;border:1px solid rgba(23,14,11,.18)"></sc-if><div><div style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:6px">COPY OR PRINT NOW · SHOWN ONCE</div><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" readonly value="{{ kioskCreatedUrl }}" aria-label="New public kiosk link" style="flex:1;min-width:240px;border:1px solid rgba(23,14,11,.25);background:#fff;padding:9px;font:11px ui-monospace,monospace"><button type="button" onClick="{{ onCopyKioskLink }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Copy link</button><button type="button" onClick="{{ onPrintKioskQr }}" style="background:transparent;color:var(--ux-ink);border:1px solid rgba(23,14,11,.35);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Print QR</button></div></div></div></sc-if>
 <sc-if value="{{ kioskLinksHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:9px 0 9px 12px;margin-bottom:13px;font-size:12px">{{ kioskLinksError }}</div></sc-if>
 <sc-if value="{{ kioskLinksLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:12px;margin-bottom:12px;font-size:12px;color:var(--ux-muted)">Loading kiosk links…</div></sc-if>
-<div style="border-top:2px solid rgba(23,14,11,.38)"><sc-for list="{{ kioskLinks }}" as="kl" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.1fr 1.35fr .9fr .8fr auto;gap:12px;align-items:center;border-bottom:1px solid rgba(23,14,11,.14);padding:11px 0;font-size:12px"><div><strong>{{ kl.label }}</strong><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">{{ kl.deviceLabel }} · TOKEN {{ kl.tokenPrefix }}</div></div><div>{{ kl.storeName }}<div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kl.storeMeta }}</div></div><div><span style="{{ kl.stateStyle }}">{{ kl.state }}</span><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ kl.expiryLabel }}</div></div><div><strong>{{ kl.accessCount }}</strong> opens<div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ kl.lastUsed }}</div></div><div style="display:flex;gap:6px"><sc-if value="{{ kl.canRevoke }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ kl.onRotate }}" aria-disabled="{{ kl.pending }}" style="background:var(--ux-ink);border:1px solid var(--ux-ink);color:var(--ux-ground);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Rotate</button><button type="button" onClick="{{ kl.onRevoke }}" aria-disabled="{{ kl.pending }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ kl.revokeLabel }}</button></sc-if></div></div></sc-for></div>
+<div style="border-top:2px solid rgba(23,14,11,.38)"><sc-for list="{{ kioskLinks }}" as="kl" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.1fr 1.35fr .9fr .8fr auto;gap:12px;align-items:center;border-bottom:1px solid rgba(23,14,11,.14);padding:11px 0;font-size:12px"><div><strong>{{ kl.label }}</strong><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-top:3px">{{ kl.deviceLabel }} · TOKEN {{ kl.tokenPrefix }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ kl.scopeLabel }}</div></div><div>{{ kl.storeName }}<div style="font-size:10.5px;color:var(--ux-muted);margin-top:2px">{{ kl.storeMeta }}</div></div><div><span style="{{ kl.stateStyle }}">{{ kl.state }}</span><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ kl.expiryLabel }}</div></div><div><strong>{{ kl.accessCount }}</strong> opens<div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ kl.lastUsed }}</div></div><div style="display:flex;gap:6px"><sc-if value="{{ kl.canRevoke }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ kl.onRotate }}" aria-disabled="{{ kl.pending }}" style="background:var(--ux-ink);border:1px solid var(--ux-ink);color:var(--ux-ground);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Rotate</button><button type="button" onClick="{{ kl.onRevoke }}" aria-disabled="{{ kl.pending }}" style="background:transparent;border:1px solid rgba(163,49,22,.45);color:var(--ux-signal-text);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ kl.revokeLabel }}</button></sc-if></div></div></sc-for></div>
 <sc-if value="{{ kioskLinksEmpty }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:13px;font-size:12px;color:var(--ux-muted)">No kiosk links have been created. Create one only after the store is qualified.</div></sc-if>
 </section>
 </sc-if>
@@ -3792,9 +3794,9 @@ class Component extends DCLogic {
     onboardingCreateFileName: '', onboardingCreateFileSize: 0, onboardingCreateFileType: '', onboardingCreateFileData: null,
     onboardingCreateError: null, onboardingCreateSubmitting: false,
     userActionEmail: null, userActionRole: 'buyer', userActionLocations: [], userActionError: null,
-    kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
+    kioskLinks: [], kioskStores: [], kioskProducts: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
     kioskStoreDraft: '', kioskLabelDraft: 'Budtender kiosk', kioskDeviceDraft: 'Counter tablet',
-    kioskExpiryDraft: '90', kioskCategoriesDraft: '', kioskItemsDraft: '', kioskLinkPending: null,
+    kioskExpiryDraft: '90', kioskBrandDraft: '', kioskProductQuery: '', kioskSelectedItemIds: [], kioskLinkPending: null,
     kioskCreatedUrl: '', kioskCreatedQr: '',
     publicKioskToken: PUBLIC_KIOSK_TOKEN, publicKioskData: null, publicKioskLoading: !!PUBLIC_KIOSK_TOKEN, publicKioskError: null,
     publicKioskProductId: null,
@@ -4433,6 +4435,7 @@ class Component extends DCLogic {
       onboardingCreateError: null, onboardingCreateSubmitting: false, onboardingCreateFileData: null,
       userActionEmail: null, userActionLocations: [], userActionError: null,
       kioskLinks: [], kioskStores: [], kioskLinksLoading: false, kioskLinksLoaded: false, kioskLinksError: null,
+      kioskProducts: [], kioskBrandDraft: '', kioskProductQuery: '', kioskSelectedItemIds: [],
       kioskLinkPending: null, kioskCreatedUrl: '', kioskCreatedQr: '', publicKioskToken: '', publicKioskData: null,
       publicKioskLoading: false, publicKioskError: null,
       onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
@@ -5669,26 +5672,48 @@ class Component extends DCLogic {
       || (!force && s.kioskLinksLoaded)) return Promise.resolve();
     this.set({ kioskLinksLoading: true, kioskLinksError: null });
     return this.kioskService({ action: 'list' }, true)
-      .then(body => this.set({ kioskLinks: Array.isArray(body.links) ? body.links : [],
-        kioskStores: Array.isArray(body.stores) ? body.stores : [], kioskLinksLoading: false,
-        kioskLinksLoaded: true, kioskLinksError: null,
-        kioskStoreDraft: s.kioskStoreDraft || ((body.stores || []).find(store => store.active) || {}).license || '' }))
+      .then(body => {
+        const products = Array.isArray(body.products) ? body.products : [];
+        const brand = (products.find(item => String(item.brand).toLowerCase() ===
+          String(s.kioskBrandDraft).toLowerCase()) || {}).brand || '';
+        const eligible = new Set(products.filter(item => String(item.brand).toLowerCase() ===
+          String(brand).toLowerCase()).map(item => Number(item.itemId)));
+        this.set({ kioskLinks: Array.isArray(body.links) ? body.links : [],
+          kioskStores: Array.isArray(body.stores) ? body.stores : [], kioskProducts: products,
+          kioskBrandDraft: brand, kioskSelectedItemIds: s.kioskSelectedItemIds.filter(id => eligible.has(id)),
+          kioskLinksLoading: false, kioskLinksLoaded: true, kioskLinksError: null,
+          kioskStoreDraft: s.kioskStoreDraft || ((body.stores || []).find(store => store.active) || {}).license || '' });
+      })
       .catch(error => this.set({ kioskLinksLoading: false, kioskLinksLoaded: true,
         kioskLinksError: error.message || 'Kiosk links could not be loaded.' }));
+  }
+
+  toggleKioskProduct(itemId) {
+    this.setState(state => ({ kioskSelectedItemIds: state.kioskSelectedItemIds.includes(itemId)
+      ? state.kioskSelectedItemIds.filter(id => id !== itemId)
+      : state.kioskSelectedItemIds.concat([itemId]), kioskLinksError: null }));
+  }
+
+  selectAllKioskBrand() {
+    const s = this.state;
+    this.set({ kioskSelectedItemIds: s.kioskProducts.filter(item => String(item.brand).toLowerCase() ===
+      String(s.kioskBrandDraft).toLowerCase())
+      .map(item => Number(item.itemId)), kioskLinksError: null });
   }
 
   createKioskLink() {
     const s = this.state;
     if (s.kioskLinkPending || !this.requirePermission('users.manage', 'create kiosk links')) return;
     if (!s.kioskStoreDraft) { this.set({ kioskLinksError: 'Choose an active, qualified store.' }); return; }
+    if (!s.kioskBrandDraft) { this.set({ kioskLinksError: 'Choose a brand.' }); return; }
+    if (!s.kioskSelectedItemIds.length) { this.set({ kioskLinksError: 'Select at least one product from that brand.' }); return; }
     this.set({ kioskLinkPending: 'create', kioskLinksError: null, kioskCreatedUrl: '', kioskCreatedQr: '' });
-    const categories = String(s.kioskCategoriesDraft || '').split(',').map(value => value.trim()).filter(Boolean);
-    const itemIds = String(s.kioskItemsDraft || '').split(/[\s,]+/).map(value => Number(value)).filter(Number.isSafeInteger);
     this.kioskService({ action: 'create', storeLicense: s.kioskStoreDraft,
       label: String(s.kioskLabelDraft || '').trim() || 'Budtender kiosk',
       deviceLabel: String(s.kioskDeviceDraft || '').trim() || 'Counter tablet',
       expiresInDays: Number(s.kioskExpiryDraft) || 90,
-      allowedCategories: categories, allowedItemIds: itemIds }, true)
+      allowedBrandName: s.kioskBrandDraft, allowedCategories: [],
+      allowedItemIds: s.kioskSelectedItemIds }, true)
       .then(body => {
         if (!body.token) throw new Error('The kiosk service did not return the one-time link token.');
         const url = body.kioskUrl || (location.origin + location.pathname + '#kiosk=' + body.token);
@@ -8593,6 +8618,31 @@ class Component extends DCLogic {
       value: store.license, disabled: 'false', label: store.organization + ' · ' + store.name + ' · ' + store.license
     }));
     if (!kioskStoreOptions.length) kioskStoreOptions.push({ value: '', disabled: 'true', label: 'No qualified stores available' });
+    const kioskBrandMap = new Map();
+    (s.kioskProducts || []).forEach(item => {
+      const brand = String(item.brand || '').trim();
+      if (brand && !kioskBrandMap.has(brand.toLowerCase())) kioskBrandMap.set(brand.toLowerCase(), brand);
+    });
+    const kioskBrandOptions = Array.from(kioskBrandMap.values()).sort((a, b) => a.localeCompare(b))
+      .map(brand => ({ value: brand, label: brand }));
+    const kioskBrandProducts = (s.kioskProducts || []).filter(item => s.kioskBrandDraft &&
+      String(item.brand || '').toLowerCase() === String(s.kioskBrandDraft).toLowerCase());
+    const kioskQuery = String(s.kioskProductQuery || '').trim().toLowerCase();
+    const kioskProductRows = kioskBrandProducts.filter(item => !kioskQuery ||
+      [item.name, item.category, item.sku, item.itemId].some(value => String(value || '').toLowerCase().includes(kioskQuery)))
+      .map(item => {
+        const id = Number(item.itemId);
+        const selected = s.kioskSelectedItemIds.includes(id);
+        return { name: item.name, meta: [item.category, item.sku, 'Canix ' + id].filter(Boolean).join(' · '),
+          mark: selected ? '✓' : '', pressed: selected ? 'true' : 'false',
+          style: 'width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:9px 10px;'
+            + 'border:0;border-bottom:1px solid rgba(23,14,11,.12);cursor:pointer;background:'
+            + (selected ? 'var(--ux-accent-wash)' : '#fff') + ';font:12px Archivo,sans-serif',
+          boxStyle: 'flex:0 0 auto;width:16px;height:16px;border:1px solid rgba(23,14,11,.45);'
+            + 'display:flex;align-items:center;justify-content:center;font:700 11px Archivo,sans-serif;'
+            + (selected ? 'background:var(--ux-accent);color:#fff' : 'background:#fff'),
+          onPick: () => this.toggleKioskProduct(id) };
+      });
     const kioskLinks = (s.kioskLinks || []).map(link => {
       const store = kioskStoreMap.get(String(link.store_license || '').toUpperCase()) || {};
       const active = link.active !== false;
@@ -8600,6 +8650,13 @@ class Component extends DCLogic {
       return {
         ...link, tokenPrefix: (link.token_prefix || '') + '…', storeName: store.name || link.store_license,
         deviceLabel: link.device_label || 'Unlabelled device',
+        scopeLabel: link.allowed_brand_name
+          ? link.allowed_brand_name + ' · ' + (Array.isArray(link.allowed_item_ids) ? link.allowed_item_ids.length : 0) + ' selected products'
+          : Array.isArray(link.allowed_item_ids) && link.allowed_item_ids.length
+            ? link.allowed_item_ids.length + ' selected products'
+            : Array.isArray(link.allowed_categories) && link.allowed_categories.length
+              ? 'Categories: ' + link.allowed_categories.join(', ')
+              : 'All published products',
         storeMeta: [store.organization, link.store_license].filter(Boolean).join(' · '),
         state: active ? 'ACTIVE' : 'REVOKED',
         stateStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;padding:3px 6px;background:'
@@ -10858,12 +10915,24 @@ class Component extends DCLogic {
       kioskLabelDraft: s.kioskLabelDraft, onKioskLabelDraft: event => this.set({ kioskLabelDraft: event.target.value, kioskLinksError: null }),
       kioskDeviceDraft: s.kioskDeviceDraft, onKioskDeviceDraft: event => this.set({ kioskDeviceDraft: event.target.value, kioskLinksError: null }),
       kioskExpiryDraft: s.kioskExpiryDraft, onKioskExpiryDraft: event => this.set({ kioskExpiryDraft: event.target.value, kioskLinksError: null }),
-      kioskCategoriesDraft: s.kioskCategoriesDraft, onKioskCategoriesDraft: event => this.set({ kioskCategoriesDraft: event.target.value, kioskLinksError: null }),
-      kioskItemsDraft: s.kioskItemsDraft, onKioskItemsDraft: event => this.set({ kioskItemsDraft: event.target.value, kioskLinksError: null }),
+      kioskBrandDraft: s.kioskBrandDraft,
+      onKioskBrandDraft: event => this.set({ kioskBrandDraft: event.target.value, kioskProductQuery: '',
+        kioskSelectedItemIds: [], kioskLinksError: null }),
+      kioskProductQuery: s.kioskProductQuery,
+      onKioskProductQuery: event => this.set({ kioskProductQuery: event.target.value }),
+      onKioskSelectAllBrand: () => this.selectAllKioskBrand(),
+      onKioskClearProducts: () => this.set({ kioskSelectedItemIds: [], kioskLinksError: null }),
+      kioskBrandOptions, kioskHasBrand: !!s.kioskBrandDraft,
+      kioskNoBrands: s.kioskLinksLoaded && !s.kioskLinksLoading && !kioskBrandOptions.length,
+      kioskProductRows, kioskNoProductResults: !!s.kioskBrandDraft && !kioskProductRows.length,
+      kioskSelectionSummary: s.kioskBrandDraft
+        ? s.kioskSelectedItemIds.length + ' of ' + kioskBrandProducts.length + ' products selected'
+        : 'Choose a brand, then select products',
       kioskStoreOptions, kioskLinks,
       kioskLinksLoading: s.kioskLinksLoading, kioskLinksHasError: !!s.kioskLinksError, kioskLinksError: s.kioskLinksError || '',
       kioskLinksRefreshLabel: s.kioskLinksLoading ? 'Refreshing…' : 'Refresh links', onKioskLinksRefresh: () => this.loadKioskLinks(true),
-      kioskCreateDisabled: s.kioskLinkPending || !s.kioskStoreDraft ? 'true' : 'false',
+      kioskCreateDisabled: s.kioskLinkPending || !s.kioskStoreDraft || !s.kioskBrandDraft
+        || !s.kioskSelectedItemIds.length ? 'true' : 'false',
       kioskCreateLabel: s.kioskLinkPending === 'create' ? 'Creating…' : 'Create kiosk link', onCreateKioskLink: () => this.createKioskLink(),
       kioskCreated: !!s.kioskCreatedUrl, kioskCreatedUrl: s.kioskCreatedUrl || '', kioskCreatedQr: s.kioskCreatedQr || '',
       kioskCreatedHasQr: !!s.kioskCreatedQr, onCopyKioskLink: () => this.copyKioskLink(), onPrintKioskQr: () => this.printKioskQr(),
