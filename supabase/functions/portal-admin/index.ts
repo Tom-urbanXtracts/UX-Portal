@@ -687,6 +687,76 @@ Deno.serve(async (request) => {
       }
       return await resetUserMfa(request, actor, email);
     }
+    if (action === "invite-workforce-administrator") {
+      if (
+        actor.role !== "internal" || actor.staff_role !== "administrator" ||
+        !(await hasPermission(actor, "users.manage"))
+      ) {
+        return json(request, {
+          error: "Only a workforce Administrator may add another Administrator.",
+        }, 403);
+      }
+      if (!/^[^@\s]+@urbanxtracts\.com$/.test(email)) {
+        return json(request, {
+          error: "Use the employee's urbanxtracts.com email address.",
+        }, 400);
+      }
+      if (body.confirmAdministrator !== true) {
+        return json(request, {
+          error: "Confirm the Administrator access grant before continuing.",
+        }, 400);
+      }
+      const fullName = text(body.fullName, 160);
+      if (!fullName) {
+        return json(request, { error: "A name is required." }, 400);
+      }
+      let target = await findAuthUser(email);
+      const invited = !target;
+      if (!target) {
+        const { data, error } = await service.auth.admin.inviteUserByEmail(
+          email,
+          { data: { full_name: fullName } },
+        );
+        if (error || !data.user) {
+          throw error ?? new Error("The invitation did not create a user.");
+        }
+        target = data.user as unknown as Row;
+      }
+      const { error: grantError } = await service.rpc(
+        "portal_grant_workforce_administrator",
+        {
+          p_actor_id: actor.id,
+          p_target_id: target.id,
+          p_full_name: fullName,
+        },
+      );
+      if (grantError) {
+        if (grantError.message.includes("already has Administrator access")) {
+          return json(request, { error: grantError.message }, 409);
+        }
+        if (grantError.message.includes("existing retailer or deactivated account")) {
+          return json(request, { error: grantError.message }, 409);
+        }
+        if (invited) {
+          console.error("portal-admin workforce grant after invitation", grantError);
+          return json(request, {
+            error: "The invitation may have been sent, but Administrator access was not granted. Check the user list before retrying.",
+          }, 503);
+        }
+        throw grantError;
+      }
+      return json(request, {
+        ok: true,
+        invited,
+        user: {
+          id: target.id,
+          email,
+          org: "urbanXtracts",
+          role: "internal",
+          staffRole: "administrator",
+        },
+      });
+    }
     const org = text(body.org, 200);
     const roleLabel = text(body.role, 40);
     const role = ({
