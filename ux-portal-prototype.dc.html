@@ -13332,7 +13332,7 @@ class Component extends DCLogic {
       summary: exception.summary || 'Source review required',
       detail: exception.detail || 'Open the relevant capability for the current source boundary.'
     }));
-    const brandSupplyActivePanel = s.screen === 'brand-products' ? 'skus'
+    const brandSupplyActivePanel = s.screen === 'brand-products' ? (s.brandSupplyPanel === 'documents' ? 'documents' : 'skus')
       : s.screen === 'brand-vendors' && s.brandSupplyPanel === 'skus' ? 'vendors' : s.brandSupplyPanel;
     const brandDocumentsData = s.brandDocumentsData && typeof s.brandDocumentsData === 'object'
       ? s.brandDocumentsData : {};

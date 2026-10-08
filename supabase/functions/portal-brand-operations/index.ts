@@ -1670,7 +1670,7 @@ async function overview(actor: Actor, organizationId: string): Promise<Row> {
       account?.canix_owner_id ? "warning" : "blocking",
       `${ownerCoverage.missingOwnerRecords} Brand package record(s) are missing the Canix Owner field.`,
       account?.canix_owner_id
-        ? `${ownerCoverage.ownerScopedRecords} record(s) are safely included under Owner ${account.canix_owner_id}; ${ownerCoverage.matchedBrandOwnerRecords} also carry the mapped Brand. Unowned records remain excluded.`
+        ? `${ownerCoverage.ownerScopedRecords} record(s) are safely included under Owner ${account.canix_owner_id}; ${ownerCoverage.matchedBrandOwnerRecords} also carry the mapped Brand. Unowned records remain excluded. To clear this warning, assign the correct Canix Owner to the missing package records in Canix, then refresh the product workspace after the next sync.`
         : "Inventory remains blocked because Brand identity is not an ownership boundary.",
     );
   }
