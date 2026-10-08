@@ -18,7 +18,7 @@ This register consolidates the current recommendations and unresolved items from
 | Item | Status | Remaining action |
 | --- | --- | --- |
 | Browser workflow acceptance | Complete | `REQ-C16914A6E4` passed submission, self-approval denial, second-Administrator approval, completion evidence, notification, and audit-state checks on 10/08/2026. |
-| Source-control preservation | In progress | Build and verification pass. Commit and push the Internal workflow, notification, suppression, identity compatibility, documentation, and migration-history changes. |
+| Source-control preservation | Complete | Build and verification passed; the Internal workflow, notification, suppression, identity compatibility, documentation, migration-history, and QuickBooks recovery changes were committed and pushed in `7d1801c`. |
 | QuickBooks production verification | Complete | Production realm is authorized. A forced recovery sync succeeded on 10/08/2026 after removing the stale `connection_status` retry deadlock; the snapshot is source-labelled and read-only. |
 | Supabase breached-password protection | Plan-gated | The organization remains on Free. Enable immediately after the organization upgrades to Pro; retain the active advisor until then. |
 
