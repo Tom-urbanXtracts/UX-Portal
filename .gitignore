@@ -13,3 +13,19 @@ node_modules/
 # Live connector exports are private operational data. Keep synthetic fixtures
 # under a separately named test-fixtures directory instead.
 /data/canix-inventory-snapshot.json
+
+# Local review evidence and connector-derived working files are not Site source.
+/.codex-audit/
+/bridge/
+/tmp/
+/outputs/brand-mapping-decisions-*/
+/outputs/brand-ownership-audit-*/
+/outputs/canix-qbo-reconciliation-*/
+/outputs/monday-exit-*/
+/outputs/pre-portal-native-*/
+
+# Temporary Office lock files.
+~$*
+
+# Generated document render previews are reproducible and too bulky for source.
+/output/**/rendered*/

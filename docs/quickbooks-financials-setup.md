@@ -1,10 +1,10 @@
 # QuickBooks financial visibility
 
-The portal reads QuickBooks Customers, Invoices, and Payments through one server-side OAuth connection. QuickBooks remains authoritative. This release displays financial history only; it does not collect payments, retain bank details, or create accounting transactions.
+The portal reads QuickBooks Customers, Vendors, Invoices, and Payments through one server-side OAuth connection. QuickBooks remains authoritative. This release displays financial history and supports internal counterparty reconciliation only; it does not collect payments, retain bank details, or create accounting transactions.
 
 ## Deploy
 
-1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, `20260902030000_quickbooks_sync_cron.sql`, `20260902050000_quickbooks_environment_isolation.sql`, and `20260902060000_quickbooks_environment_safe_cache_clear.sql`.
+1. Apply `20260901210000_quickbooks_financials.sql`, `20260901290000_quickbooks_oauth_broker.sql`, `20260902020000_quickbooks_intuit_trace_ids.sql`, `20260902030000_quickbooks_sync_cron.sql`, `20260902050000_quickbooks_environment_isolation.sql`, `20260902060000_quickbooks_environment_safe_cache_clear.sql`, `20260929190000_quickbooks_vendor_cache.sql`, and `20260929193000_quickbooks_sync_request_timeout.sql`.
 2. Deploy `quickbooks-oauth`, the updated `quickbooks-retailers`, `quickbooks-financials`, and `portal-readiness` Edge Functions.
 3. Register this exact Intuit redirect URI:
    - `https://cbhsavfbtcpdyxcvguay.supabase.co/functions/v1/quickbooks-oauth/callback`
@@ -20,11 +20,11 @@ The portal reads QuickBooks Customers, Invoices, and Payments through one server
    - QBO_EGRESS_PROXY_SECRET (the same strong credential held only by the proxy and Edge Functions)
 5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Portal start/status routes require a valid Administrator token, the callback consumes a one-time OAuth state, and the sync POST additionally accepts the scheduler-only secret.
 6. Sign in as a portal Administrator, open Release readiness, and choose **Connect QuickBooks**. The callback stores the realm and encrypted refresh token server-side. Do not copy a refresh token manually.
-7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Invoices, and Payments together.
+7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Vendors, Invoices, and Payments together.
 
 The scheduled endpoint returns HTTP 202 with `skipped: true` while no encrypted QuickBooks connection exists. This keeps the production schedule ready without turning the intentionally disconnected pre-approval state into a recurring error. The first interval after a successful OAuth connection begins normal synchronization automatically.
 
-The selected Intuit Accounting environment is explicit and is bound to the one-time OAuth state, encrypted realm, refresh-token rotations, API hostname, and published snapshot. The static-egress proxy maps separate fixed routes to Intuit's exact sandbox and production hosts. When the environment changes, the prior Customer, Invoice, and Payment cache is cleared before the new connection is accepted; the old token and snapshot cannot be reused. Release readiness and the administrator connection card display the active environment.
+The selected Intuit Accounting environment is explicit and is bound to the one-time OAuth state, encrypted realm, refresh-token rotations, API hostname, and published snapshot. The static-egress proxy maps separate fixed routes to Intuit's exact sandbox and production hosts. When the environment changes, the prior Customer, Vendor, Invoice, and Payment cache is cleared before the new connection is accepted; the old token and snapshot cannot be reused. Release readiness and the administrator connection card display the active environment.
 
 The OAuth state is stored only as a ten-minute SHA-256 hash and is consumed atomically. The refresh token is encrypted with the Edge-Function-only encryption key. The sync persists every rotated Intuit refresh token before querying data. It writes Invoice and Payment rows under a new run ID and changes last_financial_run_id only after the complete run succeeds. A failed or partial refresh therefore leaves the prior complete snapshot readable.
 
@@ -34,7 +34,7 @@ The OAuth broker resolves the current authorization and bearer-token endpoints f
 
 When both egress variables are configured, all Intuit discovery, token, and Accounting requests route through the static-egress service. Partial proxy configuration fails closed. Development remains direct when both variables are absent. The proxy accepts no arbitrary target URL: it maps only the fixed discovery and token routes plus a validated company-query route to exact Intuit HTTPS hosts.
 
-The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
+The Intuit accounting scope is broader than the portal's feature set. UX OS enforces read-only behavior in application code: the connector issues only query `GET` operations for Customer, Vendor, Invoice, and Payment. It exposes no create, update, delete, payment-collection, or invoice-generation route.
 
 ## Intuit production-key handoff
 
@@ -52,10 +52,11 @@ After those items, add the production callback URI, replace the development clie
 The normalized cache keeps:
 
 - Customer identity, display name, active state, balance, parent reference, currency, email, billing city, and source timestamps.
+- Vendor ID, display/company name, active state, balance, 1099 flag, email, city/region/postal code, and source timestamps for internal counterparty reconciliation.
 - Invoice customer, document number, transaction/due dates, original amount, balance, delivery statuses, currency, and source timestamps.
 - Payment customer, date, total, unapplied amount, non-sensitive payment-method label, invoice allocations, currency, and source timestamps.
 
-The financial cache does not retain invoice line items, bank or deposit accounts, card/check details, remittance instructions, tax identifiers, or full raw Invoice/Payment payloads. The updated Customer sync also empties the legacy raw-payload column.
+The financial cache does not retain invoice line items, bank or deposit accounts, card/check details, remittance instructions, tax identifiers, Vendor account numbers, check-print names, street addresses, or full raw Vendor/Invoice/Payment payloads. The updated Customer sync also empties the legacy raw-payload column.
 
 ## Access policy
 
@@ -81,7 +82,9 @@ These labels never create or clear an ordering hold. Order intake continues to r
 ## Verification
 
 - Sync a QuickBooks sandbox containing at least two customers, an open invoice, a past-due invoice, a paid invoice, and two payments.
-- Confirm the state row changes to one new last_financial_run_id only after all three entity queries complete.
+- Confirm the state row changes to one new last_financial_run_id only after all four entity queries complete.
+- Confirm an internal user with `accounts.manage` receives normalized Vendor IDs while a retailer user and an internal user without that permission receive 403.
+- Confirm the Vendor cache and response contain no tax identifier, account number, check-print name, street address, payment detail, or raw payload.
 - Force the Payment query to fail and confirm the prior invoices and payments remain visible with a stale warning.
 - Confirm an Owner sees all mapped stores in their organization and no other retailer.
 - Confirm a Buyer sees only assigned, directly mapped stores.

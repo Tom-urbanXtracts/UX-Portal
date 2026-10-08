@@ -7,7 +7,7 @@ import {
   orderTransitionAllowed,
   verifyHs256Jwt,
 } from "../functions/_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../functions/_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../functions/_shared/auth.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -46,16 +46,39 @@ function unsignedTestJwt(payload: Record<string, unknown>): string {
   return `${encode({ alg: "none", typ: "JWT" })}.${encode(payload)}.`;
 }
 
-Deno.test("portal API assurance gate accepts only aal2 claims", () => {
+Deno.test("portal API assurance gate accepts authenticated user claims", () => {
   assert(
-    verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal2" })}`),
-    "aal2 should pass after upstream JWT validation",
+    verifiedTokenIsAuthenticated(
+      `Bearer ${
+        unsignedTestJwt({ role: "authenticated", sub: "user-1", aal: "aal1" })
+      }`,
+    ),
+    "an aal1 authenticated user should pass after upstream JWT validation",
   );
   assert(
-    !verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal1" })}`),
-    "aal1 must fail",
+    verifiedTokenIsAuthenticated(
+      `Bearer ${
+        unsignedTestJwt({ role: "authenticated", sub: "user-1", aal: "aal2" })
+      }`,
+    ),
+    "an existing aal2 authenticated user should also pass",
   );
-  assert(!verifiedTokenHasAal2("Bearer malformed"), "malformed JWT must fail");
+  assert(
+    !verifiedTokenIsAuthenticated(
+      `Bearer ${unsignedTestJwt({ role: "anon", sub: "user-1" })}`,
+    ),
+    "anonymous claims must fail",
+  );
+  assert(
+    !verifiedTokenIsAuthenticated(
+      `Bearer ${unsignedTestJwt({ role: "authenticated" })}`,
+    ),
+    "authenticated claims without a subject must fail",
+  );
+  assert(
+    !verifiedTokenIsAuthenticated("Bearer malformed"),
+    "malformed JWT must fail",
+  );
 });
 
 Deno.test("order transitions are adjacent and terminal", () => {

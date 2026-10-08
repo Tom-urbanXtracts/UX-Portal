@@ -12,14 +12,23 @@ const packedPortalHtml = (await readFile(portalPath, "utf8"))
     "const MONEY = c => '</script>\n</body>\n</html> + (c",
     "const MONEY = c => '$' + (c",
   )
-  .replaceAll("urbanXtracts Wholesale Portal — prototype", "urbanXtracts Wholesale Portal")
+  .replaceAll("urbanXtracts Wholesale Portal — prototype", "urbanXtracts Operating System")
+  .replaceAll("urbanXtracts Wholesale Portal", "urbanXtracts Operating System")
   .replace(
     "Design prototype for the urbanXtracts wholesale portal. Not a product build; all commercial values are synthetic.",
-    "Private ordering and inventory portal for urbanXtracts and its licensed retail partners.",
+    "Private operating portal for urbanXtracts staff, brand partners, and licensed retail stores.",
   )
   .replace(
     "Design prototype. Not a product build; all commercial values are synthetic.",
+    "Private operating portal for urbanXtracts staff, brand partners, and licensed retail stores.",
+  )
+  .replace(
+    "Private ordering and inventory portal for urbanXtracts and its licensed retail partners.",
+    "Private operating portal for urbanXtracts staff, brand partners, and licensed retail stores.",
+  )
+  .replace(
     "Private ordering and inventory portal for licensed retail partners.",
+    "Private operating portal for urbanXtracts staff, brand partners, and licensed retail stores.",
   );
 const packedTemplateMatch = packedPortalHtml.match(/<script type="__bundler\/template">([\s\S]*?)<\/script>/);
 if (!packedTemplateMatch) {
@@ -58,7 +67,6 @@ function configuredPortalHtml(env = {}) {
   const config = {
     ssoProvider: provider,
     ssoDomain: String(env.UX_SSO_DOMAIN || "urbanxtracts.com").toLowerCase(),
-    mfaRequired: env.UX_MFA_REQUIRED !== "false",
     turnstileRequired: env.UX_TURNSTILE_REQUIRED === "true",
     turnstileSiteKey: String(env.UX_TURNSTILE_SITE_KEY || ""),
   };

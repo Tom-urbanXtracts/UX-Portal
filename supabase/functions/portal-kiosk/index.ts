@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 // @ts-ignore qrcode is bundled by esm.sh for the Edge runtime; no Node APIs are used here.
 import QRCode from "https://esm.sh/qrcode@1.5.4?target=deno&no-dts";
 
@@ -93,7 +93,7 @@ function newToken(): string {
 
 async function actorFor(request: Request): Promise<Actor | null> {
   const authorization = request.headers.get("authorization") ?? "";
-  if (!authorization.startsWith("Bearer ") || !verifiedTokenHasAal2(authorization)) {
+  if (!authorization.startsWith("Bearer ") || !verifiedTokenIsAuthenticated(authorization)) {
     return null;
   }
   const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {

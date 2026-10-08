@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { labFailed, labPassed } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { ContentScanError, scanContent, sha256Hex } from "../_shared/content-scanner.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -506,7 +506,7 @@ async function identity(
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active,locations",
@@ -1172,12 +1172,15 @@ async function createDurableOnboarding(
     const fileType = String(file.contentType || "").trim().toLowerCase();
     const fileSize = Number(file.sizeBytes || 0);
     const fileBody = String(file.base64 || "");
+    const hasFile = Boolean(fileName || fileType || fileSize || fileBody);
     if (
-      !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
-      !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
-      !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 10 * 1024 * 1024 ||
-      fileBody.length < 4 || fileBody.length > 14_000_000 ||
-      !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+      hasFile && (
+        !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
+        !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
+        !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 10 * 1024 * 1024 ||
+        fileBody.length < 4 || fileBody.length > 14_000_000 ||
+        !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+      )
     ) {
       throw new IntakeError(
         400,
@@ -1330,6 +1333,23 @@ async function existingDurableOnboarding(
   return data as unknown as Row | null;
 }
 
+async function workflowMode(
+  workflowKey: string,
+  fallback: "hold" | "monday" | "parallel" | "portal",
+): Promise<"hold" | "monday" | "parallel" | "portal"> {
+  const { data, error } = await service.from("portal_workflow_control")
+    .select("mode").eq("workflow_key", workflowKey).maybeSingle();
+  if (error) {
+    // The migration is backward-compatible: retain the established monday
+    // path until the source-mode control is present.
+    return fallback;
+  }
+  const mode = String(data?.mode ?? fallback);
+  return new Set(["hold", "monday", "parallel", "portal"]).has(mode)
+    ? mode as "hold" | "monday" | "parallel" | "portal"
+    : fallback;
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors(request) });
@@ -1369,18 +1389,26 @@ Deno.serve(async (request) => {
         403,
       );
     }
-    let directMondayConfigured = false;
-    try {
-      directMondayConfigured = !!(await mondayWriteToken());
-    } catch {
-      directMondayConfigured = false;
-    }
-    if (!directMondayConfigured) {
-      return json(
-        request,
-        { error: "Direct Monday intake is temporarily unavailable." },
-        503,
-      );
+    const sourceMode = await workflowMode(
+      kind === "order" ? "store_orders" : "store_onboarding",
+      "monday",
+    );
+    const requiresMonday = kind === "onboarding" ||
+      ["monday", "parallel"].includes(sourceMode);
+    if (requiresMonday) {
+      let directMondayConfigured = false;
+      try {
+        directMondayConfigured = !!(await mondayWriteToken());
+      } catch {
+        directMondayConfigured = false;
+      }
+      if (!directMondayConfigured) {
+        return json(
+          request,
+          { error: "Direct Monday intake is temporarily unavailable." },
+          503,
+        );
+      }
     }
 
     const verifiedPayload = kind === "order" && caller
@@ -1473,7 +1501,16 @@ Deno.serve(async (request) => {
     }
     let result: Row = {};
     if (kind === "order" && durableOrderId) {
-      result = (await directMondayOrder(verifiedPayload)) ?? {};
+      result = sourceMode === "portal"
+        ? {
+          orderNumber: String(
+            verifiedPayload.orderNumber || verifiedPayload.portalReference ||
+              verifiedPayload.portalOrderId,
+          ),
+          status: "accepted",
+          transport: "portal-native",
+        }
+        : (await directMondayOrder(verifiedPayload)) ?? {};
     }
     if (kind === "onboarding" && durableOnboardingId) {
       // Direct onboarding is idempotent on Portal Request ID and can deliver
@@ -1498,13 +1535,32 @@ Deno.serve(async (request) => {
     if (kind === "order" && durableOrderId) {
       await markDurableOrder(durableOrderId, "accepted", {
         orderNumber: result.orderNumber || result.id,
-        mondayItemId: result.mondayItemId || result.itemId || result.id,
-        mondayBoardId: result.mondayBoardId || result.boardId || null,
-        metadata: {
-          mondayAcceptedAt: new Date().toISOString(),
-          mondayStatus: result.status || "accepted",
-        },
+        mondayItemId: sourceMode === "portal"
+          ? null
+          : result.mondayItemId || result.itemId || result.id,
+        mondayBoardId: sourceMode === "portal"
+          ? null
+          : result.mondayBoardId || result.boardId || null,
+        metadata: sourceMode === "portal"
+          ? {
+            portalAcceptedAt: new Date().toISOString(),
+            workflowSource: "portal",
+          }
+          : {
+            mondayAcceptedAt: new Date().toISOString(),
+            mondayStatus: result.status || "accepted",
+            workflowSource: sourceMode,
+          },
       });
+      const { error: sourceError } = await service.from("portal_order").update({
+        workflow_source: sourceMode === "portal"
+          ? "portal"
+          : sourceMode === "parallel"
+          ? "parallel"
+          : "monday",
+        updated_at: new Date().toISOString(),
+      }).eq("id", durableOrderId);
+      if (sourceError) throw sourceError;
     }
     if (kind === "onboarding" && durableOnboardingId) {
       const mondayItemId = result.mondayItemId || result.itemId || result.id;

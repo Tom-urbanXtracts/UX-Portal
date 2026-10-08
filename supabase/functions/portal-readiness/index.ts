@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -17,7 +17,7 @@ const DOCUMENT_SCANNER_CONFIGURED = /^https:\/\//.test(
 ) && (Deno.env.get("DOCUMENT_SCANNER_SHARED_SECRET") ?? "").length >= 32;
 const NOTIFICATION_SENDER_CONFIGURED = /^re_/.test(
   Deno.env.get("RESEND_API_KEY") ?? "",
-);
+) && /^whsec_/.test(Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "");
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -104,7 +104,7 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile")
     .select("id,role,staff_role,active").eq("id", user.id).maybeSingle();
@@ -304,6 +304,7 @@ Deno.serve(async (request) => {
       qboResult,
       qboSchedulerResult,
       mondayResult,
+      mondayBrandMilestoneResult,
       lotIntegrityResult,
       lotSchedulerResult,
       latestMondayEventResult,
@@ -346,6 +347,9 @@ Deno.serve(async (request) => {
       service.rpc("portal_quickbooks_scheduler_state"),
       service.from("monday_connection_state").select(
         "connection_status,connected_at,account_id,granted_scopes,access_token_expires_at,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
+      ).eq("id", 1).maybeSingle(),
+      service.from("monday_brand_milestone_state").select(
+        "board_id,board_name,column_mapping,webhook_id,webhook_status,configured_at,verification_item_id,last_verified_at,last_error",
       ).eq("id", 1).maybeSingle(),
       service.from("portal_lot_integrity_state").select(
         "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
@@ -454,6 +458,9 @@ Deno.serve(async (request) => {
     if (qboResult.error) throw qboResult.error;
     if (qboSchedulerResult.error) throw qboSchedulerResult.error;
     if (mondayResult.error) throw mondayResult.error;
+    if (mondayBrandMilestoneResult.error) {
+      throw mondayBrandMilestoneResult.error;
+    }
     if (lotIntegrityResult.error) throw lotIntegrityResult.error;
     if (lotSchedulerResult.error) throw lotSchedulerResult.error;
     if (latestMondayEventResult.error) throw latestMondayEventResult.error;
@@ -481,6 +488,7 @@ Deno.serve(async (request) => {
       ? qboSchedulerResult.data[0] as Row
       : null;
     const monday = mondayResult.data as Row | null;
+    const mondayBrandMilestone = mondayBrandMilestoneResult.data as Row | null;
     const lotIntegrity = lotIntegrityResult.data as Row | null;
     const lotScheduler = Array.isArray(lotSchedulerResult.data) &&
         lotSchedulerResult.data.length
@@ -577,12 +585,21 @@ Deno.serve(async (request) => {
     const signedMondayReady = mondayOAuthReady &&
       configured("MONDAY_SIGNING_SECRET") &&
       monday?.webhook_status === "active" && Boolean(monday?.webhook_id);
+    const brandMilestoneReady = mondayOAuthReady &&
+      mondayBrandMilestone?.webhook_status === "active" &&
+      Boolean(mondayBrandMilestone?.webhook_id) &&
+      Boolean(mondayBrandMilestone?.verification_item_id) &&
+      Boolean(mondayBrandMilestone?.last_verified_at) &&
+      !mondayBrandMilestone?.last_error;
+    const approvedCallbackBoards = new Set([
+      String(monday?.webhook_board_id ?? ""),
+      String(mondayBrandMilestone?.board_id ?? ""),
+    ].filter(Boolean));
     const latestMondayCallbackOk = Boolean(latestMondayEvent) &&
       latestMondayEvent?.processing_state === "processed" &&
       Number(latestMondayEvent?.response_status) === 200 &&
       !latestMondayEvent?.last_error &&
-      String(latestMondayEvent?.board_id ?? "") ===
-        String(monday?.webhook_board_id ?? "");
+      approvedCallbackBoards.has(String(latestMondayEvent?.board_id ?? ""));
     const lastRefreshHasOneWebhook = Boolean(latestMondayRefresh) &&
       failedWebhookIds.length === 0 && remainingWebhookIds.length === 1 &&
       remainingWebhookIds[0] === String(monday?.webhook_id ?? "");
@@ -710,6 +727,17 @@ Deno.serve(async (request) => {
             detail: signedMondayReady
               ? `App OAuth is connected; signed webhook ${monday.webhook_id} is active for the order board.`
               : "An administrator must install the dedicated Monday app and create its signed order-status webhook.",
+          },
+          {
+            state: brandMilestoneReady ? "pass" : "block",
+            label: "Brand production milestone return",
+            detail: brandMilestoneReady
+              ? `Board ${mondayBrandMilestone?.board_id} is column-pinned, signed, and verified by item ${mondayBrandMilestone?.verification_item_id}.`
+              : mondayBrandMilestone?.last_error
+              ? `The Brand milestone callback needs attention: ${
+                String(mondayBrandMilestone.last_error).slice(0, 240)
+              }`
+              : "Configure the approved Brand milestone board and complete its signed verification item.",
           },
           {
             state: !latestMondayEvent
@@ -1008,16 +1036,16 @@ Deno.serve(async (request) => {
           },
           {
             state: "pass",
-            label: "Multi-factor assurance",
+            label: "Authenticated session",
             detail:
-              "This diagnostics request arrived with an aal2 session. Browser sign-in, authenticated Edge Functions, and restrictive profile policies require the same MFA assurance level.",
+              "This diagnostics request arrived with a validated authenticated session. Protected data still requires server-side role, organization, workspace, and row-level permission checks.",
           },
           {
             state: NOTIFICATION_SENDER_CONFIGURED ? "pass" : "deferred",
             label: "Notification sender",
             detail: NOTIFICATION_SENDER_CONFIGURED
-              ? "Resend Free is configured with portal-enforced hard caps of 100 emails per UTC day and 3,000 per UTC month. Templates, recipient scope, delivery events, and idempotency remain server-controlled."
-              : "The internal/store template library, durable outbox, and no-cost hard caps are ready, but outbound email remains held until the verified sender domain and RESEND_API_KEY are configured.",
+              ? "Resend Free is configured with portal-enforced hard caps of 100 emails per UTC day and 3,000 per UTC month. Templates, recipient scope, signed delivery events, and idempotency remain server-controlled."
+              : "The internal/store template library, durable outbox, and no-cost hard caps are ready, but outbound email remains held until the verified sender domain, RESEND_API_KEY, and RESEND_WEBHOOK_SECRET are configured.",
           },
           {
             state: "pass",
@@ -1102,6 +1130,16 @@ Deno.serve(async (request) => {
             null,
           matchingWebhookCount: remainingWebhookIds.length || null,
           lastWebhookRefreshAt: latestMondayRefresh?.created_at ?? null,
+          brandMilestoneBoardId: mondayBrandMilestone?.board_id ?? null,
+          brandMilestoneBoardName: mondayBrandMilestone?.board_name ?? null,
+          brandMilestoneColumnMapping: mondayBrandMilestone?.column_mapping ?? {},
+          brandMilestoneWebhookId: mondayBrandMilestone?.webhook_id ?? null,
+          brandMilestoneWebhookStatus: mondayBrandMilestone?.webhook_status ??
+            "not_configured",
+          brandMilestoneVerificationItemId:
+            mondayBrandMilestone?.verification_item_id ?? null,
+          brandMilestoneLastVerifiedAt:
+            mondayBrandMilestone?.last_verified_at ?? null,
           accessTokenExpiresAt: monday?.access_token_expires_at ?? null,
           productBoardId: MONDAY_PRODUCT_BOARD_ID,
           lotBoardId: MONDAY_LOT_BOARD_ID,

@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -912,7 +912,7 @@ async function authenticateCapability(
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!userResponse.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = asObject(await userResponse.json());
   const userId = stringOrNull(user.id);
   if (!userId) return null;
@@ -1336,11 +1336,11 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       domain: "REST API",
       table: "GET /packages + GET /sales_orders",
       grain: "one row per package",
-      refresh: "server-side five-minute target",
+      refresh: "server-side target under 15 minutes",
       latest_updated_at: state.latest_source_updated_at,
       last_successful_sync_at: lastSuccess,
       stale: lastSuccess
-        ? Date.now() - new Date(lastSuccess).getTime() > 10 * 60 * 1000
+        ? Date.now() - new Date(lastSuccess).getTime() > 60 * 60 * 1000
         : true,
       connection_mode: "server_side_canix_api_cache",
       ownership_model: "portal_item_default_with_package_override",
@@ -1506,7 +1506,7 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
         last_successful_sync_at: itemLastSuccess,
         latest_updated_at: itemState.latest_source_updated_at ?? null,
         stale: itemLastSuccess
-          ? Date.now() - new Date(itemLastSuccess).getTime() > 10 * 60 * 1000
+          ? Date.now() - new Date(itemLastSuccess).getTime() > 60 * 60 * 1000
           : true,
         status: itemState.status ?? "never_run",
         last_error: itemState.last_error ?? null,

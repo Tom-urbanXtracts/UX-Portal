@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { configuredQuickBooksEnvironment } from "../_shared/quickbooks-oauth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -85,7 +85,7 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile, error } = await service.from("portal_profile")
     .select("id,org,role,staff_role,active").eq("id", user.id).maybeSingle();

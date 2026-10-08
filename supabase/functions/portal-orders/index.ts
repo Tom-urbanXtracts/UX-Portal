@@ -6,7 +6,7 @@ import {
   orderTransitionAllowed,
 } from "../_shared/security-contract.ts";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -162,7 +162,7 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active,locations").eq(
@@ -312,6 +312,7 @@ async function hydrateOrders(orders: Row[]): Promise<Row[]> {
       state: row.state,
       publicState: publicState(String(row.state)),
       workflowState: row.workflow_state,
+      workflowSource: row.workflow_source ?? "monday",
       workflowError: row.workflow_error,
       ownerApprovalRequired: row.owner_approval_required,
       approvalThresholdCents: row.approval_threshold_cents,
@@ -321,6 +322,10 @@ async function hydrateOrders(orders: Row[]): Promise<Row[]> {
       deliveryWindow: row.delivery_window,
       receivingContact: row.receiving_contact,
       receivingInstructions: row.receiving_instructions,
+      fulfillmentPriority: row.fulfillment_priority ?? "P0",
+      assignedDepartment: row.assigned_department ?? "Administrator",
+      assignedUser: row.assigned_user ?? null,
+      dueAt: row.due_at ?? null,
       submittedAt: row.submitted_at,
       acceptedAt: row.accepted_at,
       updatedAt: row.updated_at,
@@ -955,7 +960,7 @@ Deno.serve(async (request) => {
       clean(caller.user.email, 320) || null,
       clean(body.note, 1200) || null,
       null,
-      true,
+      String(order.workflow_source || "monday") !== "portal",
     );
     const updated = await orderById(orderId);
     return json(request, {

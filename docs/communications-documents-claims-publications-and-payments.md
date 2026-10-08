@@ -46,13 +46,17 @@ Production variables:
 
 ## Receiving claims
 
-Owners and assigned Buyers may create a claim only against a delivered order line within their accessible store scope. Supported types are short, damaged, wrong item, refused, and other. The database locks the line and prevents cumulative non-denied claims from exceeding the delivered quantity. Sales, Operations, and Administrators may review and decide claims.
+Owners and assigned Buyers may create a claim only against a delivered order line within their accessible store scope. Supported types are short, damaged, wrong item, refused, and other. The database locks the line and prevents cumulative non-denied claims from exceeding the delivered quantity. Administrators alone may review and decide claims until department ownership is approved.
 
-No claim automatically creates a QuickBooks credit, refund, replacement, payment change, or Canix adjustment. The claim window and evidence requirement remain blank while Operations decides them. This lets UX OS record the exception without inventing a service promise. Evidence upload will use the same scan-cleared private document path before it becomes required.
+The approved policy allows submission for five calendar days after delivery. Shortage, damage, and wrong-item claims require a PDF, PNG, or JPEG photo, manifest, or proof of delivery. The evidence must pass the production malware scanner before the claim enters review. Refused and other claims may include evidence but do not require it.
+
+Administrators own the queue and provide the first response within two New York business days. The controlled workflow is Submitted, Under Review, More Information, Approved or Denied, and Closed. A late claim is accepted only when an active Administrator supplies a retained override reason. Department ownership remains deferred, so Operations and Sales do not manage this queue yet.
+
+No claim automatically creates a QuickBooks credit, refund, replacement, payment change, invoice mutation, or Canix adjustment. Finance performs any approved accounting action separately. The claim, clean evidence, decisions, and audit history are retained for seven years after closure; an active legal hold always overrides disposition, and automatic deletion remains disabled.
 
 ## Document retention and legal holds
 
-The policy register records a five-year floor for applicable distribution books, records, invoices, COAs, lot traceability, and recall evidence. Other five-year values are proposals pending Compliance/Finance approval. Ninety-day quarantine and 365-day superseded-asset periods are technical proposals. Automatic deletion is disabled for every class.
+The policy register records a five-year floor for applicable distribution books, records, invoices, COAs, lot traceability, and recall evidence. Receiving claims and their evidence have a separately approved seven-year schedule measured from closure. Other five-year values are proposals pending Compliance/Finance approval. Ninety-day quarantine and 365-day superseded-asset periods are technical proposals. Automatic deletion is disabled for every class.
 
 A legal hold overrides any retention date. Before automated disposition exists, Compliance must approve the class, start event, period, wind-down procedure, reviewer, deletion evidence, and backup treatment. Active assets and open matters never receive an automatic purge decision.
 

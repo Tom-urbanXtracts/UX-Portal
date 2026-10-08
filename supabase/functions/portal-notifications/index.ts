@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Webhook } from "https://esm.sh/svix@1.81.0?target=denonext";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -9,6 +9,8 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const RESEND_WEBHOOK_SECRET = Deno.env.get("RESEND_WEBHOOK_SECRET") ?? "";
 const PORTAL_EMAIL_FROM = Deno.env.get("PORTAL_EMAIL_FROM") ??
   "urbanXtracts Portal <portal@updates.urbanxtracts.com>";
+const RESEND_SENDER_CONFIGURED = /^re_/.test(RESEND_API_KEY) &&
+  /^whsec_/.test(RESEND_WEBHOOK_SECRET);
 const PORTAL_URL = "https://portal.urbanxtracts.com";
 const DOCUMENT_SCANNER_CONFIGURED = /^https:\/\//.test(Deno.env.get("DOCUMENT_SCANNER_URL") ?? "") &&
   (Deno.env.get("DOCUMENT_SCANNER_SHARED_SECRET") ?? "").length >= 32;
@@ -111,7 +113,7 @@ function clean(value: unknown, max = 500): string {
 
 async function callerFor(request: Request): Promise<Caller | null> {
   const authorization = request.headers.get("authorization") ?? "";
-  if (!authorization.startsWith("Bearer ") || !verifiedTokenHasAal2(authorization)) return null;
+  if (!authorization.startsWith("Bearer ") || !verifiedTokenIsAuthenticated(authorization)) return null;
   const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
@@ -246,6 +248,10 @@ async function queueOne(template: Row, recipientEmail: string, variables: Row, s
       : template.template_key === "onboarding_submitted_store" || template.template_key === "onboarding_submitted_internal" ? "onboarding_submitted"
       : template.template_key === "onboarding_needs_information" ? "onboarding_incomplete"
       : template.template_key === "order_received" || template.template_key === "order_state_changed" ? "order_state"
+      : template.template_key === "brand_purchase_order_received" ||
+          template.template_key === "brand_purchase_order_state_changed" ||
+          template.template_key === "brand_purchase_order_internal"
+      ? "order_state"
       : template.template_key === "claim_received" || template.template_key === "claim_internal" ? "receiving_claim_submitted"
       : template.template_key,
     template_key: template.template_key,
@@ -274,6 +280,9 @@ async function sendTemplate(caller: Caller, body: Row): Promise<Row> {
   }
   if (template.audience === "internal" && recipient.profile.role !== "internal") {
     throw new PortalError(409, "Choose an urbanXtracts user for this template.");
+  }
+  if (template.audience === "brand" && recipient.profile.role !== "brand") {
+    throw new PortalError(409, "Choose an active Brand user for this template.");
   }
   const variables = body.variables && typeof body.variables === "object" ? body.variables as Row : {};
   variables.recipientName = variables.recipientName || recipient.profile.full_name || "there";
@@ -348,7 +357,9 @@ async function listFor(caller: Caller): Promise<Row> {
       retentionRules: retention.data ?? [],
       sender: {
         provider: "Resend Free",
-        configured: Boolean(RESEND_API_KEY),
+        configured: RESEND_SENDER_CONFIGURED,
+        apiKeyConfigured: /^re_/.test(RESEND_API_KEY),
+        webhookConfigured: /^whsec_/.test(RESEND_WEBHOOK_SECRET),
         from: PORTAL_EMAIL_FROM,
         costMode: "free_tier_hard_cap",
         dailyUsed: Number(quota.dailyUsed ?? 0),

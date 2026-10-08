@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -1095,7 +1095,7 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active").eq("id", user.id)
@@ -1113,9 +1113,21 @@ async function callerFor(request: Request): Promise<Caller | null> {
   return { user, profile: profile as Row, canManage };
 }
 
-function serialize(row: Row): Row {
+function serialize(row: Row, item: Row = {}): Row {
   return {
     canixItemId: row.canix_item_id,
+    itemName: item.name ?? null,
+    brandName: item.product_brand_name ?? item.brand_name ?? null,
+    categoryName: item.item_category_name ?? null,
+    formatName: item.item_sub_type_name ?? item.item_category_name ?? null,
+    sku: item.sku ?? null,
+    quantityType: item.quantity_type ?? null,
+    unitWeight: item.unit_weight ?? null,
+    unitWeightUnit: item.unit_weight_unit ?? null,
+    caseQuantity: item.case_quantity ?? null,
+    caseQuantityUnit: item.case_quantity_unit ?? null,
+    strainName: item.strain_name ?? null,
+    strainType: item.strain_type ?? null,
     mondayItemId: row.monday_item_id,
     mondayBoardId: row.monday_board_id,
     publicationState: row.publication_state,
@@ -1125,6 +1137,8 @@ function serialize(row: Row): Row {
     validationWarnings: row.validation_warnings ?? [],
     approvedAt: row.approved_at,
     scheduledPublishAt: row.scheduled_publish_at,
+    sourceMode: row.source_mode ?? "portal",
+    revision: row.revision ?? 1,
     shortDescription: row.short_description,
     longDescription: row.long_description,
     sellingPoints: row.selling_points ?? [],
@@ -1137,6 +1151,13 @@ function serialize(row: Row): Row {
     lastSyncedAt: row.last_synced_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function catalogWorkflowMode(): Promise<string> {
+  const { data, error } = await service.from("portal_workflow_control")
+    .select("mode").eq("workflow_key", "catalog_content").maybeSingle();
+  if (error) throw error;
+  return clean(data?.mode, 40) ?? "portal";
 }
 
 async function publishDueCatalog(): Promise<void> {
@@ -1417,7 +1438,25 @@ async function upsertItems(
       },
     });
     if (error) throw error;
-    results.push(serialize(data as Row));
+    let saved = data as Row;
+    if (source === "internal") {
+      const { data: portalRecord, error: portalError } = await service.from(
+        "portal_product_content",
+      ).update({
+        source_mode: "portal",
+        workflow_state: "draft",
+        publication_state: "draft",
+        approved_by: null,
+        approved_at: null,
+        scheduled_publish_at: null,
+        updated_by: caller?.profile.id ?? null,
+        updated_by_email: caller?.user.email ?? null,
+        updated_at: now,
+      }).eq("canix_item_id", canixItemId).select("*").single();
+      if (portalError) throw portalError;
+      saved = portalRecord as Row;
+    }
+    results.push(serialize(saved));
   }
   return results;
 }
@@ -1636,8 +1675,25 @@ Deno.serve(async (request) => {
       if (!caller.canManage) query = query.eq("publication_state", "published");
       const { data, error } = await query;
       if (error) throw error;
+      const productRows = (data ?? []) as unknown as Row[];
+      const itemIds = productRows.map((row) => Number(row.canix_item_id))
+        .filter((itemId) => Number.isSafeInteger(itemId) && itemId > 0);
+      let itemById = new Map<number, Row>();
+      if (itemIds.length) {
+        const { data: itemData, error: itemError } = await service.from(
+          "canix_item_current",
+        ).select(
+          "item_id,name,brand_name,product_brand_name,item_category_name,item_sub_type_name,sku,quantity_type,unit_weight,unit_weight_unit,case_quantity,case_quantity_unit,strain_name,strain_type",
+        ).in("item_id", itemIds);
+        if (itemError) throw itemError;
+        itemById = new Map(
+          (itemData ?? []).map((item) => [Number(item.item_id), item as Row]),
+        );
+      }
       return json(request, {
-        products: (data ?? []).map((row) => serialize(row as unknown as Row)),
+        products: productRows.map((row) =>
+          serialize(row, itemById.get(Number(row.canix_item_id)) ?? {})
+        ),
       });
     }
     if (!mondayAuthorized && (!caller || !caller.canManage)) {
@@ -1645,6 +1701,20 @@ Deno.serve(async (request) => {
     }
     const body = await request.json() as Row;
     const action = String(body.action ?? "").toLowerCase();
+    const workflowMode = await catalogWorkflowMode();
+    const mondayActions = new Set([
+      "mapping-audit",
+      "approve-mapping",
+      "approve-manual-mapping",
+      "approve-exact-mappings",
+      "sync-monday",
+    ]);
+    if ((mondayAuthorized || mondayActions.has(action)) && workflowMode === "portal") {
+      throw new ProductError(
+        409,
+        "Catalog content is now managed in the Portal. Monday catalog writes are retained as read-only history.",
+      );
+    }
     if (action === "catalog-workflow") {
       if (mondayAuthorized || !caller || !caller.canManage) {
         return json(request, { error: "Forbidden" }, 403);

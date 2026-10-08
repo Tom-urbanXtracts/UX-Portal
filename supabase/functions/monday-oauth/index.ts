@@ -3,7 +3,7 @@ import {
   mondayAccessToken,
   mondayTokenExpiry,
 } from "../_shared/monday-connection.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -22,6 +22,11 @@ const ORDER_STATUS_COLUMN_ID = Deno.env.get("MONDAY_ORDER_STATUS_COLUMN_ID") ??
   "color_mm6jxv8f";
 const WEBHOOK_URL = Deno.env.get("MONDAY_ORDER_WEBHOOK_URL") ??
   `${SUPABASE_URL}/functions/v1/monday-webhook`;
+const BRAND_BOARD_ID = Deno.env.get("MONDAY_BRAND_MILESTONE_BOARD_ID") ??
+  "18433592669";
+const BRAND_BOARD_NAME = "UX OS Brand Production Milestones";
+const BRAND_WEBHOOK_URL = Deno.env.get("MONDAY_BRAND_MILESTONE_WEBHOOK_URL") ??
+  `${SUPABASE_URL}/functions/v1/monday-brand-webhook`;
 const REQUESTED_SCOPES = [
   "me:read",
   "boards:read",
@@ -35,6 +40,23 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 type Row = Record<string, unknown>;
 type Caller = { id: string; name: string; org: string };
+
+function clean(value: unknown, max = 300): string {
+  return String(value ?? "").trim().slice(0, max);
+}
+
+const BRAND_COLUMN_SPECS = [
+  { key: "status", title: "Milestone", type: "status", accepted: ["status", "color"] },
+  { key: "organizationId", title: "Brand Organization ID", type: "text", accepted: ["text"] },
+  { key: "reference", title: "Reference", type: "text", accepted: ["text"] },
+  { key: "productName", title: "Product Name", type: "text", accepted: ["text"] },
+  { key: "purchaseOrderId", title: "Purchase Order ID", type: "text", accepted: ["text"] },
+  { key: "plannedOn", title: "Planned Date", type: "date", accepted: ["date"] },
+  { key: "startedOn", title: "Started Date", type: "date", accepted: ["date"] },
+  { key: "completedOn", title: "Completed Date", type: "date", accepted: ["date"] },
+  { key: "exceptionOwner", title: "Exception Owner", type: "people", accepted: ["people", "multiple-person"] },
+  { key: "exceptionNote", title: "Exception Note", type: "long_text", accepted: ["long_text", "long-text"] },
+] as const;
 
 function allowedOrigin(request: Request): string {
   const candidate = request.headers.get("origin") ?? "";
@@ -135,7 +157,7 @@ function configured(): boolean {
     SUPABASE_URL && SUPABASE_ANON_KEY && SERVICE_ROLE_KEY && MONDAY_CLIENT_ID &&
       MONDAY_CLIENT_SECRET && MONDAY_SIGNING_SECRET &&
       TOKEN_ENCRYPTION_KEY.length >= 32 && /^\d+$/.test(ORDER_BOARD_ID) &&
-      ORDER_STATUS_COLUMN_ID,
+      ORDER_STATUS_COLUMN_ID && /^\d+$/.test(BRAND_BOARD_ID),
   );
 }
 
@@ -146,7 +168,7 @@ async function administratorFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
   const { data: profile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
@@ -206,7 +228,10 @@ function webhookColumn(config: unknown): string {
   }
 }
 
-async function listAppWebhooks(accessToken: string): Promise<Row[]> {
+async function listAppWebhooks(
+  accessToken: string,
+  boardId = ORDER_BOARD_ID,
+): Promise<Row[]> {
   const existingData = await mondayGraphql(
     accessToken,
     `query PortalWebhooks($boardId: ID!) {
@@ -214,7 +239,7 @@ async function listAppWebhooks(accessToken: string): Promise<Row[]> {
         id event board_id config
       }
     }`,
-    { boardId: ORDER_BOARD_ID },
+    { boardId },
   );
   const existing = Array.isArray(existingData.webhooks)
     ? existingData.webhooks as Row[]
@@ -230,6 +255,14 @@ function matchingOrderWebhooks(existing: Row[]): Row[] {
   );
 }
 
+function matchingBrandWebhooks(existing: Row[], statusColumnId: string): Row[] {
+  return existing.filter((row) =>
+    String(row.event) === "change_status_column_value" &&
+    String(row.board_id) === BRAND_BOARD_ID &&
+    webhookColumn(row.config) === statusColumnId
+  );
+}
+
 function webhookAuditSummary(existing: Row[]): Row[] {
   return existing.map((row) => ({
     id: String(row.id ?? ""),
@@ -240,7 +273,11 @@ function webhookAuditSummary(existing: Row[]): Row[] {
   }));
 }
 
-async function deleteWebhook(accessToken: string, webhookId: string) {
+async function deleteWebhook(
+  accessToken: string,
+  webhookId: string,
+  boardId = ORDER_BOARD_ID,
+) {
   const deletedData = await mondayGraphql(
     accessToken,
     `mutation DeletePortalOrderWebhook($webhookId: ID!) {
@@ -251,10 +288,274 @@ async function deleteWebhook(accessToken: string, webhookId: string) {
   const deleted = deletedData.delete_webhook as Row | undefined;
   if (
     String(deleted?.id ?? "") !== webhookId ||
-    String(deleted?.board_id ?? "") !== ORDER_BOARD_ID
+    String(deleted?.board_id ?? "") !== boardId
   ) {
     throw new Error("Monday did not confirm the stale webhook deletion.");
   }
+}
+
+async function brandBoardColumns(accessToken: string): Promise<Row[]> {
+  const data = await mondayGraphql(
+    accessToken,
+    `query BrandMilestoneBoard($boardId: [ID!]!) {
+      boards(ids: $boardId) { id name columns { id title type } }
+    }`,
+    { boardId: [BRAND_BOARD_ID] },
+  );
+  const board = Array.isArray(data.boards) ? data.boards[0] as Row | undefined : undefined;
+  if (!board || String(board.id ?? "") !== BRAND_BOARD_ID) {
+    throw new Error("The approved Brand milestone board is not available to the UX OS app.");
+  }
+  if (String(board.name ?? "") !== BRAND_BOARD_NAME) {
+    throw new Error("The approved Brand milestone board name does not match the configured board ID.");
+  }
+  return Array.isArray(board.columns) ? board.columns as Row[] : [];
+}
+
+async function createBrandColumn(
+  accessToken: string,
+  title: string,
+  columnType: string,
+): Promise<Row> {
+  const data = await mondayGraphql(
+    accessToken,
+    `mutation CreateBrandMilestoneColumn(
+      $boardId: ID!, $title: String!, $columnType: ColumnType!
+    ) {
+      create_column(board_id: $boardId, title: $title, column_type: $columnType) {
+        id title type
+      }
+    }`,
+    { boardId: BRAND_BOARD_ID, title, columnType },
+  );
+  const column = data.create_column as Row | undefined;
+  if (!column?.id || String(column.title ?? "") !== title) {
+    throw new Error(`Monday did not create the required ${title} column.`);
+  }
+  return column;
+}
+
+async function ensureBrandColumnMapping(
+  accessToken: string,
+): Promise<Record<string, string>> {
+  const columns = await brandBoardColumns(accessToken);
+  const mapping: Record<string, string> = {};
+  for (const spec of BRAND_COLUMN_SPECS) {
+    let column = columns.find((candidate) =>
+      String(candidate.title ?? "").trim().toLowerCase() === spec.title.toLowerCase()
+    );
+    if (column) {
+      const observedType = String(column.type ?? "");
+      if (!spec.accepted.some((type) => type === observedType)) {
+        throw new Error(`${spec.title} exists on the Brand milestone board with the wrong column type.`);
+      }
+    }
+    if (!column) {
+      column = await createBrandColumn(accessToken, spec.title, spec.type);
+      columns.push(column);
+    }
+    mapping[spec.key] = String(column.id ?? "");
+  }
+  if (Object.values(mapping).some((value) => !value)) {
+    throw new Error("Monday returned an incomplete Brand milestone column mapping.");
+  }
+  return mapping;
+}
+
+async function createOrReuseBrandWebhook(
+  accessToken: string,
+  statusColumnId: string,
+  forceCreate = false,
+): Promise<string> {
+  const existing = matchingBrandWebhooks(
+    await listAppWebhooks(accessToken, BRAND_BOARD_ID),
+    statusColumnId,
+  );
+  if (!forceCreate && existing[0]?.id) return String(existing[0].id);
+  const data = await mondayGraphql(
+    accessToken,
+    `mutation CreateBrandMilestoneWebhook(
+      $boardId: ID!, $url: String!, $config: JSON!
+    ) {
+      create_webhook(
+        board_id: $boardId,
+        url: $url,
+        event: change_status_column_value,
+        config: $config
+      ) { id board_id }
+    }`,
+    {
+      boardId: BRAND_BOARD_ID,
+      url: BRAND_WEBHOOK_URL,
+      config: JSON.stringify({
+        columnId: statusColumnId,
+        columnValue: { "$any$": true },
+      }),
+    },
+  );
+  const webhook = data.create_webhook as Row | undefined;
+  if (!webhook?.id || String(webhook.board_id ?? "") !== BRAND_BOARD_ID) {
+    throw new Error("Monday did not return the expected Brand milestone webhook.");
+  }
+  return String(webhook.id);
+}
+
+async function ensureBrandVerificationItem(
+  accessToken: string,
+  columnMapping: Record<string, string>,
+): Promise<string> {
+  const { data: state } = await service.from("monday_brand_milestone_state")
+    .select("verification_item_id").eq("id", 1).maybeSingle();
+  const existingId = clean(state?.verification_item_id, 160);
+  if (existingId) return existingId;
+  const { data: organization, error: organizationError } = await service
+    .from("portal_organization").select("id").eq("kind", "brand")
+    .eq("legal_name", "urbanXtracts").eq("status", "active").maybeSingle();
+  if (organizationError || !organization?.id) {
+    throw new Error("The urbanXtracts Brand workspace is unavailable for callback verification.");
+  }
+  const reference = `EXEC-DEMO-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}`;
+  const created = await mondayGraphql(
+    accessToken,
+    `mutation CreateBrandVerificationItem(
+      $boardId: ID!, $name: String!, $values: JSON!
+    ) {
+      create_item(
+        board_id: $boardId,
+        item_name: $name,
+        column_values: $values
+      ) { id }
+    }`,
+    {
+      boardId: BRAND_BOARD_ID,
+      name: "TEST · urbanXtracts · Executive milestone flow",
+      values: JSON.stringify({
+        [columnMapping.organizationId]: String(organization.id),
+        [columnMapping.reference]: reference,
+        [columnMapping.productName]: "urbanXtracts Brand Portal verification",
+        [columnMapping.plannedOn]: { date: new Date().toISOString().slice(0, 10) },
+      }),
+    },
+  );
+  const itemId = clean((created.create_item as Row | undefined)?.id, 160);
+  if (!itemId) throw new Error("Monday did not return the Brand callback verification item.");
+  const { error: stateError } = await service.from("monday_brand_milestone_state")
+    .update({ verification_item_id: itemId, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (stateError) throw stateError;
+  const updated = await mondayGraphql(
+    accessToken,
+    `mutation ApproveBrandVerificationItem(
+      $boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!
+    ) {
+      change_simple_column_value(
+        board_id: $boardId,
+        item_id: $itemId,
+        column_id: $columnId,
+        value: $value,
+        create_labels_if_missing: true
+      ) { id }
+    }`,
+    {
+      boardId: BRAND_BOARD_ID,
+      itemId,
+      columnId: columnMapping.status,
+      value: "Approved",
+    },
+  );
+  if (clean((updated.change_simple_column_value as Row | undefined)?.id, 160) !== itemId) {
+    throw new Error("Monday did not confirm the Brand verification milestone update.");
+  }
+  return itemId;
+}
+
+async function configureBrandMilestones(
+  accessToken: string,
+  caller: Caller,
+  forceCreate = false,
+): Promise<Row> {
+  const columnMapping = await ensureBrandColumnMapping(accessToken);
+  const observedBefore = await listAppWebhooks(accessToken, BRAND_BOARD_ID);
+  const previous = matchingBrandWebhooks(observedBefore, columnMapping.status);
+  const webhookId = await createOrReuseBrandWebhook(
+    accessToken,
+    columnMapping.status,
+    forceCreate,
+  );
+  const removedWebhookIds: string[] = [];
+  const failedWebhookIds: string[] = [];
+  for (const webhook of previous) {
+    const previousId = String(webhook.id ?? "");
+    if (!previousId || previousId === webhookId) continue;
+    try {
+      await deleteWebhook(accessToken, previousId, BRAND_BOARD_ID);
+      removedWebhookIds.push(previousId);
+    } catch {
+      failedWebhookIds.push(previousId);
+    }
+  }
+  const observedAfter = await listAppWebhooks(accessToken, BRAND_BOARD_ID);
+  const remainingWebhookIds = matchingBrandWebhooks(observedAfter, columnMapping.status)
+    .map((row) => String(row.id ?? ""))
+    .filter(Boolean);
+  const active = failedWebhookIds.length === 0 && remainingWebhookIds.length === 1 &&
+    remainingWebhookIds[0] === webhookId;
+  const { error: stateError } = await service.from("monday_brand_milestone_state")
+    .upsert({
+      id: 1,
+      board_id: BRAND_BOARD_ID,
+      board_name: BRAND_BOARD_NAME,
+      column_mapping: columnMapping,
+      webhook_id: webhookId,
+      webhook_url: BRAND_WEBHOOK_URL,
+      webhook_status: active ? "active" : "error",
+      configured_at: new Date().toISOString(),
+      configured_by: caller.id,
+      last_error: active ? null : "Obsolete Brand milestone webhook cleanup was incomplete.",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" });
+  if (stateError) throw stateError;
+  if (active) {
+    await service.from("portal_brand_reporting_exception").update({
+      status: "resolved",
+      resolved_at: new Date().toISOString(),
+      resolution_note:
+        `Bound to Monday board ${BRAND_BOARD_ID} and signed milestone column ${columnMapping.status}.`,
+      updated_at: new Date().toISOString(),
+    }).eq("exception_code", "monday_brand_milestone_callback_pending")
+      .neq("status", "resolved");
+  }
+  const verificationItemId = active
+    ? await ensureBrandVerificationItem(accessToken, columnMapping)
+    : "";
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.id,
+    actor_org: caller.org,
+    action: "monday.brand_milestones_configured",
+    detail: {
+      boardId: BRAND_BOARD_ID,
+      boardName: BRAND_BOARD_NAME,
+      columnMapping,
+      webhookId,
+      signedWebhook: true,
+      removedWebhookIds,
+      failedWebhookIds,
+      remainingWebhookIds,
+      verificationItemId,
+    },
+  });
+  if (!active) {
+    throw new Error("The Brand milestone webhook was created, but obsolete callback cleanup was incomplete.");
+  }
+  return {
+    boardId: BRAND_BOARD_ID,
+    boardName: BRAND_BOARD_NAME,
+    columnMapping,
+    webhookId,
+    removedWebhookIds,
+    remainingWebhookIds,
+    verificationItemId,
+  };
 }
 
 async function createOrReuseWebhook(
@@ -303,7 +604,7 @@ async function refreshWebhook(
     encryptionKey: TOKEN_ENCRYPTION_KEY,
     clientId: MONDAY_CLIENT_ID,
     clientSecret: MONDAY_CLIENT_SECRET,
-  }, ["webhooks:read", "webhooks:write"]);
+  }, ["boards:read", "boards:write", "webhooks:read", "webhooks:write"]);
   if (!accessToken) {
     return json(request, {
       error:
@@ -340,6 +641,11 @@ async function refreshWebhook(
   const remainingWebhookIds = matchingOrderWebhooks(observedAfter)
     .map((row) => String(row.id ?? ""))
     .filter(Boolean);
+  const brandMilestones = await configureBrandMilestones(
+    accessToken,
+    caller,
+    true,
+  );
 
   await service.from("portal_admin_audit").insert({
     actor_id: caller.id,
@@ -355,6 +661,7 @@ async function refreshWebhook(
       remainingWebhookIds,
       observedBefore: webhookAuditSummary(observedBefore),
       observedAfter: webhookAuditSummary(observedAfter),
+      brandMilestones,
     },
   });
   if (
@@ -378,6 +685,7 @@ async function refreshWebhook(
     columnId: ORDER_STATUS_COLUMN_ID,
     removedWebhookIds,
     remainingWebhookIds,
+    brandMilestones,
   });
 }
 
@@ -538,6 +846,7 @@ async function callback(request: Request): Promise<Response> {
   if (storeError) throw storeError;
 
   let webhookId: string;
+  let brandMilestones: Row;
   try {
     webhookId = await createOrReuseWebhook(accessToken);
     const { error: webhookStoreError } = await service.rpc(
@@ -550,6 +859,10 @@ async function callback(request: Request): Promise<Response> {
       },
     );
     if (webhookStoreError) throw webhookStoreError;
+    brandMilestones = await configureBrandMilestones(
+      accessToken,
+      { id: actorId, name: String(identity.name ?? ""), org: "urbanXtracts" },
+    );
   } catch (error) {
     await service.rpc("portal_mark_monday_connection_error", {
       p_error: error instanceof Error
@@ -573,10 +886,11 @@ async function callback(request: Request): Promise<Response> {
       columnId: ORDER_STATUS_COLUMN_ID,
       webhookId,
       signedWebhook: true,
+      brandMilestones,
     },
   });
   return oauthResult(
-    "The UX OS app is installed with least-privilege access, and the order-status board now has a signed callback to the portal.",
+    "The UX OS app is installed with least-privilege access, and the order and Brand milestone boards now have signed callbacks to the portal.",
     true,
   );
 }
@@ -616,11 +930,18 @@ Deno.serve(async (request) => {
       }
       return await startAuthorization(request, caller);
     }
-    const { data, error } = await service.from("monday_connection_state")
-      .select(
-        "connection_status,connected_at,account_id,account_name,user_name,access_token_expires_at,granted_scopes,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
-      ).eq("id", 1).maybeSingle();
-    if (error) throw error;
+    const [{ data, error }, { data: brandMilestones, error: brandError }] =
+      await Promise.all([
+        service.from("monday_connection_state")
+          .select(
+            "connection_status,connected_at,account_id,account_name,user_name,access_token_expires_at,granted_scopes,webhook_id,webhook_board_id,webhook_column_id,webhook_status,webhook_created_at,last_error",
+          ).eq("id", 1).maybeSingle(),
+        service.from("monday_brand_milestone_state")
+          .select(
+            "board_id,board_name,column_mapping,webhook_id,webhook_status,configured_at,last_verified_at,last_error",
+          ).eq("id", 1).maybeSingle(),
+      ]);
+    if (error || brandError) throw error ?? brandError;
     return json(request, {
       configured: configured(),
       connectionStatus: data?.connection_status ?? "disconnected",
@@ -637,6 +958,18 @@ Deno.serve(async (request) => {
       webhookCreatedAt: data?.webhook_created_at ?? null,
       hasError: Boolean(data?.last_error),
       callbackUrl: REDIRECT_URI,
+      brandMilestones: brandMilestones
+        ? {
+          boardId: brandMilestones.board_id,
+          boardName: brandMilestones.board_name,
+          columnMapping: brandMilestones.column_mapping ?? {},
+          webhookId: brandMilestones.webhook_id,
+          webhookStatus: brandMilestones.webhook_status,
+          configuredAt: brandMilestones.configured_at,
+          lastVerifiedAt: brandMilestones.last_verified_at,
+          hasError: Boolean(brandMilestones.last_error),
+        }
+        : null,
     });
   } catch (error) {
     console.error(

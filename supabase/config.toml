@@ -8,6 +8,14 @@ verify_jwt = false
 [functions.canix-item-master]
 verify_jwt = false
 
+# Signed-in catalog readers use Supabase's gateway JWT check first, then the
+# function re-resolves portal profile, role, organization, and permission scope.
+[functions.canix-catalog]
+verify_jwt = true
+
+[functions.canix-marketplace-sync]
+verify_jwt = false
+
 [functions.monday-item-master-sync]
 verify_jwt = false
 
@@ -40,12 +48,67 @@ verify_jwt = false
 [functions.monday-webhook]
 verify_jwt = false
 
+[functions.monday-brand-webhook]
+verify_jwt = false
+
 [functions.portal-lot-integrity]
 verify_jwt = false
 
+# User and role administration requires a signed-in portal session at the
+# gateway and repeats server-side profile/capability checks before mutation.
+[functions.portal-admin]
+verify_jwt = true
+
 # Public kiosk resolution uses a revocable opaque capability token; all link
-# management actions independently require an aal2 users.manage grant.
+# management actions independently require an authenticated users.manage grant.
 [functions.portal-kiosk]
+verify_jwt = false
+
+# Section contributors use a revocable, expiring opaque capability token.
+# Workforce actions independently require an authenticated session and SKU permission.
+[functions.portal-sku-intake]
+verify_jwt = false
+
+# Brand company onboarding validates the current Auth user, active Brand
+# membership, role permission, section assignment, and optimistic revision in
+# the function before any service-role operation.
+[functions.portal-brand-onboarding]
+verify_jwt = false
+
+# Brand profile reads validate the current Auth user, active Brand membership,
+# role grants, and the verified server-owned source mapping before returning a
+# scoped Canix projection or accounting classification.
+[functions.portal-brand-profile]
+verify_jwt = false
+
+# Brand administration, products, purchase orders, manufacturing, sales, and
+# finance projections authenticate and authorize every request in the function.
+[functions.portal-brand-operations]
+verify_jwt = false
+
+# Brand vendor, component, and technical-document records validate the current
+# Auth user, organization membership, role grants, and document scope in the
+# function before any service-role operation.
+[functions.portal-brand-supply-chain]
+verify_jwt = false
+
+# Brand document and support actions are signed-in Brand/Internal workflows.
+# The handlers still verify organization membership, role grants, document
+# scope, scanning state, and evidence visibility before using service-role I/O.
+[functions.portal-brand-documents]
+verify_jwt = true
+
+[functions.portal-brand-support]
+verify_jwt = true
+
+# Prospective Brand applications use an opaque, expiring email capability for
+# applicant actions and independently validate Administrator JWTs for review.
+[functions.portal-brand-application]
+verify_jwt = false
+
+# Native administrator work queues authenticate and authorize every request in
+# the function. Evidence uploads are scanned before private storage.
+[functions.portal-work-queue]
 verify_jwt = false
 
 [functions.portal-notifications]
@@ -53,3 +116,24 @@ verify_jwt = false
 
 [functions.portal-claims]
 verify_jwt = false
+
+# User-only financial, pricing, readiness, retailer, policy, and ownership
+# views keep the platform JWT check and then enforce portal-specific scope in
+# the function. Keeping them explicit avoids relying on Supabase defaults.
+[functions.portal-economic-ownership]
+verify_jwt = true
+
+[functions.portal-order-policy]
+verify_jwt = true
+
+[functions.portal-pricing]
+verify_jwt = true
+
+[functions.portal-readiness]
+verify_jwt = true
+
+[functions.portal-retailers]
+verify_jwt = true
+
+[functions.quickbooks-financials]
+verify_jwt = true
