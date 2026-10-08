@@ -1,6 +1,6 @@
 # UX OS Internal Employee Portal review package
 
-Status: Proposed planning package. No implementation is authorized by this document.
+Status: Approved build baseline. Shared foundation implementation began 8 October 2026; capability status must still be read per section.
 Prepared: 7 October 2026
 Audience: Executive Leadership, department heads, Finance, Operations, HR, Quality/Compliance, IT/Administration, Sales/Commercial, Marketing
 
@@ -19,13 +19,32 @@ The recommended model is one employee portal with department workspaces, not sep
 - Executives see approved company-level summaries and exceptions without automatically receiving unrestricted record-level access to sensitive HR, Finance, Quality, or compliance files.
 - Administrators manage users, department membership, release readiness, integration health, access requests, and audit history.
 
-### Explicit non-goals for this review
+### Explicit non-goals for this build
 
-- Do not implement the Internal Portal yet.
+- Do not treat an untested or undeployed capability as live.
 - Do not modify the current Brand, Store, Canix, QuickBooks, or Monday production workflows as part of this package.
 - Do not represent planned capabilities as live controls.
 - Do not move accounting authority out of QuickBooks or cannabis inventory authority out of Canix.
 - Do not reintroduce portal MFA after the owner decision to remove it. Employee MFA should be handled through Google Workspace if approved later.
+
+### Build status — first vertical slice
+
+The first shared Internal workflow slice is implemented and published to production:
+
+- **My Work** is available to active Internal profiles and shows only the user's own/assigned work, except that Administrators receive the Administrator queue.
+- Workforce users can submit a role and department access request with a business reason and optional expiration date.
+- Administrators may approve, return, or deny requests. Requesters cannot approve their own access.
+- Approval atomically applies the workforce role and active department membership; every decision and resulting role change is audited.
+- Access-request decisions are append-only, open duplicates are blocked, work-item updates retain optimistic version checks, and direct browser table access remains denied.
+- HR-specific workflows remain a controlled hold in this slice. Portal offboarding now disables the selected UX OS profile immediately and creates an evidenced manual checklist. Quarterly workforce and vendor access reviews are now scheduled and evidenced manually in IT governance; automatic review execution, automatic cross-system account deactivation, portal MFA, and automatic retention deletion remain held.
+- The database migrations, Edge Function, and browser interface are deployed at the production hostname. Signed-in Administrator acceptance confirmed My Work and IT governance can read production records; build contracts, service tests, security tests, and remote anonymous-denial checks pass.
+- Emergency production changes are Portal-owned: recording one creates a P0 retrospective task due within one business day, and a different Administrator must approve or return it with evidence.
+- Shared department requests are Portal-owned and available from My Work. Active workforce users may route a categorized request to an active department; Administrators review the common queue, decisions require evidence, self-approval is blocked, and no Monday handoff is created.
+- Shared department request receipts and status updates are delivered through approved Resend templates and a durable Supabase outbox. A notification failure is retained for operational follow-up and does not discard or roll back the underlying request. Every active Administrator and each Administrator-configured department owner or shared inbox receives the department-queue notices; recipient addresses are deduplicated. Tom Jalallar is the temporary owner for all active departments until the department heads approve durable owners and inboxes.
+- Production acceptance on 8 October 2026 verified the Resend sending domain, enabled signed webhook, requester receipt, separate-Administrator completion, and delivered status callback. Controlled request `REQ-5157316E91` is closed and retained as evidence.
+- Finance purchase requests use a Portal-native header and multi-line item model patterned after the retained Monday Supply Order Form 2026. The header records vendor, department, requester, priority, required date range, recurrence, payment method, business approval, Administrator status, ordered/delivered dates, and evidence. Each line records item, URL, SKU, quantity, unit cost, expense category/subcategory, chart of accounts, required date, and server-calculated subtotal. Optional PDF, PNG, and JPEG evidence is malware-scanned and can be downloaded only through a short-lived authorized link.
+- Business approvers act directly inside the Portal only after their urbanXtracts Google account has created an active Internal profile. Their approval authority does not grant Administrator access. An Administrator remains responsible for the final Portal control decision.
+- Controlled production request `PUR-289F52052C` verified two line items, the `$3,000+` route to Eran, named business approval, a separate Administrator decision by Tom, version checks, and final completion. It is labelled **CONTROLLED TEST — NO PURCHASE** and authorizes no purchase or payment.
 
 ## Current approved build direction
 
@@ -52,6 +71,10 @@ These decisions update the build intake after the 7 October 2026 review call and
 | Legal hold | Executive Members may place legal holds. Automatic deletion remains disabled; archive instead of delete. |
 | Canix freshness | Use the proposed freshness thresholds as a reviewable planning baseline: target under 15 minutes, warning after 30 minutes, stale after 60 minutes, and block current-inventory decisions after 4 hours or a relevant sync failure. |
 | Workspace owners | IT is the temporary owner for all workspaces. Executive Member is the backup owner. Final department leads remain held; list Tom Jalallar as temporary department head for now. |
+| Department inboxes | Keep Administrators on every queue. Use Tom Jalallar as the temporary owner recipient; add shared inboxes only after an Administrator confirms their real addresses. Do not infer addresses. |
+| Purchase evidence | Permit optional supporting PDFs and images on a request. Scan every upload, keep it private, and expose it only through an authorized short-lived download. |
+| Password breach screening | Keep the control on the Release Readiness hold list until the Supabase organization is upgraded to Pro; Supabase does not permit leaked-password protection on the current Free plan. |
+| Demo email delivery | Keep demo and role-test logins active, but hold their outbound messages before Resend. Retain the held message and reason in the notification history; never consume provider quota for a known non-mailbox identity. |
 | Merchandise e-commerce | Hold for now. |
 
 ## Cross-workstream build coordination
@@ -134,7 +157,7 @@ Store expansion remains held, but the approved role boundaries should be preserv
 
 - QuickBooks write-back or mutation from Portal workflows.
 - Automated cross-system deactivation for Google Workspace, Monday.com, Canix, PistilData, or QuickBooks.
-- Portal MFA, automated access reviews, MDM, endpoint enforcement, and automatic retention deletion.
+- Portal MFA, automatic access-review execution, MDM, endpoint enforcement, and automatic retention deletion. Manual scheduled workforce and vendor reviews are active in IT governance.
 - Google Calendar sync, schedule ownership implementation, merchandise ecommerce, department lead finalization, public COA/recall expansion, and unrestricted Store launch.
 
 ### Security, audit, export, and retention baseline
@@ -199,6 +222,8 @@ The Internal Portal should reuse the existing UX OS pattern:
 6. **Notification layer**
    - Resend remains the controlled email notification path.
    - Current free-account guardrails are 100 messages per UTC day and 3,000 messages per month.
+   - Shared department requests now have approved receipt and status-update templates, durable outbox records, stable idempotency keys, and provider delivery-state capture.
+   - Confirm the planned Resend plan upgrade and approve replacement Portal caps before changing the current guardrails.
    - Additional escalation policies require business approval before enablement.
 
 ## 4. Permission model
@@ -329,7 +354,7 @@ These items stay visible in Portal Build, but they do not block the Brand demo u
 | Wholesale sheet to Canix item mapping | Sales Operations and Data | The active wholesale sheet has priced rows without immutable Canix Item IDs. | Only unique exact product-name plus Brand matches can be verified automatically; all other matches remain review-only. |
 | Store visit reports as account notes | Sales Operations | The source board structure has not been confirmed. | Account notes stay labelled as sourced but unverified until the board columns are read. |
 | Canix Package Owner bridge | IT/Data and Canix | The current REST-backed snapshot does not provide supported owner assignment coverage. | Canix Owner remains blank where unsupported and never becomes Economic Owner by inference. |
-| QuickBooks production authorization | Finance and IT | The live production company is not authorized and no successful production snapshot exists. | Financial views remain read-only and source-labelled; development credentials cannot authorize the live company. |
+| QuickBooks production verification | Finance and IT | Production authorization and scheduled read-only snapshots are working as of 10/08/2026. Reconciliation views, remaining identity mappings, freshness/fallback acceptance, and reconnect-role evidence remain. | QuickBooks remains authoritative; the Portal remains read/workflow/evidence only and does not create or modify accounting records. |
 | Multi-license organization mapping | Administration | Chains with multiple licenses need a tested organization mapping. | License number remains the account key until a multi-license test proves the grouping rule. |
 | Finance cost and margin treatment | Finance | Cost component inclusion, coverage threshold, and margin formula need Finance approval. | Margin stays out of navigation; blank cost object is not substituted from lot, Brand, potency, or sales-order data. |
 | Payment terms and credit limit account gate | Finance | Finance must choose whether missing terms are a hard stop or a controlled soft path. | Onboarding keeps Stage 03 explicitly waiting on payment terms, credit limit, and rate-card policy. |
@@ -380,7 +405,7 @@ This replaces the earlier worksheet. It is the current planning baseline until d
 | PTO request | HR | Employee | Manager / HR | HR, then Executive Member | Request, dates, manager decision, payroll reference if applicable | HR-approved summary only | First internal foundation |
 | Schedule change | HR / Operations | Employee / Manager | Manager / HR | Operations or HR, then Executive Member | Requested change, coverage impact, approval note | Internal summary only | Planned later |
 | Supply request | Operations | Employee | Department head / Operations; Finance if spend threshold applies | Operations, then Executive Member | Business need, item detail, quote or receipt where applicable | Operations/Finance summary | First internal foundation |
-| Purchase approval | Finance / Executive policy; shared workflow service | Employee / Department head | $0-$500 Eric Stewart, backup Omeed/Jonathan/Drew; $501-$2,999 Jonathan/Drew/Omeed; $3,000+ Eran Sherin | Executive Member | Quote, invoice, contract, business justification, budget line, or receiving confirmation as applicable; approved requests route to Amrit Kharas for processing | CSV summary / PDF packet by approved roles only | Yes |
+| Purchase approval | Finance / Executive policy; shared workflow service | Employee / Department head | Up to and including $500: Eric Stewart; above $500 and below $3,000: Omeed / Jonathan / Drew; $3,000 and above: Eran | Executive Member | Business purpose and Administrator-recorded business-authority evidence; supporting documents remain optional in the first release | CSV summary / PDF packet by approved roles only | Live first-release foundation |
 | Account reconciliation | Finance | Finance preparer | Finance reviewer / Controller | Controller | Source snapshot, support, explanation, owner, approval, and exceptions | PDF packet by approved roles only | Yes |
 | Monthly close task | Finance | Finance | Controller | Executive sponsor | Checklist evidence, reconciliation status, blockers, exceptions, and signoff | PDF packet by approved roles only | Yes |
 | Marketing request | Marketing | Employee / Sales / Brand team | Marketing lead; Quality when claims or compliance content appears | Executive Member for blocked launches | Creative brief, assets, approval notes, compliance review when required | Approved asset/request summary | First internal foundation |
@@ -431,7 +456,7 @@ The safest first release is a shared foundation plus a narrow set of high-freque
 | Inventory freshness confusion | Cannabis inventory cannot be guessed or replaced with zero | Show Canix source and last-successful update time; target under 15 minutes, warn after 30 minutes, mark stale after 60 minutes, and block current-inventory decisions after 4 hours or a sync failure |
 | Executive over-access | Executive summary needs differ from record-level access | Provide approved aggregate views and exception links, with record-level access granted only by explicit permission |
 | Self-approval | Some workflows require separation of preparer and reviewer | Block self-approval where segregation applies and retain approval history |
-| Notification overrun | Resend free limits can be exceeded by broad escalation rules | Keep daily/monthly caps and require approval for new mandatory templates or escalation timing |
+| Notification overrun | Resend capacity can be exceeded by broad escalation rules even after a plan upgrade | Keep approved daily/monthly Portal caps and require approval for new mandatory templates, recipients, or escalation timing |
 | Monday dependency creep | The long-term direction is portal-native workflow | Preserve Monday history, but require explicit approval for any new active Monday dependency |
 | Document retention mistakes | Cannabis, finance, HR, and legal records can have different retention duties | Approve record classes, retention start events, legal-hold behavior, and deletion evidence before automated disposition |
 | Mobile usability gaps | Some employee workflows may happen away from a desk | Identify mobile-required functions during department review |

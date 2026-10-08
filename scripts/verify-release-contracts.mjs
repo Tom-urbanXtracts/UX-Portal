@@ -32,6 +32,19 @@ const brandApplication = await readFile(resolve(root, "supabase/functions/portal
 const brandApplicationMigration = await readFile(resolve(root, "supabase/migrations/20261002193733_public_brand_application.sql"), "utf8");
 const brandApplicationLinkFixMigration = await readFile(resolve(root, "supabase/migrations/20261002204932_fix_brand_application_resume_link.sql"), "utf8");
 const workQueue = await readFile(resolve(root, "supabase/functions/portal-work-queue/index.ts"), "utf8");
+const internalWork = await readFile(resolve(root, "supabase/functions/portal-internal-work/index.ts"), "utf8");
+const internalWorkMigration = await readFile(resolve(root, "supabase/migrations/20261008044951_internal_workflow_foundation.sql"), "utf8");
+const internalWorkAtomicSubmissionMigration = await readFile(resolve(root, "supabase/migrations/20261008045528_atomic_access_request_submission.sql"), "utf8");
+const workforceOffboardingMigration = await readFile(resolve(root, "supabase/migrations/20261008045759_workforce_offboarding_control.sql"), "utf8");
+const itGovernanceMigration = await readFile(resolve(root, "supabase/migrations/20261008050111_it_governance_reviews_and_system_inventory.sql"), "utf8");
+const emergencyChangeMigration = await readFile(resolve(root, "supabase/migrations/20261008050553_emergency_change_retrospective_control.sql"), "utf8");
+const departmentRequestMigration = await readFile(resolve(root, "supabase/migrations/20261008051500_shared_department_request_intake.sql"), "utf8");
+const departmentRequestAuditRepairMigration = await readFile(resolve(root, "supabase/migrations/20261008052705_repair_department_request_audit.sql"), "utf8");
+const departmentNotificationMigration = await readFile(resolve(root, "supabase/migrations/20261008051633_department_request_notifications.sql"), "utf8");
+const financePurchaseMigration = await readFile(resolve(root, "supabase/migrations/20261008053155_finance_purchase_requests_and_notification_routing.sql"), "utf8");
+const notificationSuppressionMigration = await readFile(resolve(root, "supabase/migrations/20261008161122_suppress_test_notification_recipients.sql"), "utf8");
+const notificationSuppressionGateMigration = await readFile(resolve(root, "supabase/migrations/20261008161710_enforce_notification_suppression.sql"), "utf8");
+const identityHelperCompatibilityMigration = await readFile(resolve(root, "supabase/migrations/20261008164743_restore_public_identity_helpers.sql"), "utf8");
 const marketplaceSync = await readFile(resolve(root, "supabase/functions/canix-marketplace-sync/index.ts"), "utf8");
 const scanner = await readFile(resolve(root, "services/document-scanner/server.mjs"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
@@ -251,6 +264,18 @@ assertContract(assets.includes("scanContent(bytes)") && intake.includes("scanCon
 assertContract(communicationsMigration.includes("target.scan_state <> 'clean'") && communicationsMigration.includes("A different authorized reviewer") && communicationsMigration.includes("portal_document_retention_rule") && communicationsMigration.includes("automatic_deletion_enabled boolean not null default false"), "document review requires clean scanning and separation while retention deletion remains off by default");
 assertContract(notifications.includes("idempotency-key") && notifications.includes("RESEND_WEBHOOK_SECRET") && notifications.includes("email.delivered") && notifications.includes("email.bounced") && notifications.includes("portal_claim_resend_free_quota") && notifications.includes("portal_resend_free_quota_status"), "notifications are idempotent, use signed delivery evidence, and claim and report the no-cost quota atomically");
 assertContract(notifications.includes("RESEND_SENDER_CONFIGURED") && notifications.includes("webhookConfigured") && readiness.includes("RESEND_WEBHOOK_SECRET"), "Resend is not marked configured until both the sender API key and signed webhook secret are present");
+assertContract(notificationSuppressionMigration.includes("portal_notification_suppression")
+  && notificationSuppressionMigration.includes("marketing@urbanxtract.com")
+  && notificationSuppressionMigration.includes("brands@urbanxtracts.com")
+  && notificationSuppressionMigration.includes("internal@urbanxtracts.com")
+  && notifications.includes('state: "held_policy"')
+  && notifications.includes('Delivery held by notification policy'),
+"Known demo identities remain usable for testing while their outbound email is held as audited policy evidence");
+assertContract(notificationSuppressionGateMigration.includes("portal_notification_suppression_gate")
+  && notificationSuppressionGateMigration.includes("before insert or update of recipient_email, state")
+  && notificationSuppressionGateMigration.includes("new.state := 'held_policy'")
+  && notificationSuppressionGateMigration.includes("revoke all on function public.portal_apply_notification_suppression()"),
+"Notification suppression is enforced at the database boundary and its trigger function is not browser-callable");
 assertContract(claims.includes('new Set(["owner", "buyer"])') && claims.includes("portal_create_receiving_claim") && communicationsMigration.includes("claimed + p_quantity > target_line.quantity"), "receiving claims are retailer-scoped and cannot cumulatively exceed the delivered line");
 assertContract(receivingClaimPolicyMigration.includes("policy_state = 'active_approved'") && receivingClaimPolicyMigration.includes("claim_window_days = 5") && receivingClaimPolicyMigration.includes("evidence_required_for = array['short','damaged','wrong_item']") && receivingClaimPolicyMigration.includes("initial_response_business_days = 2") && receivingClaimPolicyMigration.includes("retention_years = 7") && receivingClaimPolicyMigration.includes("portal_add_business_days"), "receiving claims enforce the approved five-day filing window, evidence types, two-business-day response target, and seven-year retention");
 assertContract(claims.includes('profile.staff_role === "administrator"') && receivingClaimPolicyMigration.includes("staff_role <> 'administrator'") && receivingClaimPolicyMigration.includes("late_override_reason") && receivingClaimPolicyMigration.includes("Only an active Administrator") && source.includes("Record late claim") && source.includes("lateOverrideReason:"), "Administrators alone own the receiving-claim queue and late overrides require an auditable reason");
@@ -306,6 +331,11 @@ assertContract(quickbooksCronMigration.includes("portal-quickbooks-sync-5m") && 
 assertContract(!/[A-Fa-f0-9]{64}/.test(quickbooksCronMigration), "the QuickBooks scheduler migration contains no embedded high-entropy secret");
 assertContract(readiness.includes("qboSchedulerResult") && readiness.includes("Five-minute scheduler"), "live readiness reports QuickBooks scheduler and Vault-credential state");
 assertContract(quickbooksRetailers.includes("quickBooksConnected") && quickbooksRetailers.includes('reason: "QuickBooks is not connected."') && quickbooksRetailers.includes("}, 202)"), "scheduled QuickBooks refreshes skip cleanly until the encrypted production connection exists");
+assertContract(quickbooksRetailers.includes("data?.connection_environment === QBO_ENVIRONMENT")
+  && quickbooksRetailers.includes("Boolean(data.realm_id)")
+  && quickbooksRetailers.includes("Boolean(data.encrypted_refresh_token)")
+  && !quickbooksRetailers.includes('data?.connection_status === "connected"'),
+  "scheduled QuickBooks refreshes retry after transient errors when valid environment-bound credentials remain available");
 assertContract(quickbooksOAuthMigration.includes("pgp_sym_encrypt") && quickbooksOAuthMigration.includes("oauth_state_expires_at > now()") && quickbooksOAuthMigration.includes("refresh_token = null"), "QuickBooks refresh tokens are encrypted and OAuth state is expiring and one-time");
 assertContract(quickbooksEnvironmentMigration.includes("oauth_environment = p_environment") && quickbooksEnvironmentMigration.includes("connection_environment = p_environment") && quickbooksEnvironmentMigration.includes("delete from public.quickbooks_customer_cache") && quickbooksOAuth.includes("portal_consume_quickbooks_oauth_state_v2") && quickbooksRetailers.includes("portal_get_quickbooks_connection_v2"), "QuickBooks OAuth, encrypted connection, and cache are isolated across sandbox and production");
 assertContract(quickbooksSafeCacheMigration.includes("delete from public.quickbooks_invoice_cache where true") && quickbooksSafeCacheMigration.includes("delete from public.quickbooks_payment_cache where true") && quickbooksSafeCacheMigration.includes("delete from public.quickbooks_customer_cache where true"), "QuickBooks environment cache clearing is explicit and compatible with API safe-update enforcement");
@@ -552,6 +582,145 @@ assertContract(holdReadinessEvidenceMigration.includes("insert into public.porta
   "controlled-hold approval packets are attached to the durable readiness evidence register");
 assertContract(!source.includes("CANIX_API_KEY"), "Canix credentials are absent from the browser source");
 assertContract(!source.includes("QBO_CLIENT_SECRET"), "QuickBooks client secret is absent from the browser source");
+assertContract(internalWorkMigration.includes("portal_access_request_decision_immutable")
+  && internalWorkMigration.includes("portal_apply_access_request_decision")
+  && internalWorkMigration.includes("A requester cannot approve their own access")
+  && internalWorkMigration.includes("portal_work_item_delegation")
+  && internalWorkMigration.includes("where status in ('submitted', 'under_review', 'returned')"),
+  "Internal access requests have one open request, atomic approval, delegation, and append-only decisions");
+assertContract(internalWork.includes("actor.role") === false
+  && internalWork.includes('data.role !== "internal"')
+  && internalWork.includes("You may request access only for your own account")
+  && internalWork.includes("You cannot approve your own access request")
+  && internalWork.includes('department.status === "held"'),
+  "Internal work API enforces workforce, requester, self-approval, and held-department boundaries");
+assertContract(internalWork.includes('service.rpc("portal_submit_access_request"')
+  && internalWorkAtomicSubmissionMigration.includes("create or replace function public.portal_submit_access_request")
+  && internalWorkAtomicSubmissionMigration.includes("insert into public.portal_access_request_decision")
+  && internalWorkAtomicSubmissionMigration.includes("insert into public.portal_admin_audit")
+  && internalWorkAtomicSubmissionMigration.includes("to service_role"),
+  "Internal access request submission atomically records the request, immutable history, and audit evidence");
+assertContract(source.includes("My Work")
+  && source.includes("Request access")
+  && source.includes("Administrator review queue")
+  && source.includes("Requesters cannot approve their own access"),
+  "Internal My Work exposes controlled access request and Administrator review flows");
+assertContract(workforceOffboardingMigration.includes("portal_start_offboarding")
+  && workforceOffboardingMigration.includes("update public.portal_profile set active = false")
+  && workforceOffboardingMigration.includes("You cannot offboard your own account")
+  && workforceOffboardingMigration.includes("external_automation_state")
+  && workforceOffboardingMigration.includes("manual_required")
+  && workforceOffboardingMigration.includes("portal_update_offboarding_checklist")
+  && workforceOffboardingMigration.includes("portal_record_offboarding_auth_state")
+  && workforceOffboardingMigration.includes("to service_role"),
+  "Workforce offboarding atomically disables Portal access, blocks self-offboarding, and retains manual external-system controls");
+assertContract(internalWork.includes('"portal_start_offboarding"')
+  && internalWork.includes('ban_duration: "876000h"')
+  && internalWork.includes('"portal_record_offboarding_auth_state"')
+  && internalWork.includes('"portal_update_offboarding_checklist"'),
+  "Internal work service revokes Auth after Portal deactivation and records checklist changes through controlled RPCs");
+assertContract(source.includes("Start offboarding")
+  && source.includes("immediately disables UX OS access")
+  && source.includes("External systems and assigned equipment remain manual")
+  && source.includes("offboardingConfirmed"),
+  "My Work presents an explicit, confirmed offboarding action and manual external-system checklist");
+assertContract(itGovernanceMigration.includes("create table if not exists public.portal_it_system")
+  && itGovernanceMigration.includes("create table if not exists public.portal_governance_review")
+  && itGovernanceMigration.includes("enable row level security")
+  && itGovernanceMigration.includes("revoke all on table public.portal_it_system")
+  && itGovernanceMigration.includes("grant all on table public.portal_it_system, public.portal_governance_review to service_role"),
+  "IT systems and access reviews are private, server-owned control records");
+assertContract(itGovernanceMigration.includes("Q4 2026 workforce access review")
+  && itGovernanceMigration.includes("Q4 2026 vendor access review")
+  && itGovernanceMigration.includes("portal_sync_governance_review_work_item")
+  && itGovernanceMigration.includes("Review evidence is required")
+  && itGovernanceMigration.includes("portal_admin_audit"),
+  "Workforce and vendor access reviews are scheduled, queued, evidenced, and audited");
+assertContract(itGovernanceMigration.includes("Finance Admin or IT Admin")
+  && itGovernanceMigration.includes("five minutes is the accepted maximum delay")
+  && itGovernanceMigration.includes("never credentials")
+  && itGovernanceMigration.includes("Production scanner approval and connection remain held"),
+  "The privileged-system register preserves approved reconnect, freshness, credential, and held-scanner boundaries");
+assertContract(internalWork.includes('service.rpc("portal_update_governance_review"')
+  && internalWork.includes('service.rpc("portal_update_it_system"')
+  && internalWork.includes("Administrator access is required to update access reviews")
+  && internalWork.includes("Administrator access is required to verify systems"),
+  "IT governance writes use Administrator-only protected RPCs");
+assertContract(source.includes("IT governance")
+  && source.includes("Access reviews")
+  && source.includes("Systems and integration health")
+  && source.includes("Reconnect authority")
+  && source.includes("This register stores control metadata only—never passwords, tokens, or keys."),
+  "The Administrator UI exposes access review evidence and source-labelled system health without storing credentials");
+assertContract(emergencyChangeMigration.includes("public.portal_add_business_days(now(), 1)")
+  && emergencyChangeMigration.includes("A change implementer cannot approve their own retrospective")
+  && emergencyChangeMigration.includes("portal_sync_emergency_change_work_item")
+  && emergencyChangeMigration.includes("'P0', 'Administrator'")
+  && emergencyChangeMigration.includes("portal_admin_audit"),
+  "Emergency changes create a P0 retrospective task due in one business day with independent approval and audit evidence");
+assertContract(internalWork.includes('service.rpc("portal_create_emergency_change"')
+  && internalWork.includes('service.rpc("portal_decide_emergency_change"')
+  && source.includes("A different Administrator must complete retrospective approval within one business day")
+  && source.includes("RETROSPECTIVE EVIDENCE"),
+  "The IT governance service and UI provide controlled emergency-change intake and retrospective review");
+assertContract(departmentRequestMigration.includes("create table if not exists public.portal_department_request")
+  && departmentRequestMigration.includes("portal_sync_department_request_work_item")
+  && departmentRequestMigration.includes("You cannot approve your own department request")
+  && departmentRequestMigration.includes("No Monday handoff is created")
+  && departmentRequestMigration.includes("portal_admin_audit"),
+  "Shared department requests are Portal-owned, queued, audited, and protected from self-approval");
+assertContract(departmentRequestAuditRepairMigration.includes("portal_admin_audit (actor_id, action, target_id, detail)")
+  && !departmentRequestAuditRepairMigration.includes("event_type")
+  && !departmentRequestAuditRepairMigration.includes("metadata)"),
+  "Department request RPCs write the established administrative audit columns");
+assertContract(internalWork.includes('"portal_submit_department_request"')
+  && internalWork.includes('"portal_decide_department_request"')
+  && source.includes("Send work to a department")
+  && source.includes("Administrator department queue")
+  && source.includes("Decision evidence"),
+  "The Internal service and My Work UI expose controlled department request intake and review");
+assertContract(departmentNotificationMigration.includes("department_request_received")
+  && departmentNotificationMigration.includes("department_request_updated")
+  && departmentNotificationMigration.includes("portal_notification_outbox_event_type_check")
+  && departmentNotificationMigration.includes("'department_request'")
+  && departmentNotificationMigration.includes("approval_state"),
+  "Department request messages use approved versioned templates and the durable notification outbox");
+assertContract(internalWork.includes("portal_claim_resend_free_quota")
+  && internalWork.includes('fetch("https://api.resend.com/emails"')
+  && internalWork.includes('"idempotency-key"')
+  && internalWork.includes("department-request-received:")
+  && internalWork.includes("department-request-updated:")
+  && notifications.includes('String(template.template_key).startsWith("department_request_")'),
+  "Department request email is idempotent, quota-controlled, Resend-backed, and delivery-state aware");
+assertContract(financePurchaseMigration.includes("create table if not exists public.portal_purchase_request")
+  && financePurchaseMigration.includes("create table if not exists public.portal_purchase_request_decision")
+  && financePurchaseMigration.includes("p_amount <= 500")
+  && financePurchaseMigration.includes("p_amount < 3000")
+  && financePurchaseMigration.includes("You cannot approve your own purchase request")
+  && financePurchaseMigration.includes("portal_sync_purchase_request_work_item")
+  && financePurchaseMigration.includes("portal_admin_audit"),
+  "Finance purchase requests are Portal-owned, threshold-routed, independently approved, queued, and audited");
+assertContract(financePurchaseMigration.includes("portal_department_notification_recipient")
+  && financePurchaseMigration.includes("department_request_routed")
+  && financePurchaseMigration.includes("purchase_request_approval_required")
+  && internalWork.includes("internalNotificationRecipients")
+  && internalWork.includes('staff_role", "administrator"')
+  && internalWork.includes('in("member_role", ["department_head", "backup_owner"])'),
+  "Department notifications reach configured owners, inboxes, department leaders, and every active Administrator");
+assertContract(internalWork.includes('service.rpc("portal_submit_purchase_request_v2"')
+  && internalWork.includes('service.rpc("portal_decide_purchase_request"')
+  && internalWork.includes('service.rpc(\n    "portal_record_purchase_business_decision"')
+  && internalWork.includes('action === "upload-purchase-document"')
+  && source.includes("FINANCE · SUPPLY ORDER PATTERN")
+  && source.includes("Administrator processing evidence")
+  && source.includes("Business decision evidence"),
+  "The Internal service and My Work UI expose calculated multi-line purchase intake, business approval, Administrator processing, and supporting documents");
+assertContract(identityHelperCompatibilityMigration.includes("create or replace function public.portal_my_permissions()")
+  && identityHelperCompatibilityMigration.includes("profile.id = auth.uid()")
+  && identityHelperCompatibilityMigration.includes("profile.active is true")
+  && identityHelperCompatibilityMigration.includes("revoke all on function public.portal_my_permissions() from public, anon")
+  && identityHelperCompatibilityMigration.includes("grant execute on function public.portal_my_permissions() to authenticated, service_role"),
+  "The browser identity RPC remains exposed only to authenticated users and returns the signed-in workforce user's permissions");
 
 const configuredFunctions = new Set([...supabaseConfig.matchAll(/^\[functions\.([^\]]+)\]/gm)].map((match) => match[1]));
 for (const name of functionNames) {

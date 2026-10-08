@@ -8,6 +8,11 @@ import {
   verifyHs256Jwt,
 } from "../functions/_shared/security-contract.ts";
 import { verifiedTokenIsAuthenticated } from "../functions/_shared/auth.ts";
+import {
+  accessRequestDecisionAllowed,
+  accessRequestRiskTier,
+  purchaseApprovalRoute,
+} from "../functions/_shared/internal-work-contract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -79,6 +84,71 @@ Deno.test("portal API assurance gate accepts authenticated user claims", () => {
     !verifiedTokenIsAuthenticated("Bearer malformed"),
     "malformed JWT must fail",
   );
+});
+
+Deno.test("access requests cannot bypass reviewable states", () => {
+  assert(
+    accessRequestDecisionAllowed("submitted", "approved"),
+    "submitted requests may be approved",
+  );
+  assert(
+    accessRequestDecisionAllowed("under_review", "returned"),
+    "review may request changes",
+  );
+  assert(
+    !accessRequestDecisionAllowed("approved", "approved"),
+    "approved requests are terminal",
+  );
+  assert(
+    !accessRequestDecisionAllowed("denied", "under_review"),
+    "denied requests cannot be reopened implicitly",
+  );
+  assert(
+    !accessRequestDecisionAllowed("submitted", "cancelled"),
+    "unsupported decisions must fail",
+  );
+});
+
+Deno.test("access risk is raised for Administrator and sensitive departments", () => {
+  assert(
+    accessRequestRiskTier("administrator", "marketing", false) === "privileged",
+    "Administrator is privileged",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "it_admin", true) === "privileged",
+    "IT access is privileged",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "finance", true) === "sensitive",
+    "Finance is sensitive",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "marketing", false) === "ordinary",
+    "ordinary access stays ordinary",
+  );
+});
+
+Deno.test("purchase approvals follow the approved spending thresholds", () => {
+  assert(purchaseApprovalRoute(500).tier === "eric_500", "$500 routes to Eric");
+  assert(
+    purchaseApprovalRoute(500.01).tier === "leadership_2999",
+    "$500.01 routes to leadership",
+  );
+  assert(
+    purchaseApprovalRoute(2999.99).authority === "Omeed / Jonathan / Drew",
+    "sub-$3,000 routes to leadership",
+  );
+  assert(
+    purchaseApprovalRoute(3000).tier === "eran_3000",
+    "$3,000 routes to Eran",
+  );
+  let rejected = false;
+  try {
+    purchaseApprovalRoute(0);
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "non-positive amounts must be rejected");
 });
 
 Deno.test("order transitions are adjacent and terminal", () => {

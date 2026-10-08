@@ -167,6 +167,62 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 </div>
 </sc-if>
 
+<sc-if value="{{ isMyWork }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL WORKSPACE</div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 7px">My Work</h1><p style="font-size:13.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">Your active work, access requests, decisions, and assignments in one place.</p></div><button type="button" onClick="{{ onInternalWorkRefresh }}" aria-disabled="{{ internalWorkLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ internalWorkRefreshLabel }}</button></div>
+<sc-if value="{{ internalWorkHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:16px;font-size:12.5px">{{ internalWorkError }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin-bottom:20px"><sc-for list="{{ internalWorkSummary }}" as="summary" hint-placeholder-count="4"><div style="padding:15px 14px;border-right:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ summary.label }}</div><div style="font:800 22px Archivo,sans-serif">{{ summary.value }}</div></div></sc-for></div>
+<section style="display:grid;grid-template-columns:minmax(280px,.85fr) minmax(360px,1.4fr);gap:18px;align-items:start;margin-bottom:24px">
+<article style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">CONTROLLED REQUEST</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 7px">Request access</h2><p style="font-size:11.5px;line-height:1.55;color:var(--ux-muted);margin:0 0 14px">Requests go to an Administrator. Requesters cannot approve their own access.</p>
+<div style="display:grid;gap:10px">
+<sc-if value="{{ internalWorkCanChooseTarget }}" hint-placeholder-val="{{ false }}"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORKFORCE USER</span><select value="{{ accessRequestTargetId }}" onChange="{{ onAccessRequestTarget }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ accessRequestTargetOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></sc-if>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORKFORCE ROLE</span><select value="{{ accessRequestRole }}" onChange="{{ onAccessRequestRole }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ accessRequestRoleOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DEPARTMENT</span><select value="{{ accessRequestDepartment }}" onChange="{{ onAccessRequestDepartment }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ accessRequestDepartmentOptions }}" as="option" hint-placeholder-count="8"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">ACCESS EXPIRATION · OPTIONAL · MM/DD/YYYY</span><input type="text" value="{{ accessRequestExpiresOn }}" onInput="{{ onAccessRequestExpiresOn }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">BUSINESS REASON</span><textarea value="{{ accessRequestJustification }}" onInput="{{ onAccessRequestJustification }}" rows="4" placeholder="Explain the work this access supports" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px/1.5 Archivo,sans-serif;resize:vertical"></textarea></label>
+<button type="button" onClick="{{ onSubmitAccessRequest }}" aria-disabled="{{ accessRequestSubmitDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer;{{ accessRequestSubmitStyle }}">{{ accessRequestSubmitLabel }}</button>
+</div></article>
+<article style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">ACTIVE ASSIGNMENTS</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 12px">Priority tasks and approvals</h2><sc-if value="{{ internalWorkItemsEmpty }}" hint-placeholder-val="{{ true }}"><p style="font-size:12px;color:var(--ux-muted);margin:0">No active assignments are waiting for you.</p></sc-if><div style="display:grid;gap:10px"><sc-for list="{{ internalWorkItems }}" as="item" hint-placeholder-count="4"><div style="border:1px solid rgba(23,14,11,.18);padding:12px"><div style="display:flex;justify-content:space-between;gap:10px"><strong style="font-size:12.5px">{{ item.title }}</strong><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:3px 6px">{{ item.priority }}</span></div><div style="font-size:11px;color:var(--ux-muted);margin-top:5px">{{ item.reference }} · {{ item.workflow }} · {{ item.status }}</div></div></sc-for></div><sc-if value="{{ internalWorkHasMore }}" hint-placeholder-val="{{ false }}"><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:12px 0 0">{{ internalWorkMoreLabel }}</p></sc-if></article>
+</section>
+<section style="display:grid;grid-template-columns:minmax(280px,.8fr) minmax(420px,1.4fr);gap:18px;align-items:start;margin-bottom:24px">
+<article style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">SHARED REQUEST INTAKE</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 7px">Send work to a department</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0 0 13px">Use one controlled queue for operational, Finance, Marketing, Quality, Sales, or IT requests.</p><div style="display:grid;gap:9px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DEPARTMENT</span><select value="{{ departmentRequestDepartment }}" onChange="{{ onDepartmentRequestDepartment }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ departmentRequestDepartmentOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">REQUEST TYPE</span><select value="{{ departmentRequestType }}" onChange="{{ onDepartmentRequestType }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ departmentRequestTypeOptions }}" as="option" hint-placeholder-count="6"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TITLE *</span><input value="{{ departmentRequestTitle }}" onInput="{{ onDepartmentRequestTitle }}" placeholder="What is needed?" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DETAILS *</span><textarea value="{{ departmentRequestDetails }}" onInput="{{ onDepartmentRequestDetails }}" rows="4" placeholder="Include the business need, deadline, and useful context" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);resize:vertical"></textarea></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ departmentRequestPriority }}" onChange="{{ onDepartmentRequestPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><option value="P1">P1 · Urgent</option><option value="P2">P2 · Normal</option><option value="P3">P3 · Low</option></select></label><button type="button" onClick="{{ onSubmitDepartmentRequest }}" aria-disabled="{{ departmentRequestSubmitDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer;{{ departmentRequestSubmitStyle }}">{{ departmentRequestSubmitLabel }}</button></div></article>
+<article style="border-top:2px solid var(--ux-ink);background:#fff"><div style="padding:16px;border-bottom:1px solid rgba(23,14,11,.16)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DEPARTMENT QUEUE</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ departmentRequestQueueHeading }}</h2></div><sc-if value="{{ departmentRequestsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:16px;font-size:12px;color:var(--ux-muted)">No department requests are available in this view.</div></sc-if><div style="display:grid"><sc-for list="{{ departmentRequests }}" as="request" hint-placeholder-count="4"><article style="padding:13px 16px;border-top:1px solid rgba(23,14,11,.14)"><div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ request.reference }} · {{ request.departmentLabel }} · {{ request.priority }}</div><strong style="font:800 13px Archivo,sans-serif">{{ request.title }}</strong><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ request.details }}</div></div><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px;height:max-content">{{ request.statusLabel }}</span></div><sc-if value="{{ request.canDecide }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(200px,1fr) auto auto auto;gap:7px;align-items:end;margin-top:9px"><input value="{{ request.note }}" onInput="{{ request.onNote }}" placeholder="Decision evidence" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><button type="button" onClick="{{ request.onApprove }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 9px;font:700 9px Archivo,sans-serif">Approve</button><button type="button" onClick="{{ request.onReturn }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 9px;font:700 9px Archivo,sans-serif">Return</button><button type="button" onClick="{{ request.onComplete }}" style="background:var(--ux-ink);color:#fff;border:0;padding:8px 9px;font:700 9px Archivo,sans-serif">Complete</button></div></sc-if></article></sc-for></div></article>
+</section>
+<section style="display:grid;grid-template-columns:minmax(300px,.85fr) minmax(430px,1.45fr);gap:18px;align-items:start;margin-bottom:24px">
+<article style="border-top:2px solid var(--ux-accent);background:#fff;padding:16px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">FINANCE · CONTROLLED SPEND</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 7px">Purchase request</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0 0 13px">The amount selects the required business authority. Administrators control the queue and record approval evidence.</p><div style="display:grid;gap:9px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">REQUESTING DEPARTMENT</span><select value="{{ purchaseRequestDepartment }}" onChange="{{ onPurchaseRequestDepartment }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestDepartmentOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">VENDOR *</span><input value="{{ purchaseRequestVendor }}" onInput="{{ onPurchaseRequestVendor }}" placeholder="Vendor or payee" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">CATEGORY</span><select value="{{ purchaseRequestCategory }}" onChange="{{ onPurchaseRequestCategory }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestCategoryOptions }}" as="option" hint-placeholder-count="6"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">AMOUNT *</span><input type="number" min="0.01" step="0.01" value="{{ purchaseRequestAmount }}" onInput="{{ onPurchaseRequestAmount }}" placeholder="0.00" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></label></div><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">NEEDED BY · OPTIONAL · MM/DD/YYYY</span><input type="text" value="{{ purchaseRequestNeededBy }}" onInput="{{ onPurchaseRequestNeededBy }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">BUSINESS PURPOSE *</span><textarea value="{{ purchaseRequestPurpose }}" onInput="{{ onPurchaseRequestPurpose }}" rows="4" placeholder="What is being purchased, why it is needed, and useful context" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);resize:vertical"></textarea></label><div style="background:var(--ux-surface);padding:9px 10px;font-size:11px"><strong>Required business authority:</strong> {{ purchaseApprovalAuthority }}</div><button type="button" onClick="{{ onSubmitPurchaseRequest }}" aria-disabled="{{ purchaseRequestSubmitDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer;{{ purchaseRequestSubmitStyle }}">{{ purchaseRequestSubmitLabel }}</button></div></article>
+<article style="border-top:2px solid var(--ux-ink);background:#fff"><div style="padding:16px;border-bottom:1px solid rgba(23,14,11,.16)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PURCHASE QUEUE</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ purchaseRequestQueueHeading }}</h2></div><sc-if value="{{ purchaseRequestsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:16px;font-size:12px;color:var(--ux-muted)">No purchase requests are available in this view.</div></sc-if><div style="display:grid"><sc-for list="{{ purchaseRequests }}" as="request" hint-placeholder-count="4"><article style="padding:13px 16px;border-top:1px solid rgba(23,14,11,.14)"><div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ request.reference }} · {{ request.departmentLabel }} · {{ request.categoryLabel }}</div><strong style="font:800 13px Archivo,sans-serif">{{ request.vendor_name }} · {{ request.amountLabel }}</strong><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ request.purpose }}</div><div style="font-size:10px;color:var(--ux-muted);margin-top:5px">Authority: {{ request.approval_authority }} · Needed {{ request.neededByLabel }}</div></div><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px;height:max-content">{{ request.statusLabel }}</span></div><sc-if value="{{ request.canDecide }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(190px,1fr) repeat(4,auto);gap:7px;align-items:end;margin-top:9px"><input value="{{ request.note }}" onInput="{{ request.onNote }}" placeholder="Business-authority evidence" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><button type="button" onClick="{{ request.onApprove }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 9px;font:700 9px Archivo,sans-serif">Approve</button><button type="button" onClick="{{ request.onReturn }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 9px;font:700 9px Archivo,sans-serif">Return</button><button type="button" onClick="{{ request.onDeny }}" style="background:transparent;color:var(--ux-signal-text);border:1px solid var(--ux-signal);padding:8px 9px;font:700 9px Archivo,sans-serif">Deny</button><button type="button" onClick="{{ request.onComplete }}" style="background:var(--ux-ink);color:#fff;border:0;padding:8px 9px;font:700 9px Archivo,sans-serif">Complete</button></div></sc-if></article></sc-for></div></article>
+</section>
+<sc-if value="{{ internalWorkCanChooseTarget }}" hint-placeholder-val="{{ false }}"><section style="border-top:2px solid var(--ux-ink);background:#fff;margin-bottom:24px"><div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">NOTIFICATION ROUTING</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 5px">Department owners and inboxes</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0">Every active Administrator is included automatically. Add department owners and shared inboxes here; duplicate addresses receive only one message.</p></div><div style="padding:14px 16px;display:grid;grid-template-columns:1fr .55fr 1fr 1.2fr auto;gap:8px;align-items:end"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DEPARTMENT</span><select value="{{ notificationRecipientDepartment }}" onChange="{{ onNotificationRecipientDepartment }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ departmentRequestDepartmentOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TYPE</span><select value="{{ notificationRecipientType }}" onChange="{{ onNotificationRecipientType }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff"><option value="inbox">Inbox</option><option value="owner">Owner</option></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">NAME</span><input value="{{ notificationRecipientName }}" onInput="{{ onNotificationRecipientName }}" placeholder="Finance inbox" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3)"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">EMAIL</span><input type="email" value="{{ notificationRecipientEmail }}" onInput="{{ onNotificationRecipientEmail }}" placeholder="team@urbanxtracts.com" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3)"></label><button type="button" onClick="{{ onSaveNotificationRecipient }}" aria-disabled="{{ notificationRecipientSaveDisabled }}" style="background:var(--ux-ink);color:#fff;border:0;padding:9px 11px;font:700 9px Archivo,sans-serif;{{ notificationRecipientSaveStyle }}">{{ notificationRecipientSaveLabel }}</button></div><sc-if value="{{ notificationRecipientsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:0 16px 14px;font-size:11.5px;color:var(--ux-muted)">No additional owner or inbox recipients are configured. Administrators are still notified.</div></sc-if><div style="display:grid"><sc-for list="{{ notificationRecipients }}" as="recipient" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:1fr .5fr 1.2fr auto;gap:10px;align-items:center;padding:10px 16px;border-top:1px solid rgba(23,14,11,.14);font-size:11px"><strong>{{ recipient.departmentLabel }}</strong><span>{{ recipient.typeLabel }}</span><span>{{ recipient.display_name }} · {{ recipient.recipient_email }}</span><button type="button" onClick="{{ recipient.onDeactivate }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 8px Archivo,sans-serif">Deactivate</button></div></sc-for></div></section></sc-if>
+<section style="border-top:2px solid var(--ux-ink);background:#fff"><div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">ACCESS HISTORY</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ internalAccessQueueHeading }}</h2></div><sc-if value="{{ internalAccessRequestsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:16px;font-size:12px;color:var(--ux-muted)">No access requests are available in this view.</div></sc-if><div style="display:grid"><sc-for list="{{ internalAccessRequests }}" as="request" hint-placeholder-count="5"><article style="padding:14px 16px;border-top:1px solid rgba(23,14,11,.15)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ request.reference }} · {{ request.risk }}</div><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 5px">{{ request.role }} · {{ request.department }}</h3><div style="font-size:11.5px;line-height:1.5;color:var(--ux-muted)">{{ request.justification }}</div></div><span style="font:700 8.5px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">{{ request.status }}</span></div><sc-if value="{{ request.canDecide }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(220px,1fr) auto auto auto;gap:8px;align-items:end;margin-top:12px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DECISION NOTE</span><input value="{{ request.note }}" onInput="{{ request.onNote }}" placeholder="Required for return or denial" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ request.onApprove }}" aria-disabled="{{ request.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">Approve</button><button type="button" onClick="{{ request.onReturn }}" aria-disabled="{{ request.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">Return</button><button type="button" onClick="{{ request.onDeny }}" aria-disabled="{{ request.pending }}" style="background:transparent;color:var(--ux-signal-text);border:1px solid var(--ux-signal);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">Deny</button></div></sc-if></article></sc-for></div></section>
+<sc-if value="{{ internalCanManageOffboarding }}" hint-placeholder-val="{{ false }}">
+<section style="border-top:2px solid var(--ux-ink);background:#fff;margin-top:24px">
+<div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORKFORCE CONTROL</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 5px">Offboarding</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0">Starting a case immediately disables UX OS access. External systems and assigned equipment remain manual, evidenced checklist steps.</p></div>
+<div style="display:grid;grid-template-columns:minmax(280px,.75fr) minmax(400px,1.5fr);gap:18px;padding:16px">
+<article style="background:var(--ux-surface);padding:14px"><div style="font:700 8px ui-monospace,monospace;color:var(--ux-signal-text);margin-bottom:5px">IMMEDIATE ACCESS CONTROL</div><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 10px">Start offboarding</h3><div style="display:grid;gap:9px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORKFORCE USER</span><select value="{{ offboardingTargetId }}" onChange="{{ onOffboardingTarget }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><option value="">Choose an active user</option><sc-for list="{{ offboardingTargetOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">BUSINESS REASON</span><textarea value="{{ offboardingReason }}" onInput="{{ onOffboardingReason }}" rows="4" placeholder="Document the approved offboarding reason" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px/1.5 Archivo,sans-serif;resize:vertical"></textarea></label><label style="display:flex;gap:8px;align-items:flex-start;font-size:11px;line-height:1.45"><input type="checkbox" checked="{{ offboardingConfirmed }}" onChange="{{ onOffboardingConfirmed }}"><span>I understand this immediately disables the selected user’s UX OS access.</span></label><button type="button" onClick="{{ onStartOffboarding }}" aria-disabled="{{ offboardingStartDisabled }}" style="background:var(--ux-signal);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer;{{ offboardingStartStyle }}">{{ offboardingStartLabel }}</button></div></article>
+<article><sc-if value="{{ offboardingCasesEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:14px;border:1px solid rgba(23,14,11,.18);font-size:12px;color:var(--ux-muted)">No offboarding cases have been created.</div></sc-if><div style="display:grid;gap:10px"><sc-for list="{{ offboardingCases }}" as="offboarding" hint-placeholder-count="3"><details style="border:1px solid rgba(23,14,11,.2);background:#fff"><summary style="padding:12px 13px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><strong style="font:800 13px Archivo,sans-serif">{{ offboarding.target_name }}</strong><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-top:4px">{{ offboarding.reference }} · {{ offboarding.progress }}</div></div><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">{{ offboarding.statusLabel }}</span></div></summary><div style="border-top:1px solid rgba(23,14,11,.16);padding:12px 13px"><div style="font-size:11px;line-height:1.5;color:var(--ux-muted);margin-bottom:10px">{{ offboarding.target_email }} · Auth {{ offboarding.authLabel }} · External systems require manual confirmation.</div><div style="display:grid;gap:8px"><sc-for list="{{ offboarding.items }}" as="check" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(125px,.7fr) minmax(130px,.55fr) minmax(180px,1.2fr) auto;gap:8px;align-items:end;border-top:1px solid rgba(23,14,11,.12);padding-top:8px"><strong style="font-size:10.5px">{{ check.system_name }}</strong><select value="{{ check.statusValue }}" onChange="{{ check.onStatus }}" disabled="{{ check.locked }}" style="padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><sc-for list="{{ check.statusOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select><input value="{{ check.note }}" onInput="{{ check.onNote }}" disabled="{{ check.locked }}" placeholder="Evidence or not-applicable reason" style="padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"><button type="button" onClick="{{ check.onSave }}" aria-disabled="{{ check.saveDisabled }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:8px 10px;font:700 9px Archivo,sans-serif;cursor:pointer;{{ check.saveStyle }}">{{ check.saveLabel }}</button></div></sc-for></div></div></details></sc-for></div></article>
+</div></section>
+</sc-if>
+<style>#main-content section:has(input[placeholder="0.00"]){display:none!important}</style>
+<section style="margin-top:24px;border-top:2px solid var(--ux-accent);background:#fff">
+<div style="padding:16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">FINANCE · SUPPLY ORDER PATTERN</div><h2 style="font:800 20px Archivo,sans-serif;margin:0 0 6px">Purchase requests</h2><p style="font-size:11.5px;color:var(--ux-muted);line-height:1.5;margin:0">Header details, line items, calculated totals, direct business approval, Administrator processing, and malware-scanned support.</p></div>
+<div style="display:grid;grid-template-columns:minmax(360px,.95fr) minmax(460px,1.35fr);gap:18px;padding:16px">
+<article style="background:var(--ux-surface);padding:14px;display:grid;gap:9px"><h3 style="font:800 16px Archivo,sans-serif;margin:0">New request</h3><div style="display:grid;grid-template-columns:1fr .7fr;gap:8px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DEPARTMENT</span><select value="{{ purchaseRequestDepartment }}" onChange="{{ onPurchaseRequestDepartment }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestDepartmentOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ purchaseRequestPriority }}" onChange="{{ onPurchaseRequestPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestPriorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></div><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">VENDOR *</span><input value="{{ purchaseRequestVendor }}" onInput="{{ onPurchaseRequestVendor }}" placeholder="Vendor / supplier" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px"><input value="{{ purchaseRequestNeededBy }}" onInput="{{ onPurchaseRequestNeededBy }}" inputMode="numeric" maxLength="10" placeholder="Need by MM/DD/YYYY" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><input value="{{ purchaseRequestDeliveryStart }}" onInput="{{ onPurchaseRequestDeliveryStart }}" inputMode="numeric" maxLength="10" placeholder="Delivery start" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><input value="{{ purchaseRequestDeliveryEnd }}" onInput="{{ onPurchaseRequestDeliveryEnd }}" inputMode="numeric" maxLength="10" placeholder="Delivery end" style="padding:8px;border:1px solid rgba(23,14,11,.3)"></div><div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center"><input value="{{ purchaseRequestPaymentMethod }}" onInput="{{ onPurchaseRequestPaymentMethod }}" placeholder="Payment method (optional)" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><label style="display:flex;gap:6px;align-items:center;font-size:10.5px"><input type="checkbox" checked="{{ purchaseRequestRecurring }}" onChange="{{ onPurchaseRequestRecurring }}">Recurring</label></div><textarea value="{{ purchaseRequestPurpose }}" onInput="{{ onPurchaseRequestPurpose }}" rows="3" placeholder="Business purpose *" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);resize:vertical"></textarea><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:12px">Items</strong><button type="button" onClick="{{ onAddPurchaseRequestLine }}" style="background:#fff;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 9px Archivo,sans-serif">Add item</button></div><div style="display:grid;gap:8px"><sc-for list="{{ purchaseRequestLines }}" as="line" hint-placeholder-count="2"><div style="background:#fff;border:1px solid rgba(23,14,11,.18);padding:9px;display:grid;gap:6px"><div style="display:flex;justify-content:space-between"><span style="font:700 8px ui-monospace,monospace">ITEM {{ line.number }} · {{ line.subtotal }}</span><sc-if value="{{ line.canRemove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ line.onRemove }}" style="border:0;background:transparent;color:var(--ux-signal-text);font:700 8px Archivo,sans-serif">Remove</button></sc-if></div><div style="display:grid;grid-template-columns:1.3fr .7fr;gap:6px"><input value="{{ line.itemDescription }}" onInput="{{ line.onDescription }}" placeholder="Item description *" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><input value="{{ line.sku }}" onInput="{{ line.onSku }}" placeholder="SKU" style="padding:7px;border:1px solid rgba(23,14,11,.3)"></div><input type="url" value="{{ line.purchaseUrl }}" onInput="{{ line.onUrl }}" placeholder="https:// purchase link (optional)" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><div style="display:grid;grid-template-columns:.5fr .7fr 1fr;gap:6px"><input type="number" min="0.001" step="0.001" value="{{ line.quantity }}" onInput="{{ line.onQuantity }}" placeholder="Qty" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><input type="number" min="0" step="0.01" value="{{ line.unitCost }}" onInput="{{ line.onUnitCost }}" placeholder="Unit cost" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><select value="{{ line.expenseCategory }}" onChange="{{ line.onCategory }}" style="padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ line.categoryOptions }}" as="option" hint-placeholder-count="6"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"><input value="{{ line.expenseSubcategory }}" onInput="{{ line.onSubcategory }}" placeholder="Sub-category" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><input value="{{ line.chartOfAccounts }}" onInput="{{ line.onAccount }}" placeholder="Chart of Accounts" style="padding:7px;border:1px solid rgba(23,14,11,.3)"><input value="{{ line.requiredDeliveryOn }}" onInput="{{ line.onDelivery }}" inputMode="numeric" maxLength="10" placeholder="Delivery date" style="padding:7px;border:1px solid rgba(23,14,11,.3)"></div></div></sc-for></div><div style="padding:9px 10px;background:#fff;font-size:11px"><strong>Total:</strong> {{ purchaseRequestTotal }} · <strong>Authority:</strong> {{ purchaseApprovalAuthority }}</div><button type="button" onClick="{{ onSubmitPurchaseRequest }}" aria-disabled="{{ purchaseRequestSubmitDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;{{ purchaseRequestSubmitStyle }}">{{ purchaseRequestSubmitLabel }}</button></article>
+<article><h3 style="font:800 16px Archivo,sans-serif;margin:0 0 10px">{{ purchaseRequestQueueHeading }}</h3><sc-if value="{{ purchaseRequestsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:14px;border:1px solid rgba(23,14,11,.18);font-size:12px;color:var(--ux-muted)">No purchase requests are available.</div></sc-if><div style="display:grid;gap:9px"><sc-for list="{{ purchaseRequests }}" as="request" hint-placeholder-count="4"><details style="border:1px solid rgba(23,14,11,.2);background:#fff"><summary style="padding:12px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:10px"><div><strong style="font:800 13px Archivo,sans-serif">{{ request.reference }} · {{ request.vendor_name }} · {{ request.amountLabel }}</strong><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-top:4px">{{ request.departmentLabel }} · {{ request.priorityLabel }} · BUSINESS {{ request.businessStatusLabel }}</div></div><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px;height:max-content">{{ request.statusLabel }}</span></div></summary><div style="border-top:1px solid rgba(23,14,11,.16);padding:12px;display:grid;gap:9px"><div style="font-size:11px;line-height:1.5;color:var(--ux-muted)">{{ request.purpose }}<br>Authority: {{ request.approval_authority }} · Needed {{ request.neededByLabel }} · {{ request.recurringLabel }}</div><div style="display:grid;gap:5px"><sc-for list="{{ request.lines }}" as="line" hint-placeholder-count="2"><div style="padding:7px 8px;background:var(--ux-surface);font-size:10.5px"><strong>{{ line.item_description }}</strong> · {{ line.subtotalLabel }}<div style="color:var(--ux-muted);margin-top:2px">{{ line.meta }}</div></div></sc-for></div><sc-if value="{{ request.canBusinessDecide }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px"><input value="{{ request.businessNote }}" onInput="{{ request.onBusinessNote }}" placeholder="Business decision evidence" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><button type="button" onClick="{{ request.onBusinessApprove }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px;font:700 8px Archivo,sans-serif">Approve</button><button type="button" onClick="{{ request.onBusinessReturn }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px;font:700 8px Archivo,sans-serif">Return</button><button type="button" onClick="{{ request.onBusinessDeny }}" style="background:transparent;border:1px solid var(--ux-signal);color:var(--ux-signal-text);padding:8px;font:700 8px Archivo,sans-serif">Deny</button></div></sc-if><div style="border-top:1px solid rgba(23,14,11,.14);padding-top:8px"><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">SUPPORTING DOCUMENTS · OPTIONAL</div><sc-if value="{{ request.hasEvidence }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px"><sc-for list="{{ request.evidence }}" as="evidence" hint-placeholder-count="2"><button type="button" onClick="{{ evidence.onDownload }}" style="background:var(--ux-surface);border:1px solid rgba(23,14,11,.2);padding:6px;font:700 8px Archivo,sans-serif">{{ evidence.typeLabel }} · {{ evidence.original_name }}</button></sc-for></div></sc-if><div style="display:grid;grid-template-columns:.7fr 1fr auto;gap:6px"><select value="{{ request.documentType }}" onChange="{{ request.onDocumentType }}" style="padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff"><option value="quote">Quote</option><option value="receipt">Receipt</option><option value="invoice">Invoice</option><option value="contract">Contract</option><option value="justification">Justification</option><option value="supporting_document">Supporting</option><option value="other">Other</option></select><label style="padding:7px;border:1px solid rgba(23,14,11,.3);font-size:9px;cursor:pointer">{{ request.documentName }}<input type="file" accept="application/pdf,image/png,image/jpeg" onChange="{{ request.onDocument }}" style="display:none"></label><button type="button" onClick="{{ request.onUploadDocument }}" aria-disabled="{{ request.documentUploadDisabled }}" style="background:var(--ux-ink);color:#fff;border:0;padding:7px;font:700 8px Archivo,sans-serif;{{ request.documentUploadStyle }}">{{ request.documentUploadLabel }}</button></div></div><sc-if value="{{ request.canDecide }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr repeat(4,auto);gap:6px"><input value="{{ request.note }}" onInput="{{ request.onNote }}" placeholder="Administrator processing evidence" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><button type="button" onClick="{{ request.onApprove }}" aria-disabled="{{ request.adminApproveDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px;font:700 8px Archivo,sans-serif;{{ request.adminApproveStyle }}">Admin approve</button><button type="button" onClick="{{ request.onReturn }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px;font:700 8px Archivo,sans-serif">Return</button><button type="button" onClick="{{ request.onDeny }}" style="background:transparent;border:1px solid var(--ux-signal);color:var(--ux-signal-text);padding:8px;font:700 8px Archivo,sans-serif">Deny</button><button type="button" onClick="{{ request.onComplete }}" style="background:var(--ux-ink);color:#fff;border:0;padding:8px;font:700 8px Archivo,sans-serif">Complete</button></div></sc-if></div></details></sc-for></div></article>
+</div></section>
+</div>
+</sc-if>
+
+<sc-if value="{{ isItGovernance }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">ADMINISTRATION · CONTROL EVIDENCE</div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 7px">IT governance</h1><p style="font-size:13.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:76ch">Review workforce and vendor access, verify privileged systems, and record the evidence behind each status.</p></div><button type="button" onClick="{{ onInternalWorkRefresh }}" aria-disabled="{{ internalWorkLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ internalWorkRefreshLabel }}</button></div>
+<sc-if value="{{ internalWorkHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:16px;font-size:12.5px">{{ internalWorkError }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin-bottom:22px"><sc-for list="{{ itGovernanceSummary }}" as="summary" hint-placeholder-count="4"><div style="padding:15px 14px;border-right:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ summary.label }}</div><div style="font:800 22px Archivo,sans-serif">{{ summary.value }}</div></div></sc-for></div>
+<section style="border-top:2px solid var(--ux-signal);background:#fff;margin-bottom:24px;padding:16px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-signal-text);margin-bottom:4px">CHANGE MANAGEMENT</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 5px">Emergency changes</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0 0 13px">Record an emergency production change immediately. A different Administrator must complete retrospective approval within one business day.</p><div style="display:grid;grid-template-columns:minmax(170px,.7fr) minmax(180px,1fr) minmax(260px,1.4fr) minmax(220px,1fr) minmax(110px,.45fr) auto;gap:8px;align-items:end;margin-bottom:15px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">SYSTEM *</span><select value="{{ emergencySystemKey }}" onChange="{{ onEmergencySystem }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><option value="">Choose</option><sc-for list="{{ emergencySystemOptions }}" as="option" hint-placeholder-count="6"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TITLE *</span><input value="{{ emergencyTitle }}" onInput="{{ onEmergencyTitle }}" placeholder="What changed" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">CHANGE SUMMARY *</span><input value="{{ emergencySummary }}" onInput="{{ onEmergencySummary }}" placeholder="Implementation and impact" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WHY IT COULD NOT WAIT *</span><input value="{{ emergencyReason }}" onInput="{{ onEmergencyReason }}" placeholder="Emergency justification" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">RISK</span><select value="{{ emergencyRisk }}" onChange="{{ onEmergencyRisk }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select></label><button type="button" onClick="{{ onCreateEmergencyChange }}" aria-disabled="{{ emergencyCreateDisabled }}" style="background:var(--ux-signal);color:#fff;border:0;padding:9px 11px;font:700 9px Archivo,sans-serif;cursor:pointer;{{ emergencyCreateStyle }}">{{ emergencyCreateLabel }}</button></div><sc-if value="{{ emergencyChangesEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:12px;background:var(--ux-surface);font-size:11.5px;color:var(--ux-muted)">No emergency changes are recorded.</div></sc-if><div style="display:grid;gap:8px"><sc-for list="{{ emergencyChanges }}" as="change" hint-placeholder-count="3"><article style="border:1px solid rgba(23,14,11,.18);padding:12px 13px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-signal-text);margin-bottom:4px">{{ change.reference }} · {{ change.systemLabel }} · {{ change.riskLabel }}</div><strong style="font:800 13px Archivo,sans-serif">{{ change.title }}</strong><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-top:4px">{{ change.summary }} · Due {{ change.dueLabel }}</div></div><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px;height:max-content">{{ change.statusLabel }}</span></div><sc-if value="{{ change.canReview }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(260px,1fr) auto auto;gap:8px;align-items:end;margin-top:10px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">RETROSPECTIVE EVIDENCE *</span><input value="{{ change.reviewNote }}" onInput="{{ change.onReviewNote }}" placeholder="Validation, outcome, and follow-up" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><button type="button" onClick="{{ change.onApprove }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 10px;font:700 9px Archivo,sans-serif;cursor:pointer">Approve</button><button type="button" onClick="{{ change.onReturn }}" style="background:transparent;border:1px solid var(--ux-signal);color:var(--ux-signal-text);padding:8px 10px;font:700 9px Archivo,sans-serif;cursor:pointer">Return</button></div></sc-if><sc-if value="{{ change.selfReviewBlocked }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;color:var(--ux-muted);margin-top:8px">A different Administrator must review this change.</div></sc-if></article></sc-for></div></section>
+<section style="border-top:2px solid var(--ux-ink);background:#fff;margin-bottom:24px"><div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">PERIODIC CONTROL</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 5px">Access reviews</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0">These records schedule and evidence manual reviews. They do not automatically deactivate a user or vendor account.</p></div><sc-if value="{{ governanceReviewsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:16px;font-size:12px;color:var(--ux-muted)">No access reviews are scheduled.</div></sc-if><div style="display:grid"><sc-for list="{{ governanceReviews }}" as="review" hint-placeholder-count="2"><article style="display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(145px,.55fr) minmax(150px,.6fr) minmax(240px,1.2fr) auto;gap:10px;align-items:end;padding:14px 16px;border-top:1px solid rgba(23,14,11,.15)"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ review.reference }} · {{ review.kindLabel }}</div><strong style="font:800 13px Archivo,sans-serif">{{ review.title }}</strong><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ review.periodLabel }}</div></div><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ review.statusValue }}" onChange="{{ review.onStatus }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><sc-for list="{{ review.statusOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE · MM/DD/YYYY</span><input value="{{ review.dueOn }}" onInput="{{ review.onDue }}" inputMode="numeric" maxLength="10" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">EVIDENCE / RESULT</span><input value="{{ review.evidenceNote }}" onInput="{{ review.onEvidence }}" placeholder="Required to complete the review" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><button type="button" onClick="{{ review.onSave }}" aria-disabled="{{ review.saveDisabled }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 9px Archivo,sans-serif;cursor:pointer;{{ review.saveStyle }}">{{ review.saveLabel }}</button></article></sc-for></div></section>
+<section style="border-top:2px solid var(--ux-ink);background:#fff"><div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">PRIVILEGED SYSTEM REGISTER</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 5px">Systems and integration health</h2><p style="font-size:11.5px;line-height:1.5;color:var(--ux-muted);margin:0">Statuses are evidence-based and show when they were last verified. This register stores control metadata only—never passwords, tokens, or keys.</p></div><sc-if value="{{ itSystemsEmpty }}" hint-placeholder-val="{{ true }}"><div style="padding:16px;font-size:12px;color:var(--ux-muted)">No systems are registered.</div></sc-if><div style="display:grid;gap:10px;padding:14px 16px"><sc-for list="{{ itSystems }}" as="system" hint-placeholder-count="6"><details style="border:1px solid rgba(23,14,11,.2);background:#fff"><summary style="padding:12px 13px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><strong style="font:800 13px Archivo,sans-serif">{{ system.display_name }}</strong><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-top:4px">{{ system.categoryLabel }} · {{ system.ownerLabel }}</div></div><div style="display:flex;gap:7px;flex-wrap:wrap"><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">{{ system.connectionLabel }}</span><span style="font:700 8px ui-monospace,monospace;background:{{ system.healthBackground }};color:{{ system.healthColor }};padding:4px 7px">{{ system.healthLabel }}</span><span style="font:700 8px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">{{ system.freshnessLabel }}</span></div></div></summary><div style="border-top:1px solid rgba(23,14,11,.16);padding:12px 13px"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin-bottom:12px;font-size:10.5px;line-height:1.5"><div><strong>Reconnect authority</strong><br>{{ system.reconnect_authority }}</div><div><strong>Visibility</strong><br>{{ system.visibility_summary }}</div><div><strong>Credential control</strong><br>{{ system.credentialLabel }}</div><div><strong>Last verified</strong><br>{{ system.lastVerifiedLabel }}</div></div><div style="display:grid;grid-template-columns:repeat(3,minmax(130px,.55fr)) minmax(150px,.65fr) minmax(250px,1.3fr) auto;gap:8px;align-items:end"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">CONNECTION</span><select value="{{ system.connectionValue }}" onChange="{{ system.onConnection }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><sc-for list="{{ system.connectionOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">HEALTH</span><select value="{{ system.healthValue }}" onChange="{{ system.onHealth }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><sc-for list="{{ system.healthOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">FRESHNESS</span><select value="{{ system.freshnessValue }}" onChange="{{ system.onFreshness }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font:10.5px Archivo,sans-serif"><sc-for list="{{ system.freshnessOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">NEXT REVIEW · MM/DD/YYYY</span><input value="{{ system.nextReviewOn }}" onInput="{{ system.onNextReview }}" inputMode="numeric" maxLength="10" placeholder="Optional" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">VERIFICATION EVIDENCE *</span><input value="{{ system.evidenceNote }}" onInput="{{ system.onEvidence }}" placeholder="What was checked and where" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);font:10.5px Archivo,sans-serif"></label><button type="button" onClick="{{ system.onSave }}" aria-disabled="{{ system.saveDisabled }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 11px;font:700 9px Archivo,sans-serif;cursor:pointer;{{ system.saveStyle }}">{{ system.saveLabel }}</button></div></div></details></sc-for></div></section>
+</div>
+</sc-if>
+
 <sc-if value="{{ isPortalBuild }}" hint-placeholder-val="{{ false }}">
 <div>
 <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">INTERNAL · BUILD CONTROL</div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 7px">Portal build control center</h1><p style="font-size:13.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:82ch">A single internal view for the department handoffs, release order, shared services, and guardrails that keep the Brand, Internal, and Store workstreams moving together.</p></div><span style="background:var(--ux-accent);color:#fff;padding:6px 9px;font:700 10px ui-monospace,monospace;letter-spacing:.06em">{{ portalBuildMode }}</span></div>
@@ -3721,7 +3777,7 @@ const INTERNAL_ROUTE_PERMISSION = {
   field: 'accounts.manage', onboarding: 'accounts.manage', recall: 'quality.manage',
   qa: 'quality.manage', lineage: 'lineage.read', admin: 'users.manage', access: 'users.manage',
   auditlog: 'audit.read', validation: 'readiness.read', 'portal-build': 'readiness.read', communications: 'notifications.manage',
-  'brand-applications': 'users.manage', 'brand-purchase-order-admin': 'users.manage', 'work-queue': 'users.manage', 'sku-intake': 'sku_intake.read'
+  'it-governance': 'users.manage', 'brand-applications': 'users.manage', 'brand-purchase-order-admin': 'users.manage', 'work-queue': 'users.manage', 'sku-intake': 'sku_intake.read'
 };
 
 const PORTAL_BUILD_PHASES = [
@@ -4366,6 +4422,8 @@ const PORTAL_BRAND_SUPPORT_API = PORTAL_CONFIG.portalBrandSupportUrl
   || SUPABASE_URL + '/functions/v1/portal-brand-support';
 const PORTAL_WORK_QUEUE_API = PORTAL_CONFIG.portalWorkQueueUrl
   || SUPABASE_URL + '/functions/v1/portal-work-queue';
+const PORTAL_INTERNAL_WORK_API = PORTAL_CONFIG.portalInternalWorkUrl
+  || SUPABASE_URL + '/functions/v1/portal-internal-work';
 const PORTAL_NOTIFICATIONS_API = PORTAL_CONFIG.portalNotificationsUrl
   || SUPABASE_URL + '/functions/v1/portal-notifications';
 const PORTAL_CLAIMS_API = PORTAL_CONFIG.portalClaimsUrl
@@ -4839,6 +4897,24 @@ class Component extends DCLogic {
     workQueuePending: null, workQueueStatusDrafts: {}, workQueuePriorityDrafts: {},
     workQueueDueDrafts: {}, workQueueCommentDrafts: {}, workQueueFilter: 'open',
     workQueueSearch: '', workQueueWorkflowFilter: 'all',
+    internalWorkData: null, internalWorkLoading: false, internalWorkLoaded: false,
+    internalWorkError: null, internalWorkPending: null,
+    accessRequestTargetId: '', accessRequestRole: 'viewer', accessRequestDepartment: '',
+    accessRequestDepartmentRole: 'member', accessRequestExpiresOn: '',
+    accessRequestJustification: '', accessRequestDecisionNotes: {},
+    departmentRequestDepartment: 'operations', departmentRequestType: 'general_request',
+    departmentRequestTitle: '', departmentRequestDetails: '', departmentRequestPriority: 'P2',
+    departmentRequestDecisionNotes: {},
+    purchaseRequestDepartment: 'operations', purchaseRequestVendor: '', purchaseRequestPriority: 'normal',
+    purchaseRequestNeededBy: '', purchaseRequestDeliveryStart: '', purchaseRequestDeliveryEnd: '',
+    purchaseRequestRecurring: false, purchaseRequestPaymentMethod: '', purchaseRequestPurpose: '',
+    purchaseRequestLines: [{ id: 'purchase-line-1', itemDescription: '', sku: '', purchaseUrl: '', quantity: '1', unitCost: '', expenseCategory: 'supplies', expenseSubcategory: '', chartOfAccounts: '', requiredDeliveryOn: '' }],
+    purchaseRequestDecisionNotes: {}, purchaseBusinessDecisionNotes: {}, purchaseDocumentDrafts: {},
+    notificationRecipientDepartment: 'operations', notificationRecipientType: 'inbox',
+    notificationRecipientName: '', notificationRecipientEmail: '',
+    offboardingTargetId: '', offboardingReason: '', offboardingConfirmed: false,
+    offboardingChecklistDrafts: {}, governanceReviewDrafts: {}, itSystemDrafts: {},
+    emergencySystemKey: '', emergencyTitle: '', emergencySummary: '', emergencyReason: '', emergencyRisk: 'high', emergencyReviewNotes: {},
     auOpen: false, auName: '', auEmail: '', auRole: 'Buyer', auAccountType: 'standard',
     auContractorExpiresOn: '', auErr: null,
     token: null, refreshToken: null, auLocs: [], auLocOpen: false, pwNotice: null,
@@ -7533,6 +7609,365 @@ class Component extends DCLogic {
 
   workQueueService(method, payload) {
     return this.securedPortalCall(PORTAL_WORK_QUEUE_API, method || 'GET', payload);
+  }
+
+  internalWorkService(method, payload) {
+    return this.securedPortalCall(PORTAL_INTERNAL_WORK_API, method || 'GET', payload);
+  }
+
+  loadInternalWork(force) {
+    const s = this.state;
+    if (!s.authUser || !s.token || s.role !== 'internal' || s.internalWorkLoading
+      || (!force && s.internalWorkLoaded)) return Promise.resolve();
+    this.set({ internalWorkLoading: true, internalWorkError: null });
+    return this.internalWorkService('GET')
+      .then(body => this.set({ internalWorkData: body, internalWorkLoading: false,
+        internalWorkLoaded: true, internalWorkError: null,
+        accessRequestTargetId: s.accessRequestTargetId || (body.actor && body.actor.id) || '' }))
+      .catch(error => this.set({ internalWorkData: null, internalWorkLoading: false,
+        internalWorkLoaded: true,
+        internalWorkError: error.message || 'My Work could not be loaded.' }));
+  }
+
+  submitAccessRequest() {
+    const s = this.state;
+    if (s.internalWorkPending) return;
+    const expiresText = String(s.accessRequestExpiresOn || '').trim();
+    const expiresOn = expiresText ? usDateToIso(expiresText) : '';
+    if (expiresText && !expiresOn) {
+      this.set({ internalWorkError: 'Enter the expiration date as MM/DD/YYYY.' }); return;
+    }
+    if (String(s.accessRequestJustification || '').trim().length < 12) {
+      this.set({ internalWorkError: 'Explain the business reason for this access.' }); return;
+    }
+    this.set({ internalWorkPending: 'submit', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'create-access-request',
+      targetProfileId: s.accessRequestTargetId || undefined,
+      requestedStaffRole: s.accessRequestRole,
+      departmentKey: s.accessRequestDepartment || null,
+      departmentRole: s.accessRequestDepartmentRole || 'member',
+      requestedExpiresOn: expiresOn || null,
+      justification: String(s.accessRequestJustification || '').trim() })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, accessRequestExpiresOn: '',
+        accessRequestJustification: '', toast: 'The access request was submitted for Administrator review.',
+        toastKind: 'ACCESS REQUESTED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The access request was not submitted.' }));
+  }
+
+  decideAccessRequest(request, decision) {
+    const s = this.state;
+    if (!request || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const note = String((s.accessRequestDecisionNotes || {})[request.id] || '').trim();
+    if (['returned','denied'].includes(decision) && note.length < 8) {
+      this.set({ internalWorkError: 'Enter a decision note before returning or denying access.' }); return;
+    }
+    this.set({ internalWorkPending: 'decision:' + request.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'decide-access-request', accessRequestId: request.id,
+      expectedVersion: request.version, decision, note })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        accessRequestDecisionNotes: { ...(current.accessRequestDecisionNotes || {}), [request.id]: '' },
+        toast: request.reference + ' was ' + (decision === 'approved' ? 'approved and applied.' : decision.replace(/_/g, ' ') + '.'),
+        toastKind: 'ACCESS DECISION' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The access decision was not saved.' }));
+  }
+
+  submitDepartmentRequest() {
+    const s = this.state;
+    const title = String(s.departmentRequestTitle || '').trim();
+    const details = String(s.departmentRequestDetails || '').trim();
+    if (s.internalWorkPending || title.length < 5 || details.length < 12) {
+      this.set({ internalWorkError: 'Add a clear request title and enough detail for the department to act.' }); return;
+    }
+    this.set({ internalWorkPending: 'department:submit', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'create-department-request',
+      departmentKey: s.departmentRequestDepartment, requestType: s.departmentRequestType,
+      title, details, priority: s.departmentRequestPriority })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, departmentRequestTitle: '',
+        departmentRequestDetails: '', toast: 'The department request was submitted.',
+        toastKind: 'REQUEST SUBMITTED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The department request was not submitted.' }));
+  }
+
+  decideDepartmentRequest(request, decision) {
+    const s = this.state;
+    if (!request || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const note = String((s.departmentRequestDecisionNotes || {})[request.id] || '').trim();
+    if (['returned','approved','denied','completed'].includes(decision) && note.length < 8) {
+      this.set({ internalWorkError: 'Add decision evidence before saving this request.' }); return;
+    }
+    this.set({ internalWorkPending: 'department:' + request.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'decide-department-request', requestId: request.id,
+      expectedVersion: request.version, decision, note })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        departmentRequestDecisionNotes: { ...(current.departmentRequestDecisionNotes || {}), [request.id]: '' },
+        toast: request.reference + ' was ' + decision.replace(/_/g, ' ') + '.',
+        toastKind: 'REQUEST UPDATED' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The department request decision was not saved.' }));
+  }
+
+  submitPurchaseRequest() {
+    const s = this.state;
+    const neededText = String(s.purchaseRequestNeededBy || '').trim();
+    const neededBy = neededText ? usDateToIso(neededText) : '';
+    const deliveryStartText = String(s.purchaseRequestDeliveryStart || '').trim();
+    const deliveryEndText = String(s.purchaseRequestDeliveryEnd || '').trim();
+    const deliveryStartOn = deliveryStartText ? usDateToIso(deliveryStartText) : '';
+    const deliveryEndOn = deliveryEndText ? usDateToIso(deliveryEndText) : '';
+    if (neededText && !neededBy) { this.set({ internalWorkError: 'Enter the needed-by date as MM/DD/YYYY.' }); return; }
+    if ((deliveryStartText && !deliveryStartOn) || (deliveryEndText && !deliveryEndOn)) {
+      this.set({ internalWorkError: 'Enter delivery dates as MM/DD/YYYY.' }); return;
+    }
+    const lines = (s.purchaseRequestLines || []).map(line => ({
+      itemDescription: String(line.itemDescription || '').trim(), sku: String(line.sku || '').trim(),
+      purchaseUrl: String(line.purchaseUrl || '').trim(), quantity: Number(line.quantity),
+      unitCost: Number(line.unitCost), expenseCategory: line.expenseCategory,
+      expenseSubcategory: String(line.expenseSubcategory || '').trim(),
+      chartOfAccounts: String(line.chartOfAccounts || '').trim(),
+      requiredDeliveryOn: String(line.requiredDeliveryOn || '').trim() ? usDateToIso(line.requiredDeliveryOn) : null
+    }));
+    const invalidLine = lines.find(line => line.itemDescription.length < 2 || !Number.isFinite(line.quantity) || line.quantity <= 0 || !Number.isFinite(line.unitCost) || line.unitCost < 0 || (line.purchaseUrl && !/^https:\/\//i.test(line.purchaseUrl)) || (line.requiredDeliveryOn === '' && String((s.purchaseRequestLines || [])[lines.indexOf(line)].requiredDeliveryOn || '').trim()));
+    if (s.internalWorkPending || String(s.purchaseRequestVendor || '').trim().length < 2 ||
+      String(s.purchaseRequestPurpose || '').trim().length < 12 || !lines.length || invalidLine) {
+      this.set({ internalWorkError: 'Add the vendor, business purpose, and complete each item with quantity, unit cost, category, and a valid HTTPS purchase link when supplied.' }); return;
+    }
+    this.set({ internalWorkPending: 'purchase:submit', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'create-purchase-request',
+      departmentKey: s.purchaseRequestDepartment, vendorName: String(s.purchaseRequestVendor || '').trim(),
+      priority: s.purchaseRequestPriority, neededBy: neededBy || null,
+      deliveryStartOn: deliveryStartOn || null, deliveryEndOn: deliveryEndOn || null,
+      recurringPurchase: s.purchaseRequestRecurring === true,
+      paymentMethod: String(s.purchaseRequestPaymentMethod || '').trim(), lines,
+      purpose: String(s.purchaseRequestPurpose || '').trim() })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, purchaseRequestVendor: '',
+        purchaseRequestNeededBy: '', purchaseRequestDeliveryStart: '', purchaseRequestDeliveryEnd: '',
+        purchaseRequestRecurring: false, purchaseRequestPaymentMethod: '', purchaseRequestPurpose: '',
+        purchaseRequestLines: [{ id: 'purchase-line-' + Date.now(), itemDescription: '', sku: '', purchaseUrl: '', quantity: '1', unitCost: '', expenseCategory: 'supplies', expenseSubcategory: '', chartOfAccounts: '', requiredDeliveryOn: '' }],
+        toast: 'The purchase request was submitted.',
+        toastKind: 'PURCHASE REQUESTED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The purchase request was not submitted.' }));
+  }
+
+  addPurchaseRequestLine() {
+    this.setState(current => ({ purchaseRequestLines: [...(current.purchaseRequestLines || []),
+      { id: 'purchase-line-' + Date.now() + '-' + Math.random().toString(16).slice(2), itemDescription: '', sku: '', purchaseUrl: '', quantity: '1', unitCost: '', expenseCategory: 'supplies', expenseSubcategory: '', chartOfAccounts: '', requiredDeliveryOn: '' }] }));
+  }
+
+  updatePurchaseRequestLine(lineId, key, value) {
+    this.setState(current => ({ purchaseRequestLines: (current.purchaseRequestLines || []).map(line => line.id === lineId ? { ...line, [key]: value } : line) }));
+  }
+
+  removePurchaseRequestLine(lineId) {
+    this.setState(current => ({ purchaseRequestLines: (current.purchaseRequestLines || []).length > 1 ? current.purchaseRequestLines.filter(line => line.id !== lineId) : current.purchaseRequestLines }));
+  }
+
+  decidePurchaseBusinessApproval(request, decision) {
+    const s = this.state;
+    const note = String((s.purchaseBusinessDecisionNotes || {})[request.id] || '').trim();
+    if (!request || s.internalWorkPending || note.length < 8) {
+      this.set({ internalWorkError: 'Add business decision evidence before saving.' }); return;
+    }
+    this.set({ internalWorkPending: 'purchase-business:' + request.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'decide-purchase-business-approval', requestId: request.id,
+      expectedVersion: request.version, decision, note })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        purchaseBusinessDecisionNotes: { ...(current.purchaseBusinessDecisionNotes || {}), [request.id]: '' },
+        toast: request.reference + ' business approval was ' + decision + '.', toastKind: 'BUSINESS DECISION' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The business decision was not saved.' }));
+  }
+
+  selectPurchaseDocument(requestId, event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    if (!['application/pdf','image/png','image/jpeg'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      this.set({ internalWorkError: 'Use a PDF, PNG, or JPEG that is 10 MB or smaller.' }); return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.setState(current => ({ purchaseDocumentDrafts: {
+      ...(current.purchaseDocumentDrafts || {}), [requestId]: {
+        ...((current.purchaseDocumentDrafts || {})[requestId] || {}),
+        file: { name: file.name, sizeBytes: file.size, contentType: file.type, base64: String(reader.result || '').split(',').pop() }
+      } } }));
+    reader.onerror = () => this.set({ internalWorkError: 'The supporting document could not be read.' });
+    reader.readAsDataURL(file);
+  }
+
+  uploadPurchaseDocument(request) {
+    const s = this.state;
+    const draft = (s.purchaseDocumentDrafts || {})[request.id] || {};
+    if (!draft.file || s.internalWorkPending) { this.set({ internalWorkError: 'Choose a supporting document first.' }); return; }
+    this.set({ internalWorkPending: 'purchase-document:' + request.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'upload-purchase-document', requestId: request.id,
+      documentType: draft.documentType || 'supporting_document', file: draft.file })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        purchaseDocumentDrafts: { ...(current.purchaseDocumentDrafts || {}), [request.id]: {} },
+        toast: 'The supporting document was scanned and attached.', toastKind: 'DOCUMENT ADDED' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The supporting document was not uploaded.' }));
+  }
+
+  downloadPurchaseDocument(request, evidence) {
+    this.internalWorkService('POST', { action: 'download-purchase-document', requestId: request.id, evidenceId: evidence.id })
+      .then(result => { if (result && result.url) window.open(result.url, '_blank', 'noopener,noreferrer'); })
+      .catch(error => this.set({ internalWorkError: error.message || 'The supporting document could not be opened.' }));
+  }
+
+  decidePurchaseRequest(request, decision) {
+    const s = this.state;
+    if (!request || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    if (decision === 'approved' && request.business_approval_status !== 'approved') {
+      this.set({ internalWorkError: 'The assigned business approver must approve this request before Administrator processing.' }); return;
+    }
+    const note = String((s.purchaseRequestDecisionNotes || {})[request.id] || '').trim();
+    if (['returned','approved','denied','completed'].includes(decision) && note.length < 8) {
+      this.set({ internalWorkError: 'Add business-authority evidence before saving this purchase request.' }); return;
+    }
+    this.set({ internalWorkPending: 'purchase:' + request.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'decide-purchase-request', requestId: request.id,
+      expectedVersion: request.version, decision, note })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        purchaseRequestDecisionNotes: { ...(current.purchaseRequestDecisionNotes || {}), [request.id]: '' },
+        toast: request.reference + ' was ' + decision.replace(/_/g, ' ') + '.', toastKind: 'PURCHASE UPDATED' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The purchase request decision was not saved.' }));
+  }
+
+  saveNotificationRecipient() {
+    const s = this.state;
+    if (s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    this.set({ internalWorkPending: 'routing:save', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'save-department-notification-recipient',
+      departmentKey: s.notificationRecipientDepartment, recipientType: s.notificationRecipientType,
+      displayName: String(s.notificationRecipientName || '').trim(),
+      recipientEmail: String(s.notificationRecipientEmail || '').trim() })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, notificationRecipientName: '',
+        notificationRecipientEmail: '', toast: 'The notification recipient was saved.', toastKind: 'ROUTING UPDATED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The notification recipient was not saved.' }));
+  }
+
+  deactivateNotificationRecipient(recipient) {
+    const s = this.state;
+    if (!recipient || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    this.set({ internalWorkPending: 'routing:' + recipient.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'deactivate-department-notification-recipient', recipientId: recipient.id })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, toast: 'The notification recipient was deactivated.', toastKind: 'ROUTING UPDATED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The notification recipient was not deactivated.' }));
+  }
+
+  startOffboarding() {
+    const s = this.state;
+    if (s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const reason = String(s.offboardingReason || '').trim();
+    if (!s.offboardingTargetId || reason.length < 12 || !s.offboardingConfirmed) {
+      this.set({ internalWorkError: 'Choose a user, enter the approved reason, and confirm immediate deactivation.' }); return;
+    }
+    this.set({ internalWorkPending: 'offboarding:start', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'start-offboarding',
+      targetProfileId: s.offboardingTargetId, reason })
+      .then(body => this.loadInternalWork(true).then(() => body))
+      .then(body => this.set({ internalWorkPending: null, offboardingTargetId: '',
+        offboardingReason: '', offboardingConfirmed: false,
+        toast: body.warning || 'Portal access was disabled and the offboarding checklist was created.',
+        toastKind: body.warning ? 'FOLLOW-UP REQUIRED' : 'ACCESS REVOKED' }))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'Offboarding could not be started.' }));
+  }
+
+  updateOffboardingChecklist(item) {
+    const s = this.state;
+    if (!item || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const draft = (s.offboardingChecklistDrafts || {})[item.id] || {};
+    const status = draft.status || item.status;
+    const evidenceNote = String(draft.note !== undefined ? draft.note : (item.evidence_note || '')).trim();
+    if (['completed','not_applicable'].includes(status) && evidenceNote.length < 8) {
+      this.set({ internalWorkError: 'Add evidence or a not-applicable reason before completing the checklist item.' }); return;
+    }
+    this.set({ internalWorkPending: 'offboarding:' + item.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'update-offboarding-checklist',
+      checklistId: item.id, expectedVersion: item.version, status, evidenceNote })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null,
+        offboardingChecklistDrafts: { ...(current.offboardingChecklistDrafts || {}), [item.id]: {} },
+        toast: item.system_name + ' was updated.', toastKind: 'OFFBOARDING UPDATED' })))
+      .catch(error => this.set({ internalWorkPending: null,
+        internalWorkError: error.message || 'The offboarding checklist was not updated.' }));
+  }
+
+  updateGovernanceReview(review) {
+    const s = this.state;
+    if (!review || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const draft = (s.governanceReviewDrafts || {})[review.id] || {};
+    const status = draft.status || review.status;
+    const dueText = String(draft.dueOn !== undefined ? draft.dueOn : isoDateToUs(review.due_on || '')).trim();
+    const dueOn = usDateToIso(dueText);
+    const evidenceNote = String(draft.evidenceNote !== undefined ? draft.evidenceNote : (review.evidence_note || '')).trim();
+    if (!dueOn) { this.set({ internalWorkError: 'Enter the review due date as MM/DD/YYYY.' }); return; }
+    if (status === 'completed' && evidenceNote.length < 8) { this.set({ internalWorkError: 'Add review evidence before completing the review.' }); return; }
+    this.set({ internalWorkPending: 'governance:' + review.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'update-governance-review', reviewId: review.id, expectedVersion: review.version, status, dueOn, evidenceNote })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null, governanceReviewDrafts: { ...(current.governanceReviewDrafts || {}), [review.id]: {} }, toast: review.reference + ' was updated.', toastKind: 'ACCESS REVIEW UPDATED' })))
+      .catch(error => this.set({ internalWorkPending: null, internalWorkError: error.message || 'The access review was not updated.' }));
+  }
+
+  updateItSystem(system) {
+    const s = this.state;
+    if (!system || s.internalWorkPending || !s.authUser || s.authUser.staffRole !== 'administrator') return;
+    const draft = (s.itSystemDrafts || {})[system.system_key] || {};
+    const nextReviewText = String(draft.nextReviewOn !== undefined ? draft.nextReviewOn : isoDateToUs(system.next_review_on || '')).trim();
+    const nextReviewOn = nextReviewText ? usDateToIso(nextReviewText) : '';
+    const evidenceNote = String(draft.evidenceNote !== undefined ? draft.evidenceNote : (system.evidence_note || '')).trim();
+    if (nextReviewText && !nextReviewOn) { this.set({ internalWorkError: 'Enter the next review date as MM/DD/YYYY.' }); return; }
+    if (evidenceNote.length < 8) { this.set({ internalWorkError: 'Add verification evidence before saving the system.' }); return; }
+    this.set({ internalWorkPending: 'system:' + system.system_key, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'update-it-system', systemKey: system.system_key, expectedVersion: system.version, connectionState: draft.connectionState || system.connection_state, healthState: draft.healthState || system.health_state, freshness: draft.freshness || system.freshness, nextReviewOn: nextReviewOn || null, evidenceNote })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null, itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: {} }, toast: system.display_name + ' was verified.', toastKind: 'SYSTEM REGISTER UPDATED' })))
+      .catch(error => this.set({ internalWorkPending: null, internalWorkError: error.message || 'The system register was not updated.' }));
+  }
+
+  createEmergencyChange() {
+    const s = this.state;
+    if (s.internalWorkPending || !s.emergencySystemKey || String(s.emergencyTitle).trim().length < 5
+      || String(s.emergencySummary).trim().length < 12 || String(s.emergencyReason).trim().length < 12) {
+      this.set({ internalWorkError: 'Complete the system, title, summary, and emergency reason.' }); return;
+    }
+    this.set({ internalWorkPending: 'emergency:create', internalWorkError: null });
+    this.internalWorkService('POST', { action: 'create-emergency-change', systemKey: s.emergencySystemKey,
+      title: s.emergencyTitle, summary: s.emergencySummary, emergencyReason: s.emergencyReason, riskLevel: s.emergencyRisk })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.set({ internalWorkPending: null, emergencySystemKey: '', emergencyTitle: '', emergencySummary: '', emergencyReason: '', emergencyRisk: 'high', toast: 'The emergency change was recorded for independent review.', toastKind: 'RETROSPECTIVE REQUIRED' }))
+      .catch(error => this.set({ internalWorkPending: null, internalWorkError: error.message || 'The emergency change was not recorded.' }));
+  }
+
+  decideEmergencyChange(change, decision) {
+    const s = this.state;
+    if (!change || s.internalWorkPending) return;
+    const reviewNote = String((s.emergencyReviewNotes || {})[change.id] || '').trim();
+    if (reviewNote.length < 8) { this.set({ internalWorkError: 'Add retrospective evidence before making a decision.' }); return; }
+    this.set({ internalWorkPending: 'emergency:' + change.id, internalWorkError: null });
+    this.internalWorkService('POST', { action: 'decide-emergency-change', changeId: change.id,
+      expectedVersion: change.version, decision, reviewNote })
+      .then(() => this.loadInternalWork(true))
+      .then(() => this.setState(current => ({ internalWorkPending: null, emergencyReviewNotes: { ...(current.emergencyReviewNotes || {}), [change.id]: '' }, toast: change.reference + ' was ' + decision + '.', toastKind: 'RETROSPECTIVE DECISION' })))
+      .catch(error => this.set({ internalWorkPending: null, internalWorkError: error.message || 'The retrospective decision was not saved.' }));
   }
 
   loadWorkQueue(force) {
@@ -10290,6 +10725,11 @@ class Component extends DCLogic {
       && !this.state.workQueueLoaded && !this.state.workQueueLoading) {
       this.loadWorkQueue();
     }
+    if (this.state.role === 'internal' && this.state.authUser && ['my-work','it-governance'].includes(this.state.screen)
+      && (prior.screen !== this.state.screen || prior.authUser !== this.state.authUser)
+      && !this.state.internalWorkLoaded && !this.state.internalWorkLoading) {
+      this.loadInternalWork();
+    }
     const userDirectoryAllowed = this.state.role === 'owner'
       || (this.state.role === 'internal' && this.hasPermission('users.manage'));
     if (this.state.authUser && userDirectoryAllowed && ['admin', 'users'].includes(this.state.screen)
@@ -11085,7 +11525,7 @@ class Component extends DCLogic {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training']];
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
-      return [['dash', 'Dashboard', 'dash'], ['portal-build', 'Portal build', 'validation'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['sku-intake', 'SKU intake', 'catalog'], ['brand-applications', 'Brand applications', 'accounts'], ['brand-purchase-order-admin', 'Brand purchase orders', 'orders'], ['work-queue', 'Work queues', 'orders'], ['receivables', 'Financials', 'economics'], ['brands', 'Brand administration', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['admin', 'Users and access', 'admin'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
+      return [['dash', 'Dashboard', 'dash'], ['my-work', 'My Work', 'orders'], ['portal-build', 'Portal build', 'validation'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['sku-intake', 'SKU intake', 'catalog'], ['brand-applications', 'Brand applications', 'accounts'], ['brand-purchase-order-admin', 'Brand purchase orders', 'orders'], ['work-queue', 'Work queues', 'orders'], ['receivables', 'Financials', 'economics'], ['brands', 'Brand administration', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['admin', 'Users and access', 'admin'], ['it-governance', 'IT governance', 'audit'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
         .filter(([id]) => !INTERNAL_ROUTE_PERMISSION[id] || grants.has(INTERNAL_ROUTE_PERMISSION[id]));
     }
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training']];
@@ -11435,10 +11875,10 @@ class Component extends DCLogic {
       };
     });
     const internalNavGroupDefinitions = [
-      { label: 'Overview', ids: ['dash', 'portal-build', 'locations'] },
+      { label: 'Overview', ids: ['dash', 'my-work', 'portal-build', 'locations'] },
       { label: 'Inventory and products', ids: ['inventory', 'catalog', 'field', 'lineage', 'qa', 'sku-intake'] },
       { label: 'Orders and accounts', ids: ['pricing', 'brand-applications', 'brand-purchase-order-admin', 'work-queue', 'receivables', 'accounts', 'brands', 'onboarding'] },
-      { label: 'Administration', ids: ['admin', 'communications', 'auditlog', 'validation'] }
+      { label: 'Administration', ids: ['admin', 'it-governance', 'communications', 'auditlog', 'validation'] }
     ];
     const brandNavGroupDefinitions = [
       { label: 'Company', ids: ['brand-home', 'brand-company', 'brand-agreements', 'brand-users'] },
@@ -13974,6 +14414,231 @@ class Component extends DCLogic {
           + evidence.length + ' evidence file' + (evidence.length === 1 ? '' : 's') + ' · '
           + events.length + ' audit event' + (events.length === 1 ? '' : 's') };
     });
+    const internalWorkData = s.internalWorkData || {};
+    const internalWorkActor = internalWorkData.actor || {};
+    const internalWorkSourceItems = Array.isArray(internalWorkData.items) ? internalWorkData.items : [];
+    const internalWorkSourceRequests = Array.isArray(internalWorkData.requests) ? internalWorkData.requests : [];
+    const internalWorkDepartments = Array.isArray(internalWorkData.departments) ? internalWorkData.departments : [];
+    const internalWorkProfiles = Array.isArray(internalWorkData.profiles) ? internalWorkData.profiles : [];
+    const internalWorkOffboarding = Array.isArray(internalWorkData.offboardingCases) ? internalWorkData.offboardingCases : [];
+    const internalWorkGovernanceReviews = Array.isArray(internalWorkData.governanceReviews) ? internalWorkData.governanceReviews : [];
+    const internalWorkSystems = Array.isArray(internalWorkData.systems) ? internalWorkData.systems : [];
+    const internalWorkEmergencyChanges = Array.isArray(internalWorkData.emergencyChanges) ? internalWorkData.emergencyChanges : [];
+    const internalDepartmentRequests = Array.isArray(internalWorkData.departmentRequests) ? internalWorkData.departmentRequests : [];
+    const internalPurchaseRequests = Array.isArray(internalWorkData.purchaseRequests) ? internalWorkData.purchaseRequests : [];
+    const actorPurchaseApprovalTiers = Array.isArray(internalWorkData.actorPurchaseApprovalTiers) ? internalWorkData.actorPurchaseApprovalTiers : [];
+    const internalNotificationRecipients = Array.isArray(internalWorkData.notificationRecipients) ? internalWorkData.notificationRecipients : [];
+    const internalWorkItems = internalWorkSourceItems.slice(0, 8).map(item => ({ ...item,
+      workflow: String(item.workflow_key || 'portal').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+      status: String(item.status || '').replace(/_/g, ' ').toUpperCase() }));
+    const reviewableAccessStates = new Set(['submitted','under_review','returned']);
+    const internalAccessRequests = internalWorkSourceRequests.map(request => ({ ...request,
+      risk: String(request.risk_tier || 'ordinary').toUpperCase(),
+      role: String(request.requested_staff_role || 'viewer').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+      department: (internalWorkDepartments.find(department => department.department_key === request.requested_department_key) || {}).display_name || 'No department change',
+      status: String(request.status || '').replace(/_/g, ' ').toUpperCase(),
+      note: (s.accessRequestDecisionNotes || {})[request.id] || '',
+      onNote: event => this.setState(current => ({ accessRequestDecisionNotes: {
+        ...(current.accessRequestDecisionNotes || {}), [request.id]: event.target.value } })),
+      canDecide: internalWorkActor.administrator === true && reviewableAccessStates.has(request.status),
+      pending: !!s.internalWorkPending,
+      onApprove: () => this.decideAccessRequest(request, 'approved'),
+      onReturn: () => this.decideAccessRequest(request, 'returned'),
+      onDeny: () => this.decideAccessRequest(request, 'denied') }));
+    const accessRequestDepartmentOptions = [{ value: '', label: 'No department change' }]
+      .concat(internalWorkDepartments.filter(department => department.status === 'active')
+        .map(department => ({ value: department.department_key,
+          label: department.display_name + (department.sensitive_tier ? ' · sensitive' : '') })));
+    const departmentRequestDepartmentOptions = internalWorkDepartments
+      .filter(department => department.status === 'active')
+      .map(department => ({ value: department.department_key, label: department.display_name }));
+    const departmentRequests = internalDepartmentRequests.map(request => {
+      const department = internalWorkDepartments.find(item => item.department_key === request.department_key);
+      const note = (s.departmentRequestDecisionNotes || {})[request.id] || '';
+      return { ...request,
+        departmentLabel: department ? department.display_name : request.assigned_department,
+        statusLabel: String(request.status || '').replace(/_/g, ' ').toUpperCase(), note,
+        canDecide: internalWorkActor.administrator === true
+          && ['submitted','under_review','returned','approved'].includes(request.status),
+        onNote: event => this.setState(current => ({ departmentRequestDecisionNotes: {
+          ...(current.departmentRequestDecisionNotes || {}), [request.id]: event.target.value } })),
+        onApprove: () => this.decideDepartmentRequest(request, 'approved'),
+        onReturn: () => this.decideDepartmentRequest(request, 'returned'),
+        onComplete: () => this.decideDepartmentRequest(request, 'completed') };
+    });
+    const purchaseRequests = internalPurchaseRequests.map(request => {
+      const note = (s.purchaseRequestDecisionNotes || {})[request.id] || '';
+      const businessNote = (s.purchaseBusinessDecisionNotes || {})[request.id] || '';
+      const documentDraft = (s.purchaseDocumentDrafts || {})[request.id] || {};
+      const lines = Array.isArray(request.portal_purchase_request_line)
+        ? request.portal_purchase_request_line.slice().sort((a, b) => Number(a.line_number || 0) - Number(b.line_number || 0)) : [];
+      const evidence = Array.isArray(request.evidence) ? request.evidence : [];
+      const canBusinessDecide = actorPurchaseApprovalTiers.includes(request.approval_tier)
+        && ['submitted','under_review','returned'].includes(request.status)
+        && request.business_approval_status !== 'approved';
+      return { ...request, note,
+        businessNote,
+        amountLabel: Number(request.amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+        neededByLabel: request.needed_by ? isoDateToUs(request.needed_by) : 'No required date',
+        categoryLabel: String(request.expense_category || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+        statusLabel: String(request.status || '').replace(/_/g, ' ').toUpperCase(),
+        businessStatusLabel: String(request.business_approval_status || 'pending').replace(/_/g, ' ').toUpperCase(),
+        priorityLabel: String(request.priority || 'normal').toUpperCase(),
+        recurringLabel: request.recurring_purchase ? 'Recurring' : 'One-time',
+        departmentLabel: (internalWorkDepartments.find(item => item.department_key === request.requested_for_department_key) || {}).display_name || request.requested_for_department_key,
+        lines: lines.map(line => ({ ...line,
+          subtotalLabel: Number(line.subtotal || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+          unitCostLabel: Number(line.unit_cost || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+          meta: [line.sku ? 'SKU ' + line.sku : '', line.quantity + ' × ' + Number(line.unit_cost || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }), line.expense_subcategory || line.expense_category, line.chart_of_accounts || 'Account pending'].filter(Boolean).join(' · ') })),
+        evidence: evidence.map(item => ({ ...item, typeLabel: String(item.evidence_type || '').replace(/^purchase_/, '').replace(/_/g, ' ').toUpperCase(),
+          sizeLabel: Math.max(1, Math.round(Number(item.size_bytes || 0) / 1024)) + ' KB',
+          onDownload: () => this.downloadPurchaseDocument(request, item) })),
+        hasEvidence: evidence.length > 0,
+        canBusinessDecide,
+        onBusinessNote: event => this.setState(current => ({ purchaseBusinessDecisionNotes: {
+          ...(current.purchaseBusinessDecisionNotes || {}), [request.id]: event.target.value } })),
+        onBusinessApprove: () => this.decidePurchaseBusinessApproval(request, 'approved'),
+        onBusinessReturn: () => this.decidePurchaseBusinessApproval(request, 'returned'),
+        onBusinessDeny: () => this.decidePurchaseBusinessApproval(request, 'denied'),
+        canDecide: internalWorkActor.administrator === true && ['submitted','under_review','returned','approved'].includes(request.status),
+        adminApproveDisabled: request.business_approval_status !== 'approved',
+        adminApproveStyle: request.business_approval_status !== 'approved' ? 'opacity:.35;cursor:not-allowed' : '',
+        onNote: event => this.setState(current => ({ purchaseRequestDecisionNotes: {
+          ...(current.purchaseRequestDecisionNotes || {}), [request.id]: event.target.value } })),
+        onApprove: () => this.decidePurchaseRequest(request, 'approved'),
+        onReturn: () => this.decidePurchaseRequest(request, 'returned'),
+        onDeny: () => this.decidePurchaseRequest(request, 'denied'),
+        onComplete: () => this.decidePurchaseRequest(request, 'completed'),
+        documentType: documentDraft.documentType || 'supporting_document',
+        documentName: documentDraft.file ? documentDraft.file.name : 'No file selected',
+        onDocumentType: event => this.setState(current => ({ purchaseDocumentDrafts: {
+          ...(current.purchaseDocumentDrafts || {}), [request.id]: { ...((current.purchaseDocumentDrafts || {})[request.id] || {}), documentType: event.target.value } } })),
+        onDocument: event => this.selectPurchaseDocument(request.id, event),
+        onUploadDocument: () => this.uploadPurchaseDocument(request),
+        documentUploadDisabled: !documentDraft.file || !!s.internalWorkPending,
+        documentUploadStyle: !documentDraft.file || s.internalWorkPending ? 'opacity:.4;cursor:not-allowed' : '',
+        documentUploadLabel: s.internalWorkPending === 'purchase-document:' + request.id ? 'Scanning…' : 'Attach document' };
+    });
+    const notificationRecipients = internalNotificationRecipients.map(recipient => ({ ...recipient,
+      departmentLabel: (internalWorkDepartments.find(item => item.department_key === recipient.department_key) || {}).display_name || recipient.department_key,
+      typeLabel: String(recipient.recipient_type || '').toUpperCase(),
+      onDeactivate: () => this.deactivateNotificationRecipient(recipient) }));
+    const purchaseLines = (s.purchaseRequestLines || []).map((line, index) => ({ ...line,
+      number: String(index + 1).padStart(2, '0'), canRemove: (s.purchaseRequestLines || []).length > 1,
+      categoryOptions: [['supplies','Supplies'],['services','Services'],['inventory','Inventory'],['equipment','Equipment'],['travel','Travel'],['other','Other']].map(([value,label]) => ({ value, label })),
+      subtotal: (Number(line.quantity || 0) * Number(line.unitCost || 0)).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+      onDescription: event => this.updatePurchaseRequestLine(line.id, 'itemDescription', event.target.value),
+      onSku: event => this.updatePurchaseRequestLine(line.id, 'sku', event.target.value),
+      onUrl: event => this.updatePurchaseRequestLine(line.id, 'purchaseUrl', event.target.value),
+      onQuantity: event => this.updatePurchaseRequestLine(line.id, 'quantity', event.target.value),
+      onUnitCost: event => this.updatePurchaseRequestLine(line.id, 'unitCost', event.target.value),
+      onCategory: event => this.updatePurchaseRequestLine(line.id, 'expenseCategory', event.target.value),
+      onSubcategory: event => this.updatePurchaseRequestLine(line.id, 'expenseSubcategory', event.target.value),
+      onAccount: event => this.updatePurchaseRequestLine(line.id, 'chartOfAccounts', event.target.value),
+      onDelivery: event => this.updatePurchaseRequestLine(line.id, 'requiredDeliveryOn', event.target.value),
+      onRemove: () => this.removePurchaseRequestLine(line.id) }));
+    const purchaseAmount = purchaseLines.reduce((sum, line) => sum + Number(line.quantity || 0) * Number(line.unitCost || 0), 0);
+    const purchaseApprovalAuthority = Number.isFinite(purchaseAmount) && purchaseAmount > 0
+      ? (purchaseAmount <= 500 ? 'Eric Stewart' : purchaseAmount < 3000 ? 'Omeed / Jonathan / Drew' : 'Eran') : 'Enter an amount';
+    const accessRequestTargetOptions = internalWorkProfiles.map(profile => ({ value: profile.id,
+      label: (profile.full_name || 'Unnamed user') + ' · ' + String(profile.staff_role || 'viewer').replace(/_/g, ' ') }));
+    const offboardingTargetOptions = internalWorkProfiles.filter(profile => profile.id !== (s.authUser && s.authUser.id))
+      .map(profile => ({ value: profile.id,
+        label: (profile.full_name || 'Unnamed user') + ' · ' + String(profile.staff_role || 'viewer').replace(/_/g, ' ') }));
+    const offboardingStatusOptions = [
+      ['not_started','Not started'], ['in_progress','In progress'],
+      ['completed','Completed'], ['not_applicable','Not applicable']
+    ].map(([value,label]) => ({ value, label }));
+    const offboardingCases = internalWorkOffboarding.map(offboarding => {
+      const sourceItems = Array.isArray(offboarding.portal_offboarding_checklist)
+        ? offboarding.portal_offboarding_checklist.slice().sort((a, b) => String(a.system_name || '').localeCompare(String(b.system_name || ''))) : [];
+      const completed = sourceItems.filter(item => ['completed','not_applicable'].includes(item.status)).length;
+      return { ...offboarding,
+        statusLabel: String(offboarding.status || '').replace(/_/g, ' ').toUpperCase(),
+        authLabel: String(offboarding.auth_revocation_state || 'pending').replace(/_/g, ' ').toUpperCase(),
+        progress: completed + ' OF ' + sourceItems.length + ' STEPS COMPLETE',
+        items: sourceItems.map(item => {
+          const draft = (s.offboardingChecklistDrafts || {})[item.id] || {};
+          const statusValue = draft.status || item.status;
+          const note = draft.note !== undefined ? draft.note : (item.evidence_note || '');
+          const locked = offboarding.status !== 'in_progress' || item.system_key === 'ux_os';
+          return { ...item, statusValue, note, statusOptions: offboardingStatusOptions,
+            locked, saveDisabled: locked || !!s.internalWorkPending,
+            saveStyle: locked || s.internalWorkPending ? 'opacity:.4;cursor:not-allowed' : '',
+            saveLabel: s.internalWorkPending === 'offboarding:' + item.id ? 'Saving…' : 'Save',
+            onStatus: event => this.setState(current => ({ offboardingChecklistDrafts: {
+              ...(current.offboardingChecklistDrafts || {}), [item.id]: {
+                ...((current.offboardingChecklistDrafts || {})[item.id] || {}), status: event.target.value } } })),
+            onNote: event => this.setState(current => ({ offboardingChecklistDrafts: {
+              ...(current.offboardingChecklistDrafts || {}), [item.id]: {
+                ...((current.offboardingChecklistDrafts || {})[item.id] || {}), note: event.target.value } } })),
+            onSave: () => this.updateOffboardingChecklist(item) };
+        }) };
+    });
+    const governanceReviewStatusOptions = [
+      ['scheduled','Scheduled'], ['in_progress','In progress'], ['completed','Completed'], ['cancelled','Cancelled']
+    ].map(([value,label]) => ({ value, label }));
+    const governanceReviews = internalWorkGovernanceReviews.map(review => {
+      const draft = (s.governanceReviewDrafts || {})[review.id] || {};
+      return { ...review,
+        kindLabel: String(review.review_kind || '').replace(/_/g, ' ').toUpperCase(),
+        periodLabel: isoDateToUs(review.period_start || '') + ' – ' + isoDateToUs(review.period_end || ''),
+        statusValue: draft.status || review.status,
+        dueOn: draft.dueOn !== undefined ? draft.dueOn : isoDateToUs(review.due_on || ''),
+        evidenceNote: draft.evidenceNote !== undefined ? draft.evidenceNote : (review.evidence_note || ''),
+        statusOptions: governanceReviewStatusOptions,
+        saveDisabled: !!s.internalWorkPending,
+        saveStyle: s.internalWorkPending ? 'opacity:.4;cursor:not-allowed' : '',
+        saveLabel: s.internalWorkPending === 'governance:' + review.id ? 'Saving…' : 'Save review',
+        onStatus: event => this.setState(current => ({ governanceReviewDrafts: { ...(current.governanceReviewDrafts || {}), [review.id]: { ...((current.governanceReviewDrafts || {})[review.id] || {}), status: event.target.value } } })),
+        onDue: event => this.setState(current => ({ governanceReviewDrafts: { ...(current.governanceReviewDrafts || {}), [review.id]: { ...((current.governanceReviewDrafts || {})[review.id] || {}), dueOn: event.target.value } } })),
+        onEvidence: event => this.setState(current => ({ governanceReviewDrafts: { ...(current.governanceReviewDrafts || {}), [review.id]: { ...((current.governanceReviewDrafts || {})[review.id] || {}), evidenceNote: event.target.value } } })),
+        onSave: () => this.updateGovernanceReview(review) };
+    });
+    const connectionOptions = [['connected','Connected'],['manual','Manual'],['not_connected','Not connected'],['on_hold','On hold'],['unknown','Unknown']].map(([value,label]) => ({ value, label }));
+    const healthOptions = [['healthy','Healthy'],['degraded','Degraded'],['outage','Outage'],['unknown','Unknown'],['not_applicable','Not applicable']].map(([value,label]) => ({ value, label }));
+    const freshnessOptions = [['real_time','Real time'],['event_driven','Event driven'],['five_minutes','Five minutes'],['scheduled','Scheduled'],['manual','Manual'],['unknown','Unknown'],['not_applicable','Not applicable']].map(([value,label]) => ({ value, label }));
+    const itSystems = internalWorkSystems.map(system => {
+      const draft = (s.itSystemDrafts || {})[system.system_key] || {};
+      const connectionValue = draft.connectionState || system.connection_state;
+      const healthValue = draft.healthState || system.health_state;
+      const freshnessValue = draft.freshness || system.freshness;
+      const healthConcern = ['degraded','outage','unknown'].includes(healthValue);
+      return { ...system, connectionValue, healthValue, freshnessValue,
+        categoryLabel: String(system.category || '').replace(/_/g, ' ').toUpperCase(),
+        ownerLabel: system.platform_owner + (system.business_owner ? ' / ' + system.business_owner : ''),
+        connectionLabel: 'CONNECTION · ' + String(connectionValue || 'unknown').replace(/_/g, ' ').toUpperCase(),
+        healthLabel: 'HEALTH · ' + String(healthValue || 'unknown').replace(/_/g, ' ').toUpperCase(),
+        freshnessLabel: 'FRESHNESS · ' + String(freshnessValue || 'unknown').replace(/_/g, ' ').toUpperCase(),
+        healthBackground: healthConcern ? '#f7dfd8' : 'var(--ux-accent-wash)', healthColor: healthConcern ? 'var(--ux-signal-text)' : 'var(--ux-accent-text)',
+        credentialLabel: String(system.credential_location || 'not_confirmed').replace(/_/g, ' '),
+        lastVerifiedLabel: system.last_verified_at ? new Date(system.last_verified_at).toLocaleString('en-US') : 'Not yet verified',
+        nextReviewOn: draft.nextReviewOn !== undefined ? draft.nextReviewOn : isoDateToUs(system.next_review_on || ''),
+        evidenceNote: draft.evidenceNote !== undefined ? draft.evidenceNote : (system.evidence_note || ''),
+        connectionOptions, healthOptions, freshnessOptions,
+        saveDisabled: !!s.internalWorkPending, saveStyle: s.internalWorkPending ? 'opacity:.4;cursor:not-allowed' : '',
+        saveLabel: s.internalWorkPending === 'system:' + system.system_key ? 'Saving…' : 'Save verification',
+        onConnection: event => this.setState(current => ({ itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: { ...((current.itSystemDrafts || {})[system.system_key] || {}), connectionState: event.target.value } } })),
+        onHealth: event => this.setState(current => ({ itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: { ...((current.itSystemDrafts || {})[system.system_key] || {}), healthState: event.target.value } } })),
+        onFreshness: event => this.setState(current => ({ itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: { ...((current.itSystemDrafts || {})[system.system_key] || {}), freshness: event.target.value } } })),
+        onNextReview: event => this.setState(current => ({ itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: { ...((current.itSystemDrafts || {})[system.system_key] || {}), nextReviewOn: event.target.value } } })),
+        onEvidence: event => this.setState(current => ({ itSystemDrafts: { ...(current.itSystemDrafts || {}), [system.system_key]: { ...((current.itSystemDrafts || {})[system.system_key] || {}), evidenceNote: event.target.value } } })),
+        onSave: () => this.updateItSystem(system) };
+    });
+    const emergencySystemOptions = internalWorkSystems.map(system => ({ value: system.system_key, label: system.display_name }));
+    const emergencyChanges = internalWorkEmergencyChanges.map(change => {
+      const system = internalWorkSystems.find(item => item.system_key === change.system_key);
+      const selfReviewBlocked = !!(internalWorkActor.id && change.created_by === internalWorkActor.id && change.status === 'awaiting_retrospective');
+      return { ...change, systemLabel: system ? system.display_name : change.system_key,
+        riskLabel: String(change.risk_level || '').toUpperCase(),
+        statusLabel: String(change.status || '').replace(/_/g, ' ').toUpperCase(),
+        dueLabel: change.retrospective_due_at ? new Date(change.retrospective_due_at).toLocaleString('en-US') : 'Not recorded',
+        reviewNote: (s.emergencyReviewNotes || {})[change.id] || '', selfReviewBlocked,
+        canReview: change.status === 'awaiting_retrospective' && !selfReviewBlocked && !s.internalWorkPending,
+        onReviewNote: event => this.setState(current => ({ emergencyReviewNotes: { ...(current.emergencyReviewNotes || {}), [change.id]: event.target.value } })),
+        onApprove: () => this.decideEmergencyChange(change, 'approved'), onReturn: () => this.decideEmergencyChange(change, 'returned') };
+    });
+    const openInternalAccessRequests = internalWorkSourceRequests.filter(request => reviewableAccessStates.has(request.status)).length;
     return {
       roleBadge: s.screen === 'brand-application' ? 'BRAND APPLICATION' : s.screen === 'sku-section' ? 'SKU CONTRIBUTOR' : s.screen === 'public-kiosk' ? 'PUBLIC KIOSK' : !s.authUser ? ''
         : isBrandWorkspace ? 'BRAND · ' + String(activeWorkspace && activeWorkspace.memberRole || 'MEMBER').replace(/^brand_/, '').replace(/_/g, ' ').toUpperCase()
@@ -14521,6 +15186,161 @@ class Component extends DCLogic {
       ],
       workQueueRefreshLabel: s.workQueueLoading ? 'Refreshing…' : 'Refresh',
       onWorkQueueRefresh: () => this.loadWorkQueue(true),
+      isMyWork: isInternal && s.screen === 'my-work',
+      isItGovernance: isInternal && s.screen === 'it-governance' && internalWorkActor.administrator === true,
+      internalWorkLoading: s.internalWorkLoading,
+      internalWorkHasError: !!s.internalWorkError,
+      internalWorkError: s.internalWorkError || '',
+      internalWorkRefreshLabel: s.internalWorkLoading ? 'Refreshing…' : 'Refresh',
+      onInternalWorkRefresh: () => this.loadInternalWork(true),
+      internalWorkItems,
+      internalWorkItemsEmpty: s.internalWorkLoaded && !internalWorkItems.length,
+      internalWorkHasMore: internalWorkSourceItems.length > internalWorkItems.length,
+      internalWorkMoreLabel: (internalWorkSourceItems.length - internalWorkItems.length) + ' additional assignment'
+        + (internalWorkSourceItems.length - internalWorkItems.length === 1 ? '' : 's') + ' remain in Work queues.',
+      internalAccessRequests,
+      internalAccessRequestsEmpty: s.internalWorkLoaded && !internalAccessRequests.length,
+      internalAccessQueueHeading: internalWorkActor.administrator ? 'Administrator review queue' : 'Your access requests',
+      departmentRequests,
+      departmentRequestsEmpty: s.internalWorkLoaded && !departmentRequests.length,
+      departmentRequestQueueHeading: internalWorkActor.administrator ? 'Administrator department queue' : 'Your department requests',
+      departmentRequestDepartment: s.departmentRequestDepartment,
+      departmentRequestDepartmentOptions,
+      onDepartmentRequestDepartment: event => this.set({ departmentRequestDepartment: event.target.value }),
+      departmentRequestType: s.departmentRequestType,
+      departmentRequestTypeOptions: [
+        ['general_request','General request'], ['supply_request','Supply request'],
+        ['finance_request','Finance request'], ['marketing_request','Marketing request'],
+        ['quality_request','Quality / compliance request'], ['it_service','IT service request']
+      ].map(([value,label]) => ({ value, label })),
+      onDepartmentRequestType: event => this.set({ departmentRequestType: event.target.value }),
+      departmentRequestTitle: s.departmentRequestTitle,
+      onDepartmentRequestTitle: event => this.set({ departmentRequestTitle: event.target.value }),
+      departmentRequestDetails: s.departmentRequestDetails,
+      onDepartmentRequestDetails: event => this.set({ departmentRequestDetails: event.target.value }),
+      departmentRequestPriority: s.departmentRequestPriority,
+      onDepartmentRequestPriority: event => this.set({ departmentRequestPriority: event.target.value }),
+      departmentRequestSubmitDisabled: !!s.internalWorkPending || String(s.departmentRequestTitle || '').trim().length < 5 || String(s.departmentRequestDetails || '').trim().length < 12,
+      departmentRequestSubmitStyle: (!!s.internalWorkPending || String(s.departmentRequestTitle || '').trim().length < 5 || String(s.departmentRequestDetails || '').trim().length < 12) ? 'opacity:.4;cursor:not-allowed' : '',
+      departmentRequestSubmitLabel: s.internalWorkPending === 'department:submit' ? 'Submitting…' : 'Submit request',
+      onSubmitDepartmentRequest: () => this.submitDepartmentRequest(),
+      purchaseRequests,
+      purchaseRequestsEmpty: s.internalWorkLoaded && !purchaseRequests.length,
+      purchaseRequestQueueHeading: internalWorkActor.administrator ? 'Administrator purchase queue' : actorPurchaseApprovalTiers.length ? 'Purchase approvals and your requests' : 'Your purchase requests',
+      purchaseRequestDepartment: s.purchaseRequestDepartment,
+      purchaseRequestDepartmentOptions: departmentRequestDepartmentOptions,
+      onPurchaseRequestDepartment: event => this.set({ purchaseRequestDepartment: event.target.value }),
+      purchaseRequestVendor: s.purchaseRequestVendor,
+      onPurchaseRequestVendor: event => this.set({ purchaseRequestVendor: event.target.value }),
+      purchaseRequestPriority: s.purchaseRequestPriority,
+      purchaseRequestPriorityOptions: [['low','Low'],['normal','Normal'],['high','High'],['urgent','Urgent']].map(([value,label]) => ({ value, label })),
+      onPurchaseRequestPriority: event => this.set({ purchaseRequestPriority: event.target.value }),
+      purchaseRequestNeededBy: s.purchaseRequestNeededBy,
+      onPurchaseRequestNeededBy: event => this.set({ purchaseRequestNeededBy: event.target.value }),
+      purchaseRequestDeliveryStart: s.purchaseRequestDeliveryStart,
+      onPurchaseRequestDeliveryStart: event => this.set({ purchaseRequestDeliveryStart: event.target.value }),
+      purchaseRequestDeliveryEnd: s.purchaseRequestDeliveryEnd,
+      onPurchaseRequestDeliveryEnd: event => this.set({ purchaseRequestDeliveryEnd: event.target.value }),
+      purchaseRequestRecurring: s.purchaseRequestRecurring ? 'checked' : '',
+      onPurchaseRequestRecurring: event => this.set({ purchaseRequestRecurring: event.target.checked }),
+      purchaseRequestPaymentMethod: s.purchaseRequestPaymentMethod,
+      onPurchaseRequestPaymentMethod: event => this.set({ purchaseRequestPaymentMethod: event.target.value }),
+      purchaseRequestPurpose: s.purchaseRequestPurpose,
+      onPurchaseRequestPurpose: event => this.set({ purchaseRequestPurpose: event.target.value }),
+      purchaseRequestLines: purchaseLines,
+      onAddPurchaseRequestLine: () => this.addPurchaseRequestLine(),
+      purchaseRequestTotal: purchaseAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+      purchaseApprovalAuthority,
+      purchaseRequestSubmitDisabled: !!s.internalWorkPending || String(s.purchaseRequestVendor || '').trim().length < 2 || String(s.purchaseRequestPurpose || '').trim().length < 12 || !purchaseLines.length || !Number.isFinite(purchaseAmount) || purchaseAmount <= 0,
+      purchaseRequestSubmitStyle: (!!s.internalWorkPending || String(s.purchaseRequestVendor || '').trim().length < 2 || String(s.purchaseRequestPurpose || '').trim().length < 12 || !purchaseLines.length || !Number.isFinite(purchaseAmount) || purchaseAmount <= 0) ? 'opacity:.4;cursor:not-allowed' : '',
+      purchaseRequestSubmitLabel: s.internalWorkPending === 'purchase:submit' ? 'Submitting…' : 'Submit purchase request',
+      onSubmitPurchaseRequest: () => this.submitPurchaseRequest(),
+      notificationRecipients,
+      notificationRecipientsEmpty: !notificationRecipients.length,
+      notificationRecipientDepartment: s.notificationRecipientDepartment,
+      onNotificationRecipientDepartment: event => this.set({ notificationRecipientDepartment: event.target.value }),
+      notificationRecipientType: s.notificationRecipientType,
+      onNotificationRecipientType: event => this.set({ notificationRecipientType: event.target.value }),
+      notificationRecipientName: s.notificationRecipientName,
+      onNotificationRecipientName: event => this.set({ notificationRecipientName: event.target.value }),
+      notificationRecipientEmail: s.notificationRecipientEmail,
+      onNotificationRecipientEmail: event => this.set({ notificationRecipientEmail: event.target.value }),
+      notificationRecipientSaveDisabled: !!s.internalWorkPending || String(s.notificationRecipientName || '').trim().length < 2 || !String(s.notificationRecipientEmail || '').includes('@'),
+      notificationRecipientSaveStyle: (!!s.internalWorkPending || String(s.notificationRecipientName || '').trim().length < 2 || !String(s.notificationRecipientEmail || '').includes('@')) ? 'opacity:.4;cursor:not-allowed' : '',
+      notificationRecipientSaveLabel: s.internalWorkPending === 'routing:save' ? 'Saving…' : 'Add recipient',
+      onSaveNotificationRecipient: () => this.saveNotificationRecipient(),
+      internalWorkCanChooseTarget: internalWorkActor.administrator === true,
+      internalWorkSummary: [
+        { label: 'ACTIVE WORK', value: internalWorkItems.length },
+        { label: 'OPEN ACCESS', value: openInternalAccessRequests },
+        { label: 'OFFBOARDING', value: internalWorkOffboarding.filter(item => item.status === 'in_progress').length },
+        { label: 'DEPARTMENTS', value: (internalWorkData.memberships || []).length },
+        { label: 'APPROVAL OWNER', value: 'ADMIN' }
+      ],
+      accessRequestTargetId: s.accessRequestTargetId,
+      accessRequestTargetOptions,
+      onAccessRequestTarget: event => this.set({ accessRequestTargetId: event.target.value }),
+      accessRequestRole: s.accessRequestRole,
+      accessRequestRoleOptions: [
+        ['viewer','Viewer'], ['operations','Operations'], ['sales','Sales'],
+        ['quality','Quality'], ['administrator','Administrator']
+      ].map(([value,label]) => ({ value, label })),
+      onAccessRequestRole: event => this.set({ accessRequestRole: event.target.value }),
+      accessRequestDepartment: s.accessRequestDepartment,
+      accessRequestDepartmentOptions,
+      onAccessRequestDepartment: event => this.set({ accessRequestDepartment: event.target.value }),
+      accessRequestExpiresOn: s.accessRequestExpiresOn,
+      onAccessRequestExpiresOn: event => this.set({ accessRequestExpiresOn: event.target.value }),
+      accessRequestJustification: s.accessRequestJustification,
+      onAccessRequestJustification: event => this.set({ accessRequestJustification: event.target.value }),
+      accessRequestSubmitDisabled: (!!s.internalWorkPending || String(s.accessRequestJustification || '').trim().length < 12) ? 'true' : 'false',
+      accessRequestSubmitStyle: (!!s.internalWorkPending || String(s.accessRequestJustification || '').trim().length < 12) ? 'opacity:.45;cursor:not-allowed' : '',
+      accessRequestSubmitLabel: s.internalWorkPending === 'submit' ? 'Submitting…' : 'Submit access request',
+      internalCanManageOffboarding: internalWorkActor.administrator === true,
+      offboardingTargetId: s.offboardingTargetId,
+      offboardingTargetOptions,
+      onOffboardingTarget: event => this.set({ offboardingTargetId: event.target.value }),
+      offboardingReason: s.offboardingReason,
+      onOffboardingReason: event => this.set({ offboardingReason: event.target.value }),
+      offboardingConfirmed: s.offboardingConfirmed,
+      onOffboardingConfirmed: event => this.set({ offboardingConfirmed: !!event.target.checked }),
+      offboardingStartDisabled: !s.offboardingTargetId || String(s.offboardingReason || '').trim().length < 12
+        || !s.offboardingConfirmed || !!s.internalWorkPending,
+      offboardingStartStyle: !s.offboardingTargetId || String(s.offboardingReason || '').trim().length < 12
+        || !s.offboardingConfirmed || s.internalWorkPending ? 'opacity:.4;cursor:not-allowed' : '',
+      offboardingStartLabel: s.internalWorkPending === 'offboarding:start' ? 'Disabling access…' : 'Start offboarding',
+      onStartOffboarding: () => this.startOffboarding(),
+      offboardingCases,
+      offboardingCasesEmpty: s.internalWorkLoaded && !offboardingCases.length,
+      governanceReviews,
+      governanceReviewsEmpty: s.internalWorkLoaded && !governanceReviews.length,
+      itSystems,
+      itSystemsEmpty: s.internalWorkLoaded && !itSystems.length,
+      emergencyChanges,
+      emergencyChangesEmpty: s.internalWorkLoaded && !emergencyChanges.length,
+      emergencySystemKey: s.emergencySystemKey,
+      emergencySystemOptions,
+      onEmergencySystem: event => this.set({ emergencySystemKey: event.target.value }),
+      emergencyTitle: s.emergencyTitle,
+      onEmergencyTitle: event => this.set({ emergencyTitle: event.target.value }),
+      emergencySummary: s.emergencySummary,
+      onEmergencySummary: event => this.set({ emergencySummary: event.target.value }),
+      emergencyReason: s.emergencyReason,
+      onEmergencyReason: event => this.set({ emergencyReason: event.target.value }),
+      emergencyRisk: s.emergencyRisk,
+      onEmergencyRisk: event => this.set({ emergencyRisk: event.target.value }),
+      emergencyCreateDisabled: !!s.internalWorkPending || !s.emergencySystemKey || String(s.emergencyTitle).trim().length < 5 || String(s.emergencySummary).trim().length < 12 || String(s.emergencyReason).trim().length < 12,
+      emergencyCreateStyle: s.internalWorkPending || !s.emergencySystemKey || String(s.emergencyTitle).trim().length < 5 || String(s.emergencySummary).trim().length < 12 || String(s.emergencyReason).trim().length < 12 ? 'opacity:.4;cursor:not-allowed' : '',
+      emergencyCreateLabel: s.internalWorkPending === 'emergency:create' ? 'Recording…' : 'Record change',
+      onCreateEmergencyChange: () => this.createEmergencyChange(),
+      itGovernanceSummary: [
+        { label: 'REGISTERED SYSTEMS', value: itSystems.length },
+        { label: 'CONNECTED', value: itSystems.filter(system => system.connection_state === 'connected').length },
+        { label: 'HEALTH EXCEPTIONS', value: itSystems.filter(system => ['degraded','outage','unknown'].includes(system.health_state)).length },
+        { label: 'OPEN REVIEWS', value: governanceReviews.filter(review => !['completed','cancelled'].includes(review.status)).length },
+        { label: 'EMERGENCY REVIEWS', value: emergencyChanges.filter(change => change.status === 'awaiting_retrospective').length }
+      ],
+      onSubmitAccessRequest: () => this.submitAccessRequest(),
       brandSalesCanDownload: isBrandWorkspace && s.screen === 'brand-sales'
         && !!((brandOperations.sales || {}).downloadEnabled),
       onBrandSalesDownload: () => this.downloadBrandSalesReport(),

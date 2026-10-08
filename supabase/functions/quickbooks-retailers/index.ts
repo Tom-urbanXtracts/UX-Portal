@@ -634,8 +634,11 @@ async function quickBooksConnected(): Promise<boolean> {
     "connection_status,connection_environment,realm_id,encrypted_refresh_token",
   ).eq("id", 1).maybeSingle();
   if (error) throw error;
-  return data?.connection_status === "connected" &&
-    data?.connection_environment === QBO_ENVIRONMENT &&
+  // A transient sync failure records `connection_status = error`. The cron
+  // worker must still retry when the environment-bound credentials remain
+  // present; otherwise one timeout permanently deadlocks the five-minute job.
+  // An absent realm/token or an environment mismatch still fails closed.
+  return data?.connection_environment === QBO_ENVIRONMENT &&
     Boolean(data.realm_id) &&
     Boolean(data.encrypted_refresh_token);
 }

@@ -111,6 +111,12 @@ verify_jwt = false
 [functions.portal-work-queue]
 verify_jwt = false
 
+# Internal Employee Portal requests authenticate in the function, then scope
+# reads and mutations to the active workforce profile. Administrators may
+# review all requests; ordinary users may submit and read only their own.
+[functions.portal-internal-work]
+verify_jwt = false
+
 [functions.portal-notifications]
 verify_jwt = false
 
