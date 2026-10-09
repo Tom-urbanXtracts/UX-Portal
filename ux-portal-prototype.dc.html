@@ -176,6 +176,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <sc-if value="{{ dataControlHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:16px;font-size:12.5px">{{ dataControlError }}</div></sc-if>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin-bottom:18px"><sc-for list="{{ dataControlSummary }}" as="summary" hint-placeholder-count="5"><div style="padding:14px;border-right:1px solid rgba(23,14,11,.18)"><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ summary.label }}</div><div style="font:800 21px Archivo,sans-serif">{{ summary.value }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ summary.note }}</div></div></sc-for></div>
 <div style="display:flex;overflow:auto;border:1px solid rgba(23,14,11,.2);margin-bottom:16px"><sc-for list="{{ dataControlTabs }}" as="tab" hint-placeholder-count="6"><button type="button" onClick="{{ tab.onPick }}" aria-pressed="{{ tab.pressed }}" style="{{ tab.style }}">{{ tab.label }} <span style="opacity:.65">{{ tab.count }}</span></button></sc-for></div>
+<sc-if value="{{ dataControlShowDependencyGuide }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--ux-signal);background:var(--ux-signal-tint);padding:12px 14px;margin:-4px 0 16px"><div><strong style="display:block;font-size:12px;margin-bottom:4px">{{ dataControlDependencyTitle }}</strong><span style="display:block;font-size:11px;line-height:1.5;color:var(--ux-muted-strong)">{{ dataControlDependencyDetail }}</span></div><button type="button" onClick="{{ onDataControlDependencyAction }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ dataControlDependencyActionLabel }}</button></div></sc-if>
 <div style="display:grid;grid-template-columns:{{ dataControlLayoutColumns }};gap:18px;align-items:start">
 <section style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px">
 <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ dataControlQueueKicker }}</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ dataControlQueueTitle }}</h2></div><input type="search" value="{{ dataControlSearch }}" onInput="{{ onDataControlSearch }}" placeholder="Search" style="width:min(230px,45%);padding:8px;border:1px solid rgba(23,14,11,.3)"></div>
@@ -1055,7 +1056,8 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">PORTAL · CATALOG AUTHORING</div><h2 style="font:800 17px Archivo,sans-serif;margin:0 0 5px">Product content</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0">Select a Canix item, save its product content as a Portal draft, then use the audited review and publication steps below.</p></div><span style="font:700 9px ui-monospace,monospace;background:var(--ux-accent);color:#fff;padding:5px 8px">ADMINISTRATOR OWNER</span></div>
 <label style="display:block;margin-bottom:10px"><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">CANIX PRODUCT *</span><select value="{{ catalogContentItemId }}" onChange="{{ onCatalogContentItem }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="">Choose a product</option><sc-for list="{{ catalogContentOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:10px"><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SHORT DESCRIPTION *</span><textarea value="{{ catalogContentShort }}" onInput="{{ onCatalogContentShort }}" style="width:100%;min-height:75px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">LONG DESCRIPTION</span><textarea value="{{ catalogContentLong }}" onInput="{{ onCatalogContentLong }}" style="width:100%;min-height:75px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SELLING POINTS * · ONE PER LINE</span><textarea value="{{ catalogContentSellingPoints }}" onInput="{{ onCatalogContentSellingPoints }}" style="width:100%;min-height:88px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">INGREDIENTS *</span><textarea value="{{ catalogContentIngredients }}" onInput="{{ onCatalogContentIngredients }}" style="width:100%;min-height:88px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">USAGE INFORMATION *</span><textarea value="{{ catalogContentUsage }}" onInput="{{ onCatalogContentUsage }}" style="width:100%;min-height:88px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">PRODUCT PROFILE *</span><textarea value="{{ catalogContentProfile }}" onInput="{{ onCatalogContentProfile }}" style="width:100%;min-height:88px;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px/1.5 Archivo,sans-serif"></textarea></label></div>
-<div style="display:grid;grid-template-columns:minmax(240px,1fr) minmax(180px,.35fr);gap:10px;align-items:end;margin-bottom:11px"><label><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">PRODUCT IMAGE URL · OPTIONAL</span><input type="url" value="{{ catalogContentImage }}" onInput="{{ onCatalogContentImage }}" placeholder="https://approved-asset-host.example/product.jpg" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px Archivo,sans-serif"><span style="display:block;font-size:10px;line-height:1.45;color:var(--ux-muted);margin-top:5px">Use an HTTPS image on an approved asset host. Saving replaces the current product image.</span></label><div style="height:92px;background:var(--ux-surface);border:1px solid rgba(23,14,11,.2);display:flex;align-items:center;justify-content:center;overflow:hidden"><sc-if value="{{ catalogContentHasImage }}" hint-placeholder-val="false"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" data-src="{{ catalogContentImage }}" onLoad="if(this.dataset.src&&!this.dataset.src.includes('{')){const next=this.dataset.src;this.removeAttribute('data-src');this.src=next}" alt="Selected product image preview" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:contain;background:#fff"></sc-if><sc-if value="{{ catalogContentNoImage }}" hint-placeholder-val="true"><span style="font:700 8.5px ui-monospace,monospace;color:var(--ux-faint);letter-spacing:.08em">NO IMAGE SELECTED</span></sc-if></div></div>
+<section style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:12px 13px;margin-bottom:11px"><div style="display:grid;grid-template-columns:minmax(240px,1fr) minmax(180px,.35fr);gap:10px;align-items:end"><div><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">PRODUCT IMAGE · OPTIONAL</span><label style="display:block;border:1px dashed rgba(23,14,11,.36);background:#fff;padding:10px"><input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onChange="{{ onCatalogImageFile }}" style="width:100%;font-size:11px"><span style="display:block;font-size:10px;line-height:1.45;color:var(--ux-muted);margin-top:5px">{{ catalogImageFileLabel }}</span></label><button type="button" onClick="{{ onCatalogImageUpload }}" aria-disabled="{{ catalogImageUploadDisabled }}" style="margin-top:7px;background:var(--ux-accent);color:#fff;border:0;padding:9px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer;opacity:{{ catalogImageUploadOpacity }}">{{ catalogImageUploadLabel }}</button><span style="display:block;font-size:10px;line-height:1.5;color:var(--ux-muted);margin-top:6px">Uploads are private and malware-scanned. A different authorized reviewer must approve the image before it appears in the catalog.</span></div><div style="height:116px;background:#fff;border:1px solid rgba(23,14,11,.2);display:flex;align-items:center;justify-content:center;overflow:hidden"><sc-if value="{{ catalogContentHasImage }}" hint-placeholder-val="false"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" data-src="{{ catalogContentImage }}" onLoad="if(this.dataset.src&&!this.dataset.src.includes('{')){const next=this.dataset.src;this.removeAttribute('data-src');this.src=next}" alt="Current approved product image" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:contain;background:#fff"></sc-if><sc-if value="{{ catalogContentNoImage }}" hint-placeholder-val="true"><span style="font:700 8.5px ui-monospace,monospace;color:var(--ux-faint);letter-spacing:.08em">NO APPROVED IMAGE</span></sc-if></div></div><sc-if value="{{ catalogAssetsHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:7px 0 7px 10px;margin-top:9px;font-size:11px">{{ catalogAssetsError }}</div></sc-if><sc-if value="{{ catalogAssetsHasRows }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;border-top:1px solid rgba(23,14,11,.18)"><sc-for list="{{ catalogAssetRows }}" as="asset" hint-placeholder-count="2"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(23,14,11,.12)"><div style="min-width:0"><strong style="display:block;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ asset.filename }}</strong><span style="font:9px ui-monospace,monospace;color:var(--ux-muted)">{{ asset.state }} · {{ asset.scan }} · {{ asset.by }}</span></div><div style="display:flex;gap:5px"><sc-if value="{{ asset.canReview }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ asset.onApprove }}" style="background:var(--ux-accent);color:#fff;border:0;padding:6px 8px;font:700 9px Archivo,sans-serif;cursor:pointer">Approve</button><button type="button" onClick="{{ asset.onQuarantine }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:5px 8px;font:700 9px Archivo,sans-serif;cursor:pointer">Quarantine</button></sc-if><sc-if value="{{ asset.needsOtherReviewer }}" hint-placeholder-val="{{ false }}"><span style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted)">OTHER REVIEWER REQUIRED</span></sc-if></div></div></sc-for></div></sc-if></section>
+<label style="display:block;margin-bottom:11px"><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">EXTERNAL PRODUCT IMAGE URL · OPTIONAL</span><input type="url" value="{{ catalogContentImage }}" onInput="{{ onCatalogContentImage }}" placeholder="https://approved-asset-host.example/product.jpg" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px Archivo,sans-serif"><span style="display:block;font-size:10px;line-height:1.45;color:var(--ux-muted);margin-top:5px">Use only when an approved image is already hosted on an allowed HTTPS asset host.</span></label>
 <label style="display:block;margin-bottom:11px"><span style="display:block;font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SEARCH KEYWORDS · COMMA SEPARATED</span><input value="{{ catalogContentKeywords }}" onInput="{{ onCatalogContentKeywords }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:12px Archivo,sans-serif"></label>
 <button type="button" onClick="{{ onCatalogContentSave }}" aria-disabled="{{ catalogContentSaveDisabled }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ catalogContentSaveLabel }}</button>
 </section>
@@ -4456,6 +4458,8 @@ const PORTAL_DATA_CONTROLS_API = PORTAL_CONFIG.portalDataControlsUrl
   || SUPABASE_URL + '/functions/v1/portal-data-controls';
 const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
   || SUPABASE_URL + '/functions/v1/portal-product-content';
+const PORTAL_ASSETS_API = PORTAL_CONFIG.portalAssetsUrl
+  || SUPABASE_URL + '/functions/v1/portal-assets';
 const PORTAL_KIOSK_API = PORTAL_CONFIG.portalKioskUrl
   || SUPABASE_URL + '/functions/v1/portal-kiosk';
 const PORTAL_SKU_INTAKE_API = PORTAL_CONFIG.portalSkuIntakeUrl
@@ -5040,7 +5044,8 @@ class Component extends DCLogic {
     catalogWorkflowPending: null,
     catalogContentItemId: '', catalogContentShort: '', catalogContentLong: '', catalogContentSellingPoints: '',
     catalogContentIngredients: '', catalogContentUsage: '', catalogContentProfile: '', catalogContentImage: '', catalogContentKeywords: '',
-    catalogContentPending: false,
+    catalogContentPending: false, catalogImageFile: null, catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum',
+    catalogImagePending: false, catalogAssets: [], catalogAssetsLoading: false, catalogAssetsError: null,
     demoTourActive: false, demoTourStep: 0, demoTourCompleted: false,
     retailerAccounts: QUICKBOOKS_DEMO_ACCOUNTS.slice(), retailerAccountsLoading: false, retailerAccountsLoaded: false, retailerAccountsError: null,
     financialData: null, financialLoading: false, financialLoaded: false, financialError: null,
@@ -5708,7 +5713,8 @@ class Component extends DCLogic {
       catalogWorkflowError: null, catalogWorkflowPending: null,
       catalogContentItemId: '', catalogContentShort: '', catalogContentLong: '', catalogContentSellingPoints: '',
       catalogContentIngredients: '', catalogContentUsage: '', catalogContentProfile: '', catalogContentImage: '', catalogContentKeywords: '',
-      catalogContentPending: false,
+      catalogContentPending: false, catalogImageFile: null, catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum',
+      catalogImagePending: false, catalogAssets: [], catalogAssetsLoading: false, catalogAssetsError: null,
       pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })),
       pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })), pricingLoading: false, pricingLoaded: false, pricingError: null,
       orderPolicies: DEMO_ORDER_POLICIES.map(row => ({ ...row })), orderPoliciesLoading: false,
@@ -6700,6 +6706,105 @@ class Component extends DCLogic {
     if (state === 'draft') return this.catalogWorkflowAction(row, 'review');
   }
 
+  catalogAssetCall(method, payload, query) {
+    const url = PORTAL_ASSETS_API + (query ? '?' + new URLSearchParams(query).toString() : '');
+    const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + (this.state.token || '') };
+    if (payload) headers['Content-Type'] = 'application/json';
+    return this.portalFetch(url, { method, headers, credentials: 'same-origin',
+      body: payload ? JSON.stringify(payload) : undefined })
+      .then(response => response.json().catch(() => ({})).then(body => ({ ok: response.ok, status: response.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Product-image service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  loadCatalogAssets(canixItemId) {
+    const ownerId = Number(canixItemId || this.state.catalogContentItemId);
+    if (!Number.isSafeInteger(ownerId) || ownerId <= 0 || this.state.catalogAssetsLoading) return Promise.resolve();
+    this.set({ catalogAssetsLoading: true, catalogAssetsError: null });
+    return this.catalogAssetCall('GET', null, { purpose: 'product_image', ownerId: String(ownerId) })
+      .then(body => this.set({ catalogAssets: Array.isArray(body.assets) ? body.assets : [],
+        catalogAssetsLoading: false, catalogAssetsError: null }))
+      .catch(error => this.set({ catalogAssets: [], catalogAssetsLoading: false,
+        catalogAssetsError: error.message || 'Product-image history could not be loaded.' }));
+  }
+
+  readCatalogImageFile(event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) {
+      this.set({ catalogImageFile: null, catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum', catalogAssetsError: null });
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size <= 0 || file.size > 10 * 1024 * 1024) {
+      event.target.value = '';
+      this.set({ catalogImageFile: null, catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum',
+        catalogAssetsError: 'Use a JPEG, PNG, or WebP image no larger than 10 MB.' });
+      return;
+    }
+    this.set({ catalogImageFile: file,
+      catalogImageFileLabel: file.name + ' · ' + Math.max(1, Math.round(file.size / 1024)).toLocaleString('en-US') + ' KB',
+      catalogAssetsError: null });
+  }
+
+  uploadCatalogImage() {
+    const s = this.state;
+    const canixItemId = Number(s.catalogContentItemId);
+    const file = s.catalogImageFile;
+    if (!Number.isSafeInteger(canixItemId) || canixItemId <= 0 || !file || s.catalogImagePending
+      || !this.requirePermission('catalog.manage', 'upload product imagery')) return;
+    this.set({ catalogImagePending: true, catalogAssetsError: null });
+    let created = null;
+    this.catalogAssetCall('POST', { action: 'create-upload', purpose: 'product_image', ownerId: canixItemId,
+      filename: file.name, contentType: file.type, sizeBytes: file.size })
+      .then(body => {
+        created = body;
+        if (!body || !body.upload || !body.upload.signedUrl || !body.assetId) {
+          throw new Error('The secure upload address was not returned.');
+        }
+        const form = new FormData();
+        form.append('cacheControl', '3600');
+        form.append('', file);
+        return fetch(body.upload.signedUrl, { method: 'PUT', headers: {
+          'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + (s.token || ''), 'x-upsert': 'false'
+        }, body: form }).then(response => {
+          if (!response.ok) return response.json().catch(() => ({})).then(payload => {
+            throw new Error((payload && (payload.message || payload.error)) || 'The image could not be transferred to secure storage.');
+          });
+          return response;
+        });
+      })
+      .then(() => this.catalogAssetCall('POST', { action: 'complete-upload', assetId: created.assetId }))
+      .then(() => {
+        this.set({ catalogImagePending: false, catalogImageFile: null,
+          catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum',
+          toast: 'Image uploaded and malware-scanned. A different authorized reviewer must approve it before publication.',
+          toastKind: 'AWAITING IMAGE REVIEW' });
+        return this.loadCatalogAssets(canixItemId);
+      })
+      .catch(error => this.set({ catalogImagePending: false,
+        catalogAssetsError: error.message || 'The product image could not be uploaded.' }));
+  }
+
+  reviewCatalogImage(assetId, decision) {
+    if (!assetId || this.state.catalogImagePending || !this.requirePermission('catalog.manage', 'review product imagery')) return;
+    const note = decision === 'quarantine'
+      ? window.prompt('Why should this image be quarantined?') : 'Approved for the selected Canix catalog item.';
+    if (decision === 'quarantine' && (!note || !note.trim())) return;
+    const canixItemId = Number(this.state.catalogContentItemId);
+    this.set({ catalogImagePending: true, catalogAssetsError: null });
+    this.catalogAssetCall('POST', { action: 'review', assetId, decision, note: String(note || '').trim() })
+      .then(() => {
+        this.set({ catalogImagePending: false, catalogWorkflowLoaded: false,
+          toast: decision === 'approve' ? 'Product image approved and attached to the catalog record.' : 'Product image quarantined.',
+          toastKind: decision === 'approve' ? 'IMAGE APPROVED' : 'IMAGE QUARANTINED' });
+        return Promise.all([this.loadCatalogAssets(canixItemId), this.loadCatalogWorkflow(true), this.loadCatalog()]);
+      })
+      .catch(error => this.set({ catalogImagePending: false,
+        catalogAssetsError: error.message || 'The product-image review was not saved.' }));
+  }
+
   selectCatalogContentItem(canixItemId) {
     const id = String(canixItemId || '');
     const row = (this.state.catalogWorkflowRows || []).find(item => String(item.canixItemId) === id) || {};
@@ -6715,8 +6820,10 @@ class Component extends DCLogic {
       catalogContentProfile: row.productProfile || content.productProfile || '',
       catalogContentImage: row.imageUrl || content.imageUrl || '',
       catalogContentKeywords: (row.keywords || content.keywords || []).join(', '),
-      catalogWorkflowError: null
+      catalogImageFile: null, catalogImageFileLabel: 'Choose JPEG, PNG, or WebP · 10 MB maximum',
+      catalogAssets: [], catalogAssetsError: null, catalogWorkflowError: null
     });
+    if (id) this.loadCatalogAssets(id);
   }
 
   saveCatalogContentDraft() {
@@ -12051,6 +12158,15 @@ class Component extends DCLogic {
     const partyOptions = [{ value: '', label: 'No economic party' }].concat((dataControlData.parties || []).map(party => ({ value: String(party.id), label: party.display_name + ' · ' + party.party_code })));
     const skuOptions = [{ value: '', label: 'Choose Portal SKU' }].concat((dataControlData.skus || []).map(sku => ({ value: String(sku.id), label: sku.reference + ' · ' + sku.brand_name + ' · ' + sku.product_name })));
     const lotOptions = [{ value: '', label: 'Choose approved lot' }].concat((dataControlData.lots || []).filter(lot => lot.approval_status === 'approved').map(lot => ({ value: lot.lot_id, label: lot.lot_id + ' · ' + lot.lot_name })));
+    const dataControlApprovedLotCount = Math.max(0, lotOptions.length - 1);
+    const dataControlPendingLotCount = (dataControlData.lots || []).filter(lot => lot.approval_status !== 'approved' && lot.approval_status !== 'archived').length;
+    const dataControlShowDependencyGuide = ['package_lots', 'cost_objects'].includes(dataControlTab) && dataControlApprovedLotCount === 0;
+    const dataControlDependencyTitle = dataControlTab === 'cost_objects'
+      ? 'Approve a lot before assigning its Cost Object'
+      : 'Approve the Lot Register before reconciling packages';
+    const dataControlDependencyDetail = dataControlPendingLotCount.toLocaleString('en-US')
+      + ' lot record' + (dataControlPendingLotCount === 1 ? '' : 's')
+      + ' await review. Approved lots populate this screen automatically; do not infer a Lot ID or Cost Object from a name, package, Brand, or sales order.';
     const formFieldSets = {
       owners: [dcField('canixOwnerId','CANIX OWNER ID *','number'),dcField('canixOwnerName','CANIX OWNER NAME','text'),dcField('ownershipCode','OWNERSHIP CLASSIFICATION','select',ownerOptions),dcField('economicPartyId','ECONOMIC PARTY','select',partyOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
       package_lots: [dcField('canixPackageId','CANIX PACKAGE ID *','number'),dcField('complianceTag','COMPLIANCE TAG','text'),dcField('lotId','APPROVED LOT ID','select',lotOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
@@ -12161,6 +12277,22 @@ class Component extends DCLogic {
         label: item.name + ' · ' + item.brand + ' · Canix ' + String(item.sourceId).replace('canix:item:', '') })))
       .filter((option, index, rows) => rows.findIndex(row => row.value === option.value) === index)
       .sort((left, right) => left.label.localeCompare(right.label));
+    const signedInEmail = String(s.authUser && s.authUser.email || '').toLowerCase();
+    const catalogAssetRows = (Array.isArray(s.catalogAssets) ? s.catalogAssets : []).map(asset => {
+      const creatorEmail = String(asset.created_by_email || '').toLowerCase();
+      const pendingReview = asset.state === 'pending_review' && asset.scan_state === 'clean';
+      const needsOtherReviewer = pendingReview && creatorEmail === signedInEmail;
+      return {
+        id: asset.id, filename: asset.original_filename || 'Product image',
+        state: String(asset.state || 'unknown').replace(/_/g, ' ').toUpperCase(),
+        scan: String(asset.scan_state || 'pending').replace(/_/g, ' ').toUpperCase(),
+        by: asset.created_by_email || 'Uploader not recorded',
+        canReview: pendingReview && !needsOtherReviewer && !s.catalogImagePending,
+        needsOtherReviewer,
+        onApprove: () => this.reviewCatalogImage(asset.id, 'approve'),
+        onQuarantine: () => this.reviewCatalogImage(asset.id, 'quarantine')
+      };
+    });
     const catalogCategories = ['All'].concat(Array.from(new Set(catalogPool.map(item => item.cat))).sort());
     const catalogMappingSummary = s.catalogMappingData && s.catalogMappingData.summary || null;
     const catalogMappingSuggestions = s.catalogMappingData && Array.isArray(s.catalogMappingData.suggestions)
@@ -16046,6 +16178,9 @@ class Component extends DCLogic {
         style: 'background:' + (dataControlTab === id ? 'var(--ux-ink)' : '#fff') + ';color:' + (dataControlTab === id ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:0;border-right:1px solid rgba(23,14,11,.2);padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap',
         onPick: () => this.setDataControlTab(id)
       })),
+      dataControlShowDependencyGuide, dataControlDependencyTitle, dataControlDependencyDetail,
+      dataControlDependencyActionLabel: 'Review Lot register',
+      onDataControlDependencyAction: () => this.setDataControlTab('lots'),
       dataControlLayoutColumns: narrow ? '1fr' : 'minmax(360px,1.2fr) minmax(310px,.8fr)',
       dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : ['owners','package_lots','items'].includes(dataControlTab) ? 'LIVE CANIX SOURCE + PORTAL DECISIONS' : 'CURRENT DECISIONS',
       dataControlQueueTitle: ({ owners:'Canix Owner mappings', package_lots:'Package Lot ID overlays', items:'Item identity mappings', lots:'Portal lot register', cost_objects:'Cost Object decisions', catalog:'Catalog records', history:'Decision history' })[dataControlTab],
@@ -16858,6 +16993,14 @@ class Component extends DCLogic {
       catalogContentHasImage: /^https:\/\//i.test(String(s.catalogContentImage || '').trim()),
       catalogContentNoImage: !/^https:\/\//i.test(String(s.catalogContentImage || '').trim()),
       onCatalogContentImage: event => this.set({ catalogContentImage: event.target.value }),
+      catalogImageFileLabel: s.catalogImageFileLabel,
+      onCatalogImageFile: event => this.readCatalogImageFile(event),
+      catalogImageUploadDisabled: s.catalogImagePending || !s.catalogContentItemId || !s.catalogImageFile ? 'true' : 'false',
+      catalogImageUploadOpacity: s.catalogImagePending || !s.catalogContentItemId || !s.catalogImageFile ? '.5' : '1',
+      catalogImageUploadLabel: s.catalogImagePending ? 'Uploading and scanning…' : 'Upload image',
+      onCatalogImageUpload: () => this.uploadCatalogImage(),
+      catalogAssetsHasError: !!s.catalogAssetsError, catalogAssetsError: s.catalogAssetsError || '',
+      catalogAssetsHasRows: catalogAssetRows.length > 0, catalogAssetRows,
       catalogContentKeywords: s.catalogContentKeywords,
       onCatalogContentKeywords: event => this.set({ catalogContentKeywords: event.target.value }),
       catalogContentSaveDisabled: s.catalogContentPending || !s.catalogContentItemId ? 'true' : 'false',

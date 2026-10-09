@@ -10,8 +10,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BUCKET = "portal-assets";
-const ASSET_UPLOADS_ENABLED = Deno.env.get("PORTAL_ASSET_UPLOADS_ENABLED") ===
-  "true";
+// Product-image uploads are available only when the required malware scanner is
+// configured. This keeps the release fail-closed without relying on a legacy
+// feature flag that could silently leave the production form disabled.
+const ASSET_UPLOADS_ENABLED = contentScannerConfigured();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
