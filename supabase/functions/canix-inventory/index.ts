@@ -1005,13 +1005,25 @@ async function allLotControls(runId: string): Promise<Json[]> {
   return rows;
 }
 
-async function allInboundLotCostObjects(): Promise<Json[]> {
+async function allPortalLotRegisters(): Promise<Json[]> {
   const rows: Json[] = [];
   for (let start = 0;; start += 1000) {
-    const { data, error } = await service.from("portal_inbound_lot")
-      .select("lot_id,cost_object_id,approval_status")
-      .eq("active", true)
-      .not("lot_id", "is", null)
+    const { data, error } = await service.from("portal_lot_register")
+      .select("lot_id,cost_object_candidate,approval_status,ownership_code,canix_owner_id,economic_party_id,uom_code,updated_at")
+      .range(start, start + 999);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as Json[];
+    rows.push(...page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+async function allDataControlRows(table: string): Promise<Json[]> {
+  const rows: Json[] = [];
+  for (let start = 0;; start += 1000) {
+    const { data, error } = await service.from(table).select("*")
+      .in("decision_status", ["approved", "not_required"])
       .range(start, start + 999);
     if (error) throw error;
     const page = (data ?? []) as unknown as Json[];
@@ -1165,16 +1177,24 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   const [
     ownedRows,
     lotControls,
-    inboundLotCostObjects,
+    portalLotRegisters,
     lotCostObjectDecisions,
+    packageLotOverlays,
+    ownerMappings,
+    itemMappings,
+    dataControlParties,
     lotStateResult,
     itemStateResult,
     canReadCosts,
   ] = await Promise.all([
     withEconomicOwnership(await allCurrentPackages(runId)),
     allLotControls(runId),
-    allInboundLotCostObjects(),
+    allPortalLotRegisters(),
     allLotCostObjectDecisions(),
+    allDataControlRows("portal_package_lot_overlay"),
+    allDataControlRows("portal_canix_owner_mapping"),
+    allDataControlRows("portal_item_identity_mapping"),
+    service.from("portal_economic_party").select("id,display_name"),
     service.from("portal_lot_integrity_state").select(
       "monday_board_id,enforcement_mode,register_sync_status,last_register_sync_at,last_integrity_run_at,last_error,register_rows,approved_register_rows,invalid_register_rows,duplicate_register_rows,package_rows,valid_package_rows,exception_package_rows,allocation_exception_rows",
     ).eq("id", 1).maybeSingle(),
@@ -1185,20 +1205,21 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   ]);
   if (lotStateResult.error) throw lotStateResult.error;
   if (itemStateResult.error) throw itemStateResult.error;
+  if (dataControlParties.error) throw dataControlParties.error;
   const lotControlByPackage = new Map(
     lotControls.map((control) => [String(control.package_id), control]),
   );
-  const sourceCostObjectByLot = new Map<string, Json>();
-  for (const lot of inboundLotCostObjects) {
+  const portalLotById = new Map<string, Json>();
+  for (const lot of portalLotRegisters) {
     const lotId = stringOrNull(lot.lot_id);
     if (lotId) {
-      sourceCostObjectByLot.set(lotId, {
-        costObjectId: stringOrNull(lot.cost_object_id)?.toUpperCase() ?? null,
-        approvalStatus: stringOrNull(lot.approval_status)?.toLowerCase() ??
-          null,
-      });
+      portalLotById.set(lotId, lot);
     }
   }
+  const packageLotOverlayByPackage = new Map(packageLotOverlays.map((row) => [String(row.canix_package_id), row]));
+  const ownerMappingByOwner = new Map(ownerMappings.map((row) => [String(row.canix_owner_id), row]));
+  const itemMappingByItem = new Map(itemMappings.map((row) => [String(row.canix_item_id), row]));
+  const dataControlPartyNames = new Map((dataControlParties.data ?? []).map((row) => [String(row.id), String(row.display_name)]));
   const costObjectDecisionByLot = new Map<string, Json>();
   for (const decision of lotCostObjectDecisions) {
     const lotId = stringOrNull(decision.lot_id);
@@ -1206,14 +1227,21 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
   }
   const rows: Json[] = ownedRows.map((row): Json => {
     const control = lotControlByPackage.get(String(row.package_id));
-    const validLotId = control?.integrity_status === "valid"
+    const packageLotOverlay = packageLotOverlayByPackage.get(String(row.package_id)) ?? null;
+    const overlayLotId = packageLotOverlay?.decision_status === "approved"
+      ? stringOrNull(packageLotOverlay.lot_id)
+      : null;
+    const sourceLotId = stringOrNull(row.lot_id);
+    const candidateLotId = overlayLotId ?? (control?.integrity_status === "valid"
       ? stringOrNull(control.lot_id)
-      : null;
+      : sourceLotId);
+    const portalLot = candidateLotId ? portalLotById.get(candidateLotId) ?? null : null;
+    const validLotId = portalLot?.approval_status === "approved" ? candidateLotId : null;
     const sourceCostObject = validLotId
-      ? sourceCostObjectByLot.get(validLotId) ?? null
+      ? portalLotById.get(validLotId) ?? null
       : null;
-    const sourceCostObjectId = stringOrNull(sourceCostObject?.costObjectId);
-    const sourceCostObjectApproved = sourceCostObject?.approvalStatus ===
+    const sourceCostObjectId = stringOrNull(sourceCostObject?.cost_object_candidate)?.toUpperCase() ?? null;
+    const sourceCostObjectApproved = sourceCostObject?.approval_status ===
       "approved";
     const decision = validLotId
       ? costObjectDecisionByLot.get(validLotId) ?? null
@@ -1232,21 +1260,49 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       : decisionStatus === "not_required"
       ? sourceCostObjectId ? "source_conflict" : "accepted_no_code"
       : "pending";
+    const ownerMapping = ownerMappingByOwner.get(String(row.canix_package_owner_id)) ?? null;
+    const itemMapping = itemMappingByItem.get(String(row.item_id)) ?? null;
+    const ownerPartyId = ownerMapping?.decision_status === "approved"
+      ? stringOrNull(ownerMapping.economic_party_id)
+      : null;
     return {
       ...row,
+      canix_lot_id: sourceLotId,
+      lot_id: validLotId ?? sourceLotId,
+      lot_overlay_status: packageLotOverlay?.decision_status ?? null,
+      lot_overlay_source: packageLotOverlay ? "Supabase Portal overlay" : null,
+      ownership_code: ownerMapping?.decision_status === "approved"
+        ? stringOrNull(ownerMapping.ownership_code)
+        : null,
+      owner_classification_status: ownerMapping?.decision_status ?? null,
+      economic_owner_id: ownerPartyId ?? row.economic_owner_id,
+      economic_owner_name: ownerPartyId ? dataControlPartyNames.get(ownerPartyId) ?? null : row.economic_owner_name,
+      economic_owner_source: ownerPartyId ? "portal_canix_owner_mapping" : row.economic_owner_source,
+      portal_sku_reference: itemMapping?.decision_status === "approved"
+        ? stringOrNull(itemMapping.portal_sku_reference)
+        : null,
+      portal_sku_id: itemMapping?.decision_status === "approved"
+        ? stringOrNull(itemMapping.portal_sku_id)
+        : null,
+      item_mapping_status: itemMapping?.decision_status ?? null,
       cost_object_id: costObjectValidationState === "valid"
         ? decidedCostObjectId
         : null,
       coa_url: httpsUrlOrNull(row.coa_url),
-      lot_control_status: control?.integrity_status ?? "not_checked",
-      lot_allocation_eligible: control?.allocation_eligible ?? false,
-      lot_control_detail: control?.detail ??
-        "Lot pointer has not been checked against the Monday register.",
+      lot_control_status: validLotId ? "valid"
+        : packageLotOverlay?.decision_status === "not_required" ? "not_required"
+        : control?.integrity_status ?? "not_checked",
+      lot_allocation_eligible: validLotId ? true : control?.allocation_eligible ?? false,
+      lot_control_detail: validLotId
+        ? "Lot ID resolves to an approved Supabase Portal lot record."
+        : packageLotOverlay?.decision_status === "not_required"
+        ? "Lot ID was durably marked Not required; allocation policy remains unchanged."
+        : control?.detail ?? "Lot pointer has not been checked against the Portal lot register.",
       lot_checked_at: control?.checked_at ?? null,
       cost_object_status: validLotId ? decisionStatus : null,
       cost_object_validation_state: costObjectValidationState,
       cost_object_source_value: sourceCostObjectId,
-      cost_object_source_status: stringOrNull(sourceCostObject?.approvalStatus),
+      cost_object_source_status: stringOrNull(sourceCostObject?.approval_status),
       cost_object_decision_note: decision?.decision_note ?? null,
       cost_object_decided_by: decision?.decided_by_email ?? null,
       cost_object_decided_at: decision?.decided_at ?? null,
@@ -1346,8 +1402,8 @@ async function cachedPayload(profile: Json): Promise<Json | null> {
       ownership_model: "portal_item_default_with_package_override",
       ownership_fallback: "none",
       cost_object_source:
-        "Finance/Operations decision validated against the approved Monday UX Inbound Lot Register; never Canix sales-order line",
-      lot_register_system: "Monday UX Inbound Lot Register",
+        "Finance/Operations/Admin decision validated against the approved Supabase Portal lot register; never Canix sales-order line",
+      lot_register_system: "Supabase Portal lot register",
       lot_register_board_id: lotState?.monday_board_id ?? null,
       lot_register_last_sync_at: lotState?.last_register_sync_at ?? null,
       lot_integrity_last_checked_at: lotState?.last_integrity_run_at ?? null,

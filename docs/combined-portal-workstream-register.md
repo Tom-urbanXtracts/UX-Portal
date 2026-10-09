@@ -70,7 +70,7 @@ This register consolidates the current recommendations and unresolved items from
 | Canix | Inventory/compliance authority | Owner-field coverage, near-real-time freshness acceptance, Lot/Cost Object policy, lineage inputs, and exception resolution |
 | QuickBooks | Accounting authority; portal read/workflow/evidence only | Production authorization and scheduled refresh are working. Complete reconciliation views, remaining identity mapping, freshness/fallback acceptance, and controlled reconnect-role evidence. |
 | Google Workspace | Employee SSO | Named approver first sign-in, group/role administration decisions, and later Calendar synchronization |
-| Monday.com | Historical records retained | Remove dependencies from new workflows only after portal replacement acceptance; do not delete historical records |
+| Monday.com | Historical records retained and copied into UX OS where approved | Use `docs/monday-compatible-workspaces-migration-plan.md` as the migration blueprint. Recreate Monday-compatible boards, records, comments, files, automations, and dashboards inside UX OS by controlled copy/import; remove dependencies from new workflows only after portal replacement acceptance; do not delete historical records from Monday. |
 | Resend | Controlled outbound email | Current limits are adequate; upgrade only when measured usage requires it; keep suppression for non-mailbox test identities |
 | Malware scanner | Required before accepted private uploads | Keep production health evidence and add each newly approved document class to scan/release policy |
 

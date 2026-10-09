@@ -51,8 +51,14 @@ verify_jwt = false
 [functions.monday-brand-webhook]
 verify_jwt = false
 
+[functions.monday-supply-order-webhook]
+verify_jwt = false
+
 [functions.portal-lot-integrity]
 verify_jwt = false
+
+[functions.portal-data-controls]
+verify_jwt = true
 
 # User and role administration requires a signed-in portal session at the
 # gateway and repeats server-side profile/capability checks before mutation.

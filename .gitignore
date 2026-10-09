@@ -23,6 +23,9 @@ node_modules/
 /outputs/canix-qbo-reconciliation-*/
 /outputs/monday-exit-*/
 /outputs/pre-portal-native-*/
+/ux-os-audit-*/
+/ux-os-audit-*.json
+/ux-os-audit-*.png
 
 # Temporary Office lock files.
 ~$*

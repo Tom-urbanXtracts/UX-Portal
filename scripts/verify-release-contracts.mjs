@@ -18,6 +18,7 @@ const pricing = await readFile(resolve(root, "supabase/functions/portal-pricing/
 const financials = await readFile(resolve(root, "supabase/functions/quickbooks-financials/index.ts"), "utf8");
 const orders = await readFile(resolve(root, "supabase/functions/portal-orders/index.ts"), "utf8");
 const lotIntegrity = await readFile(resolve(root, "supabase/functions/portal-lot-integrity/index.ts"), "utf8");
+const portalDataControls = await readFile(resolve(root, "supabase/functions/portal-data-controls/index.ts"), "utf8");
 const economicOwnership = await readFile(resolve(root, "supabase/functions/portal-economic-ownership/index.ts"), "utf8");
 const productContent = await readFile(resolve(root, "supabase/functions/portal-product-content/index.ts"), "utf8");
 const assets = await readFile(resolve(root, "supabase/functions/portal-assets/index.ts"), "utf8");
@@ -90,6 +91,7 @@ const mondayItemMasterTuningMigration = await readFile(resolve(root, "supabase/m
 const mondayItemMasterRetargetMigration = await readFile(resolve(root, "supabase/migrations/20260902150000_monday_item_master_retarget.sql"), "utf8");
 const costObjectSourceMigration = await readFile(resolve(root, "supabase/migrations/20260914131500_cost_object_source_boundary.sql"), "utf8");
 const costObjectDecisionMigration = await readFile(resolve(root, "supabase/migrations/20260914160000_lot_cost_object_decisions.sql"), "utf8");
+const portalDataControlMigration = await readFile(resolve(root, "supabase/migrations/20261009223102_portal_native_data_control_center.sql"), "utf8");
 const kioskMigration = await readFile(resolve(root, "supabase/migrations/20260914173000_public_store_kiosk_links.sql"), "utf8");
 const kioskBrandMigration = await readFile(resolve(root, "supabase/migrations/20260917120000_kiosk_brand_product_scope.sql"), "utf8");
 const threeWorkspaceMigration = await readFile(resolve(root, "supabase/migrations/20260929170000_three_workspace_foundation.sql"), "utf8");
@@ -137,7 +139,12 @@ function assertContract(condition, name) {
 }
 
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
-assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allInboundLotCostObjects") && inventory.includes("allLotCostObjectDecisions") && inventory.includes('control?.integrity_status === "valid"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid Monday-backed lot decision");
+assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allPortalLotRegisters") && inventory.includes("allLotCostObjectDecisions") && inventory.includes('portalLot?.approval_status === "approved"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid Portal-backed lot decision");
+assertContract(portalDataControlMigration.includes("portal_canix_owner_mapping") && portalDataControlMigration.includes("portal_package_lot_overlay") && portalDataControlMigration.includes("portal_item_identity_mapping") && portalDataControlMigration.includes("portal_lot_register") && portalDataControlMigration.includes("never mutate Canix"), "Portal-native Owner, Lot ID, item identity, and lot controls remain Supabase overlays and never write to Canix");
+assertContract(portalDataControlMigration.includes("auto_approved") && portalDataControlMigration.includes("stable source ID") && portalDataControlMigration.includes("Everything else enters review"), "Monday lots import conservatively: only stable, approved, unambiguous rows auto-approve");
+assertContract(portalDataControlMigration.includes("Data-control decision history is append-only") && portalDataControlMigration.includes("A new approved mapping replaces the current mapping prospectively"), "Replacement mappings retain immutable historical evidence");
+assertContract(portalDataControls.includes('return ["administrator", "operations"].includes(caller.staffRole)') && portalDataControls.includes('caller.departments.includes("finance")') && portalDataControls.includes('action === "save-cost-object"'), "Ownership is independently manageable by Operations while Cost Objects allow Finance, Operations, or Administrator approval");
+assertContract(source.includes("Data control center") && source.includes("They never write Owner or Lot ID changes back to Canix") && source.includes("Catalog authoring and approval remain in Catalog"), "Internal Data Control Center exposes durable overlay queues without duplicating catalog authority");
 assertContract(costObjectSourceMigration.includes("set cost_object_id = null") && costObjectSourceMigration.includes("check (cost_object_id is null)") && costObjectSourceMigration.includes("never copy a Canix sales-order line"), "the migration clears and prevents the former sales-order-line Cost Object alias");
 assertContract(costObjectDecisionMigration.includes("pending_assignment") && costObjectDecisionMigration.includes("not_required") && costObjectDecisionMigration.includes("portal_lot_cost_object_event_immutable") && costObjectDecisionMigration.includes("Cost Object decision history is append-only") && costObjectDecisionMigration.includes("exactly match the approved Monday Cost Object value") && costObjectDecisionMigration.includes("Clear the Monday Cost Object value before approving Not Required"), "Cost Object decisions distinguish pending, assigned, and evidenced no-code outcomes with source validation and immutable history");
 assertContract(costObjectDecisionMigration.includes("'administrator', 'cost_objects.manage'") && costObjectDecisionMigration.includes("'operations', 'cost_objects.manage'") && !costObjectDecisionMigration.includes("'sales', 'cost_objects.manage'"), "only Administrator and Operations roles receive Cost Object decision authority");
@@ -226,11 +233,17 @@ assertContract(source.includes("onbLocationOptions") && source.includes("All qua
 assertContract(source.includes("accounts.rows.concat(QUICKBOOKS_DEMO_ACCOUNTS)") && source.includes("retailerOnboarding: onboarding.rows"), "the onboarding queue remains available when QuickBooks is temporarily unavailable");
 assertContract(source.includes("onboardingPanel: 'queue'") && source.includes("Store onboarding sections") && source.includes("onboardingReadinessChecks"), "store onboarding uses compact switchable sections with visible readiness gates");
 const internalNavSource = source.match(/if \(role === 'internal'\) \{([\s\S]*?)\n    \}/)?.[1] || "";
-assertContract(internalNavSource.includes("['validation', 'Release readiness'")
+assertContract(!internalNavSource.includes("['validation', 'Release readiness'")
+  && !internalNavSource.includes("['portal-build', 'Portal build'")
+  && !internalNavSource.includes("['it-governance', 'IT governance'")
+  && !internalNavSource.includes("['communications', 'Communications and controls'")
+  && internalNavSource.includes("['pricing', 'Pricing and discounts'")
   && !internalNavSource.includes("['accounts', 'Retailer accounts'")
   && !internalNavSource.includes("['lineage', 'Lots and lineage'")
   && !internalNavSource.includes("['qa', 'Release and quality'")
-  && !internalNavSource.includes("['onboarding', 'Store onboarding"), "the Internal sidebar hides retired and on-hold modules while Release Readiness remains available");
+  && !internalNavSource.includes("['onboarding', 'Store onboarding")
+  && source.includes("label: 'Notification delivery'")
+  && source.includes("label: 'Release evidence'"), "the Internal sidebar stays focused while protected notification and release controls remain available from Users and access");
 assertContract(source.includes('aria-label="Release readiness summary"')
   && source.includes("const readinessMetrics = [")
   && source.includes("'P0 BLOCKERS'")
@@ -494,7 +507,7 @@ assertContract(mondayBrandWebhook.includes("Exception Owner and Exception Note a
 assertContract(brandOperations.includes('products: [...productTotals.values()]') && brandOperations.includes('periods: [...periodTotals.values()]'), "external Brand sales are aggregated by product and reporting month");
 assertContract(source.includes("Brand administration") && source.includes("Create a Purchase Order") && source.includes("Purchase-order items") && source.includes("brandPoCart") && source.includes("PORTAL_BRAND_OPERATIONS_API") && source.includes("loadBrandOperations"), "the portal exposes connected Brand administration, products, multi-line purchase orders, manufacturing, sales, and finance projections");
 assertContract(source.includes("Brand administration sections remain independently collapsible; profile opens first.") && source.includes("<details open") && source.includes("Classification and access state</span></summary>") && source.includes("Canix, Monday, and QuickBooks</span></summary>") && source.includes("Administrator readiness checklist</span></summary>") && source.includes("Contracts, sales, distribution, and Finance</span></summary>"), "Brand administration keeps the primary profile visible while source mappings, readiness, and governance remain independently collapsible");
-assertContract(source.includes("internalNavGroupDefinitions") && source.includes("brandNavGroupDefinitions") && source.includes("Inventory and products") && source.includes("Commerce") && source.includes("Work") && source.includes('open="{{ group.open }}"') && source.includes("isGroupedNavigation: !!s.authUser && (isInternal || isBrandWorkspace) && !narrow"), "desktop Internal and Brand navigation is grouped into collapsible functional sections while mobile retains flat navigation");
+assertContract(source.includes("internalNavGroupDefinitions") && source.includes("brandNavGroupDefinitions") && source.includes("Inventory and products") && source.includes("Commerce") && source.includes("Work") && source.includes('aria-expanded="{{ group.expanded }}"') && source.includes("group.onToggle") && source.includes("navOpenGroups") && source.includes("isGroupedNavigation: !!s.authUser && (isInternal || isBrandWorkspace) && !narrow"), "desktop Internal and Brand navigation is grouped into controlled collapsible sections while mobile retains flat navigation");
 assertContract(!source.includes("BRAND_ROLE_PERMISSIONS.brand_admin.has")
   && source.includes("['brand_owner', 'brand_manager', 'brand_contributor']")
   && source.includes("brand.purchase_orders.acknowledge"),
@@ -730,8 +743,14 @@ for (const name of functionNames) {
 for (const name of functionNames) {
   const text = await readFile(resolve(root, "supabase/functions", name, "index.ts"), "utf8");
   assertContract(text.includes("authorization") || text.includes("x-ux-") || text.includes("x-cron-secret"), `${name} has an authentication boundary`);
-  if (name === "monday-webhook" || name === "monday-brand-webhook") {
+  if (["monday-webhook", "monday-brand-webhook", "monday-supply-order-webhook"].includes(name)) {
     assertContract(!text.includes("access-control-allow-origin"), `${name} remains server-to-server and does not expose a browser CORS surface`);
+    if (name === "monday-supply-order-webhook") {
+      assertContract(text.includes("await authenticated(request)")
+        && text.includes("verifyHs256Jwt")
+        && text.includes("SUPPLY_ORDER_WEBHOOK_SECRET"),
+      "monday-supply-order-webhook validates a shared secret or signed Monday token before processing");
+    }
   } else {
     assertContract(text.includes('"https://portal.urbanxtracts.com"'), `${name} permits the production portal origin`);
     assertContract(text.includes("verifiedTokenIsAuthenticated"), `${name} requires a validated authenticated user session`);
@@ -747,7 +766,8 @@ if (process.argv.includes("--remote")) {
     "portal-economic-ownership": "GET", "portal-intake": "POST", "portal-order-policy": "GET",
     "portal-orders": "GET", "portal-pricing": "GET", "portal-product-content": "GET",
     "portal-readiness": "GET", "portal-retailers": "GET", "quickbooks-financials": "GET",
-    "quickbooks-retailers": "GET", "monday-webhook": "POST", "monday-brand-webhook": "POST", "portal-kiosk": "POST",
+    "quickbooks-retailers": "GET", "monday-webhook": "POST", "monday-brand-webhook": "POST",
+    "monday-supply-order-webhook": "POST", "portal-kiosk": "POST",
     "portal-sku-intake": "POST", "portal-brand-onboarding": "POST", "portal-brand-profile": "POST",
     "portal-brand-application": "POST", "portal-brand-documents": "POST", "portal-brand-operations": "POST",
     "portal-brand-support": "POST", "portal-brand-supply-chain": "POST", "canix-marketplace-sync": "POST",

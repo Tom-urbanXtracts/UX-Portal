@@ -13,6 +13,10 @@ import {
   accessRequestRiskTier,
   purchaseApprovalRoute,
 } from "../functions/_shared/internal-work-contract.ts";
+import {
+  supplyOrderApprovalRoute,
+  supplyOrderValidation,
+} from "../functions/_shared/supply-order-contract.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -129,18 +133,21 @@ Deno.test("access risk is raised for Administrator and sensitive departments", (
 });
 
 Deno.test("purchase approvals follow the approved spending thresholds", () => {
-  assert(purchaseApprovalRoute(500).tier === "eric_500", "$500 routes to Eric");
+  assert(
+    purchaseApprovalRoute(500).tier === "eric_500",
+    "$500 routes to Eric",
+  );
   assert(
     purchaseApprovalRoute(500.01).tier === "leadership_2999",
     "$500.01 routes to leadership",
   );
   assert(
-    purchaseApprovalRoute(2999.99).authority === "Omeed / Jonathan / Drew",
-    "sub-$3,000 routes to leadership",
+    purchaseApprovalRoute(3000).authority === "Omeed, Drew or Jonathan",
+    "$3,000 routes to leadership",
   );
   assert(
-    purchaseApprovalRoute(3000).tier === "eran_3000",
-    "$3,000 routes to Eran",
+    purchaseApprovalRoute(3000.01).tier === "eran_3000",
+    "over $3,000 routes to Eran",
   );
   let rejected = false;
   try {
@@ -149,6 +156,58 @@ Deno.test("purchase approvals follow the approved spending thresholds", () => {
     rejected = true;
   }
   assert(rejected, "non-positive amounts must be rejected");
+});
+
+Deno.test("supply order validation blocks placeholder request data", () => {
+  const result = supplyOrderValidation({
+    requesterIds: [50753431],
+    department: "Marketing",
+    vendor: "MerchPrinters",
+    needBeforeDate: "2026-10-30",
+    priority: "High - ASAP",
+    lines: [{
+      name: "Printed hoodie",
+      linkUrl: "https://na.com",
+      unitCost: 16,
+      quantity: 200,
+      sku: "na",
+      department: "Marketing",
+      expenseCategory: "Creative Production",
+      expenseSubcategory: null,
+      chartOfAccounts: null,
+    }],
+  });
+  assert(!result.complete, "placeholder data should require correction");
+  assert(result.total === 3200, "valid cost and quantity still total");
+  assert(
+    result.missing.includes("Item 1: purchase link"),
+    "placeholder purchase link is missing",
+  );
+  assert(result.missing.includes("Item 1: SKU"), "placeholder SKU is missing");
+  assert(
+    result.missing.includes("Item 1: expense sub-category"),
+    "sub-category is required",
+  );
+  assert(
+    result.missing.includes("Item 1: chart of accounts"),
+    "COA is required",
+  );
+});
+
+Deno.test("supply order routing returns monday users by threshold", () => {
+  assert(
+    supplyOrderApprovalRoute(500).mondayUserIds.join(",") === "98722698",
+    "Eric gets the under-$500 approval",
+  );
+  assert(
+    supplyOrderApprovalRoute(500.01).mondayUserIds.join(",") ===
+      "50261465,49938939,50344762",
+    "leadership users get the middle tier",
+  );
+  assert(
+    supplyOrderApprovalRoute(3000.01).mondayUserIds.join(",") === "50263474",
+    "Eran gets the over-$3000 tier",
+  );
 });
 
 Deno.test("order transitions are adjacent and terminal", () => {

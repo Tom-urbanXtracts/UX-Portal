@@ -125,14 +125,16 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <sc-if value="{{ isGroupedNavigation }}" hint-placeholder-val="{{ true }}">
 <div style="display:grid;gap:4px">
 <sc-for list="{{ navGroups }}" as="group" hint-placeholder-count="4">
-<details open="{{ group.open }}" style="border-bottom:1px solid rgba(23,14,11,.14)">
-<summary style="cursor:pointer;padding:10px 20px;font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-muted);text-transform:uppercase">{{ group.label }}</summary>
+<section style="border-bottom:1px solid rgba(23,14,11,.14)">
+<button type="button" onClick="{{ group.onToggle }}" aria-expanded="{{ group.expanded }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:transparent;border:0;cursor:pointer;padding:10px 20px;font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-muted);text-transform:uppercase"><span>{{ group.label }}</span><span aria-hidden="true">{{ group.toggleMark }}</span></button>
+<sc-if value="{{ group.open }}" hint-placeholder-val="true">
 <div style="padding:0 0 7px">
 <sc-for list="{{ group.items }}" as="n" hint-placeholder-count="6">
 <button type="button" onClick="{{ n.onPick }}" aria-current="{{ n.current }}" style="{{ n.style }}" style-hover="background:var(--ux-surface)"><svg aria-hidden="true" focusable="false" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none;opacity:.75"><sc-for list="{{ n.icon }}" as="d" hint-placeholder-count="2"><path d="{{ d }}"></path></sc-for></svg><span style="flex:1">{{ n.label }}</span><span style="{{ n.badgeStyle }}">{{ n.badge }}</span></button>
 </sc-for>
 </div>
-</details>
+</sc-if>
+</section>
 </sc-for>
 </div>
 </sc-if>
@@ -163,6 +165,28 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <div style="display:flex;gap:10px;flex-wrap:wrap">
 <button type="button" onClick="{{ onPwFix }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 14px;font:700 12px Archivo,sans-serif;cursor:pointer;min-height:40px">Email me a reset link</button>
 <button type="button" onClick="{{ onPwDismiss }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer;min-height:40px">Not now</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDataControls }}" hint-placeholder-val="{{ false }}">
+<div>
+<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px"><div><div style="font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:6px">DATA &amp; PRODUCTION READINESS</div><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 7px">Data control center</h1><p style="font-size:13.5px;color:var(--ux-muted);line-height:1.55;margin:0;max-width:78ch">Resolve Canix identities, lot pointers, ownership, Cost Objects, and catalog readiness once. Approved decisions remain in the Portal and are reapplied to every source refresh.</p></div><button type="button" onClick="{{ onDataControlRefresh }}" aria-disabled="{{ dataControlLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ dataControlRefreshLabel }}</button></div>
+<div style="border-left:4px solid var(--ux-accent);background:var(--ux-accent-tint);padding:12px 15px;margin-bottom:18px;font-size:12px;line-height:1.55"><strong>Source boundary:</strong> These are Supabase Portal overlays. They never write Owner or Lot ID changes back to Canix. New approved mappings become current while prior decisions remain in immutable history.</div>
+<sc-if value="{{ dataControlHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:16px;font-size:12.5px">{{ dataControlError }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin-bottom:18px"><sc-for list="{{ dataControlSummary }}" as="summary" hint-placeholder-count="5"><div style="padding:14px;border-right:1px solid rgba(23,14,11,.18)"><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ summary.label }}</div><div style="font:800 21px Archivo,sans-serif">{{ summary.value }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ summary.note }}</div></div></sc-for></div>
+<div style="display:flex;overflow:auto;border:1px solid rgba(23,14,11,.2);margin-bottom:16px"><sc-for list="{{ dataControlTabs }}" as="tab" hint-placeholder-count="6"><button type="button" onClick="{{ tab.onPick }}" aria-pressed="{{ tab.pressed }}" style="{{ tab.style }}">{{ tab.label }} <span style="opacity:.65">{{ tab.count }}</span></button></sc-for></div>
+<div style="display:grid;grid-template-columns:{{ dataControlLayoutColumns }};gap:18px;align-items:start">
+<section style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px">
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ dataControlQueueKicker }}</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ dataControlQueueTitle }}</h2></div><input type="search" value="{{ dataControlSearch }}" onInput="{{ onDataControlSearch }}" placeholder="Search" style="width:min(230px,45%);padding:8px;border:1px solid rgba(23,14,11,.3)"></div>
+<sc-if value="{{ dataControlEmpty }}" hint-placeholder-val="{{ false }}"><p style="font-size:12px;color:var(--ux-muted)">No records match this view.</p></sc-if>
+<div style="display:grid;gap:8px"><sc-for list="{{ dataControlRows }}" as="row" hint-placeholder-count="5"><button type="button" onClick="{{ row.onPick }}" style="text-align:left;background:{{ row.background }};border:1px solid rgba(23,14,11,.16);padding:11px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:10px"><strong style="font-size:12px">{{ row.primary }}</strong><span style="font:700 8px ui-monospace,monospace;background:{{ row.statusBackground }};color:{{ row.statusColor }};padding:3px 6px">{{ row.status }}</span></div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:5px;line-height:1.45">{{ row.secondary }}</div></button></sc-for></div>
+</section>
+<aside style="border-top:2px solid var(--ux-ink);background:var(--ux-surface);padding:16px">
+<sc-if value="{{ dataControlCatalogMode }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">ONE APPROVER</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 8px">Catalog publication</h2><p style="font-size:11.5px;line-height:1.55;color:var(--ux-muted)">Catalog authoring and approval remain in Catalog. This queue shows readiness without creating a second publication authority.</p><button type="button" onClick="{{ goCatalogControls }}" style="margin-top:10px;background:var(--ux-accent);color:#fff;border:0;padding:10px 13px;font:700 11px Archivo,sans-serif;cursor:pointer">Open Catalog controls</button></div></sc-if>
+<sc-if value="{{ dataControlHistoryMode }}" hint-placeholder-val="{{ false }}"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">IMMUTABLE EVIDENCE</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 8px">Decision history</h2><p style="font-size:11.5px;line-height:1.55;color:var(--ux-muted)">History cannot be edited or deleted. Replacements create a new event instead of changing prior evidence.</p></div></sc-if>
+<sc-if value="{{ dataControlFormMode }}" hint-placeholder-val="{{ true }}"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ dataControlFormKicker }}</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 8px">{{ dataControlFormTitle }}</h2><p style="font-size:11.5px;line-height:1.55;color:var(--ux-muted);margin:0 0 13px">{{ dataControlFormDescription }}</p><div style="display:grid;gap:10px"><sc-for list="{{ dataControlFields }}" as="field" hint-placeholder-count="7"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">{{ field.label }}</span><sc-if value="{{ field.isSelect }}" hint-placeholder-val="false"><select value="{{ field.value }}" onChange="{{ field.onInput }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ field.options }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></sc-if><sc-if value="{{ field.isTextarea }}" hint-placeholder-val="false"><textarea value="{{ field.value }}" onInput="{{ field.onInput }}" rows="3" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);resize:vertical"></textarea></sc-if><sc-if value="{{ field.isInput }}" hint-placeholder-val="true"><input type="{{ field.type }}" value="{{ field.value }}" onInput="{{ field.onInput }}" placeholder="{{ field.placeholder }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3)"></sc-if></label></sc-for><div style="display:flex;gap:8px"><button type="button" onClick="{{ onDataControlSave }}" aria-disabled="{{ dataControlSaveDisabled }}" style="flex:1;background:var(--ux-accent);color:#fff;border:0;padding:10px 12px;font:700 11px Archivo,sans-serif;cursor:pointer;opacity:{{ dataControlSaveOpacity }}">{{ dataControlSaveLabel }}</button><button type="button" onClick="{{ onDataControlClear }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">Clear</button></div></div></div></sc-if>
+</aside>
 </div>
 </div>
 </sc-if>
@@ -1043,6 +1067,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 </section>
 </sc-if>
 
+<sc-if value="{{ showShoppingCatalog }}" hint-placeholder-val="true">
 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-bottom:16px;border-bottom:2px solid rgba(23,14,11,.4)">
 <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="Search product, SKU, strain, terpene, potency or full tag" style="flex:1;min-width:220px;border:1px solid rgba(23,14,11,.35);background:#fff;padding:10px 12px;font:14px Archivo,sans-serif;border-radius:0">
 <sc-for list="{{ catFilters }}" as="c" hint-placeholder-count="5">
@@ -1124,6 +1149,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <div style="font-size:14px;line-height:1.6">No products match that search. Try removing the category filter, or search the full compliance tag rather than part of it — partial tags are not resolved to a single lot.</div>
 </div>
 </sc-if>
+</sc-if>
 </div>
 </sc-if>
 
@@ -1186,7 +1212,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Batch / lot reference</div><div style="color:var(--ux-muted)">{{ lotBatch }}</div></div>
 <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Lab result</div><div>{{ lotTest }}</div></div>
 <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px"><div style="font-weight:600">Release state</div><div>{{ lotRelease }}</div></div>
-<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px;align-items:center"><div style="font-weight:600">Certificate of analysis</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><sc-if value="{{ coaAvailable }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ openCoa }}" style="border:1px solid rgba(23,14,11,.35);background:transparent;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer" style-hover="background:var(--ux-surface)">Open COA</button></sc-if><sc-if value="{{ coaUnavailable }}" hint-placeholder-val="{{ false }}"><span style="font:600 9.5px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">NOT IN CURRENT FEED</span></sc-if><span style="font-size:11.5px;color:var(--ux-muted)">{{ coaNote }}</span></div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;padding:11px 0;border-bottom:2px solid rgba(23,14,11,.4);font-size:13px;align-items:center"><div style="font-weight:600">Certificate of analysis</div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><sc-if value="{{ coaAvailable }}" hint-placeholder-val="{{ true }}"><a href="{{ coaUrl }}" target="_blank" rel="noopener noreferrer" style="border:1px solid rgba(23,14,11,.35);background:transparent;padding:8px 12px;font:700 12px Archivo,sans-serif;cursor:pointer;color:var(--ux-ink);text-decoration:none">Open COA</a></sc-if><sc-if value="{{ coaUnavailable }}" hint-placeholder-val="{{ false }}"><span style="font:600 9.5px ui-monospace,monospace;background:var(--ux-surface);padding:4px 7px">DOCUMENT NOT AVAILABLE</span></sc-if><span style="font-size:11.5px;color:var(--ux-muted)">{{ coaNote }}</span></div></div>
 </div>
 
 <h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:38px 0 12px">Potency and profile</h2>
@@ -1197,10 +1223,12 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <div style="font-size:11.5px;line-height:1.55;color:var(--ux-muted);margin-top:14px">Values are reproduced as Canix supplies them for this package. The portal does not interpret the result or turn it into an effects or medical claim.</div>
 </div>
 
+<sc-if value="{{ showProductPerformance }}" hint-placeholder-val="true">
 <h2 style="font:800 17px/1.2 Archivo,sans-serif;margin:38px 0 12px">Performance at your stores</h2>
 <div style="border:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:24px 26px;max-width:70ch">
 <div style="font-size:14px;line-height:1.6">{{ pdPerfText }}</div>
 </div>
+</sc-if>
 </div>
 </sc-if>
 
@@ -2252,6 +2280,12 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <section style="border-top:2px solid var(--ux-ink);padding-top:12px"><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 8px">Review cadence</h3><div style="display:grid"><sc-for list="{{ itReviewCadence }}" as="review" hint-placeholder-count="4"><div style="border-top:1px solid rgba(23,14,11,.14);padding:10px 0;font-size:11.5px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap"><strong>{{ review.area }}</strong><span style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text)">{{ review.cadence }}</span></div><div style="color:var(--ux-muted);line-height:1.45;margin-top:4px">{{ review.scope }}</div><div style="font-size:10.5px;color:var(--ux-muted-strong);margin-top:4px">Owner: {{ review.owner }}</div></div></sc-for></div></section>
 <section style="border-top:2px solid var(--ux-signal);padding-top:12px"><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 8px">Held automations</h3><ul style="margin:0;padding-left:18px;display:grid;gap:7px;font-size:11.5px;line-height:1.5;color:var(--ux-muted-strong)"><sc-for list="{{ itHeldAutomations }}" as="item" hint-placeholder-count="3"><li>{{ item }}</li></sc-for></ul><div style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 11px;margin-top:12px;font-size:11.5px;line-height:1.5;color:var(--ux-muted-strong)">Emergency changes need retrospective approval within one business day. Offboarding checklists cover Google Workspace, Monday.com, Canix, PistilData, and QuickBooks without assuming automatic deactivation.</div></section>
 </div>
+</section>
+</sc-if>
+<sc-if value="{{ showAdminControlLinks }}" hint-placeholder-val="{{ false }}">
+<section style="border:1px solid rgba(23,14,11,.24);background:#fff;padding:18px 20px;margin:0 0 24px">
+<div style="margin-bottom:14px"><div style="font:700 9px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);margin-bottom:5px">ADMINISTRATOR TOOLS</div><h2 style="font:800 18px Archivo,sans-serif;margin:0 0 6px">System controls</h2><p style="font-size:12.5px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:76ch">Administrative controls remain protected and audited without occupying the main navigation.</p></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px"><sc-for list="{{ adminControlLinks }}" as="tool" hint-placeholder-count="2"><button type="button" onClick="{{ tool.onOpen }}" style="text-align:left;border:1px solid rgba(23,14,11,.2);background:var(--ux-ground);padding:14px;cursor:pointer"><span style="display:block;font:800 13px Archivo,sans-serif;margin-bottom:6px">{{ tool.label }}</span><span style="display:block;font-size:11px;line-height:1.5;color:var(--ux-muted)">{{ tool.note }}</span></button></sc-for></div>
 </section>
 </sc-if>
 <sc-if value="{{ showBrandView }}" hint-placeholder-val="{{ false }}">
@@ -3431,7 +3465,25 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{}">
 const MONEY = c => '$' + (c / 100).toFixed(2);
-const TODAY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'America/New_York' }).format(new Date());
+const formatDateUs = value => {
+  if (!value) return '';
+  const raw = String(value).trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/.exec(raw);
+  if (iso) return iso[2] + '/' + iso[3] + '/' + iso[1];
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? raw : new Intl.DateTimeFormat('en-US', {
+    month: '2-digit', day: '2-digit', year: 'numeric', timeZone: 'America/New_York'
+  }).format(parsed);
+};
+const formatDateTimeUs = value => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  return isNaN(parsed.getTime()) ? formatDateUs(value) : new Intl.DateTimeFormat('en-US', {
+    month: '2-digit', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    timeZone: 'America/New_York'
+  }).format(parsed);
+};
+const TODAY = formatDateUs(new Date());
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const US_DATE_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 const validCalendarDate = (year, month, day) => {
@@ -3441,7 +3493,7 @@ const validCalendarDate = (year, month, day) => {
 const isoDateToUs = value => {
   const text = String(value || '').trim();
   const match = ISO_DATE_PATTERN.exec(text);
-  return match && validCalendarDate(match[1], match[2], match[3]) ? match[2] + '/' + match[3] + '/' + match[1] : text;
+  return match && validCalendarDate(match[1], match[2], match[3]) ? match[2] + '/' + match[3] + '/' + match[1] : formatDateUs(text);
 };
 const usDateToIso = value => {
   const text = String(value || '').trim();
@@ -3772,7 +3824,7 @@ const STAFF_ROLE_LABELS = {
   quality: 'Quality', viewer: 'Viewer'
 };
 const INTERNAL_ROUTE_PERMISSION = {
-  inventory: 'inventory.read', orders: 'orders.manage', accounts: 'accounts.manage', brands: 'accounts.manage',
+  inventory: 'inventory.read', 'data-controls': ['inventory.read', 'financials.read'], orders: 'orders.manage', accounts: 'accounts.manage', brands: 'accounts.manage',
   pricing: 'pricing.manage', receivables: 'financials.read',
   field: 'accounts.manage', onboarding: 'accounts.manage', recall: 'quality.manage',
   qa: 'quality.manage', lineage: 'lineage.read', admin: 'users.manage', access: 'users.manage',
@@ -4400,6 +4452,8 @@ const MONDAY_OAUTH_API = PORTAL_CONFIG.mondayOAuthUrl
   || SUPABASE_URL + '/functions/v1/monday-oauth';
 const PORTAL_LOT_INTEGRITY_API = PORTAL_CONFIG.lotIntegrityUrl
   || SUPABASE_URL + '/functions/v1/portal-lot-integrity';
+const PORTAL_DATA_CONTROLS_API = PORTAL_CONFIG.portalDataControlsUrl
+  || SUPABASE_URL + '/functions/v1/portal-data-controls';
 const PORTAL_PRODUCT_CONTENT_API = PORTAL_CONFIG.portalProductContentUrl
   || SUPABASE_URL + '/functions/v1/portal-product-content';
 const PORTAL_KIOSK_API = PORTAL_CONFIG.portalKioskUrl
@@ -4518,7 +4572,7 @@ function buildCanixCatalog(data) {
         usageInformation: null, productProfile: null, imageUrl: null, keywords: [], source: null },
       searchText: rows.flatMap(row => [row.cannabinoids, row.terpenes, row.lab_profile]).map(value => JSON.stringify(value || '')).join(' '),
       lots: rows.slice(0, 12).map(row => ({
-        tag: row.tag || String(row.package_id || ''), packaged: row.packaged_date || 'Not recorded',
+        tag: row.tag || String(row.package_id || ''), packaged: row.packaged_date ? formatDateUs(row.packaged_date) : 'Not recorded',
         packageId: row.package_id, room: row.room_name || 'Not recorded', facility: row.facility_name || 'Not recorded',
         lab: row.test_result_status || row.lab_test_status || 'No structured result', hasCoa: row.has_coa === true || row.has_coa === 1,
         salesOrder: row.sales_order_name || row.sales_order_id || null, costObject: row.cost_object_id || null,
@@ -4962,6 +5016,9 @@ class Component extends DCLogic {
     costObjectQueue: 'pending_assignment', costObjectSearch: '', costObjectSelectedLot: null,
     costObjectStatusDraft: 'pending_assignment', costObjectCodeDraft: '', costObjectNote: '',
     costObjectPending: false, costObjectError: null,
+    dataControlData: null, dataControlLoading: false, dataControlLoaded: false, dataControlError: null,
+    dataControlTab: 'owners', dataControlSearch: '', dataControlSelectedKey: null,
+    dataControlDraft: {}, dataControlPending: false,
     catalogLoading: false, catalogLoaded: false, catalogError: null,
     pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })), pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })),
     pricingDefaults: [], wholesaleSources: [], wholesaleSummary: {}, wholesaleQuery: '', wholesaleStatus: 'all',
@@ -6218,6 +6275,91 @@ class Component extends DCLogic {
       })
       .catch(e => this.set({ costObjectPending: false,
         costObjectError: (e && e.message) || 'The Cost Object decision could not be saved.' }));
+  }
+
+  dataControlCall(method, payload) {
+    return this.securedPortalCall(PORTAL_DATA_CONTROLS_API, method, payload);
+  }
+
+  loadDataControls(force) {
+    if (this.state.dataControlLoading || (this.state.dataControlLoaded && !force)) return Promise.resolve(this.state.dataControlData);
+    this.set({ dataControlLoading: true, dataControlError: null });
+    return this.dataControlCall('GET').then(data => {
+      this.set({ dataControlData: data, dataControlLoading: false, dataControlLoaded: true, dataControlError: null });
+      return data;
+    }).catch(error => {
+      this.set({ dataControlLoading: false, dataControlLoaded: true,
+        dataControlError: (error && error.message) || 'The data-control queue could not be loaded.' });
+      throw error;
+    });
+  }
+
+  dataControlRecords(tab) {
+    const data = this.state.dataControlData || {};
+    return ({ owners: data.ownerMappings, package_lots: data.packageLots, items: data.itemMappings,
+      lots: data.lots, cost_objects: data.costObjects, catalog: data.catalog, history: data.events }[tab] || []);
+  }
+
+  setDataControlTab(tab) {
+    this.set({ dataControlTab: tab, dataControlSearch: '', dataControlSelectedKey: null,
+      dataControlDraft: {}, dataControlError: null });
+  }
+
+  setDataControlField(key, value) {
+    this.setState(current => ({ dataControlDraft: { ...(current.dataControlDraft || {}), [key]: value },
+      dataControlError: null }));
+  }
+
+  selectDataControlRecord(record) {
+    const tab = this.state.dataControlTab;
+    const draft = tab === 'owners' ? {
+      canixOwnerId: record.canix_owner_id, canixOwnerName: record.canix_owner_name || '',
+      economicPartyId: record.economic_party_id || '', ownershipCode: record.ownership_code || '',
+      status: record.decision_status || 'pending_review', note: record.decision_note || ''
+    } : tab === 'package_lots' ? {
+      canixPackageId: record.canix_package_id, complianceTag: record.compliance_tag || '', lotId: record.lot_id || '',
+      status: record.decision_status || 'pending_review', note: record.decision_note || ''
+    } : tab === 'items' ? {
+      canixItemId: record.canix_item_id, canixItemName: record.canix_item_name || '', canixBrandName: record.canix_brand_name || '',
+      portalSkuReference: record.portal_sku_reference || '', portalSkuId: record.portal_sku_id || '',
+      status: record.decision_status || 'pending_review', note: record.decision_note || ''
+    } : tab === 'lots' ? {
+      lotId: record.lot_id || '', lotName: record.lot_name || '', ownershipCode: record.ownership_code || '',
+      canixOwnerId: record.canix_owner_id || '', economicPartyId: record.economic_party_id || '',
+      agreementReference: record.agreement_reference || '', dealType: record.deal_type || '', uomCode: record.uom_code || '',
+      expectedQuantity: record.expected_quantity == null ? '' : record.expected_quantity,
+      receivedQuantity: record.received_quantity == null ? '' : record.received_quantity,
+      costObjectCandidate: record.cost_object_candidate || '', effectiveDate: isoDateToUs(record.effective_date || ''),
+      status: record.approval_status || 'pending_review', note: record.decision_note || ''
+    } : tab === 'cost_objects' ? {
+      lotId: record.lot_id || '', status: record.decision_status || 'pending_assignment',
+      costObjectId: record.cost_object_id || '', note: record.decision_note || ''
+    } : {};
+    const key = record.canix_owner_id || record.canix_package_id || record.canix_item_id || record.lot_id || record.id;
+    this.set({ dataControlSelectedKey: String(key || ''), dataControlDraft: draft, dataControlError: null });
+  }
+
+  saveDataControl() {
+    if (this.state.dataControlPending) return;
+    const action = ({ owners: 'save-owner-mapping', package_lots: 'save-package-lot', items: 'save-item-mapping',
+      lots: 'save-lot', cost_objects: 'save-cost-object' })[this.state.dataControlTab];
+    if (!action) return;
+    this.set({ dataControlPending: true, dataControlError: null });
+    const draft = { ...(this.state.dataControlDraft || {}) };
+    if (this.state.dataControlTab === 'lots' && draft.effectiveDate) {
+      const normalizedDate = usDateToIso(draft.effectiveDate);
+      if (!normalizedDate) {
+        this.set({ dataControlPending: false, dataControlError: 'Enter the effective date as MM/DD/YYYY.' });
+        return;
+      }
+      draft.effectiveDate = normalizedDate;
+    }
+    this.dataControlCall('POST', { action, ...draft }).then(() => {
+      this.set({ dataControlPending: false, dataControlDraft: {}, dataControlSelectedKey: null,
+        toast: 'The Portal data decision was saved with immutable history.', toastKind: 'DECISION SAVED' });
+      return this.loadDataControls(true);
+    }).catch(error => this.set({ dataControlPending: false,
+      dataControlError: (error && error.message) || 'The data-control decision could not be saved.' }));
   }
 
   economicOwnershipCall(method, body) {
@@ -10656,6 +10798,10 @@ class Component extends DCLogic {
       && prior.screen !== this.state.screen && !this.state.economicOwnershipLoaded && !this.state.economicOwnershipLoading) {
       this.loadEconomicOwnership();
     }
+    if (this.state.role === 'internal' && this.hasPermission('inventory.read') && this.state.screen === 'data-controls'
+      && prior.screen !== this.state.screen && !this.state.dataControlLoaded && !this.state.dataControlLoading) {
+      this.loadDataControls(false);
+    }
     const retailerCatalogScreen = ['catalog', 'product', 'pricing', 'kiosk'].includes(this.state.screen);
     if (this.state.role !== 'internal' && this.state.authUser && retailerCatalogScreen
       && prior.screen !== this.state.screen && !this.loc().demo && !this.state.catalogLoaded && !this.state.catalogLoading) {
@@ -11525,8 +11671,13 @@ class Component extends DCLogic {
     if (role === 'budtender') return [['kiosk', 'Product lookup', 'kiosk'], ['catalog', 'Browse products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training']];
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
-      return [['dash', 'Dashboard', 'dash'], ['my-work', 'My Work', 'orders'], ['portal-build', 'Portal build', 'validation'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['sku-intake', 'SKU intake', 'catalog'], ['brand-applications', 'Brand applications', 'accounts'], ['brand-purchase-order-admin', 'Brand purchase orders', 'orders'], ['work-queue', 'Work queues', 'orders'], ['receivables', 'Financials', 'economics'], ['brands', 'Brand administration', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['admin', 'Users and access', 'admin'], ['it-governance', 'IT governance', 'audit'], ['communications', 'Communications and controls', 'bell'], ['auditlog', 'Audit history', 'audit'], ['validation', 'Release readiness', 'validation']]
-        .filter(([id]) => !INTERNAL_ROUTE_PERMISSION[id] || grants.has(INTERNAL_ROUTE_PERMISSION[id]));
+      return [['dash', 'Dashboard', 'dash'], ['my-work', 'My Work', 'orders'], ['locations', 'Store performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['data-controls', 'Data control center', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Pricing and discounts', 'economics'], ['sku-intake', 'SKU intake', 'catalog'], ['brand-applications', 'Brand applications', 'accounts'], ['brand-purchase-order-admin', 'Brand purchase orders', 'orders'], ['work-queue', 'Work queues', 'orders'], ['receivables', 'Financials', 'economics'], ['brands', 'Brand administration', 'accounts'], ['field', 'Kiosk modes', 'kiosk'], ['admin', 'Users and access', 'admin'], ['auditlog', 'Audit history', 'audit']]
+        .filter(([id]) => {
+          const requirement = INTERNAL_ROUTE_PERMISSION[id];
+          return !requirement || (Array.isArray(requirement)
+            ? requirement.some(permission => grants.has(permission))
+            : grants.has(requirement));
+        });
     }
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders and approvals', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and delivery', 'accounts'], ['approval', 'Approval authority', 'orders'], ['users', 'Your users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training']];
     return [['dash', 'Dashboard', 'dash'], ['locations', 'Store performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft order', 'cart'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your records', 'audit'], ['training', 'Training', 'training']];
@@ -11847,15 +11998,76 @@ class Component extends DCLogic {
     const isKioskRole = role === 'budtender' && isStoreWorkspace;
     const staffPermissions = s.authUser && Array.isArray(s.authUser.permissions) ? s.authUser.permissions : [];
     const canStaff = permission => isInternal && staffPermissions.includes(permission);
+    const dataControlData = s.dataControlData || {};
+    const dataControlSummaryData = dataControlData.summary || {};
+    const dataControlTab = ['owners', 'package_lots', 'items', 'lots', 'cost_objects', 'catalog', 'history'].includes(s.dataControlTab)
+      ? s.dataControlTab : 'owners';
+    const dataControlSourceRows = this.dataControlRecords(dataControlTab);
+    const dataControlNeedle = String(s.dataControlSearch || '').trim().toLowerCase();
+    const dataControlFiltered = dataControlSourceRows.filter(row => !dataControlNeedle
+      || Object.values(row || {}).some(value => String(value == null ? '' : value).toLowerCase().includes(dataControlNeedle)));
+    const dataControlKey = row => String(row.canix_owner_id || row.canix_package_id || row.canix_item_id || row.lot_id || row.id || '');
+    const dataControlStatus = row => String(row.decision_status || row.approval_status || row.publication_state || row.action || 'pending_review');
+    const dataControlPrimary = row => dataControlTab === 'owners'
+      ? (row.canix_owner_name || 'Canix Owner ' + row.canix_owner_id)
+      : dataControlTab === 'package_lots' ? ('Package ' + row.canix_package_id)
+      : dataControlTab === 'items' ? (row.canix_item_name || 'Canix Item ' + row.canix_item_id)
+      : dataControlTab === 'lots' || dataControlTab === 'cost_objects' ? (row.lot_name || row.lot_id)
+      : dataControlTab === 'catalog' ? ('Canix Item ' + row.canix_item_id)
+      : ((row.control_type || 'Decision') + ' · ' + (row.control_key || row.id));
+    const dataControlSecondary = row => dataControlTab === 'owners'
+      ? ('Owner ' + row.canix_owner_id + ' · ' + (row.ownership_code || 'classification pending'))
+      : dataControlTab === 'package_lots' ? ((row.compliance_tag || 'No compliance tag') + ' · ' + (row.lot_id || 'Lot ID not set'))
+      : dataControlTab === 'items' ? ('Canix ' + row.canix_item_id + ' · ' + (row.canix_brand_name || 'Brand not recorded') + ' · ' + (row.portal_sku_reference || 'SKU mapping pending'))
+      : dataControlTab === 'lots' ? ((row.ownership_code || 'Ownership pending') + ' · ' + (row.uom_code || 'UOM not set') + ' · ' + (row.cost_object_candidate || 'Cost Object pending'))
+      : dataControlTab === 'cost_objects' ? ((row.cost_object_id || 'No assigned code') + ' · ' + (row.decided_by_email || 'Not decided'))
+      : dataControlTab === 'catalog' ? ('Completeness ' + Number(row.completeness_score || 0) + '% · ' + (row.publication_state === 'published' ? ('Published ' + formatDate(row.updated_at)) : row.approved_at ? ('Approved ' + formatDate(row.approved_at)) : 'Not published'))
+      : ((row.actor_email || 'System') + ' · ' + (row.created_at || ''));
+    const dataControlRows = dataControlFiltered.slice(0, 250).map(row => {
+      const status = dataControlStatus(row);
+      const good = ['approved', 'assigned', 'published', 'not_required', 'auto_approved'].includes(status);
+      const bad = ['conflict', 'rejected', 'returned'].includes(status);
+      return { primary: dataControlPrimary(row), secondary: dataControlSecondary(row), status: status.replace(/_/g, ' ').toUpperCase(),
+        background: dataControlKey(row) === String(s.dataControlSelectedKey || '') ? 'var(--ux-accent-tint)' : '#fff',
+        statusBackground: good ? 'var(--ux-accent)' : bad ? 'var(--ux-signal)' : 'var(--ux-surface)',
+        statusColor: good || bad ? '#fff' : 'var(--ux-muted-strong)', onPick: () => this.selectDataControlRecord(row) };
+    });
+    const dataControlDraft = s.dataControlDraft || {};
+    const selectOptions = values => values.map(([value, label]) => ({ value, label }));
+    const dcField = (key, label, type, options, placeholder) => ({ key, label,
+      value: dataControlDraft[key] == null ? '' : String(dataControlDraft[key]), type: type === 'number' ? 'number' : 'text',
+      placeholder: placeholder || '', isSelect: type === 'select', isTextarea: type === 'textarea',
+      isInput: !['select', 'textarea'].includes(type), options: options || [],
+      onInput: event => this.setDataControlField(key, event.target.value) });
+    const decisionOptions = selectOptions([['pending_review','Pending review'],['approved','Approved'],['conflict','Conflict'],['not_required','Not required'],['archived','Archived']]);
+    const ownerOptions = selectOptions([['','Choose ownership'],['UX','UX'],['TOLL','TOLL'],['SPLIT','SPLIT'],['TEST','TEST']]);
+    const partyOptions = [{ value: '', label: 'No economic party' }].concat((dataControlData.parties || []).map(party => ({ value: String(party.id), label: party.display_name + ' · ' + party.party_code })));
+    const skuOptions = [{ value: '', label: 'Choose Portal SKU' }].concat((dataControlData.skus || []).map(sku => ({ value: String(sku.id), label: sku.reference + ' · ' + sku.brand_name + ' · ' + sku.product_name })));
+    const lotOptions = [{ value: '', label: 'Choose approved lot' }].concat((dataControlData.lots || []).filter(lot => lot.approval_status === 'approved').map(lot => ({ value: lot.lot_id, label: lot.lot_id + ' · ' + lot.lot_name })));
+    const formFieldSets = {
+      owners: [dcField('canixOwnerId','CANIX OWNER ID *','number'),dcField('canixOwnerName','CANIX OWNER NAME','text'),dcField('ownershipCode','OWNERSHIP CLASSIFICATION','select',ownerOptions),dcField('economicPartyId','ECONOMIC PARTY','select',partyOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
+      package_lots: [dcField('canixPackageId','CANIX PACKAGE ID *','number'),dcField('complianceTag','COMPLIANCE TAG','text'),dcField('lotId','APPROVED LOT ID','select',lotOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
+      items: [dcField('canixItemId','CANIX ITEM ID *','number'),dcField('canixItemName','CANIX ITEM NAME','text'),dcField('canixBrandName','CANIX BRAND','text'),{ ...dcField('portalSkuId','PORTAL SKU','select',skuOptions), onInput: event => { const sku = (dataControlData.skus || []).find(row => String(row.id) === event.target.value); this.setState(current => ({ dataControlDraft: { ...(current.dataControlDraft || {}), portalSkuId: event.target.value, portalSkuReference: sku ? sku.reference : '' }, dataControlError: null })); } },dcField('portalSkuReference','PORTAL SKU REFERENCE *','text'),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
+      lots: [dcField('lotId','LOT ID *','text'),dcField('lotName','LOT NAME *','text'),dcField('ownershipCode','OWNERSHIP','select',ownerOptions),dcField('canixOwnerId','CANIX OWNER ID','number'),dcField('economicPartyId','ECONOMIC PARTY','select',partyOptions),dcField('agreementReference','AGREEMENT REFERENCE','text'),dcField('dealType','DEAL TYPE','text'),dcField('uomCode','UOM','select',selectOptions([['','Choose UOM'],['G_IN','G_IN'],['G_OUT','G_OUT'],['G_DRY','G_DRY'],['G_WET','G_WET']])),dcField('expectedQuantity','EXPECTED QUANTITY','number'),dcField('receivedQuantity','RECEIVED QUANTITY','number'),dcField('costObjectCandidate','COST OBJECT CANDIDATE','text'),dcField('effectiveDate','EFFECTIVE DATE · MM/DD/YYYY','text',null,'MM/DD/YYYY'),dcField('status','APPROVAL STATUS','select',selectOptions([['draft','Draft'],['pending_review','Pending review'],['approved','Approved'],['rejected','Rejected'],['conflict','Conflict'],['archived','Archived']])),dcField('note','EVIDENCE NOTE','textarea')],
+      cost_objects: [dcField('lotId','APPROVED LOT *','select',lotOptions),dcField('status','DECISION','select',selectOptions([['pending_assignment','Pending Finance/Ops assignment'],['assigned','Assigned'],['not_required','Not required']])),dcField('costObjectId','COST OBJECT','text'),dcField('note','EVIDENCE NOTE','textarea')]
+    };
+    const dataControlMeta = {
+      owners: ['CANIX OWNER', 'Owner classification', 'Operations may approve independently.'],
+      package_lots: ['PACKAGE POINTER', 'Package Lot ID overlay', 'Approved values remain in Supabase and never write to Canix.'],
+      items: ['ITEM IDENTITY', 'Canix Item to Portal SKU', 'Use immutable IDs; names remain supporting evidence.'],
+      lots: ['PORTAL AUTHORITY', 'Lot register', 'Approved lots govern the package pointer and Cost Object workflow.'],
+      cost_objects: ['FINANCE / OPERATIONS / ADMIN', 'Cost Object decision', 'Not required is durable. Assigned codes must exactly match the approved lot candidate.']
+    }[dataControlTab] || ['', '', ''];
     const canOrder = !!s.authUser && !isBrandWorkspace && ((isStoreWorkspace && (role === 'owner' || role === 'buyer')) || canStaff('orders.manage'));
     const showDraftOrderShortcut = isStoreWorkspace && (role === 'owner' || role === 'buyer');
     const loc = this.loc();
+    const demoMode = !isInternal && !isBrandWorkspace && !!loc.demo;
     const licenseBlocked = canOrder && loc.expired;
     const arBlocked = canOrder && !!loc.pastDue;
     const submitBlocked = licenseBlocked || arBlocked || s.orderSubmitting;
 
-    const scopedOrders = loc.demo ? s.orders.filter(order => order.demo) : s.orders.filter(order => !order.demo);
-    const scopedDocs = loc.demo ? DEMO_DOCS : DOCS;
+    const scopedOrders = demoMode ? s.orders.filter(order => order.demo) : s.orders.filter(order => !order.demo);
+    const scopedDocs = demoMode ? DEMO_DOCS : DOCS;
     const visibleOrders = isInternal ? scopedOrders : scopedOrders.filter(order => order.loc === s.loc);
     const pendingApproval = scopedOrders.filter(order => order.state === 'Awaiting approval' && (isInternal || order.loc === s.loc));
 
@@ -11875,10 +12087,10 @@ class Component extends DCLogic {
       };
     });
     const internalNavGroupDefinitions = [
-      { label: 'Overview', ids: ['dash', 'my-work', 'portal-build', 'locations'] },
-      { label: 'Inventory and products', ids: ['inventory', 'catalog', 'field', 'lineage', 'qa', 'sku-intake'] },
+      { label: 'Overview', ids: ['dash', 'my-work', 'locations'] },
+      { label: 'Inventory and products', ids: ['inventory', 'data-controls', 'catalog', 'field', 'lineage', 'qa', 'sku-intake'] },
       { label: 'Orders and accounts', ids: ['pricing', 'brand-applications', 'brand-purchase-order-admin', 'work-queue', 'receivables', 'accounts', 'brands', 'onboarding'] },
-      { label: 'Administration', ids: ['admin', 'it-governance', 'communications', 'auditlog', 'validation'] }
+      { label: 'Administration', ids: ['admin', 'auditlog'] }
     ];
     const brandNavGroupDefinitions = [
       { label: 'Company', ids: ['brand-home', 'brand-company', 'brand-agreements', 'brand-users'] },
@@ -11887,11 +12099,22 @@ class Component extends DCLogic {
       { label: 'Work', ids: ['brand-tasks', 'brand-support'] }
     ];
     const navGroupDefinitions = isInternal ? internalNavGroupDefinitions : isBrandWorkspace ? brandNavGroupDefinitions : [];
-    const navGroups = navGroupDefinitions.map(group => ({
-      label: group.label,
-      items: group.ids.map(id => nav.find(item => item.id === id)).filter(Boolean),
-      open: group.ids.some(id => s.screen === id || (id === 'orders' && s.screen === 'order'))
-    })).filter(group => group.items.length);
+    const navOpenGroups = s.navOpenGroups || {};
+    const navGroups = navGroupDefinitions.map(group => {
+      const key = group.label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const active = group.ids.some(id => s.screen === id || (id === 'orders' && s.screen === 'order'));
+      const open = active || navOpenGroups[key] === true;
+      return {
+        label: group.label,
+        items: group.ids.map(id => nav.find(item => item.id === id)).filter(Boolean),
+        open,
+        expanded: open ? 'true' : 'false',
+        toggleMark: open ? '−' : '+',
+        onToggle: () => this.setState(current => ({ navOpenGroups: {
+          ...(current.navOpenGroups || {}), [key]: !(active || (current.navOpenGroups || {})[key] === true)
+        } }))
+      };
+    }).filter(group => group.items.length);
     if (navGroups.length && !navGroups.some(group => group.open)) navGroups[0].open = true;
 
     const roleTabs = [['owner', 'Owner'], ['buyer', 'Buyer'], ['budtender', 'Budtender'], ['internal', 'Internal']].map(([id, label]) => ({
@@ -11918,11 +12141,11 @@ class Component extends DCLogic {
 
     const seedCatalog = PRODUCTS.filter(item => item.source !== 'Canix' && item.source !== 'CanixPreview');
     const liveCatalog = PRODUCTS.filter(item => item.source === 'Canix');
-    const catalogPool = loc.demo
+    const catalogPool = demoMode
       ? seedCatalog
       : (s.inventoryLoaded || s.catalogLoaded) && liveCatalog.length
         ? liveCatalog.filter(item => item.releaseVerified || item.preorder)
-        : seedCatalog;
+        : [];
     const catalogAdminPool = isInternal && liveCatalog.length ? liveCatalog : catalogPool;
     const catalogContentOptions = (s.catalogWorkflowRows || []).map(item => ({ value: String(item.canixItemId),
       label: (item.itemName || 'Canix item ' + item.canixItemId) + ' · ' + (item.brandName || 'Brand not recorded')
@@ -12065,7 +12288,7 @@ class Component extends DCLogic {
         noImage: !(row.imageUrl || (linked && linked.content && linked.content.imageUrl)),
         score: Number(row.completenessScore || 0) + '%', workflowLabel: state.replace(/_/g, ' ').toUpperCase(),
         missingLabel: Array.isArray(row.missingFields) && row.missingFields.length ? 'Missing: ' + row.missingFields.join(', ') : 'Required product content complete',
-        scheduleLabel: row.scheduledPublishAt ? 'Scheduled ' + new Date(row.scheduledPublishAt).toLocaleString() : validationWarnings.join(' · '),
+        scheduleLabel: row.scheduledPublishAt ? 'Scheduled ' + formatDateTimeUs(row.scheduledPublishAt) : validationWarnings.join(' · '),
         pending: pending ? 'true' : 'false',
         canReview: ['draft', 'review'].includes(state), canApprove: state === 'review' && complete,
         canSchedule: state === 'approved',
@@ -12097,7 +12320,7 @@ class Component extends DCLogic {
       name: p.name, brand: p.brand, cat: p.cat, format: p.format, sku: p.sku, band: p.band, catDot: catDot(p.cat, 9),
       summary: (p.content && p.content.shortDescription) || 'Product identity and release state are available; product education has not yet been published from the Portal.',
       imageUrl: p.content && p.content.imageUrl || '', hasImage: !!(p.content && p.content.imageUrl), noImage: !(p.content && p.content.imageUrl),
-      releaseLabel: p.oos && p.source === 'Canix' ? 'ALLOCATED · INTERNAL ONLY' : p.preorder ? 'PRE-ORDER · AWAITING RELEASE' : p.source === 'Canix' ? 'CANIX RELEASED' : loc.demo ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
+      releaseLabel: p.oos && p.source === 'Canix' ? 'ALLOCATED · INTERNAL ONLY' : p.preorder ? 'PRE-ORDER · AWAITING RELEASE' : p.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
       isFav: s.favs.indexOf(p.id) !== -1,
       favStyle: 'background:transparent;border:1px solid rgba(23,14,11,.25);padding:8px 10px;font:700 12px Archivo,sans-serif;cursor:pointer;color:' + (s.favs.indexOf(p.id) !== -1 ? 'var(--ux-accent-text)' : 'var(--ux-muted)'),
       favLabel: s.favs.indexOf(p.id) !== -1 ? 'Saved' : 'Save',
@@ -12121,21 +12344,17 @@ class Component extends DCLogic {
     const canProposePricing = !!s.authUser && ['owner', 'buyer'].includes(role) && !s.impersonating;
     const canReviewPricing = canStaff('pricing.manage');
     const pricingProduct = catalogPool.find(item => item.id === s.pricingProduct) || catalogPool[0] || PRODUCTS[0];
-    const pricingScopedProposals = loc.demo
+    const pricingScopedProposals = demoMode
       ? s.pricingProposals.filter(row => row.demo || String(row.locationLicense || '').indexOf('DEMO-') === 0)
       : isInternal
         ? s.pricingProposals.filter(row => !row.demo && String(row.locationLicense || '').indexOf('DEMO-') !== 0)
         : s.pricingProposals.filter(row => row.locationLicense === loc.license && row.organization === this.actingOrg());
-    const pricingScopedPrices = loc.demo
+    const pricingScopedPrices = demoMode
       ? s.pricingPrices.filter(row => row.demo || String(row.locationLicense || '').indexOf('DEMO-') === 0)
       : isInternal
         ? s.pricingPrices.filter(row => !row.demo && String(row.locationLicense || '').indexOf('DEMO-') !== 0)
         : s.pricingPrices.filter(row => row.locationLicense === loc.license && row.organization === this.actingOrg());
-    const pricingDate = value => {
-      if (!value) return 'Date not recorded';
-      const date = new Date(value);
-      return isNaN(date.getTime()) ? String(value) : new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
-    };
+    const pricingDate = value => value ? formatDateUs(value) : 'Date not recorded';
     const pricingStateStyle = state => 'display:inline-block;font:700 9.5px ui-monospace,monospace;letter-spacing:.06em;padding:4px 7px;background:'
       + (state === 'pending' ? 'var(--ux-signal);color:#fff' : state === 'approved' ? 'var(--ux-accent);color:#fff' : 'var(--ux-surface);color:var(--ux-muted-strong)');
     const pricingProposals = pricingScopedProposals.map(row => ({
@@ -12296,7 +12515,7 @@ class Component extends DCLogic {
 
     const dashboardDemoLocations = new Set(this.availableLocations().filter(location => location.demo).map(location => location.id));
     const dashboardDemoInvoices = DEMO_INVOICES.filter(invoice => dashboardDemoLocations.has(invoice.loc));
-    const dashboardFinancial = loc.demo
+    const dashboardFinancial = demoMode
       ? {
           outstandingCents: dashboardDemoInvoices.filter(invoice => invoice.state !== 'Paid').reduce((sum, invoice) => sum + invoice.amount, 0),
           pastDueCents: dashboardDemoInvoices.filter(invoice => invoice.state === 'Past due').reduce((sum, invoice) => sum + invoice.amount, 0),
@@ -12308,14 +12527,9 @@ class Component extends DCLogic {
       ? MONEY(Number(dashboardFinancial.pastDueCents || 0)) + ' past due \u00b7 ' + Number(dashboardFinancial.openInvoiceCount || 0) + ' open'
       : s.financialError ? 'Last snapshot unavailable' : 'Loads from QuickBooks';
     const tiles = isInternal
-      ? loc.demo
-        ? [{ label: 'Orders', value: String(visibleOrders.length), note: 'Across available accounts' },
-           { label: 'Awaiting approval', value: String(pendingApproval.length), note: 'Buyer orders requiring review' },
-           { label: 'Released SKUs', value: '32', note: 'Stable Canix catalog snapshot' },
-           { label: 'Outstanding', value: dashboardOutstanding, note: dashboardFinanceNote }]
-        : [{ label: 'Live orders', value: String(visibleOrders.length), note: 'Across production accounts' },
+      ? [{ label: 'Live orders', value: String(visibleOrders.length), note: 'Across production accounts' },
            { label: 'Awaiting approval', value: String(pendingApproval.length), note: 'At the store, not with us' },
-           { label: 'Released SKUs', value: String(liveCatalog.filter(item => item.releaseVerified).length || seedCatalog.filter(item => !item.oos).length), note: s.inventoryLoaded ? 'Projected from current Canix packages' : 'Catalog preview until Canix loads' },
+           { label: 'Released SKUs', value: String(liveCatalog.filter(item => item.releaseVerified).length), note: s.inventoryLoaded ? 'Projected from current Canix packages' : 'Load Canix inventory' },
            { label: 'Outstanding', value: dashboardOutstanding, note: dashboardFinanceNote }]
       : role === 'owner'
         ? [{ label: 'Orders, this location', value: String(visibleOrders.length), note: 'Placed through the portal' },
@@ -12352,12 +12566,7 @@ class Component extends DCLogic {
     }));
 
     const dashRows = isInternal
-      ? loc.demo
-        ? [{ a: 'Demo Riverside', b: 'Past-due account blocks new submissions', c: 'DEMO-NY-EXEC-002', tag: 'FINANCIAL GATE', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ loc: 'l-demo-2', screen: 'cart' }) },
-           { a: 'DEMO-SO-1008', b: 'Every Buyer order needs Store Owner approval', c: 'Demo Riverside', tag: 'APPROVAL', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ loc: 'l-demo-2', order: 'DEMO-SO-1008', screen: 'order' }) },
-           { a: 'DEMO-SO-1009', b: 'Approved pre-order cannot process before Canix release', c: 'Demo Northgate', tag: 'RELEASE HOLD', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ loc: 'l-demo-3', order: 'DEMO-SO-1009', screen: 'order' }) },
-           { a: 'Demo Northgate', b: 'Expired license pauses ordering at one store only', c: 'DEMO-NY-EXEC-003', tag: 'LICENSE GATE', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ loc: 'l-demo-3', screen: 'cart' }) }]
-        : [{ a: 'Retailer account queue', b: 'Review connected QuickBooks accounts and store readiness', c: 'Account controls', tag: 'REVIEW', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'accounts' }) },
+      ? [{ a: 'Retailer account queue', b: 'Review connected QuickBooks accounts and store readiness', c: 'Account controls', tag: 'REVIEW', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'accounts' }) },
            { a: 'Orders needing movement', b: pendingApproval.length + ' awaiting store approval', c: 'Order queue', tag: 'ORDERS', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
            { a: 'Packages with no lot identifier', b: 'Tag used as lot identity', c: '1,161 packages', tag: 'INTEGRITY', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'qa' }) },
            { a: 'Cost coverage below threshold', b: 'Labor cost effectively unpopulated', c: '75% of packages', tag: 'BLOCKED', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ screen: 'economics' }) }]
@@ -13124,7 +13333,7 @@ class Component extends DCLogic {
             : 'background:#f4e8b8;color:var(--ux-ink)',
           verificationType: String(task.completionCheck || 'manual').toLowerCase() === 'manual' ? 'MANUAL EVIDENCE' : 'AUTOMATED CHECK',
           target: draft.dueOn || task.dueOn ? isoDateToUs(draft.dueOn !== undefined ? draft.dueOn : task.dueOn) : 'No target date set',
-          lastReviewed: task.updatedAt ? new Date(task.updatedAt).toLocaleDateString('en-US') : 'Not reviewed',
+          lastReviewed: task.updatedAt ? formatDateUs(task.updatedAt) : 'Not reviewed',
           evidence: evidenceRows.length + ' evidence · ' + comments.length + ' comments',
           durable: !!(s.readinessData && s.readinessData.canManageTasks),
           task, taskStatus: draft.status || task.status || 'not_started',
@@ -13573,7 +13782,7 @@ class Component extends DCLogic {
     const brandAgreementEvents = brandOpsAgreementEvents.map(event => ({
       action: String(event.action || '').replace(/^brand_agreement_/, '').replace(/_/g, ' ').toUpperCase(),
       reference: event.reference || 'Agreement record',
-      when: event.createdAt ? new Date(event.createdAt).toLocaleString('en-US') : ''
+      when: event.createdAt ? formatDateTimeUs(event.createdAt) : ''
     }));
     let brandSectionRows = brandSection ? brandSection.rows.map((label, index) => ({
       label, status: index === 0 ? 'DESIGNED' : 'NOT STARTED',
@@ -13697,7 +13906,7 @@ class Component extends DCLogic {
         .concat(brandOpsDistribution.map(milestone => ({ label: 'Shipment milestone',
           status: String(milestone.status || '').replace(/_/g, ' ').toUpperCase(),
           detail: [milestone.source_system ? 'Source: ' + milestone.source_system : null,
-            milestone.occurred_at ? new Date(milestone.occurred_at).toLocaleString('en-US') : null,
+            milestone.occurred_at ? formatDateTimeUs(milestone.occurred_at) : null,
             milestone.external_note, milestone.evidence_reference ? 'Approved evidence available' : null]
             .filter(Boolean).join(' · ') })));
       if (!brandSectionRows.length) brandSectionRows = [{ label: 'No scoped portal orders', status: 'CURRENT',
@@ -13831,10 +14040,10 @@ class Component extends DCLogic {
           + (item.status === 'completed' ? 'var(--ux-accent)' : item.status === 'waiting' ? 'var(--ux-signal-tint)' : 'var(--ux-surface)')
           + ';color:' + (item.status === 'completed' ? '#fff' : 'var(--ux-muted-strong)'),
         meta: [item.priority, item.assigned_department ? 'Owner: ' + item.assigned_department : null,
-          item.due_at ? 'Due ' + new Date(item.due_at).toLocaleDateString('en-US') : null,
-          item.updated_at ? 'Updated ' + new Date(item.updated_at).toLocaleString('en-US') : null].filter(Boolean).join(' · '),
+          item.due_at ? 'Due ' + formatDateUs(item.due_at) : null,
+          item.updated_at ? 'Updated ' + formatDateTimeUs(item.updated_at) : null].filter(Boolean).join(' · '),
         comments: comments.map(entry => ({ body: entry.body,
-          meta: (entry.created_by_email || 'Portal user') + ' · ' + new Date(entry.created_at).toLocaleString('en-US') })),
+          meta: (entry.created_by_email || 'Portal user') + ' · ' + formatDateTimeUs(entry.created_at) })),
         hasComments: comments.length > 0, comment,
         onComment: event => this.setState(current => ({ brandSupportCommentDrafts: {
           ...(current.brandSupportCommentDrafts || {}), [item.id]: event.target.value } })),
@@ -13848,11 +14057,14 @@ class Component extends DCLogic {
     const brandUserRows = (s.brandUsers || []).map(user => {
       const roleValue = (s.brandUserDraftRoles || {})[user.membershipId] || user.memberRole;
       const canEdit = !!user.canEdit && !s.impersonating && !!(s.brandUsersMeta && s.brandUsersMeta.canManage);
+      const roleOptions = canEdit
+        ? brandUserRoleOptions
+        : BRAND_ROLE_DETAILS.filter(role => role.value === roleValue || brandAssignableRoles.has(role.value));
       return { ...user, roleValue, canEdit, cannotEdit: !canEdit, inactive: !user.active,
         statusLabel: String(user.status || 'unknown').toUpperCase(),
         statusStyle: 'display:inline-block;font:700 9px ui-monospace,monospace;letter-spacing:.05em;padding:3px 6px;background:'
           + (user.active ? 'var(--ux-accent)' : 'var(--ux-surface)') + ';color:' + (user.active ? '#fff' : 'var(--ux-muted-strong)'),
-        roleOptions: brandUserRoleOptions,
+        roleOptions,
         pending: s.brandUserPending === user.membershipId ? 'true' : 'false',
         saveLabel: s.brandUserPending === user.membershipId ? 'Saving…' : 'Save role',
         onRole: event => this.set({ brandUserDraftRoles: { ...(s.brandUserDraftRoles || {}),
@@ -13944,7 +14156,7 @@ class Component extends DCLogic {
       ...document, name: document.original_name,
       meta: [brandOnboardingSelected ? brandOnboardingSelected.title : null,
         Math.max(1, Math.round(Number(document.size_bytes || 0) / 1024)) + ' KB',
-        document.created_at ? new Date(document.created_at).toLocaleDateString('en-US') : null,
+        document.created_at ? formatDateUs(document.created_at) : null,
         'Malware scan passed'].filter(Boolean).join(' · '),
       onDownload: () => this.downloadBrandOnboardingDocument(document)
     }));
@@ -14263,7 +14475,7 @@ class Component extends DCLogic {
           + ' · ' + (order.handoff_state === 'portal_native' ? 'Portal-managed' : 'Historical workflow'),
         lines: lineCards,
         comments: comments.map(comment => ({ body: comment.body,
-          meta: (comment.created_by_email || 'Portal user') + ' · ' + new Date(comment.created_at).toLocaleString('en-US') })),
+          meta: (comment.created_by_email || 'Portal user') + ' · ' + formatDateTimeUs(comment.created_at) })),
         hasComments: comments.length > 0,
         canEditDraft: brandPoCanCreate && order.status === 'draft',
         onEditDraft: () => this.editBrandPurchaseOrder(order),
@@ -14612,7 +14824,7 @@ class Component extends DCLogic {
         freshnessLabel: 'FRESHNESS · ' + String(freshnessValue || 'unknown').replace(/_/g, ' ').toUpperCase(),
         healthBackground: healthConcern ? '#f7dfd8' : 'var(--ux-accent-wash)', healthColor: healthConcern ? 'var(--ux-signal-text)' : 'var(--ux-accent-text)',
         credentialLabel: String(system.credential_location || 'not_confirmed').replace(/_/g, ' '),
-        lastVerifiedLabel: system.last_verified_at ? new Date(system.last_verified_at).toLocaleString('en-US') : 'Not yet verified',
+        lastVerifiedLabel: system.last_verified_at ? formatDateTimeUs(system.last_verified_at) : 'Not yet verified',
         nextReviewOn: draft.nextReviewOn !== undefined ? draft.nextReviewOn : isoDateToUs(system.next_review_on || ''),
         evidenceNote: draft.evidenceNote !== undefined ? draft.evidenceNote : (system.evidence_note || ''),
         connectionOptions, healthOptions, freshnessOptions,
@@ -14632,7 +14844,7 @@ class Component extends DCLogic {
       return { ...change, systemLabel: system ? system.display_name : change.system_key,
         riskLabel: String(change.risk_level || '').toUpperCase(),
         statusLabel: String(change.status || '').replace(/_/g, ' ').toUpperCase(),
-        dueLabel: change.retrospective_due_at ? new Date(change.retrospective_due_at).toLocaleString('en-US') : 'Not recorded',
+        dueLabel: change.retrospective_due_at ? formatDateTimeUs(change.retrospective_due_at) : 'Not recorded',
         reviewNote: (s.emergencyReviewNotes || {})[change.id] || '', selfReviewBlocked,
         canReview: change.status === 'awaiting_retrospective' && !selfReviewBlocked && !s.internalWorkPending,
         onReviewNote: event => this.setState(current => ({ emergencyReviewNotes: { ...(current.emergencyReviewNotes || {}), [change.id]: event.target.value } })),
@@ -14858,7 +15070,7 @@ class Component extends DCLogic {
         { label: 'MISSING PRODUCT ID', value: Number(brandMarketplaceCounts.missingProductId || 0), note: 'Canix Item cannot reconcile' }
       ],
       brandMarketplaceSourceNote: brandMarketplaceSource.lastSuccessfulAt
-        ? 'SHOP SNAPSHOT · ' + new Date(brandMarketplaceSource.lastSuccessfulAt).toLocaleString('en-US')
+        ? 'SHOP SNAPSHOT · ' + formatDateTimeUs(brandMarketplaceSource.lastSuccessfulAt)
         : 'SHOP SNAPSHOT NOT AVAILABLE',
       brandSupplyLoading: s.brandSupplyLoading,
       brandSupplyHasError: !!s.brandSupplyError,
@@ -15777,7 +15989,9 @@ class Component extends DCLogic {
       goOrdersBtn: () => this.set({ screen: 'orders', order: null }),
       goValidation: () => canStaff('readiness.read') ? this.set({ screen: 'validation' }) : this.requirePermission('readiness.read', 'view release readiness'),
       goDashboard: () => this.set({ screen: 'dash' }),
-      isInternalAccessDenied: isInternal && !!INTERNAL_ROUTE_PERMISSION[s.screen] && !canStaff(INTERNAL_ROUTE_PERMISSION[s.screen]),
+      isInternalAccessDenied: isInternal && !!INTERNAL_ROUTE_PERMISSION[s.screen] && !(Array.isArray(INTERNAL_ROUTE_PERMISSION[s.screen])
+        ? INTERNAL_ROUTE_PERMISSION[s.screen].some(permission => canStaff(permission))
+        : canStaff(INTERNAL_ROUTE_PERMISSION[s.screen])),
 
       shellStyle: 'flex:1;display:flex;align-items:stretch;flex-wrap:wrap;flex-direction:' + (narrow ? 'column' : 'row'),
       kioskPairNote: 'A shared floor tablet is paired to a location by an urbanXtracts administrator. It has no personal login, which is why kiosk mode is education-only \u2014 nothing it can do requires attribution.',
@@ -15807,6 +16021,41 @@ class Component extends DCLogic {
       isDash: s.screen === 'dash' && !isBrandWorkspace, isCatalog: s.screen === 'catalog' && !isBrandWorkspace, isProduct: s.screen === 'product' && !isBrandWorkspace,
       isPricing: s.screen === 'pricing' && (canReviewPricing || ['owner', 'buyer'].includes(role)),
       isInventory: s.screen === 'inventory' && canStaff('inventory.read'),
+      isDataControls: s.screen === 'data-controls' && (canStaff('inventory.read') || canStaff('financials.read')),
+      dataControlLoading: s.dataControlLoading,
+      dataControlRefreshLabel: s.dataControlLoading ? 'Refreshing…' : 'Refresh controls',
+      onDataControlRefresh: () => this.loadDataControls(true),
+      dataControlHasError: !!s.dataControlError,
+      dataControlError: s.dataControlError || '',
+      dataControlSummary: [
+        { label: 'OWNER MAPPINGS', value: String(dataControlSummaryData.ownerMappings || 0), note: String(dataControlSummaryData.ownerPending || 0) + ' need review' },
+        { label: 'PACKAGE LOT OVERLAYS', value: String(dataControlSummaryData.packageLotOverlays || 0), note: String(dataControlSummaryData.packageLotPending || 0) + ' need review' },
+        { label: 'ITEM MAPPINGS', value: String(dataControlSummaryData.itemMappings || 0), note: String(dataControlSummaryData.itemPending || 0) + ' need review' },
+        { label: 'LOT REGISTER', value: String(dataControlSummaryData.lots || 0), note: String(dataControlSummaryData.lotsPending || 0) + ' need review' },
+        { label: 'CATALOG RECORDS', value: String(dataControlSummaryData.catalogRecords || 0), note: String(dataControlSummaryData.catalogPending || 0) + ' not published' }
+      ],
+      dataControlTabs: [['owners','Owner',dataControlData.ownerMappings],['package_lots','Package → Lot',dataControlData.packageLots],['items','Item mapping',dataControlData.itemMappings],['lots','Lot register',dataControlData.lots],['cost_objects','Cost Objects',dataControlData.costObjects],['catalog','Catalog readiness',dataControlData.catalog],['history','History',dataControlData.events]].map(([id,label,rows]) => ({
+        label, count: Array.isArray(rows) ? '(' + rows.length + ')' : '(0)', pressed: dataControlTab === id ? 'true' : 'false',
+        style: 'background:' + (dataControlTab === id ? 'var(--ux-ink)' : '#fff') + ';color:' + (dataControlTab === id ? 'var(--ux-ground)' : 'var(--ux-ink)') + ';border:0;border-right:1px solid rgba(23,14,11,.2);padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer;white-space:nowrap',
+        onPick: () => this.setDataControlTab(id)
+      })),
+      dataControlLayoutColumns: narrow ? '1fr' : 'minmax(360px,1.2fr) minmax(310px,.8fr)',
+      dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : 'CURRENT DECISIONS',
+      dataControlQueueTitle: ({ owners:'Canix Owner mappings', package_lots:'Package Lot ID overlays', items:'Item identity mappings', lots:'Portal lot register', cost_objects:'Cost Object decisions', catalog:'Catalog records', history:'Decision history' })[dataControlTab],
+      dataControlSearch: s.dataControlSearch,
+      onDataControlSearch: event => this.set({ dataControlSearch: event.target.value }),
+      dataControlRows,
+      dataControlEmpty: dataControlRows.length === 0,
+      dataControlCatalogMode: dataControlTab === 'catalog', dataControlHistoryMode: dataControlTab === 'history',
+      dataControlFormMode: !['catalog','history'].includes(dataControlTab),
+      dataControlFormKicker: dataControlMeta[0], dataControlFormTitle: dataControlMeta[1], dataControlFormDescription: dataControlMeta[2],
+      dataControlFields: formFieldSets[dataControlTab] || [],
+      dataControlSaveDisabled: s.dataControlPending || !(dataControlData.permissions && (dataControlTab === 'cost_objects' ? dataControlData.permissions.canManageCostObjects : dataControlData.permissions.canManageData)),
+      dataControlSaveOpacity: s.dataControlPending || !(dataControlData.permissions && (dataControlTab === 'cost_objects' ? dataControlData.permissions.canManageCostObjects : dataControlData.permissions.canManageData)) ? '.5' : '1',
+      dataControlSaveLabel: s.dataControlPending ? 'Saving…' : s.dataControlSelectedKey ? 'Save replacement decision' : 'Save decision',
+      onDataControlSave: () => this.saveDataControl(),
+      onDataControlClear: () => this.set({ dataControlSelectedKey: null, dataControlDraft: {}, dataControlError: null }),
+      goCatalogControls: () => this.set({ screen: 'catalog' }),
       onEconomicPartyAdd: () => this.openEconomicParty(null),
       onEconomicPartnerSync: () => this.syncEconomicPartners(),
       economicPartnerSyncPending: s.economicPartnerSyncPending,
@@ -16440,7 +16689,7 @@ class Component extends DCLogic {
       ].map(([n, label, note, screen]) => ({ n, label, note, onOpen: () => this.set({ screen,
         ...(screen === 'recall' ? { recallTag: loc.demo ? DEMO_RECALL_TAG : RECALL_TAG } : {}) }) })),
 
-      pricingTitle: canReviewPricing ? 'Store pricing approvals' : 'Store pricing',
+      pricingTitle: canReviewPricing ? 'Pricing and discounts' : 'Store pricing',
       pricingSub: canReviewPricing
         ? 'Review retailer proposals across licensed stores. Approval publishes the price only to the named store rate card and records the decision.'
         : 'Propose prices for the selected store. A proposal never changes catalog or ordering until Administrator, Operations, or Sales approves it.',
@@ -16539,15 +16788,16 @@ class Component extends DCLogic {
       orderPolicyHasError: !!s.orderPoliciesError,
       orderPolicyError: s.orderPoliciesError || '',
 
-      catalogSub: loc.demo
+      catalogSub: demoMode
         ? 'A stable snapshot of real product names is paired with synthetic prices, policies, and store scenarios. It is isolated from Canix, QuickBooks, Monday, and production orders so every presentation starts from the same baseline.'
         : (s.inventoryLoaded || s.catalogLoaded) && liveCatalog.length
           ? 'Current available count-based inventory projected from Canix, with released and pre-order products clearly separated. Canix remains the inventory source of truth.'
         : (s.inventoryLoading || s.catalogLoading)
           ? 'Loading the current Canix package catalog…'
           : s.catalogError
-            ? 'The Canix catalog is temporarily unavailable. Clearly-labelled demo products remain visible for walkthroughs.'
-            : 'Demo catalog shown until the authenticated Canix inventory feed loads.',
+            ? 'The production Canix catalog is temporarily unavailable. No demo products are substituted.'
+            : 'No production catalog is available yet. Load Canix inventory or use the explicit executive-demo account.',
+      showShoppingCatalog: !isInternal,
       query: s.query, onQuery: e => { if (!s.query && e.target.value) this.bump(m => ({ searches: m.searches + 1 })); this.set({ query: e.target.value }); },
       catFilters: catalogCategories.map(c => ({
         label: c,
@@ -16618,7 +16868,7 @@ class Component extends DCLogic {
       pdName: product.name, pdBrand: product.brand, pdCat: product.cat, pdCatDot: catDot(product.cat, 9), pdFormat: product.format,
       pdSku: product.sku, pdStrain: product.strain, pdBand: product.band,
       pdImageUrl: productContent.imageUrl || '', pdHasImage: !!productContent.imageUrl, pdNoImage: !productContent.imageUrl,
-      pdReleaseLabel: product.source === 'CanixPreview' ? 'PORTAL DRAFT PREVIEW' : product.oos && product.source === 'Canix' ? 'ALLOCATED · NOT ORDERABLE' : product.preorder ? 'PRE-ORDER · AWAITING RELEASE' : product.source === 'Canix' ? 'CANIX RELEASED' : loc.demo ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
+      pdReleaseLabel: product.source === 'CanixPreview' ? 'PORTAL DRAFT PREVIEW' : product.oos && product.source === 'Canix' ? 'ALLOCATED · NOT ORDERABLE' : product.preorder ? 'PRE-ORDER · AWAITING RELEASE' : product.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
       pdDesc: productContent.longDescription || productContent.shortDescription || (product.source === 'CanixPreview'
         ? 'This preview reflects the current Portal-authored draft. Inventory availability, pricing, release status, and lot allocation are not implied.'
         : product.source === 'Canix'
@@ -16656,12 +16906,12 @@ class Component extends DCLogic {
             : 'Canix has not supplied a case quantity; eaches are currently allowed.')),
 
       pdLots: product.lots.map((l, i) => ({
-        tag: '…' + l.tag.slice(-10), packaged: l.packaged,
+        tag: '…' + l.tag.slice(-10), packaged: formatDateUs(l.packaged) || 'Not recorded',
         style: 'text-align:left;background:' + (s.lot === i ? '#fff' : 'transparent') + ';border:1px solid ' + (s.lot === i ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') +
           ';border-left:3px solid ' + (s.lot === i ? 'var(--ux-accent)' : 'transparent') + ';padding:11px 14px;cursor:pointer',
         onPick: () => this.set({ lot: i })
       })),
-      lotTag: lot.tag, lotPackaged: lot.packaged,
+      lotTag: lot.tag, lotPackaged: formatDateUs(lot.packaged) || 'Not recorded',
       lotBatch: lot.packageId ? 'Canix package ' + lot.packageId + ' — the compliance tag anchors traceability' : 'Not recorded for this package — the compliance tag is the lot identity',
       lotTest: lot.lab || 'Demo lab result not connected',
       lotRelease: product.source === 'CanixPreview' ? 'Draft preview · not a release decision' : product.releaseVerified ? 'Released from current Canix package state' : product.preorder ? 'Awaiting passing lab result · preorder only' : 'Demo catalog release',
@@ -16669,8 +16919,8 @@ class Component extends DCLogic {
         : lot.hasCoa ? 'Canix reports that a COA is present, but no HTTPS document URL was returned.'
         : product.source === 'CanixPreview' ? 'COA details are not available in a catalog draft preview.'
         : product.source !== 'Canix' ? 'Synthetic certificate data for the isolated demonstration catalog.' : 'No COA pointer is present in the current Canix package response.',
-      coaAvailable: product.source !== 'CanixPreview' && (!!lot.hasCoa || !!lotCoa.documentUrl || lotAnalytes.length > 0 || product.source !== 'Canix'),
-      coaUnavailable: product.source === 'CanixPreview' || (!lot.hasCoa && !lotCoa.documentUrl && !lotAnalytes.length && product.source === 'Canix'),
+      coaAvailable: /^https:\/\//i.test(String(lotCoa.documentUrl || '')),
+      coaUnavailable: !/^https:\/\//i.test(String(lotCoa.documentUrl || '')),
       coaDocumentAvailable: !!lotCoa.documentUrl,
       coaDocumentUnavailable: !lotCoa.documentUrl,
       coaUrl: lotCoa.documentUrl || '',
@@ -16689,6 +16939,7 @@ class Component extends DCLogic {
       openCoa: () => this.set({ screen: 'coa' }),
       backToCatalog: () => this.set({ screen: 'catalog' }),
       backToProduct: () => this.set({ screen: 'product' }),
+      showProductPerformance: !isKioskRole,
 
       cartSub: licenseBlocked ? 'This location cannot submit while its license record is expired.' : arBlocked ? 'This location cannot submit while its balance is past due — the check runs here, not at shipping.' : 'Each line uses the approved rate for this store. Review before submitting.',
       cartEmpty: cart.length === 0, cartHasLines: cart.length > 0,
@@ -17530,6 +17781,20 @@ class Component extends DCLogic {
       itGovernanceCards: IT_ACCESS_GOVERNANCE,
       itReviewCadence: IT_ACCESS_REVIEW_CADENCE,
       itHeldAutomations: IT_HELD_AUTOMATIONS,
+      showAdminControlLinks: isInternal && s.screen === 'admin' && !s.impersonating
+        && (canStaff('notifications.manage') || canStaff('readiness.read')),
+      adminControlLinks: [
+        ...(canStaff('notifications.manage') ? [{
+          label: 'Notification delivery',
+          note: 'Manage templates, recipients, delivery status, suppressions, and sender capacity.',
+          onOpen: () => this.set({ screen: 'communications' })
+        }] : []),
+        ...(canStaff('readiness.read') ? [{
+          label: 'Release evidence',
+          note: 'Review controlled readiness tasks, supporting evidence, and unresolved release blockers.',
+          onOpen: () => this.set({ screen: 'validation' })
+        }] : [])
+      ],
       showAccessReviews: s.role === 'internal' && this.hasPermission('users.manage') && accessReviewRows.length > 0,
       accessReviewRows,
       auOpen: s.auOpen, auClosed: !s.auOpen,

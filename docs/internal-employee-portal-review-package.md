@@ -215,9 +215,11 @@ The Internal Portal should reuse the existing UX OS pattern:
 
 5. **Monday.com history and migration layer**
    - Existing Monday records should be preserved.
+   - The migration target is a Monday-compatible UX OS Boards layer that copies board structure, records, comments, updates, files, automations, dashboards, permissions evidence, and source identifiers into the Portal without deleting Monday data.
    - New portal-native workflows should stay in UX OS.
-   - Monday data may remain as read-only history during migration.
+   - Monday data may remain as read-only history, a source-labelled mirror, or a parallel-run source during migration.
    - Store onboarding dependencies remain on hold until Store strategy is reactivated.
+   - Detailed planning lives in `docs/monday-compatible-workspaces-migration-plan.md`.
 
 6. **Notification layer**
    - Resend remains the controlled email notification path.

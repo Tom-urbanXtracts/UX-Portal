@@ -41,8 +41,8 @@ export function purchaseApprovalRoute(amount: number): PurchaseApprovalRoute {
     throw new Error("Purchase amount must be greater than zero.");
   }
   if (amount <= 500) return { tier: "eric_500", authority: "Eric Stewart" };
-  if (amount < 3000) {
-    return { tier: "leadership_2999", authority: "Omeed / Jonathan / Drew" };
+  if (amount <= 3000) {
+    return { tier: "leadership_2999", authority: "Omeed, Drew or Jonathan" };
   }
   return { tier: "eran_3000", authority: "Eran" };
 }
