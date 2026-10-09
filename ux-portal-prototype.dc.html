@@ -6171,6 +6171,12 @@ class Component extends DCLogic {
       .then(({ ok, status, payload }) => {
         if (!ok) throw new Error((payload && payload.error) || ('Canix Item Master endpoint returned ' + status + '.'));
         const sync = payload && payload.sync ? payload.sync : {};
+        if (sync.skipped && sync.reason === 'already_running') throw new Error('A recent Canix Item Master sync is still running. Try again after it completes.');
+        if (sync.skipped && sync.reason === 'fresh') {
+          this.set({ itemMasterSyncPending: false, toast: 'The Canix Item Master is already current.', toastKind: 'CURRENT' });
+          this.loadInventory();
+          return;
+        }
         this.set({ itemMasterSyncPending: false, toast: Number(sync.items || 0).toLocaleString('en-US')
           + ' Canix Item Master record(s) synchronized.', toastKind: 'SYNCED' });
         this.loadInventory();
@@ -6336,6 +6342,7 @@ class Component extends DCLogic {
       costObjectId: record.cost_object_id || '', note: record.decision_note || ''
     } : {};
     const key = record.canix_owner_id || record.canix_package_id || record.canix_item_id || record.lot_id || record.id;
+    draft._hasExistingDecision = Boolean(record && record.source_system);
     this.set({ dataControlSelectedKey: String(key || ''), dataControlDraft: draft, dataControlError: null });
   }
 
@@ -12016,9 +12023,9 @@ class Component extends DCLogic {
       : dataControlTab === 'catalog' ? ('Canix Item ' + row.canix_item_id)
       : ((row.control_type || 'Decision') + ' · ' + (row.control_key || row.id));
     const dataControlSecondary = row => dataControlTab === 'owners'
-      ? ('Owner ' + row.canix_owner_id + ' · ' + (row.ownership_code || 'classification pending'))
-      : dataControlTab === 'package_lots' ? ((row.compliance_tag || 'No compliance tag') + ' · ' + (row.lot_id || 'Lot ID not set'))
-      : dataControlTab === 'items' ? ('Canix ' + row.canix_item_id + ' · ' + (row.canix_brand_name || 'Brand not recorded') + ' · ' + (row.portal_sku_reference || 'SKU mapping pending'))
+      ? ('Owner ' + row.canix_owner_id + ' · ' + Number(row.package_count || 0) + ' current packages · ' + (row.ownership_code || 'classification pending'))
+      : dataControlTab === 'package_lots' ? ((row.compliance_tag || 'No compliance tag') + ' · ' + (row.canix_item_name || 'Item not recorded') + ' · ' + (row.source_lot_status === 'missing' ? 'Lot ID missing in Canix' : row.source_lot_status === 'approved' ? 'Source Lot ID approved' : row.source_lot_status === 'not_in_current_snapshot' ? 'Historical overlay' : (row.source_lot_id || row.lot_id || 'Lot ID') + ' needs register approval'))
+      : dataControlTab === 'items' ? ('Canix ' + row.canix_item_id + ' · ' + (row.canix_brand_name || 'Brand not recorded') + ' · ' + (row.canix_active === false ? 'Inactive source item' : 'Active source item') + ' · ' + (row.portal_sku_reference || 'SKU mapping pending'))
       : dataControlTab === 'lots' ? ((row.ownership_code || 'Ownership pending') + ' · ' + (row.uom_code || 'UOM not set') + ' · ' + (row.cost_object_candidate || 'Cost Object pending'))
       : dataControlTab === 'cost_objects' ? ((row.cost_object_id || 'No assigned code') + ' · ' + (row.decided_by_email || 'Not decided'))
       : dataControlTab === 'catalog' ? ('Completeness ' + Number(row.completeness_score || 0) + '% · ' + (row.publication_state === 'published' ? ('Published ' + formatDate(row.updated_at)) : row.approved_at ? ('Approved ' + formatDate(row.approved_at)) : 'Not published'))
@@ -16028,9 +16035,9 @@ class Component extends DCLogic {
       dataControlHasError: !!s.dataControlError,
       dataControlError: s.dataControlError || '',
       dataControlSummary: [
-        { label: 'OWNER MAPPINGS', value: String(dataControlSummaryData.ownerMappings || 0), note: String(dataControlSummaryData.ownerPending || 0) + ' need review' },
-        { label: 'PACKAGE LOT OVERLAYS', value: String(dataControlSummaryData.packageLotOverlays || 0), note: String(dataControlSummaryData.packageLotPending || 0) + ' need review' },
-        { label: 'ITEM MAPPINGS', value: String(dataControlSummaryData.itemMappings || 0), note: String(dataControlSummaryData.itemPending || 0) + ' need review' },
+        { label: 'CANIX OWNERS', value: String(dataControlSummaryData.ownerMappings || 0), note: String(dataControlSummaryData.ownerPending || 0) + ' need review · ' + String(dataControlSummaryData.packagesMissingOwner || 0) + ' packages missing Owner' },
+        { label: 'PACKAGE LOT GAPS', value: String(dataControlSummaryData.packageLotOverlays || 0), note: String(dataControlSummaryData.packageLotPending || 0) + ' need review' },
+        { label: 'CANIX ITEMS', value: String(dataControlSummaryData.itemMappings || 0), note: String(dataControlSummaryData.itemPending || 0) + ' need mapping review' },
         { label: 'LOT REGISTER', value: String(dataControlSummaryData.lots || 0), note: String(dataControlSummaryData.lotsPending || 0) + ' need review' },
         { label: 'CATALOG RECORDS', value: String(dataControlSummaryData.catalogRecords || 0), note: String(dataControlSummaryData.catalogPending || 0) + ' not published' }
       ],
@@ -16040,7 +16047,7 @@ class Component extends DCLogic {
         onPick: () => this.setDataControlTab(id)
       })),
       dataControlLayoutColumns: narrow ? '1fr' : 'minmax(360px,1.2fr) minmax(310px,.8fr)',
-      dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : 'CURRENT DECISIONS',
+      dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : ['owners','package_lots','items'].includes(dataControlTab) ? 'LIVE CANIX SOURCE + PORTAL DECISIONS' : 'CURRENT DECISIONS',
       dataControlQueueTitle: ({ owners:'Canix Owner mappings', package_lots:'Package Lot ID overlays', items:'Item identity mappings', lots:'Portal lot register', cost_objects:'Cost Object decisions', catalog:'Catalog records', history:'Decision history' })[dataControlTab],
       dataControlSearch: s.dataControlSearch,
       onDataControlSearch: event => this.set({ dataControlSearch: event.target.value }),
@@ -16052,7 +16059,7 @@ class Component extends DCLogic {
       dataControlFields: formFieldSets[dataControlTab] || [],
       dataControlSaveDisabled: s.dataControlPending || !(dataControlData.permissions && (dataControlTab === 'cost_objects' ? dataControlData.permissions.canManageCostObjects : dataControlData.permissions.canManageData)),
       dataControlSaveOpacity: s.dataControlPending || !(dataControlData.permissions && (dataControlTab === 'cost_objects' ? dataControlData.permissions.canManageCostObjects : dataControlData.permissions.canManageData)) ? '.5' : '1',
-      dataControlSaveLabel: s.dataControlPending ? 'Saving…' : s.dataControlSelectedKey ? 'Save replacement decision' : 'Save decision',
+      dataControlSaveLabel: s.dataControlPending ? 'Saving…' : s.dataControlSelectedKey && s.dataControlDraft && s.dataControlDraft._hasExistingDecision ? 'Save replacement decision' : 'Save decision',
       onDataControlSave: () => this.saveDataControl(),
       onDataControlClear: () => this.set({ dataControlSelectedKey: null, dataControlDraft: {}, dataControlError: null }),
       goCatalogControls: () => this.set({ screen: 'catalog' }),
