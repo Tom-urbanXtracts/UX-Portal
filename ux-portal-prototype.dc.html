@@ -2686,13 +2686,10 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <sc-if value="{{ financeApprovalPolicyVisible }}" hint-placeholder-val="{{ false }}">
 <section style="border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin:0 0 24px;padding:15px 0">
-<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:13px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">FINANCE WORKFLOW BASELINE</div><h2 style="font:800 19px Archivo,sans-serif;margin:0">Purchase approval and QuickBooks controls</h2></div><span style="font:700 8.5px ui-monospace,monospace;background:var(--ux-surface);padding:5px 7px">READ ONLY QBO</span></div>
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:13px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">FINANCE WORKFLOW BASELINE</div><h2 style="font:800 19px Archivo,sans-serif;margin:0">Purchase Approval and QuickBooks Controls</h2></div><span style="font:700 8.5px ui-monospace,monospace;background:var(--ux-surface);padding:5px 7px">READ ONLY QBO</span></div>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;margin-bottom:13px">
 <sc-for list="{{ financeApprovalRules }}" as="rule" hint-placeholder-count="4"><article style="background:#fff;border:1px solid rgba(23,14,11,.18);padding:12px 13px;min-height:126px"><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ rule.band }}</div><div style="font:800 13.5px Archivo,sans-serif;line-height:1.25;margin-bottom:6px">{{ rule.approver }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted);margin-bottom:6px">{{ rule.backup }}</div><div style="font-size:10.5px;line-height:1.45;color:var(--ux-muted-strong)">{{ rule.routing }}</div></article></sc-for>
 </div>
-<ul style="margin:0;padding-left:18px;display:grid;gap:6px;font-size:11.5px;line-height:1.5;color:var(--ux-muted-strong)">
-<sc-for list="{{ financeControlRules }}" as="rule" hint-placeholder-count="5"><li>{{ rule }}</li></sc-for>
-</ul>
 </section>
 </sc-if>
 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:0 0 24px">
@@ -2703,8 +2700,8 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <button type="button" onClick="{{ onFinancialRefresh }}" style="border:0;background:var(--ux-ink);color:var(--ux-ground);padding:10px 13px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ financialRefreshLabel }}</button>
 </div>
 <div style="display:flex;flex-wrap:wrap;border-top:2px solid rgba(23,14,11,.4);border-bottom:2px solid rgba(23,14,11,.4);margin-bottom:28px">
-<div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Outstanding</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arOutstanding }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">Across {{ arOpenCount }} unpaid invoices.</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Past due</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arOverdue }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">Shown for visibility; it does not set an order hold.</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Payments received</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arPaidAmount }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">Across {{ arPaymentCount }} recorded payments.</div></div><div style="padding:14px 0 14px 18px;flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Credit limit</div><div style="font:800 22px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ arCreditLimit }}</div><div style="font-size:11.5px;color:var(--ux-muted)">Allowed to remain blank when QuickBooks does not return one.</div></div></div>
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">By location</h2>
+<div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Outstanding</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arOutstanding }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ arOpenCount }} unpaid invoices</div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Past due</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arOverdue }}</span></div></div><div style="padding:14px 18px 14px 0;border-right:1px solid rgba(23,14,11,.14);flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Payments received</div><div style="font:800 26px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px"><span style="background:transparent">{{ arPaidAmount }}</span></div><div style="font-size:11.5px;color:var(--ux-muted)">{{ arPaymentCount }} payments</div></div><div style="padding:14px 0 14px 18px;flex:1;min-width:150px"><div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:6px">Credit limit</div><div style="font:800 22px/1 Archivo,sans-serif;letter-spacing:-.02em;margin-bottom:5px">{{ arCreditLimit }}</div></div></div>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:0 0 12px">By Location</h2>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1fr .7fr .7fr .8fr .6fr 1fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Location</div><div>Billed</div><div>Outstanding</div><div>Past due</div><div>Paid</div><div>Payment records</div>
@@ -2721,6 +2718,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-for>
 </div>
 <h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Invoices</h2>
+<sc-if value="{{ financialHasInvoices }}" hint-placeholder-val="{{ true }}">
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:.8fr .9fr .7fr .7fr .7fr .7fr .65fr 1fr;gap:12px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Invoice</div><div>Location</div><div>Issued</div><div>Due</div><div>Original</div><div>Balance</div><div>State</div><div>Actions</div>
@@ -2738,19 +2736,16 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Payment history</h2>
+</sc-if>
+<sc-if value="{{ financialNoInvoices }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 0;color:var(--ux-muted);font-size:13px">No invoices match this store filter.</div></sc-if>
+<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">Payment History</h2>
+<sc-if value="{{ financialHasPayments }}" hint-placeholder-val="{{ true }}">
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:.8fr 1fr .8fr .8fr .8fr;gap:14px;padding:9px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)"><div>Payment</div><div>Location</div><div>Date</div><div>Amount</div><div>Method</div></div>
 <sc-for list="{{ arPayments }}" as="p" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:.8fr 1fr .8fr .8fr .8fr;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font:500 12px ui-monospace,Menlo,monospace;font-weight:600">{{ p.id }}</div><div>{{ p.loc }}</div><div style="color:var(--ux-muted)">{{ p.date }}</div><div style="font-weight:600">{{ p.amount }}</div><div style="color:var(--ux-muted)">{{ p.method }}</div></div></sc-for>
 </div>
+</sc-if>
 <sc-if value="{{ financialNoPayments }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 0;color:var(--ux-muted);font-size:13px">No payment records match this store filter.</div></sc-if>
-<h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">How financial visibility affects ordering</h2>
-<div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Separate controls</div><div>A non-zero or past-due QuickBooks balance is displayed here but never creates an order hold by itself. The portal&rsquo;s explicit store ordering status remains the only receivables-related gate.</div></div>
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Buyer scope</div><div>Buyers see invoices and payments only for stores assigned to their profile. A store without a direct QuickBooks customer mapping stays blank instead of falling back to an organisation-wide customer and leaking another store.</div></div>
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payments</div><div>Payment collection stays outside UX OS through the approved cannabis-banking process. The portal displays the latest QuickBooks payment history but never accepts card or bank details and never creates a payment transaction.</div></div>
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Source</div><div>Every live figure comes from the last fully successful server-side QuickBooks snapshot. A failed refresh leaves the prior complete snapshot visible with a stale warning.</div></div>
-</div>
 </sc-if>
 
 <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
@@ -3409,8 +3404,9 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 
 <sc-if value="{{ isLocations }}" hint-placeholder-val="{{ false }}">
 <div>
-<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store performance</h1>
-<p style="font-size:14px;color:var(--ux-muted);margin:0 0 24px;max-width:74ch">Wholesale ordering, revenue, payment behavior, product mix and reorder frequency side by side. Retail POS sell-through remains explicitly unavailable because urbanXtracts does not receive store sales data.</p>
+<h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Store Performance</h1>
+<sc-if value="{{ locationPerformanceEmpty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:18px;padding:16px;border:1px solid rgba(23,14,11,.18);font-size:13px;color:var(--ux-muted)">No store data is available.</div></sc-if>
+<sc-if value="{{ locationPerformanceAvailable }}" hint-placeholder-val="{{ true }}">
 <div style="border-top:2px solid rgba(23,14,11,.4)">
 <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:16px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.2);font:600 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)">
 <div>Metric</div><div>{{ locCompareA }}</div><div>{{ locCompareB }}</div><div>{{ locCompareC }}</div>
@@ -3422,7 +3418,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 </sc-for>
 </div>
-<div style="margin-top:20px;font-size:12px;color:var(--ux-muted);line-height:1.6;max-width:78ch">{{ locationPerformanceNote }}</div>
+</sc-if>
 </div>
 </sc-if>
 
@@ -3634,10 +3630,6 @@ const isDemoOrganization = value => [DEMO_ORG, LEGACY_DEMO_ORG].includes(String(
 
 const USERS = [
   { name: 'Toni Alvarez', email: 'toni@urbanxtracts.com', org: 'urbanXtracts', role: 'Account management', locs: 'Assigned accounts', last: '24 Aug 2026' }
-  ,{ name: 'Alex Morgan', email: 'owner@executive-demo.invalid', org: DEMO_ORG, role: 'Store owner', locs: 'All 3 locations', last: 'Demo account' }
-  ,{ name: 'Jordan Lee', email: 'buyer@executive-demo.invalid', org: DEMO_ORG, role: 'Buyer', locs: 'Demo Downtown, Demo Riverside', last: 'Demo account' }
-  ,{ name: 'Maya Chen', email: 'budtender@executive-demo.invalid', org: DEMO_ORG, role: 'Budtender', locs: 'Demo Downtown', last: 'Demo account' }
-  ,{ name: 'Executive demo kiosk', email: 'device · demo pairing', org: DEMO_ORG, role: 'Kiosk device', locs: 'Demo Downtown', last: 'Demo device' }
 ];
 
 const SEED_AUDIT = [];
@@ -3677,35 +3669,16 @@ const CAT_HUE = {
 const catDot = (cat, size) => 'width:' + size + 'px;height:' + Math.round(size * 0.78) + 'px;flex:none;border-radius:' + size + 'px ' + size + 'px 0 0;background:' + (CAT_HUE[cat] || 'var(--ux-faint)');
 const CATS = ['All', 'Vape cartridge', 'Infused edible', 'Infused pre-roll', 'Packaged flower', 'Concentrate', 'Infused flower'];
 
-const LOCATIONS = [
-  { id: 'l-demo', name: 'Demo Downtown', license: 'DEMO-NY-EXEC-001', expired: false, pastDue: false,
-    demo: true, demoScenario: 'READY TO ORDER', qboCustomerId: 'qbo:customer:demo-001' },
-  { id: 'l-demo-2', name: 'Demo Riverside', license: 'DEMO-NY-EXEC-002', expired: false, pastDue: true,
-    demo: true, demoScenario: 'ACCOUNT HOLD + PAST DUE', qboCustomerId: 'qbo:customer:demo-001' },
-  { id: 'l-demo-3', name: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', expired: true, pastDue: false,
-    demo: true, demoScenario: 'EXPIRED LICENSE', qboCustomerId: 'qbo:customer:demo-001' }
-];
+const LOCATIONS = [];
+const EMPTY_LOCATION = {
+  id: '', name: 'No store assigned', license: '', expired: false, pastDue: false,
+  demo: false, qboCustomerId: null
+};
 
 const FLOW = ['Awaiting approval', 'Placed', 'Approved', 'Shipped', 'Received'];
 const INTERNAL_STATE = { 'Awaiting approval': 'draft', 'Placed': 'created', 'Approved': 'approved · filled', 'Shipped': 'shipped', 'Received': 'accepted', 'Flagged': 'canceled / returned' };
 
-const DEMO_SEED_ORDERS = [
-  { id: 'DEMO-SO-1007', loc: 'l-demo', placed: '31 Aug 2026', state: 'Received', demo: true,
-    history: { 'Placed': '28 Aug 2026', 'Approved': '28 Aug 2026', 'Shipped': '30 Aug 2026', 'Received': '31 Aug 2026' },
-    lines: [{ id: 'p4', lot: 0, qty: 24, price: 1360 }, { id: 'p6', lot: 0, qty: 50, price: 640 }] },
-  { id: 'DEMO-SO-1008', loc: 'l-demo-2', placed: '31 Aug 2026', state: 'Awaiting approval', demo: true,
-    ownerApprovalRequired: true, approvalThresholdCents: 0,
-    history: { 'Awaiting approval': '31 Aug 2026' },
-    lines: [{ id: 'p1', lot: 0, qty: 18, price: 1780 }] },
-  { id: 'DEMO-SO-1009', loc: 'l-demo-3', placed: '31 Aug 2026', state: 'Approved', demo: true,
-    ownerApprovalRequired: false, approvalThresholdCents: null, containsPreorder: true,
-    preorderProductIds: ['p12'], releaseHold: true,
-    history: { 'Placed': '31 Aug 2026', 'Approved': '31 Aug 2026' },
-    lines: [{ id: 'p12', lot: 0, qty: 12, price: 2140 }] },
-  { id: 'DEMO-SO-1010', loc: 'l-demo', placed: '30 Aug 2026', state: 'Flagged', demo: true,
-    history: { 'Placed': '30 Aug 2026', 'Flagged': '30 Aug 2026' }, exceptionReason: 'Store Owner declined the Buyer request',
-    lines: [{ id: 'p3', lot: 0, qty: 30, price: 1290 }] }
-];
+const DEMO_SEED_ORDERS = [];
 
 const SEED_ORDERS = DEMO_SEED_ORDERS.slice();
 
@@ -3754,36 +3727,9 @@ const VALIDATION = [
 
 const DOCS = [];
 
-const DEMO_DOCS = [
-  { name: 'Demo Downtown license.pdf', type: 'License record', dates: 'Synthetic current record', state: 'Accepted', loc: 'Demo Downtown' },
-  { name: 'Demo Northgate renewal.pdf', type: 'License renewal', dates: 'Synthetic expired-license scenario', state: 'In review', loc: 'Demo Northgate' },
-  { name: 'Demo insurance certificate.pdf', type: 'Insurance certificate', dates: 'Synthetic presentation record', state: 'Accepted', loc: 'All three demo stores' }
-];
+const DEMO_DOCS = [];
 
 const ONBOARDING = [
-  { id: 'demo-onboarding-complete', org: DEMO_ORG, dba: DEMO_ORG, legalEntity: 'Cannabis Store Demo LLC',
-    licenses: '3 demo stores · DEMO-NY-EXEC-001 through 003', stage: 6, stageKey: 'ready', workflowState: 'accepted',
-    retailerAccountId: 'demo-retailer-001', mondayItemId: 'DEMO-MONDAY-001', submittedAt: '2026-08-31T15:00:00Z',
-    ownerName: 'Alex Morgan', ownerEmail: 'owner@executive-demo.invalid',
-    stores: [
-      { name: 'Demo Downtown', license: 'DEMO-NY-EXEC-001', address: '101 Market Street, Demo, NY', quickbooksCustomerId: 'demo-001', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
-      { name: 'Demo Riverside', license: 'DEMO-NY-EXEC-002', address: '202 River Road, Demo, NY', quickbooksCustomerId: 'demo-001-child-2', licenseExpiresOn: '2027-08-31', qualificationStatus: 'qualified' },
-      { name: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', address: '303 North Avenue, Demo, NY', quickbooksCustomerId: 'demo-001-child-3', licenseExpiresOn: '2026-08-31', qualificationStatus: 'expired' }
-    ],
-    people: [
-      { id: 'demo-person-owner', role: 'owner', name: 'Alex Morgan', email: 'owner@executive-demo.invalid', accessStatus: 'active' },
-      { id: 'demo-person-buyer', role: 'buyer', name: 'Jordan Lee', email: 'buyer@executive-demo.invalid', storeLicense: 'DEMO-NY-EXEC-001, DEMO-NY-EXEC-002', accessStatus: 'active' },
-      { id: 'demo-person-budtender', role: 'budtender', name: 'Maya Chen', email: 'budtender@executive-demo.invalid', storeLicense: 'DEMO-NY-EXEC-001', accessStatus: 'active' }
-    ],
-    events: [
-      { toStage: 'intake', createdAt: '2026-08-31T15:00:00Z', note: 'Synthetic multi-store request accepted by the isolated demo workflow.' },
-      { toStage: 'qualification', createdAt: '2026-08-31T15:05:00Z', note: 'Three fictional licenses and QuickBooks identities were reviewed; Northgate is now an expired store-level hold.' },
-      { toStage: 'terms', createdAt: '2026-08-31T15:10:00Z', note: 'Demo commercial terms recorded without a live price publication.' },
-      { toStage: 'account_creation', createdAt: '2026-08-31T15:15:00Z', note: 'Synthetic retailer account linked.' },
-      { toStage: 'access', createdAt: '2026-08-31T15:20:00Z', note: 'Owner, Buyer, and Budtender access scoped to the demo stores.' },
-      { toStage: 'ready', createdAt: '2026-08-31T15:25:00Z', note: 'All demo gates passed; the organization is ready for an isolated test order.' }
-    ],
-    note: 'Synthetic end-to-end record: QuickBooks-linked organization, three reviewed stores with location-specific gates, owner profile, scoped buyer, store-assigned budtender and paired kiosk.' },
   { org: 'Cedar & Pine Provisions', licenses: '2 locations · OCM-RETL-24-000871, OCM-RETL-24-000872', stage: 5, note: 'Owner invited 21 Aug. Waiting on the owner to accept and add their buyers.' },
   { org: 'Harborline Cannabis Co.', licenses: '1 location · OCM-RETL-24-000904', stage: 3, note: 'Held at commercial terms — no per-account rate card record exists, so no price can be assigned.' },
   { org: 'Marigold Street Dispensary', licenses: '4 locations · 3 qualified, 1 pending', stage: 2, note: 'One license failed qualification against the state record. The other three proceed; that location cannot order.' },
@@ -4099,11 +4045,7 @@ const REP_BOOK = [
     seed: [] }
 ];
 
-const DELIVERY = {
-  'l-demo': { window: 'Executive demo · immediate', instructions: 'Synthetic fulfillment path. No shipment or external system write is created.', contact: 'Alex Morgan · demo owner' },
-  'l-demo-2': { window: 'Tuesdays, 10am to 2pm', instructions: 'Synthetic past-due account scenario. No shipment or external system write is created.', contact: 'Jordan Lee · demo buyer' },
-  'l-demo-3': { window: 'Fridays, 9am to noon', instructions: 'Synthetic expired-license and pre-order scenario. No shipment or external system write is created.', contact: 'Alex Morgan · demo owner' }
-};
+const DELIVERY = {};
 
 const PUBLIC_CODES = [
   { code: 'K7M2-QX48-RB91', tag: '1A4060300019F21000004182', product: 'Apple Motorbreath 1g Cart', packaged: '13 Aug 2026', tested: '11 Aug 2026', result: 'Passed', published: true },
@@ -4147,17 +4089,8 @@ const API_WITHHELD = [
   'Any part of another organisation'
 ];
 
-const DEMO_INVOICES = [
-  { id: 'DEMO-INV-1007', loc: 'l-demo', issued: '28 Aug 2026', due: '27 Sep 2026', amount: 64640, state: 'Paid', age: 0 },
-  { id: 'DEMO-INV-1005', loc: 'l-demo-2', issued: '1 Jul 2026', due: '31 Jul 2026', amount: 32040, state: 'Past due', age: 31 },
-  { id: 'DEMO-INV-1006', loc: 'l-demo-3', issued: '14 Aug 2026', due: '13 Sep 2026', amount: 18400, state: 'Open', age: 0 }
-];
-
-const DEMO_PAYMENTS = [
-  { id: 'DEMO-PMT-501', loc: 'l-demo', date: '31 Aug 2026', amount: 64640, method: 'ACH' },
-  { id: 'DEMO-PMT-497', loc: 'l-demo-2', date: '15 Aug 2026', amount: 28800, method: 'Check' },
-  { id: 'DEMO-PMT-488', loc: 'l-demo-3', date: '2 Aug 2026', amount: 58000, method: 'ACH' }
-];
+const DEMO_INVOICES = [];
+const DEMO_PAYMENTS = [];
 
 const CLAIMS = [
   { id: 'CLM-241', order: 'SO-23964', loc: 'l3', line: 'Hudson Valley Kush Badder 1g', reason: 'Short \u2014 18 of 20 received', raised: '12 Jul 2026', state: 'Resolved \u00b7 credited' },
@@ -4171,11 +4104,7 @@ const STORE_AUDIT = [
   { ts: '2 Aug 2026 09:14', actor: 'Marcus Reyes', action: 'Order submitted', subject: 'SO-24098', detail: 'Sent for approval under the buyer-submitted rule.' }
 ];
 
-const DEMO_STORE_AUDIT = [
-  { ts: '31 Aug 2026 21:15', actor: 'Alex Morgan', action: 'Price proposed', subject: 'Hudson Valley Kush Badder 1g · Demo Downtown', detail: 'Synthetic proposal awaiting internal publication approval.' },
-  { ts: '31 Aug 2026 18:05', actor: 'Jordan Lee', action: 'Order submitted', subject: 'DEMO-SO-1008', detail: 'Held for Store Owner approval under the Demo Riverside policy.' },
-  { ts: '30 Aug 2026 14:20', actor: 'urbanXtracts quality', action: 'Recall scenario prepared', subject: 'Demo tag …09021', detail: 'Synthetic impact rows only; no notice or external write.' }
-];
+const DEMO_STORE_AUDIT = [];
 
 const RECALL_TAG = '1A4060300019F21000003907';
 const DEMO_RECALL_TAG = '1A4060300018B44000009021';
@@ -4191,15 +4120,8 @@ const RECALL_CUSTODY = [
   { where: 'Allocated, not yet picked', qty: 20, note: 'Held against an unshipped order line; the allocation releases when the lot is withdrawn.' }
 ];
 
-const DEMO_RECALL_OTHER = [
-  { org: DEMO_ORG, loc: 'Demo Riverside', license: 'DEMO-NY-EXEC-002', qty: 12, order: 'DEMO-SO-1005', when: 'Received 27 Aug 2026', signed: 'Demo receiver', state: 'Delivered' },
-  { org: DEMO_ORG, loc: 'Demo Northgate', license: 'DEMO-NY-EXEC-003', qty: 8, order: 'DEMO-SO-1006', when: 'Shipped 30 Aug 2026', signed: '—', state: 'In transit' }
-];
-
-const DEMO_RECALL_CUSTODY = [
-  { where: 'Demo finished goods', qty: 16, note: 'Synthetic custody stock ready to quarantine without a live Canix write.' },
-  { where: 'Demo allocation, not picked', qty: 6, note: 'Synthetic allocation held before fulfillment.' }
-];
+const DEMO_RECALL_OTHER = [];
+const DEMO_RECALL_CUSTODY = [];
 
 const ONBOARDING_STAGES = ['Intake', 'Qualification', 'Commercial terms', 'Account creation', 'Access', 'Ready to order'];
 
@@ -4620,7 +4542,7 @@ function buildCanixCatalog(data) {
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const QUICKBOOKS_DEMO_ACCOUNTS = [
+const RETIRED_QUICKBOOKS_DEMO_ACCOUNTS = [
   { id: 'qbo:customer:demo-001', name: DEMO_ORG, company: DEMO_ORG, active: true,
     balance: 0, currency: 'USD', source: 'QuickBooks demo customer', portalStatus: 'ready_to_order', locations: 3,
     portalAccountId: 'demo-retailer-001', quickbooksCustomerId: 'demo-001', demo: true },
@@ -4629,15 +4551,17 @@ const QUICKBOOKS_DEMO_ACCOUNTS = [
   { id: 'qbo:customer:demo-003', name: 'Demo Inactive Retailer', company: 'Demo Inactive Retailer', active: false,
     balance: 0, currency: 'USD', source: 'QuickBooks demo customer', portalStatus: 'INACTIVE IN QUICKBOOKS', locations: 1, demo: true }
 ];
+const QUICKBOOKS_DEMO_ACCOUNTS = [];
 
-const DEMO_PRICE_PROPOSALS = [
+const RETIRED_DEMO_PRICE_PROPOSALS = [
   { id: 'demo-price-proposal-001', organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-001',
     locationName: 'Demo Downtown', productId: 'p11', productName: 'Hudson Valley Kush Badder 1g', sku: 'UXTC-000018',
     currentPriceCents: 2900, proposedPriceCents: 2750, note: 'Demo retailer proposal awaiting internal publication approval.',
     state: 'pending', proposedByEmail: 'owner@executive-demo.invalid', proposedByRole: 'owner', createdAt: '2026-08-31T21:15:00-04:00', demo: true }
 ];
+const DEMO_PRICE_PROPOSALS = [];
 
-const DEMO_STORE_PRICES = [
+const RETIRED_DEMO_STORE_PRICES = [
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-001', locationName: 'Demo Downtown',
     productId: 'p4', productName: 'New York Sunrise Gummies 10ct', sku: 'WRAE-000007', priceCents: 1360,
     publishedAt: '2026-08-31T19:45:00-04:00', sourceProposalId: 'demo-price-approved-001', demo: true },
@@ -4648,8 +4572,9 @@ const DEMO_STORE_PRICES = [
     productId: 'p12', productName: 'Purple Dream Infused Flower 3.5g', sku: 'BLWI-000006', priceCents: 2140,
     publishedAt: '2026-08-31T19:55:00-04:00', sourceProposalId: 'demo-price-approved-003', demo: true }
 ];
+const DEMO_STORE_PRICES = [];
 
-const DEMO_ORDER_POLICIES = [
+const RETIRED_DEMO_ORDER_POLICIES = [
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-001', locationName: 'Demo Downtown',
     thresholdCents: 50000, mode: 'above_threshold', enforceCaseQuantity: false, minimumOrderCents: 25000, leadTimeDays: 3, updatedAt: '2026-08-31T20:00:00-04:00', demo: true },
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-002', locationName: 'Demo Riverside',
@@ -4657,8 +4582,9 @@ const DEMO_ORDER_POLICIES = [
   { organization: DEMO_ORG, locationLicense: 'DEMO-NY-EXEC-003', locationName: 'Demo Northgate',
     thresholdCents: null, mode: 'disabled', enforceCaseQuantity: false, minimumOrderCents: null, leadTimeDays: null, updatedAt: '2026-08-31T20:00:00-04:00', demo: true }
 ];
+const DEMO_ORDER_POLICIES = [];
 
-const DEMO_TOUR_STEPS = [
+const RETIRED_DEMO_TOUR_STEPS = [
   { screen: 'dash', loc: 'l-demo', title: 'One organization, three store conditions',
     body: 'Start with the organization-wide view. Demo Downtown is ready to order, Demo Riverside demonstrates a past-due gate, and Demo Northgate demonstrates an expired license.',
     prompt: 'Compare available inventory, open orders, and the location selector without touching production data.' },
@@ -4681,6 +4607,7 @@ const DEMO_TOUR_STEPS = [
     body: 'Finish with the synthetic QuickBooks customer, its three licensed stores, role assignments, onboarding record, and isolated reset control.',
     prompt: 'Open Cannabis Store (DEMO), confirm all three stores and contacts, then finish for unrestricted free roam.' }
 ];
+const DEMO_TOUR_STEPS = [];
 
 // Supabase puts the recovery token in the URL fragment, never the query string,
 // so it never reaches whatever server hosts this file. Read it once, at load.
@@ -5134,6 +5061,7 @@ class Component extends DCLogic {
   set(patch) { this.setState(patch); }
 
   showDemoTourStep(index) {
+    if (!DEMO_TOUR_STEPS.length) return;
     const safe = Math.max(0, Math.min(index, DEMO_TOUR_STEPS.length - 1));
     const step = DEMO_TOUR_STEPS[safe];
     this.set({ demoTourActive: true, demoTourStep: safe, screen: step.screen, loc: step.loc,
@@ -11587,7 +11515,7 @@ class Component extends DCLogic {
   }
   loc() {
     const allowed = this.availableLocations();
-    return allowed.find(l => l.id === this.state.loc) || allowed[0] || LOCATIONS[0];
+    return allowed.find(l => l.id === this.state.loc) || allowed[0] || LOCATIONS[0] || EMPTY_LOCATION;
   }
   locName(id) { const l = LOCATIONS.find(x => x.id === id); return l ? l.name : '—'; }
   orderValue(o) { return o.lines.reduce((a, l) => a + l.price * l.qty, 0); }
@@ -13669,7 +13597,8 @@ class Component extends DCLogic {
     ];
 
     const perfEmptyText = 'Performance here is this account\u2019s own ordering with urbanXtracts. We do not receive store sales data \u2014 that was decided out of scope on 24 Aug 2026, not left pending \u2014 so nothing is estimated and reorder timing rests on your own order interval alone.';
-    const demoTourStep = DEMO_TOUR_STEPS[Math.max(0, Math.min(s.demoTourStep, DEMO_TOUR_STEPS.length - 1))];
+    const demoTourStep = DEMO_TOUR_STEPS[Math.max(0, Math.min(s.demoTourStep, DEMO_TOUR_STEPS.length - 1))]
+      || { loc: '', title: '', body: '', prompt: '' };
     const economicPartyRows = (s.economicParties || []).map(party => {
       const brandMappings = (s.economicBrandMappings || []).filter(mapping => mapping.is_current !== false
         && String(mapping.economic_partner_party_id || '') === String(party.id));
@@ -16339,7 +16268,7 @@ class Component extends DCLogic {
       canResetDemo: !!loc.demo && canStaff('accounts.manage') && !s.impersonating,
       onDemoReset: () => this.resetExecutiveDemo(),
       onDemoTourRestart: () => this.startDemoTour(),
-      demoTourActive: !!s.authUser && s.demoTourActive,
+      demoTourActive: !!s.authUser && s.demoTourActive && DEMO_TOUR_STEPS.length > 0,
       demoTourProgress: String(s.demoTourStep + 1).padStart(2, '0') + ' OF ' + String(DEMO_TOUR_STEPS.length).padStart(2, '0'),
       demoTourLocation: this.locName(demoTourStep.loc),
       demoTourTitle: demoTourStep.title,
@@ -17789,6 +17718,9 @@ class Component extends DCLogic {
             id: p.id, loc: p.locationName || this.locName(p.loc), date: dateLabel(p.txnDate),
             amount: MONEY(Number(p.totalAmountCents || 0)), method: p.paymentMethod || 'Not recorded'
           })),
+          financialHasInvoices: invoiceSorted.length > 0,
+          financialNoInvoices: invoiceSorted.length === 0,
+          financialHasPayments: paymentsFiltered.length > 0,
           financialNoPayments: paymentsFiltered.length === 0,
           arOutstanding: MONEY(open.reduce((a, i) => a + Number(i.balanceCents || 0), 0)),
           arOverdue: MONEY(invoiceFiltered.filter(i => i.state === 'past_due')
@@ -18410,6 +18342,8 @@ class Component extends DCLogic {
         });
         const cell = (index, key) => values[index] ? values[index][key] : '\u2014';
         return {
+          locationPerformanceEmpty: performanceLocations.length === 0,
+          locationPerformanceAvailable: performanceLocations.length > 0,
           locationRows: [
             { metric: 'Portal orders loaded', a: cell(0, 'orders'), b: cell(1, 'orders'), c: cell(2, 'orders') },
             { metric: 'Wholesale order value', a: cell(0, 'value'), b: cell(1, 'value'), c: cell(2, 'value') },
@@ -18424,10 +18358,7 @@ class Component extends DCLogic {
           ],
           locCompareA: performanceLocations[0] ? performanceLocations[0].name : '\u2014',
           locCompareB: performanceLocations[1] ? performanceLocations[1].name : '\u2014',
-          locCompareC: performanceLocations[2] ? performanceLocations[2].name : '\u2014',
-          locationPerformanceNote: loc.demo
-            ? 'This isolated executive-demo view combines synthetic portal orders and QuickBooks financial history. Resetting the demo restores the baseline.'
-            : 'Order metrics use the portal history loaded for this session. Payment behavior uses the last successful QuickBooks snapshot; POS sell-through is not inferred from wholesale orders.'
+          locCompareC: performanceLocations[2] ? performanceLocations[2].name : '\u2014'
         };
       })(),
       tests: TESTS.map(t => ({

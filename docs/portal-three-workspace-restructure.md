@@ -274,7 +274,7 @@ Keep existing retailer and store tables during migration. Add compatibility view
 - **Pending acceptance:** bind the external browser extension explicitly to the Tom (urbanxtracts.com) profile and complete the signed-in workspace/Brand-preview click-through.
 - **Released:** the Brand Inventory view reads only the latest successful Canix snapshot within the verified urbanXtracts Brand scope. It reports product and package-record status counts while exact weight and unit quantities remain withheld pending a recorded decision.
 - **Released:** Brand Financials classifies urbanXtracts as company-owned. No external QuickBooks customer/vendor identity, settlement, Brand statement, or external balance is invented; company-level books remain Internal-only.
-- **Released:** the original `Downtown`, `Riverside`, and `Northgate` prototype stores and their `Downtown Provisions` account are retired from active use. Historical orders, published prices, and audit evidence remain preserved. The separate `Demo Downtown`, `Demo Riverside`, and `Demo Northgate` acceptance-test organization remains available for role testing.
+- **Released:** the original prototype stores and the later Demo Downtown, Demo Riverside, and Demo Northgate acceptance-test fixtures are retired from active portal use. Synthetic orders, invoices, payments, prices, and onboarding records are no longer loaded into the beta interface.
 
 ### Phase 2 — Brand source of truth
 

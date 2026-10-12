@@ -159,7 +159,7 @@ The data is readable and filterable, but not yet control-complete:
 
 The role experience works, but its data is explicitly synthetic:
 
-- Demo Downtown, Demo Riverside, and Demo Northgate are still the active Store records.
+- Demo Downtown, Demo Riverside, and Demo Northgate were retired from the beta interface on 12 Oct 2026 together with their synthetic financial history.
 - Catalog, prices, packages, COA values, order history, receivables, approvals, and license gates are demo scenarios.
 - No live retailer acceptance can rely on these values.
 

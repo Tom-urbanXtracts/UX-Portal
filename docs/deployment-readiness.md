@@ -99,7 +99,7 @@ The production Turnstile widget is restricted to `portal.urbanxtracts.com`. Sign
 - Deploy `portal-retailers` after the retailer-account migration. Only internal users with `accounts.manage` can link a QuickBooks customer, change retailer readiness, add stores, qualify licenses, or enable/disable store ordering.
 - The updated `portal-intake` records an onboarding request and its one-to-ten stores before calling Monday. Configure the Monday onboarding response to return `mondayItemId` and `mondayBoardId`; missing confirmation is retained as a reconciliation item rather than silently treated as success.
 - Schedule the combined QuickBooks financial refresh at the cadence accounting approves. The internal Financials action also performs an authenticated server-side sync; retailer users can refresh only the already-authorized portal view.
-- Cannabis Store (DEMO), its three licensed stores, and `qbo:customer:demo-*` accounts are synthetic, visibly labelled, resettable, and never forwarded to Canix, QuickBooks, or Monday.
+- The retired Cannabis Store demo fixtures, synthetic QuickBooks accounts, invoices, and payment history are not loaded into the live portal.
 - Recall execution, recall notices, and COA administration remain outside UX OS. The portal may display Canix-supplied lab and source-document information inside authorized product and lineage views, but it does not publish or amend it.
 - Cost/margin remains out of navigation until Finance approves the calculation. The customer Store API and payment collection are excluded from the product. Financials are a scoped, read-only QuickBooks projection; a displayed balance never creates an order hold.
 
@@ -119,19 +119,9 @@ The production Turnstile widget is restricted to `portal.urbanxtracts.com`. Sign
 - Private portal asset infrastructure and production Turnstile onboarding protection are active. The signed-out form requires a single-use action-bound token, exact `portal.urbanxtracts.com` hostname validation, and a default three-request UTC-day limit. The production Cloud Run ClamAV service passed clean, EICAR, credential, digest, and size-limit acceptance on 14 September 2026 and is connected through Supabase-only secrets. Product assets remain on hold; onboarding and future product assets require a digest-matched clean result before storage/review.
 - The wholesale pricing source audit is recorded in `docs/wholesale-pricing-source.md`. All 118 source rows are staged in the protected Pricing review queue. The five unique exact product-name + Brand pairs were verified and published on 2 September 2026; 113 exceptions remain unpublished pending an authoritative Canix Item ID. Published defaults remain subordinate to approved store-specific prices.
 
-## Executive-demo baseline
+## Beta test-data baseline
 
-The administrator-only reset restores this complete scenario set and restarts the required seven-step walkthrough. Production orders, drafts, pricing, policies, users, and audit history are preserved.
-
-| Demo store | Licensed-store condition | Approval policy | Demonstration record |
-| --- | --- | --- | --- |
-| Demo Downtown | Ready to order | Buyer orders above $500 require Store Owner approval | Delivered order `DEMO-SO-1007`, declined order `DEMO-SO-1010`, and a pending store-price proposal |
-| Demo Riverside | Explicit account ordering hold; past-due QuickBooks invoice displayed | Every Buyer order requires Store Owner approval | `DEMO-SO-1008` waiting for Store Owner approval |
-| Demo Northgate | Expired license blocks new submission | Value approval disabled | Approved pre-order `DEMO-SO-1009` held until Canix release |
-
-The catalog is a stable snapshot of real product names with synthetic demo prices, factual education, lab values, and scenarios. It does not refresh from Canix or Monday while a demo location is selected. Live Canix, Monday, order, and pricing data are excluded from the demo views; demo rows are likewise excluded from production views.
-
-Demo-only QuickBooks accounts, users, onboarding, documents, invoices, notifications, and failed-lab metrics follow the same boundary. They never identify a production retailer or trigger an external connector.
+Demo Downtown, Demo Riverside, Demo Northgate, their synthetic orders, and their synthetic invoice and payment history were retired from the beta release on 12 Oct 2026. Store acceptance testing now uses explicitly scoped test records created through the same portal workflows as production records. Test records must remain clearly labelled, must not identify a production retailer, and must not trigger an external connector unless the test explicitly covers that connector.
 
 ## Release checks
 
@@ -188,8 +178,6 @@ Demo-only QuickBooks accounts, users, onboarding, documents, invoices, notificat
 - Walk one onboarding request through all six stages. Confirm licenses must be individually reviewed, only qualified stores are materialized, account relinking stops after store creation, requested users are invited with server-derived organization/store scope, and Ready remains blocked until account, store, and Owner prerequisites pass.
 - Test email/password and the selected SSO provider on the final domain before inviting users.
 - Configure Resend only through Supabase secrets. `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, and `PORTAL_EMAIL_FROM` are present in production. The Resend dashboard confirms `updates.urbanxtracts.com` is verified and the production webhook is enabled. Controlled request `REQ-5157316E91` proved both approved templates, durable outbox records, provider sends, and signed delivery callbacks end to end on 8 October 2026. See `docs/supabase-resend-production-setup.md`. The Portal retains its current 100/day and 3,000/month safety caps until the planned Resend plan upgrade and revised limits are explicitly approved.
-- Enter Cannabis Store (DEMO) as an Administrator, complete all seven forced walkthrough steps, and confirm free roam begins only after the last step.
-- Mutate a demo order, draft, price, policy, and access record; use Reset executive demo; confirm the baseline above returns and no production record changes.
-- Confirm Demo Owner sees all three demo stores, Demo Buyer sees Downtown and Riverside, and Demo Budtender sees Downtown only.
-- Confirm demo catalog, pricing, order, QuickBooks snapshot, onboarding, kiosk, and exception views display no production rows and make no external write.
+- Confirm retired Store demo fixtures and synthetic financial history do not appear for Internal or Store accounts.
+- Confirm scoped test records do not expose or alter unrelated production organizations, stores, financial history, or user assignments.
 - Create a kiosk link for one qualified store, copy it from its one-time display, and confirm a signed-out browser can search published product education. Confirm the same browser cannot obtain prices, quantities, order/account data, document URLs, or administration. Revoke the link and confirm the same URL stops resolving immediately.
