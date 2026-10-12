@@ -284,6 +284,7 @@ async function syncQuickBooks(): Promise<
     invoiceCount: number;
     paymentCount: number;
     creditMemoCount: number;
+    itemCount: number;
   }
 > {
   await service.from("quickbooks_sync_state").update({
@@ -314,12 +315,13 @@ async function syncQuickBooks(): Promise<
       }).eq("id", 1);
     if (tokenError) throw tokenError;
 
-    const [customers, vendors, invoices, payments, creditMemos] = await Promise.all([
+    const [customers, vendors, invoices, payments, creditMemos, items] = await Promise.all([
       qboQuery(auth, "Customer", "where Active in (true, false)"),
       qboQuery(auth, "Vendor", "where Active in (true, false)"),
       qboQuery(auth, "Invoice"),
       qboQuery(auth, "Payment"),
       qboQuery(auth, "CreditMemo"),
+      qboQuery(auth, "Item", "where Active in (true, false)"),
     ]);
     const now = new Date().toISOString();
     const runId = crypto.randomUUID();
@@ -427,6 +429,31 @@ async function syncQuickBooks(): Promise<
         synced_at: now,
       }];
     });
+    const itemRows = items.flatMap((item: Row) => {
+      const id = boundedText(item.Id, 160);
+      const name = boundedText(item.Name, 500);
+      if (!id || !name) return [];
+      const metadata = item.MetaData as Row | undefined;
+      return [{
+        quickbooks_item_id: id,
+        name,
+        fully_qualified_name: boundedText(item.FullyQualifiedName, 800),
+        sku: boundedText(item.Sku, 240),
+        item_type: boundedText(item.Type, 80),
+        active: item.Active !== false,
+        description: boundedText(item.Description, 2000),
+        parent_item_id: refValue(item.ParentRef),
+        income_account_id: refValue(item.IncomeAccountRef),
+        expense_account_id: refValue(item.ExpenseAccountRef),
+        asset_account_id: refValue(item.AssetAccountRef),
+        purchase_cost: finiteNumber(item.PurchaseCost),
+        unit_price: finiteNumber(item.UnitPrice),
+        track_quantity: item.TrackQtyOnHand === true,
+        quantity_on_hand: finiteNumber(item.QtyOnHand),
+        source_updated_at: boundedText(metadata?.LastUpdatedTime, 80),
+        synced_at: now,
+      }];
+    });
 
     await upsertChunks(
       "quickbooks_customer_cache",
@@ -453,6 +480,39 @@ async function syncQuickBooks(): Promise<
       creditMemoRows,
       "quickbooks_credit_memo_id,sync_run_id",
     );
+    await upsertChunks(
+      "quickbooks_item_cache",
+      itemRows,
+      "quickbooks_item_id",
+    );
+    const { error: staleItemError } = await service.from(
+      "quickbooks_item_cache",
+    ).delete().neq("synced_at", now);
+    if (staleItemError) throw staleItemError;
+    const { error: absentMappingError } = await service.from(
+      "portal_item_source_mapping",
+    ).update({ source_present: false, updated_at: now }).eq(
+      "source_system",
+      "quickbooks",
+    );
+    if (absentMappingError) throw absentMappingError;
+    await upsertChunks(
+      "portal_item_source_mapping",
+      itemRows.map((item) => ({
+        source_system: "quickbooks",
+        source_item_id: item.quickbooks_item_id,
+        source_name: item.name,
+        source_brand_name: null,
+        source_sku: item.sku,
+        source_item_type: item.item_type,
+        source_active: item.active,
+        source_present: true,
+        source_updated_at: item.source_updated_at,
+        last_seen_at: now,
+        updated_at: now,
+      })),
+      "source_system,source_item_id",
+    );
     const { error: stateError } = await service.from("quickbooks_sync_state")
       .update({
         realm_id: auth.realm,
@@ -468,6 +528,7 @@ async function syncQuickBooks(): Promise<
         invoice_count: invoiceRows.length,
         payment_count: paymentRows.length,
         credit_memo_count: creditMemoRows.length,
+        item_count: itemRows.length,
         updated_at: now,
         last_intuit_tid: null,
       }).eq("id", 1);
@@ -497,6 +558,7 @@ async function syncQuickBooks(): Promise<
       invoiceCount: invoiceRows.length,
       paymentCount: paymentRows.length,
       creditMemoCount: creditMemoRows.length,
+      itemCount: itemRows.length,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -182,6 +182,23 @@ async function allCurrentItems(): Promise<Row[]> {
   return rows;
 }
 
+async function allSourceItemMappings(): Promise<Row[]> {
+  const rows: Row[] = [];
+  const pageSize = 1000;
+  for (let offset = 0;; offset += pageSize) {
+    const { data, error } = await service.from("portal_item_source_mapping")
+      .select("*").order("source_system", { ascending: true }).order(
+        "source_item_id",
+        { ascending: true },
+      ).range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as Row[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+}
+
 function normalizedLotId(value: unknown): string | null {
   const valueString = clean(value, 80).toUpperCase();
   return /^[A-Z0-9-]{1,40}$/.test(valueString) ? valueString : null;
@@ -227,9 +244,9 @@ async function snapshot(caller: Caller): Promise<Row> {
     catalogRows,
     events,
     packageSources,
-    itemSources,
     packageSync,
     itemSync,
+    quickBooksSync,
   ] = await Promise.all([
     service.from("portal_canix_owner_mapping").select("*").order("updated_at", {
       ascending: false,
@@ -237,10 +254,7 @@ async function snapshot(caller: Caller): Promise<Row> {
     service.from("portal_package_lot_overlay").select("*").order("updated_at", {
       ascending: false,
     }).limit(5000),
-    service.from("portal_item_identity_mapping").select("*").order(
-      "updated_at",
-      { ascending: false },
-    ).limit(5000),
+    allSourceItemMappings(),
     service.from("portal_lot_register").select("*").order("updated_at", {
       ascending: false,
     }).limit(5000),
@@ -261,18 +275,19 @@ async function snapshot(caller: Caller): Promise<Row> {
       "id,control_type,control_key,action,actor_email,created_at",
     ).order("created_at", { ascending: false }).limit(100),
     allCurrentPackages(),
-    allCurrentItems(),
     service.from("canix_sync_state").select(
       "status,last_successful_at,latest_source_updated_at,package_count,last_error",
     ).eq("id", 1).maybeSingle(),
     service.from("canix_item_sync_state").select(
       "status,last_successful_at,latest_source_updated_at,item_count,last_error",
     ).eq("id", 1).maybeSingle(),
+    service.from("quickbooks_sync_state").select(
+      "status,last_successful_at,item_count,last_error",
+    ).eq("id", 1).maybeSingle(),
   ]);
   const resultSets = [
     owners,
     packageLots,
-    items,
     lots,
     costObjects,
     parties,
@@ -281,22 +296,20 @@ async function snapshot(caller: Caller): Promise<Row> {
     events,
     packageSync,
     itemSync,
+    quickBooksSync,
   ];
   const failed = resultSets.find((result) => result.error);
   if (failed?.error) throw failed.error;
   const lotRows = lots.data ?? [];
   const savedOwnerRows = owners.data ?? [];
   const savedPackageLotRows = packageLots.data ?? [];
-  const savedItemRows = items.data ?? [];
+  const savedItemRows = items;
   const catalog = catalogRows.data ?? [];
   const savedOwnerById = new Map(
     savedOwnerRows.map((row) => [String(row.canix_owner_id), row]),
   );
   const savedPackageLotById = new Map(
     savedPackageLotRows.map((row) => [String(row.canix_package_id), row]),
-  );
-  const savedItemById = new Map(
-    savedItemRows.map((row) => [String(row.canix_item_id), row]),
   );
   const approvedLots = new Set(
     lotRows.filter((row) => row.approval_status === "approved").map((row) =>
@@ -377,30 +390,18 @@ async function snapshot(caller: Caller): Promise<Row> {
     }
   }
 
-  const itemRows = itemSources.map((source) => {
-    const key = String(source.item_id);
-    return {
-      canix_item_id: source.item_id,
-      canix_item_name: source.name ?? null,
-      canix_brand_name: source.product_brand_name ?? source.brand_name ?? null,
-      canix_sku: source.sku ?? null,
-      canix_item_type: source.item_type_name ?? source.item_category_name ??
-        null,
-      canix_facility_name: source.facility_name ?? null,
-      canix_active: source.is_active === true,
-      decision_status: "pending_review",
-      decision_note: "",
-      source_updated_at: source.source_updated_at ?? null,
-      source_discovery: true,
-      ...(savedItemById.get(key) ?? {}),
-    };
-  });
-  const currentItemIds = new Set(itemSources.map((row) => String(row.item_id)));
-  for (const saved of savedItemRows) {
-    if (!currentItemIds.has(String(saved.canix_item_id))) {
-      itemRows.push({ ...saved, source_discovery: false, canix_active: false });
-    }
-  }
+  const itemRows: Row[] = savedItemRows.map((source): Row => ({
+    ...source,
+    canix_item_id: source.source_system === "canix"
+      ? Number(source.source_item_id)
+      : null,
+    canix_item_name: source.source_name ?? null,
+    canix_brand_name: source.source_brand_name ?? null,
+    canix_sku: source.source_sku ?? null,
+    canix_item_type: source.source_item_type ?? null,
+    canix_active: source.source_active === true,
+    source_discovery: source.source_present === true,
+  }));
   return {
     source: {
       system: "Supabase",
@@ -409,6 +410,14 @@ async function snapshot(caller: Caller): Promise<Row> {
       retrievedAt: new Date().toISOString(),
       canixPackages: packageSync.data ?? null,
       canixItems: itemSync.data ?? null,
+      quickBooksItems: quickBooksSync.data ?? null,
+      refreshSchedule: {
+        cadenceMinutes: 15,
+        timezone: "America/New_York",
+        days: "Monday-Friday",
+        start: "06:00",
+        end: "18:00",
+      },
     },
     permissions: {
       canManageData: canManageData(caller),
@@ -430,9 +439,20 @@ async function snapshot(caller: Caller): Promise<Row> {
       itemMappings: itemRows.length,
       itemPending:
         itemRows.filter((row) =>
-          row.decision_status !== "approved" &&
-          row.decision_status !== "not_required"
+          !["approved", "not_required", "archived"].includes(
+            String(row.decision_status),
+          ) &&
+          row.source_present !== false
         ).length,
+      itemToBeMapped: itemRows.filter((row) =>
+        row.decision_status === "to_be_mapped" && row.source_present !== false
+      ).length,
+      canixSourceItems: itemRows.filter((row) =>
+        row.source_system === "canix" && row.source_present !== false
+      ).length,
+      quickBooksSourceItems: itemRows.filter((row) =>
+        row.source_system === "quickbooks" && row.source_present !== false
+      ).length,
       lots: lotRows.length,
       lotsPending: lotRows.filter((row) =>
         row.approval_status !== "approved" &&
@@ -443,7 +463,7 @@ async function snapshot(caller: Caller): Promise<Row> {
         catalog.filter((row) => row.publication_state !== "published").length,
       sourcePackages: packageSources.length,
       packagesMissingOwner,
-      sourceItems: itemSources.length,
+      sourceItems: itemRows.filter((row) => row.source_present !== false).length,
     },
     ownerMappings: ownerRows,
     packageLots: packageLotRows,
@@ -658,6 +678,98 @@ async function saveItem(caller: Caller, body: Row): Promise<Row> {
   return data as Row;
 }
 
+async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
+  const sourceSystem = clean(body.sourceSystem, 40).toLowerCase();
+  const sourceItemId = clean(body.sourceItemId, 160);
+  if (!["canix", "quickbooks"].includes(sourceSystem) || !sourceItemId) {
+    throw new Error("Choose a valid Canix or QuickBooks source item.");
+  }
+  const status = decisionStatus(body.status);
+  const skuReference = clean(body.portalSkuReference, 160) || null;
+  const skuId = clean(body.portalSkuId, 80) || null;
+  if (status === "approved" && (!skuReference || !skuId)) {
+    throw new Error("Approved Item mappings require an existing Portal SKU.");
+  }
+  const note = clean(body.note, 1500);
+  if (status !== "pending_review" && note.length < 8) {
+    throw new Error("Enter an evidence note of at least 8 characters.");
+  }
+  if (status === "approved") {
+    const { data: matchedSku, error: skuError } = await service.from(
+      "portal_sku_intake",
+    ).select("id,reference").eq("id", skuId).maybeSingle();
+    if (skuError) throw skuError;
+    if (!matchedSku || clean(matchedSku.reference, 160) !== skuReference) {
+      throw new Error("Choose an existing Portal SKU for this mapping.");
+    }
+  }
+  const { data: prior, error: priorError } = await service.from(
+    "portal_item_source_mapping",
+  ).select("*").eq("source_system", sourceSystem).eq(
+    "source_item_id",
+    sourceItemId,
+  ).maybeSingle();
+  if (priorError) throw priorError;
+  if (!prior) throw new Error("The source item is no longer available.");
+  const row = {
+    portal_sku_reference: status === "not_required" ? null : skuReference,
+    portal_sku_id: status === "not_required" ? null : skuId,
+    decision_status: status,
+    decision_note: note,
+    match_method: status === "approved" ? "manual_review" : null,
+    match_confidence: status === "approved" ? 1 : null,
+    approved_by: ["approved", "not_required"].includes(status)
+      ? caller.id
+      : null,
+    approved_by_email: ["approved", "not_required"].includes(status)
+      ? caller.email
+      : null,
+    approved_at: ["approved", "not_required"].includes(status)
+      ? new Date().toISOString()
+      : null,
+    updated_at: new Date().toISOString(),
+  };
+  const { data, error } = await service.from("portal_item_source_mapping")
+    .update(row).eq("source_system", sourceSystem).eq(
+      "source_item_id",
+      sourceItemId,
+    ).select("*").single();
+  if (error) throw error;
+
+  // Preserve the existing Canix projection used by inventory and catalog
+  // consumers while the cross-system register becomes the control surface.
+  if (sourceSystem === "canix") {
+    const canixItemId = positiveInteger(sourceItemId);
+    if (!canixItemId) throw new Error("The Canix Item ID is invalid.");
+    const { error: legacyError } = await service.from(
+      "portal_item_identity_mapping",
+    ).upsert({
+      canix_item_id: canixItemId,
+      portal_sku_reference: row.portal_sku_reference,
+      portal_sku_id: row.portal_sku_id,
+      canix_item_name: prior.source_name,
+      canix_brand_name: prior.source_brand_name,
+      decision_status: status,
+      decision_note: note,
+      source_system: "portal",
+      approved_by: row.approved_by,
+      approved_by_email: row.approved_by_email,
+      approved_at: row.approved_at,
+      updated_at: row.updated_at,
+    });
+    if (legacyError) throw legacyError;
+  }
+  await event(
+    caller,
+    "source_item_mapping",
+    `${sourceSystem}:${sourceItemId}`,
+    eventAction(prior as Row, status),
+    prior as Row,
+    data as Row,
+  );
+  return data as Row;
+}
+
 async function saveLot(caller: Caller, body: Row): Promise<Row> {
   const lotId = clean(body.lotId, 40).toUpperCase();
   if (!/^[A-Z0-9-]{1,40}$/.test(lotId)) {
@@ -800,6 +912,7 @@ Deno.serve(async (request) => {
       "save-owner-mapping": () => saveOwner(caller, body),
       "save-package-lot": () => savePackageLot(caller, body),
       "save-item-mapping": () => saveItem(caller, body),
+      "save-source-item-mapping": () => saveSourceItem(caller, body),
       "save-lot": () => saveLot(caller, body),
     };
     if (!handlers[action]) {

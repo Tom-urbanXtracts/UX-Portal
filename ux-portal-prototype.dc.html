@@ -179,7 +179,7 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 <sc-if value="{{ dataControlShowDependencyGuide }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--ux-signal);background:var(--ux-signal-tint);padding:12px 14px;margin:-4px 0 16px"><div><strong style="display:block;font-size:12px;margin-bottom:4px">{{ dataControlDependencyTitle }}</strong><span style="display:block;font-size:11px;line-height:1.5;color:var(--ux-muted-strong)">{{ dataControlDependencyDetail }}</span></div><button type="button" onClick="{{ onDataControlDependencyAction }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:9px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ dataControlDependencyActionLabel }}</button></div></sc-if>
 <div style="display:grid;grid-template-columns:{{ dataControlLayoutColumns }};gap:18px;align-items:start">
 <section style="border-top:2px solid var(--ux-ink);background:#fff;padding:16px">
-<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ dataControlQueueKicker }}</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ dataControlQueueTitle }}</h2></div><input type="search" value="{{ dataControlSearch }}" onInput="{{ onDataControlSearch }}" placeholder="Search" style="width:min(230px,45%);padding:8px;border:1px solid rgba(23,14,11,.3)"></div>
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:4px">{{ dataControlQueueKicker }}</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">{{ dataControlQueueTitle }}</h2></div><div style="display:flex;gap:8px;flex:1;justify-content:flex-end"><select value="{{ dataControlItemFilter }}" onChange="{{ onDataControlItemFilter }}" style="{{ dataControlItemFilterStyle }}"><sc-for list="{{ dataControlItemFilterOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select><input type="search" value="{{ dataControlSearch }}" onInput="{{ onDataControlSearch }}" placeholder="Search" style="width:min(230px,45%);padding:8px;border:1px solid rgba(23,14,11,.3)"></div></div>
 <sc-if value="{{ dataControlEmpty }}" hint-placeholder-val="{{ false }}"><p style="font-size:12px;color:var(--ux-muted)">No records match this view.</p></sc-if>
 <div style="display:grid;gap:8px"><sc-for list="{{ dataControlRows }}" as="row" hint-placeholder-count="5"><button type="button" onClick="{{ row.onPick }}" style="text-align:left;background:{{ row.background }};border:1px solid rgba(23,14,11,.16);padding:11px;cursor:pointer"><div style="display:flex;justify-content:space-between;gap:10px"><strong style="font-size:12px">{{ row.primary }}</strong><span style="font:700 8px ui-monospace,monospace;background:{{ row.statusBackground }};color:{{ row.statusColor }};padding:3px 6px">{{ row.status }}</span></div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:5px;line-height:1.45">{{ row.secondary }}</div></button></sc-for></div>
 </section>
@@ -4987,7 +4987,7 @@ class Component extends DCLogic {
     costObjectStatusDraft: 'pending_assignment', costObjectCodeDraft: '', costObjectNote: '',
     costObjectPending: false, costObjectError: null,
     dataControlData: null, dataControlLoading: false, dataControlLoaded: false, dataControlError: null,
-    dataControlTab: 'owners', dataControlSearch: '', dataControlSelectedKey: null,
+    dataControlTab: 'owners', dataControlSearch: '', dataControlItemFilter: 'to_be_mapped', dataControlSelectedKey: null,
     dataControlDraft: {}, dataControlPending: false,
     catalogLoading: false, catalogLoaded: false, catalogError: null,
     pricingProposals: DEMO_PRICE_PROPOSALS.map(row => ({ ...row })), pricingPrices: DEMO_STORE_PRICES.map(row => ({ ...row })),
@@ -6284,7 +6284,7 @@ class Component extends DCLogic {
   }
 
   setDataControlTab(tab) {
-    this.set({ dataControlTab: tab, dataControlSearch: '', dataControlSelectedKey: null,
+    this.set({ dataControlTab: tab, dataControlSearch: '', dataControlItemFilter: tab === 'items' ? 'to_be_mapped' : 'all', dataControlSelectedKey: null,
       dataControlDraft: {}, dataControlError: null });
   }
 
@@ -6303,6 +6303,7 @@ class Component extends DCLogic {
       canixPackageId: record.canix_package_id, complianceTag: record.compliance_tag || '', lotId: record.lot_id || '',
       status: record.decision_status || 'pending_review', note: record.decision_note || ''
     } : tab === 'items' ? {
+      sourceSystem: record.source_system || 'canix', sourceItemId: record.source_item_id || record.canix_item_id,
       canixItemId: record.canix_item_id, canixItemName: record.canix_item_name || '', canixBrandName: record.canix_brand_name || '',
       portalSkuReference: record.portal_sku_reference || '', portalSkuId: record.portal_sku_id || '',
       status: record.decision_status || 'pending_review', note: record.decision_note || ''
@@ -6318,14 +6319,15 @@ class Component extends DCLogic {
       lotId: record.lot_id || '', status: record.decision_status || 'pending_assignment',
       costObjectId: record.cost_object_id || '', note: record.decision_note || ''
     } : {};
-    const key = record.canix_owner_id || record.canix_package_id || record.canix_item_id || record.lot_id || record.id;
+    const key = tab === 'items' ? ((record.source_system || 'canix') + ':' + (record.source_item_id || record.canix_item_id))
+      : record.canix_owner_id || record.canix_package_id || record.canix_item_id || record.lot_id || record.id;
     draft._hasExistingDecision = Boolean(record && record.source_system);
     this.set({ dataControlSelectedKey: String(key || ''), dataControlDraft: draft, dataControlError: null });
   }
 
   saveDataControl() {
     if (this.state.dataControlPending) return;
-    const action = ({ owners: 'save-owner-mapping', package_lots: 'save-package-lot', items: 'save-item-mapping',
+    const action = ({ owners: 'save-owner-mapping', package_lots: 'save-package-lot', items: 'save-source-item-mapping',
       lots: 'save-lot', cost_objects: 'save-cost-object' })[this.state.dataControlTab];
     if (!action) return;
     this.set({ dataControlPending: true, dataControlError: null });
@@ -12158,21 +12160,27 @@ class Component extends DCLogic {
       ? s.dataControlTab : 'owners';
     const dataControlSourceRows = this.dataControlRecords(dataControlTab);
     const dataControlNeedle = String(s.dataControlSearch || '').trim().toLowerCase();
-    const dataControlFiltered = dataControlSourceRows.filter(row => !dataControlNeedle
-      || Object.values(row || {}).some(value => String(value == null ? '' : value).toLowerCase().includes(dataControlNeedle)));
-    const dataControlKey = row => String(row.canix_owner_id || row.canix_package_id || row.canix_item_id || row.lot_id || row.id || '');
-    const dataControlStatus = row => String(row.decision_status || row.approval_status || row.publication_state || row.action || 'pending_review');
+    const dataControlItemFilter = String(s.dataControlItemFilter || (dataControlTab === 'items' ? 'to_be_mapped' : 'all'));
+    const dataControlFiltered = dataControlSourceRows.filter(row => (dataControlTab !== 'items'
+      || dataControlItemFilter === 'all'
+      || (dataControlItemFilter === 'source_missing' ? row.source_present === false : row.decision_status === dataControlItemFilter))
+      && (!dataControlNeedle || Object.values(row || {}).some(value => String(value == null ? '' : value).toLowerCase().includes(dataControlNeedle))));
+    const dataControlKey = row => String(dataControlTab === 'items'
+      ? ((row.source_system || 'canix') + ':' + (row.source_item_id || row.canix_item_id || ''))
+      : row.canix_owner_id || row.canix_package_id || row.canix_item_id || row.lot_id || row.id || '');
+    const dataControlStatus = row => String(dataControlTab === 'items' && row.source_present === false
+      ? 'source_missing' : row.decision_status || row.approval_status || row.publication_state || row.action || 'pending_review');
     const dataControlPrimary = row => dataControlTab === 'owners'
       ? (row.canix_owner_name || 'Canix Owner ' + row.canix_owner_id)
       : dataControlTab === 'package_lots' ? ('Package ' + row.canix_package_id)
-      : dataControlTab === 'items' ? (row.canix_item_name || 'Canix Item ' + row.canix_item_id)
+      : dataControlTab === 'items' ? (row.canix_item_name || (String(row.source_system || 'source') + ' Item ' + (row.source_item_id || row.canix_item_id)))
       : dataControlTab === 'lots' || dataControlTab === 'cost_objects' ? (row.lot_name || row.lot_id)
       : dataControlTab === 'catalog' ? ('Canix Item ' + row.canix_item_id)
       : ((row.control_type || 'Decision') + ' · ' + (row.control_key || row.id));
     const dataControlSecondary = row => dataControlTab === 'owners'
       ? ('Owner ' + row.canix_owner_id + ' · ' + Number(row.package_count || 0) + ' current packages · ' + (row.ownership_code || 'classification pending'))
       : dataControlTab === 'package_lots' ? ((row.compliance_tag || 'No compliance tag') + ' · ' + (row.canix_item_name || 'Item not recorded') + ' · ' + (row.source_lot_status === 'missing' ? 'Lot ID missing in Canix' : row.source_lot_status === 'approved' ? 'Source Lot ID approved' : row.source_lot_status === 'not_in_current_snapshot' ? 'Historical overlay' : (row.source_lot_id || row.lot_id || 'Lot ID') + ' needs register approval'))
-      : dataControlTab === 'items' ? ('Canix ' + row.canix_item_id + ' · ' + (row.canix_brand_name || 'Brand not recorded') + ' · ' + (row.canix_active === false ? 'Inactive source item' : 'Active source item') + ' · ' + (row.portal_sku_reference || 'SKU mapping pending'))
+      : dataControlTab === 'items' ? (String(row.source_system || 'canix').toUpperCase() + ' ' + (row.source_item_id || row.canix_item_id) + ' · ' + (row.canix_brand_name || 'Brand not recorded') + ' · ' + (row.source_present === false ? 'No longer in current snapshot' : row.canix_active === false ? 'Inactive source item' : 'Active source item') + ' · ' + (row.portal_sku_reference || 'To be mapped'))
       : dataControlTab === 'lots' ? ((row.ownership_code || 'Ownership pending') + ' · ' + (row.uom_code || 'UOM not set') + ' · ' + (row.cost_object_candidate || 'Cost Object pending'))
       : dataControlTab === 'cost_objects' ? ((row.cost_object_id || 'No assigned code') + ' · ' + (row.decided_by_email || 'Not decided'))
       : dataControlTab === 'catalog' ? ('Completeness ' + Number(row.completeness_score || 0) + '% · ' + (row.publication_state === 'published' ? ('Published ' + formatDate(row.updated_at)) : row.approved_at ? ('Approved ' + formatDate(row.approved_at)) : 'Not published'))
@@ -12210,14 +12218,14 @@ class Component extends DCLogic {
     const formFieldSets = {
       owners: [dcField('canixOwnerId','CANIX OWNER ID *','number'),dcField('canixOwnerName','CANIX OWNER NAME','text'),dcField('ownershipCode','OWNERSHIP CLASSIFICATION','select',ownerOptions),dcField('economicPartyId','ECONOMIC PARTY','select',partyOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
       package_lots: [dcField('canixPackageId','CANIX PACKAGE ID *','number'),dcField('complianceTag','COMPLIANCE TAG','text'),dcField('lotId','APPROVED LOT ID','select',lotOptions),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
-      items: [dcField('canixItemId','CANIX ITEM ID *','number'),dcField('canixItemName','CANIX ITEM NAME','text'),dcField('canixBrandName','CANIX BRAND','text'),{ ...dcField('portalSkuId','PORTAL SKU','select',skuOptions), onInput: event => { const sku = (dataControlData.skus || []).find(row => String(row.id) === event.target.value); this.setState(current => ({ dataControlDraft: { ...(current.dataControlDraft || {}), portalSkuId: event.target.value, portalSkuReference: sku ? sku.reference : '' }, dataControlError: null })); } },dcField('portalSkuReference','PORTAL SKU REFERENCE *','text'),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
+      items: [dcField('sourceSystem','SOURCE SYSTEM','text'),dcField('sourceItemId','SOURCE ITEM ID *','text'),dcField('canixItemName','SOURCE ITEM NAME','text'),dcField('canixBrandName','SOURCE BRAND','text'),{ ...dcField('portalSkuId','PORTAL SKU','select',skuOptions), onInput: event => { const sku = (dataControlData.skus || []).find(row => String(row.id) === event.target.value); this.setState(current => ({ dataControlDraft: { ...(current.dataControlDraft || {}), portalSkuId: event.target.value, portalSkuReference: sku ? sku.reference : '' }, dataControlError: null })); } },dcField('portalSkuReference','PORTAL SKU REFERENCE *','text'),dcField('status','DECISION','select',decisionOptions),dcField('note','EVIDENCE NOTE','textarea')],
       lots: [dcField('lotId','LOT ID *','text'),dcField('lotName','LOT NAME *','text'),dcField('ownershipCode','OWNERSHIP','select',ownerOptions),dcField('canixOwnerId','CANIX OWNER ID','number'),dcField('economicPartyId','ECONOMIC PARTY','select',partyOptions),dcField('agreementReference','AGREEMENT REFERENCE','text'),dcField('dealType','DEAL TYPE','text'),dcField('uomCode','UOM','select',selectOptions([['','Choose UOM'],['G_IN','G_IN'],['G_OUT','G_OUT'],['G_DRY','G_DRY'],['G_WET','G_WET']])),dcField('expectedQuantity','EXPECTED QUANTITY','number'),dcField('receivedQuantity','RECEIVED QUANTITY','number'),dcField('costObjectCandidate','COST OBJECT CANDIDATE','text'),dcField('effectiveDate','EFFECTIVE DATE · MM/DD/YYYY','text',null,'MM/DD/YYYY'),dcField('status','APPROVAL STATUS','select',selectOptions([['draft','Draft'],['pending_review','Pending review'],['approved','Approved'],['rejected','Rejected'],['conflict','Conflict'],['archived','Archived']])),dcField('note','EVIDENCE NOTE','textarea')],
       cost_objects: [dcField('lotId','APPROVED LOT *','select',lotOptions),dcField('status','DECISION','select',selectOptions([['pending_assignment','Pending Finance/Ops assignment'],['assigned','Assigned'],['not_required','Not required']])),dcField('costObjectId','COST OBJECT','text'),dcField('note','EVIDENCE NOTE','textarea')]
     };
     const dataControlMeta = {
       owners: ['CANIX OWNER', 'Owner classification', 'Operations may approve independently.'],
       package_lots: ['PACKAGE POINTER', 'Package Lot ID overlay', 'Approved values remain in Supabase and never write to Canix.'],
-      items: ['ITEM IDENTITY', 'Canix Item to Portal SKU', 'Use immutable IDs; names remain supporting evidence.'],
+      items: ['ITEM IDENTITY', 'Source Item to Portal SKU', 'Approved Canix and QuickBooks IDs reconnect automatically after each source refresh.'],
       lots: ['PORTAL AUTHORITY', 'Lot register', 'Approved lots govern the package pointer and Cost Object workflow.'],
       cost_objects: ['FINANCE / OPERATIONS / ADMIN', 'Cost Object decision', 'Not required is durable. Assigned codes must exactly match the approved lot candidate.']
     }[dataControlTab] || ['', '', ''];
@@ -16329,7 +16337,7 @@ class Component extends DCLogic {
       dataControlSummary: [
         { label: 'CANIX OWNERS', value: String(dataControlSummaryData.ownerMappings || 0), note: String(dataControlSummaryData.ownerPending || 0) + ' need review · ' + String(dataControlSummaryData.packagesMissingOwner || 0) + ' packages missing Owner' },
         { label: 'PACKAGE LOT GAPS', value: String(dataControlSummaryData.packageLotOverlays || 0), note: String(dataControlSummaryData.packageLotPending || 0) + ' need review' },
-        { label: 'CANIX ITEMS', value: String(dataControlSummaryData.itemMappings || 0), note: String(dataControlSummaryData.itemPending || 0) + ' need mapping review' },
+        { label: 'ITEM IDENTITIES', value: String(dataControlSummaryData.itemMappings || 0), note: String(dataControlSummaryData.itemToBeMapped || 0) + ' to be mapped · ' + String(dataControlSummaryData.canixSourceItems || 0) + ' Canix · ' + String(dataControlSummaryData.quickBooksSourceItems || 0) + ' QuickBooks' },
         { label: 'LOT REGISTER', value: String(dataControlSummaryData.lots || 0), note: String(dataControlSummaryData.lotsPending || 0) + ' need review' },
         { label: 'CATALOG RECORDS', value: String(dataControlSummaryData.catalogRecords || 0), note: String(dataControlSummaryData.catalogPending || 0) + ' not published' }
       ],
@@ -16342,10 +16350,22 @@ class Component extends DCLogic {
       dataControlDependencyActionLabel: 'Review Lot register',
       onDataControlDependencyAction: () => this.setDataControlTab('lots'),
       dataControlLayoutColumns: narrow ? '1fr' : 'minmax(360px,1.2fr) minmax(310px,.8fr)',
-      dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : ['owners','package_lots','items'].includes(dataControlTab) ? 'LIVE CANIX SOURCE + PORTAL DECISIONS' : 'CURRENT DECISIONS',
-      dataControlQueueTitle: ({ owners:'Canix Owner mappings', package_lots:'Package Lot ID overlays', items:'Item identity mappings', lots:'Portal lot register', cost_objects:'Cost Object decisions', catalog:'Catalog records', history:'Decision history' })[dataControlTab],
+      dataControlQueueKicker: dataControlTab === 'history' ? 'LAST 100 EVENTS' : dataControlTab === 'items' ? 'CANIX + QUICKBOOKS SOURCE · PORTAL DECISIONS' : ['owners','package_lots'].includes(dataControlTab) ? 'LIVE CANIX SOURCE + PORTAL DECISIONS' : 'CURRENT DECISIONS',
+      dataControlQueueTitle: ({ owners:'Canix Owner mappings', package_lots:'Package Lot ID overlays', items:'Item Mapping Center', lots:'Portal lot register', cost_objects:'Cost Object decisions', catalog:'Catalog records', history:'Decision history' })[dataControlTab],
       dataControlSearch: s.dataControlSearch,
       onDataControlSearch: event => this.set({ dataControlSearch: event.target.value }),
+      dataControlItemFilter,
+      dataControlItemFilterStyle: dataControlTab === 'items' ? 'display:block;min-width:150px;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff' : 'display:none',
+      dataControlItemFilterOptions: [
+        { value: 'to_be_mapped', label: 'To Be Mapped' },
+        { value: 'pending_review', label: 'Pending Review' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'conflict', label: 'Conflict' },
+        { value: 'not_required', label: 'Not Required' },
+        { value: 'source_missing', label: 'Source Missing' },
+        { value: 'all', label: 'All Items' }
+      ],
+      onDataControlItemFilter: event => this.set({ dataControlItemFilter: event.target.value, dataControlSelectedKey: null, dataControlDraft: {} }),
       dataControlRows,
       dataControlEmpty: dataControlRows.length === 0,
       dataControlCatalogMode: dataControlTab === 'catalog', dataControlHistoryMode: dataControlTab === 'history',

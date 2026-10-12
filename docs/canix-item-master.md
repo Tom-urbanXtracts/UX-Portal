@@ -12,10 +12,12 @@ The portal continues to treat Canix as the source of truth. It does not create, 
 - Grain: one row per authoritative Canix Item ID.
 - Scope: active and inactive items across every facility available to the server-side Canix API key.
 - Pagination: 2,000 rows per request with stable Item ID ordering and a 100-page safety limit.
-- Refresh target: every five minutes through an independent Vault-backed scheduler.
+- Refresh target: every 15 minutes from 6:00 AM through 6:00 PM America/New_York, Monday through Friday, through an independent Vault-backed scheduler.
 - Failure behavior: the prior complete snapshot remains available. Partial fetches never replace it.
 
 The Item Master sync is fault-isolated from package inventory. Failure of `GET /items` does not prevent the package cache from continuing its own five-minute refresh.
+
+Each successful Item Master refresh reconciles the source evidence in the Portal Item Mapping Center. New Canix Item IDs enter **To Be Mapped**. Existing Portal decisions remain durable and are never replaced by a source refresh.
 
 ## Data control
 

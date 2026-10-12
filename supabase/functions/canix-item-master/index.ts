@@ -370,6 +370,32 @@ async function syncItemMaster(force = false): Promise<Json> {
     if (asObject(published).published !== true) {
       throw new Error("Canix Item Master publication did not complete");
     }
+    const reconciledAt = new Date().toISOString();
+    const { error: absentMappingError } = await service.from(
+      "portal_item_source_mapping",
+    ).update({ source_present: false, updated_at: reconciledAt }).eq(
+      "source_system",
+      "canix",
+    );
+    if (absentMappingError) throw absentMappingError;
+    for (let index = 0; index < items.length; index += 250) {
+      const sourceRows = items.slice(index, index + 250).map((item) => ({
+        source_system: "canix",
+        source_item_id: String(item.item_id),
+        source_name: item.name,
+        source_brand_name: item.product_brand_name ?? item.brand_name ?? null,
+        source_sku: item.sku,
+        source_item_type: item.item_type_name ?? item.item_category_name ?? null,
+        source_active: item.is_active,
+        source_present: true,
+        source_updated_at: item.source_updated_at,
+        last_seen_at: reconciledAt,
+        updated_at: reconciledAt,
+      }));
+      const { error } = await service.from("portal_item_source_mapping")
+        .upsert(sourceRows, { onConflict: "source_system,source_item_id" });
+      if (error) throw error;
+    }
     return {
       run_id: runId,
       items: items.length,

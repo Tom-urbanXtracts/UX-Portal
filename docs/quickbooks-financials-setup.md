@@ -1,6 +1,6 @@
 # QuickBooks financial visibility
 
-The portal reads QuickBooks Customers, Vendors, Invoices, and Payments through one server-side OAuth connection. QuickBooks remains authoritative. This release displays financial history and supports internal counterparty reconciliation only; it does not collect payments, retain bank details, or create accounting transactions.
+The portal reads QuickBooks Customers, Vendors, Products and Services, Invoices, and Payments through one server-side OAuth connection. QuickBooks remains authoritative. This release displays financial history and supports internal counterparty and item reconciliation only; it does not collect payments, retain bank details, or create accounting transactions.
 
 ## Deploy
 
@@ -20,7 +20,7 @@ The portal reads QuickBooks Customers, Vendors, Invoices, and Payments through o
    - QBO_EGRESS_PROXY_SECRET (the same strong credential held only by the proxy and Edge Functions)
 5. Keep JWT gateway verification disabled only if the function is configured to self-authenticate exactly as implemented. Portal start/status routes require a valid Administrator token, the callback consumes a one-time OAuth state, and the sync POST additionally accepts the scheduler-only secret.
 6. Sign in as a portal Administrator, open Release readiness, and choose **Connect QuickBooks**. The callback stores the realm and encrypted refresh token server-side. Do not copy a refresh token manually.
-7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_quickbooks_sync_schedule()` as the database owner. The function creates the five-minute POST schedule only when the Vault value exists. A successful sync refreshes Customers, Vendors, Invoices, and Payments together.
+7. Store the same strong random value as the Edge Function secret `QBO_CRON_SECRET` and the database Vault secret `qbo_cron_secret`, then call `portal_enable_item_refresh_schedules()` as the database owner. The function creates the 15-minute, weekday 6:00 AM–6:00 PM America/New_York POST schedule only when the Vault value exists. A successful sync refreshes Customers, Vendors, Products and Services, Invoices, and Payments together.
 
 The scheduled endpoint returns HTTP 202 with `skipped: true` while no encrypted QuickBooks connection exists. This keeps the production schedule ready without turning the intentionally disconnected pre-approval state into a recurring error. The first interval after a successful OAuth connection begins normal synchronization automatically.
 
@@ -53,6 +53,7 @@ The normalized cache keeps:
 
 - Customer identity, display name, active state, balance, parent reference, currency, email, billing city, and source timestamps.
 - Vendor ID, display/company name, active state, balance, 1099 flag, email, city/region/postal code, and source timestamps for internal counterparty reconciliation.
+- Product and Service ID, name, SKU, type, active state, permitted account references, price/cost, quantity tracking, and source timestamps for item reconciliation.
 - Invoice customer, document number, transaction/due dates, original amount, balance, delivery statuses, currency, and source timestamps.
 - Payment customer, date, total, unapplied amount, non-sensitive payment-method label, invoice allocations, currency, and source timestamps.
 
