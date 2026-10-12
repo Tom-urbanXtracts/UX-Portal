@@ -15,10 +15,13 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const PORTAL_NOTIFICATIONS_ENABLED =
+  Deno.env.get("PORTAL_NOTIFICATIONS_ENABLED") === "true";
 const PORTAL_EMAIL_FROM = Deno.env.get("PORTAL_EMAIL_FROM") ??
   "urbanXtracts Portal <portal@updates.urbanxtracts.com>";
 const PORTAL_URL = "https://portal.urbanxtracts.com";
 const SUPPLY_ORDER_AGENT_EMAIL = "amrit@urbanxtracts.com";
+const SUPPLY_ORDER_DESTINATION = "urbanXtracts company receiving address";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -93,6 +96,16 @@ function clean(value: unknown, max = 500): string {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function isSupplyOrderSetupTest(request: Row): boolean {
+  const lines = Array.isArray(request.portal_purchase_request_line)
+    ? request.portal_purchase_request_line as Row[]
+    : [];
+  const text = [request.reference, request.vendor_name, request.purpose]
+    .concat(lines.map((line) => line.item_description)).filter(Boolean).join(" ");
+  return /\b(?:do not fulfill|test approval routing|controlled test|supply order test)\b/i.test(text) ||
+    /^(?:test|test vendor)$/i.test(clean(request.vendor_name, 200));
+}
+
 function interpolate(
   template: string,
   variables: Row,
@@ -127,6 +140,10 @@ async function sendDepartmentNotification(
   variables: Row,
   eventKey: string,
 ): Promise<string> {
+  // Notifications remain launch-gated until the portal workflow and recipients
+  // have completed setup. Enabling delivery requires an explicit environment
+  // change; the safe default is to keep every message held.
+  if (!PORTAL_NOTIFICATIONS_ENABLED) return "held_launch";
   const { data: template, error: templateError } = await service.from(
     "portal_notification_template",
   )
@@ -430,6 +447,7 @@ async function overview(actor: Actor): Promise<Row> {
     systemsResult,
     emergencyChangesResult,
     supplyItemHistoryResult,
+    activeBrandsResult,
   ] = await Promise.all([
     service.from("portal_department").select(
       "department_key,display_name,status,platform_owner,business_owner,backup_owner,sensitive_tier",
@@ -455,7 +473,7 @@ async function overview(actor: Actor): Promise<Row> {
         actor.id,
       ).order("created_at", { ascending: false }).limit(100),
     service.from("portal_purchase_request").select(
-      "*,portal_purchase_request_line(*),portal_purchase_request_decision(*)",
+      "*,brand:portal_organization!brand_organization_id(id,display_name),portal_purchase_request_line(*),portal_purchase_request_decision(*)",
     ).order("created_at", { ascending: false }).limit(250),
     service.from("portal_purchase_approver").select(
       "id,approval_tier,display_name,approver_email,is_backup,active",
@@ -500,6 +518,11 @@ async function overview(actor: Actor): Promise<Row> {
       : Promise.resolve({ data: [], error: null }),
     service.from("portal_supply_item_history").select("*").eq("active", true)
       .order("last_ordered_at", { ascending: false }).limit(100),
+    service.from("portal_organization").select(
+      "id,display_name,legal_name,status,portal_brand_profile_detail!inner(activation_state)",
+    ).eq("kind", "brand").eq("status", "active")
+      .eq("portal_brand_profile_detail.activation_state", "active")
+      .order("display_name"),
   ]);
   for (
     const result of [
@@ -516,6 +539,7 @@ async function overview(actor: Actor): Promise<Row> {
       systemsResult,
       emergencyChangesResult,
       supplyItemHistoryResult,
+      activeBrandsResult,
     ]
   ) {
     if (result.error) throw result.error;
@@ -538,7 +562,7 @@ async function overview(actor: Actor): Promise<Row> {
       actor.administrator || actor.email === SUPPLY_ORDER_AGENT_EMAIL ||
       String(request.requester_id) === actor.id ||
       actorPurchaseApprovalTiers.includes(String(request.approval_tier)),
-  );
+  ).filter((request) => !isSupplyOrderSetupTest(request));
   let purchaseEvidence: Row[] = [];
   if (purchaseRequests.length) {
     const requestIds = purchaseRequests.map((request) => String(request.id));
@@ -576,6 +600,11 @@ async function overview(actor: Actor): Promise<Row> {
     actorPurchaseApprovalTiers,
     canPlaceSupplyOrders: actor.administrator || actor.email === SUPPLY_ORDER_AGENT_EMAIL,
     supplyItemHistory: supplyItemHistoryResult.data ?? [],
+    activeBrands: ((activeBrandsResult.data ?? []) as Row[]).map((brand) => ({
+      id: brand.id,
+      displayName: brand.display_name,
+      legalName: brand.legal_name,
+    })),
     supplyOrderReport: {
       totalRequests: purchaseRequests.length,
       awaitingApproval: purchaseRequests.filter((row) =>
@@ -770,6 +799,7 @@ async function decideDepartmentRequest(actor: Actor, body: Row): Promise<Row> {
 
 async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   const departmentKey = clean(body.departmentKey, 40);
+  const brandOrganizationId = clean(body.brandOrganizationId, 36);
   const vendorName = clean(body.vendorName, 200);
   const purpose = clean(body.purpose, 4000);
   const priority = clean(body.priority || "normal", 20);
@@ -778,7 +808,7 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   const deliveryEndOn = isoDate(body.deliveryEndOn);
   const paymentMethod = clean(body.paymentMethod, 100);
   const recipientName = clean(body.recipientName, 160);
-  const deliveryLocation = clean(body.deliveryLocation, 500);
+  const deliveryLocation = SUPPLY_ORDER_DESTINATION;
   const estimatedShipping = Number(body.estimatedShipping || 0);
   const estimatedTax = Number(body.estimatedTax || 0);
   const estimatedDiscount = Number(body.estimatedDiscount || 0);
@@ -794,7 +824,7 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   ]);
   if (
     !/^[a-z0-9_]{2,40}$/.test(departmentKey) || vendorName.length < 2 ||
-    purpose.length < 12 || recipientName.length < 2 || deliveryLocation.length < 4 ||
+    purpose.length < 12 || recipientName.length < 2 ||
     !Number.isFinite(estimatedShipping) || estimatedShipping < 0 ||
     !Number.isFinite(estimatedTax) || estimatedTax < 0 ||
     !Number.isFinite(estimatedDiscount) || estimatedDiscount < 0 ||
@@ -805,6 +835,28 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       400,
       "Complete the department, vendor, business purpose, and at least one item.",
     );
+  }
+  const supplyDepartments = new Set([
+    "maintenance", "administration", "compliance", "distribution",
+    "human_resources", "grow", "marketing", "process", "develop", "brand",
+  ]);
+  if (!supplyDepartments.has(departmentKey)) {
+    throw new InternalWorkError(400, "Choose an approved Supply Order department.");
+  }
+  if (departmentKey === "brand") {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(brandOrganizationId)) {
+      throw new InternalWorkError(400, "Choose an active Brand for this Supply Order.");
+    }
+    const brandResult = await service.from("portal_organization").select(
+      "id,portal_brand_profile_detail!inner(activation_state)",
+    ).eq("id", brandOrganizationId).eq("kind", "brand").eq("status", "active")
+      .eq("portal_brand_profile_detail.activation_state", "active").maybeSingle();
+    if (brandResult.error) throw brandResult.error;
+    if (!brandResult.data) {
+      throw new InternalWorkError(400, "The selected Brand is not active.");
+    }
+  } else if (brandOrganizationId) {
+    throw new InternalWorkError(400, "A Brand may only be assigned to the Brand department.");
   }
   const normalizedLines = lines.map((line, index) => {
     const itemDescription = clean(line.itemDescription, 500);
@@ -857,10 +909,11 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       "Enter a purchase amount greater than zero.",
     );
   }
-  const { data, error } = await service.rpc("portal_submit_purchase_request_v3", {
+  const { data, error } = await service.rpc("portal_submit_purchase_request_v4", {
     p_actor_id: actor.id,
     p_actor_email: actor.email,
     p_department_key: departmentKey,
+    p_brand_organization_id: departmentKey === "brand" ? brandOrganizationId : null,
     p_vendor_name: vendorName,
     p_purpose: purpose,
     p_priority: priority,

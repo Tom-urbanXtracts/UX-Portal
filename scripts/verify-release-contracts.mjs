@@ -44,6 +44,7 @@ const departmentRequestAuditRepairMigration = await readFile(resolve(root, "supa
 const departmentNotificationMigration = await readFile(resolve(root, "supabase/migrations/20261008051633_department_request_notifications.sql"), "utf8");
 const financePurchaseMigration = await readFile(resolve(root, "supabase/migrations/20261008053155_finance_purchase_requests_and_notification_routing.sql"), "utf8");
 const supplyOrderMigration = await readFile(resolve(root, "supabase/migrations/20261012133000_supply_order_workspace_v1.sql"), "utf8");
+const supplyOrderBrandMigration = await readFile(resolve(root, "supabase/migrations/20261012143000_supply_order_departments_and_brand_scope.sql"), "utf8");
 const notificationSuppressionMigration = await readFile(resolve(root, "supabase/migrations/20261008161122_suppress_test_notification_recipients.sql"), "utf8");
 const notificationSuppressionGateMigration = await readFile(resolve(root, "supabase/migrations/20261008161710_enforce_notification_suppression.sql"), "utf8");
 const identityHelperCompatibilityMigration = await readFile(resolve(root, "supabase/migrations/20261008164743_restore_public_identity_helpers.sql"), "utf8");
@@ -721,14 +722,30 @@ assertContract(financePurchaseMigration.includes("portal_department_notification
   && internalWork.includes('staff_role", "administrator"')
   && internalWork.includes('in("member_role", ["department_head", "backup_owner"])'),
   "Department notifications reach configured owners, inboxes, department leaders, and every active Administrator");
-assertContract(internalWork.includes('service.rpc("portal_submit_purchase_request_v3"')
+assertContract(internalWork.includes('service.rpc("portal_submit_purchase_request_v4"')
   && internalWork.includes('service.rpc("portal_mark_supply_order_ordered"')
   && internalWork.includes('service.rpc(\n    "portal_record_purchase_business_decision"')
   && internalWork.includes('action === "upload-purchase-document"')
   && source.includes("INTERNAL · CONTROLLED PURCHASING")
-  && source.includes("AMRIT · PURCHASING QUEUE")
+  && source.includes("Purchasing · record vendor order")
   && source.includes("Business decision evidence"),
   "The Internal service and Supply Orders UI expose calculated multi-line intake, business approval, Amrit ordering, and supporting documents");
+assertContract(source.includes("const SUPPLY_ORDER_DESTINATION = 'urbanXtracts company receiving address'")
+  && source.includes('const SUPPLY_ORDER_BOARD_2026_ITEMS = [')
+  && source.includes('supplyOrderCatalogCount: supplyOrderCatalogItems.length')
+  && source.includes('.filter(request => !isSupplyOrderSetupTest(request))')
+  && internalWork.includes('const SUPPLY_ORDER_DESTINATION = "urbanXtracts company receiving address"')
+  && internalWork.includes('.filter((request) => !isSupplyOrderSetupTest(request))'),
+  "Supply Orders use the fixed company destination, expose the Board 2026 item catalog, and keep setup tests out of the working queue");
+assertContract(source.includes("['maintenance', 'Maintenance']")
+  && source.includes("['marketing', 'Marketing']")
+  && source.includes("['brand', 'Brand']")
+  && source.includes('purchaseRequestBrandVisible: s.purchaseRequestDepartment === \'brand\'')
+  && internalWork.includes('p_brand_organization_id: departmentKey === "brand"')
+  && supplyOrderBrandMigration.includes("portal_purchase_request_brand_scope_check")
+  && supplyOrderBrandMigration.includes("detail.activation_state = 'active'")
+  && supplyOrderBrandMigration.includes("portal_submit_purchase_request_v4"),
+  "Supply Orders use the approved department taxonomy and require a durable active Brand scope when Brand is selected");
 assertContract(supplyOrderMigration.includes("elsif total_amount < 3000")
   && supplyOrderMigration.includes("portal_supply_item_history")
   && supplyOrderMigration.includes("estimated_shipping")
