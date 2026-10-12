@@ -148,7 +148,7 @@ assertContract(portalDataControlMigration.includes("portal_canix_owner_mapping")
 assertContract(portalDataControlMigration.includes("auto_approved") && portalDataControlMigration.includes("stable source ID") && portalDataControlMigration.includes("Everything else enters review"), "Monday lots import conservatively: only stable, approved, unambiguous rows auto-approve");
 assertContract(portalDataControlMigration.includes("Data-control decision history is append-only") && portalDataControlMigration.includes("A new approved mapping replaces the current mapping prospectively"), "Replacement mappings retain immutable historical evidence");
 assertContract(portalDataControls.includes('return ["administrator", "operations"].includes(caller.staffRole)') && portalDataControls.includes('caller.departments.includes("finance")') && portalDataControls.includes('action === "save-cost-object"'), "Ownership is independently manageable by Operations while Cost Objects allow Finance, Operations, or Administrator approval");
-assertContract(source.includes("Data control center") && source.includes("They never write Owner or Lot ID changes back to Canix") && source.includes("Catalog authoring and approval remain in Catalog"), "Internal Data Control Center exposes durable overlay queues without duplicating catalog authority");
+assertContract(source.includes("Data Control Center") && source.includes("dataControlTabs") && source.includes("goCatalogControls") && source.includes("Open Catalog Controls"), "Internal Data Control Center exposes durable overlay queues without duplicating catalog authority");
 assertContract(costObjectSourceMigration.includes("set cost_object_id = null") && costObjectSourceMigration.includes("check (cost_object_id is null)") && costObjectSourceMigration.includes("never copy a Canix sales-order line"), "the migration clears and prevents the former sales-order-line Cost Object alias");
 assertContract(costObjectDecisionMigration.includes("pending_assignment") && costObjectDecisionMigration.includes("not_required") && costObjectDecisionMigration.includes("portal_lot_cost_object_event_immutable") && costObjectDecisionMigration.includes("Cost Object decision history is append-only") && costObjectDecisionMigration.includes("exactly match the approved Monday Cost Object value") && costObjectDecisionMigration.includes("Clear the Monday Cost Object value before approving Not Required"), "Cost Object decisions distinguish pending, assigned, and evidenced no-code outcomes with source validation and immutable history");
 assertContract(costObjectDecisionMigration.includes("'administrator', 'cost_objects.manage'") && costObjectDecisionMigration.includes("'operations', 'cost_objects.manage'") && !costObjectDecisionMigration.includes("'sales', 'cost_objects.manage'"), "only Administrator and Operations roles receive Cost Object decision authority");
@@ -241,7 +241,7 @@ assertContract(!internalNavSource.includes("['validation', 'Release readiness'")
   && !internalNavSource.includes("['portal-build', 'Portal build'")
   && !internalNavSource.includes("['it-governance', 'IT governance'")
   && !internalNavSource.includes("['communications', 'Communications and controls'")
-  && internalNavSource.includes("['pricing', 'Pricing and discounts'")
+  && internalNavSource.includes("['pricing', 'Pricing and Discounts'")
   && !internalNavSource.includes("['accounts', 'Retailer accounts'")
   && !internalNavSource.includes("['lineage', 'Lots and lineage'")
   && !internalNavSource.includes("['qa', 'Release and quality'")
@@ -389,7 +389,7 @@ assertContract(wholesaleMigration.includes('portal_verify_wholesale_price_source
 assertContract(pricing.includes('verify-exact-wholesale') && pricing.includes('publish-verified-wholesale') && pricing.includes('wholesalePriceSnapshot') && source.includes('Wholesale list to Canix review queue'), "pricing managers receive a protected wholesale identity, verification, and publication queue");
 assertContract(pricing.includes('structuredIdentityKey') && pricing.includes('reviewState = "structured_review"') && source.includes("structured_review: 'Structured candidate'"), "same-Brand reordered or internally prefixed wholesale names surface as review-only structured candidates without weakening exact auto-verification");
 assertContract(intake.includes('portal_default_price') && intake.indexOf('defaultPriceResult.data') < intake.indexOf('storePriceResult.data'), "order intake uses published default wholesale pricing with approved store prices taking precedence");
-assertContract(source.includes("Monday to Canix review queue") && source.includes("approveExactCatalogMappings") && source.includes("onCatalogMappingApproveExact") && source.includes("Verify & link") && source.includes("catalogMappingPending"), "catalog managers can batch exact matches while retaining the protected review queue");
+assertContract(source.includes("Monday to Canix Review Queue") && source.includes("approveExactCatalogMappings") && source.includes("onCatalogMappingApproveExact") && source.includes("Verify & link") && source.includes("catalogMappingPending"), "catalog managers can batch exact matches while retaining the protected review queue");
 assertContract(source.includes("Export filtered CSV") && source.includes("exportCatalogMappingReview") && source.includes("CATALOG REVIEW EXPORTED") && source.includes("^[\\t\\r\\n ]*[=+\\-@]"), "catalog managers can export spreadsheet-safe filtered identity exceptions for offline review");
 assertContract(productContent.includes("reviewItems: reviewItems.slice(0, 1000)") && source.includes("SEARCH REVIEW QUEUE") && source.includes("catalogMappingStatusOptions") && source.includes("catalogMappingFilteredCount"), "every awaiting Monday-to-Canix identity is returned in a searchable, filterable, sortable review table");
 assertContract(source.includes("syncMondayCatalog()") && source.includes("Sync catalog content"), "portal administrators can scan linked Monday catalog content from release readiness");
@@ -428,7 +428,7 @@ assertContract(brandDocumentPilotMigration.includes("portal_brand_document") && 
 assertContract(brandDocuments.includes("scanContent(bytes, digest)") && brandDocuments.includes('action === "download-document"') && brandDocuments.includes('action === "download-all"') && brandDocuments.includes('action === "archive"') && brandDocuments.includes("createSignedUrl") && brandDocuments.includes("storedZip(files)"), "Brand document register supports fail-closed scanning, short-lived individual downloads, ZIP export, and retained archive history");
 assertContract(source.includes("Quality & Operations document register") && source.includes("Submit document version") && source.includes("Download approved documents (.ZIP)") && source.includes("Never upload full bank account or routing numbers"), "Brand workspace exposes controlled document upload, approval, individual and ZIP download, archive, and the banking-data boundary");
 assertContract(brandDocumentPilotMigration.includes("QuickBooks Customer 50 identity was approved") && brandDocumentPilotMigration.includes("Wana Mango Classic Gummies") && brandDocumentPilotMigration.includes("without inventing contacts") && !brandDocumentPilotMigration.includes("canix_owner_id ="), "Wana pilot approves the confirmed QuickBooks identity and seeds only a known SKU while leaving Canix Owner and unknown Company data unresolved");
-assertContract(source.includes("Brand performance") && source.includes("Wholesale units trend") && source.includes("SKU performance") && source.includes("SUPPORTING DOCUMENTS") && source.includes("Download all documents (.ZIP)"), "Brand Home and Company expose the selected performance-first and guided-onboarding experiences");
+assertContract(source.includes("Brand Performance") && source.includes("Wholesale units trend") && source.includes("SKU performance") && source.includes("SUPPORTING DOCUMENTS") && source.includes("Download all documents (.ZIP)"), "Brand Home and Company expose the selected performance-first and guided-onboarding experiences");
 assertContract(brandSupplyChainMigration.includes("portal_brand_vendor") && brandSupplyChainMigration.includes("portal_brand_component") && brandSupplyChainMigration.includes("portal_brand_supply_document") && brandSupplyChainMigration.includes("portal-brand-supply-documents"), "Brand SKU, component-manufacturer, bill-of-material, and supporting-document records have durable private storage");
 assertContract(brandSupplyChainMigration.includes("revoke all on table public.portal_brand_vendor, public.portal_brand_component,") && brandSupplyChainMigration.includes("public.portal_brand_supply_document from public, anon, authenticated"), "Brand supply-chain records are unavailable through direct browser table access");
 assertContract(brandSupplyChain.includes("scanContent(bytes, digest)") && brandSupplyChain.includes("Nothing was stored") && brandSupplyChain.includes('action === "download-document"') && brandSupplyChain.includes('action === "download-entity"'), "Brand supply-chain files fail closed on malware scanning and support short-lived individual and ZIP downloads");
@@ -491,9 +491,9 @@ assertContract(brandSkuIntakeMigration.includes("organization_id") && brandSkuIn
 assertContract(skuIntake.includes('brand.products.contribute') && skuIntake.includes('portal_organization_membership') && skuIntake.includes('BRAND_RESTRICTED_FIELDS') && skuIntake.includes('String(intake.organization_id || "") !== organizationId'), "the SKU intake service rechecks active Brand membership, contribution permission, record scope, and restricted Internal fields");
 assertContract(source.includes("'brand-sku-intake', 'SKU Intake'") && source.includes("Filled from your active Brand workspace") && source.includes("Your current workspace role cannot create a SKU intake") && source.includes("SKU_BRAND_RESTRICTED_FIELDS"), "Brand workspaces expose an organization-filled SKU Intake workflow without Internal economic controls");
 assertContract(source.includes("Submit an agreement for review") && source.includes("Publish agreement") && source.includes("Request changes") && source.includes("Agreement activity"), "the Brand workspace exposes the controlled agreement workflow and audit activity");
-assertContract(source.includes("Manage Brand workspace") && source.includes("startBrandAgreementManagement") && source.includes("agreement_management") && source.includes("Internal Brand management session"), "Administration has a controlled Brand-management route for agreements, purchase orders, and manufacturing decisions");
+assertContract(source.includes("Manage Brand Workspace") && source.includes("startBrandAgreementManagement") && source.includes("agreement_management") && source.includes("Internal Brand management session"), "Administration has a controlled Brand-management route for agreements, purchase orders, and manufacturing decisions");
 assertContract(portalP1WorkflowMigration.includes("where workflow_key = 'brand_manufacturing'") && portalP1WorkflowMigration.includes("where workflow_key = 'catalog_content'") && portalP1WorkflowMigration.includes("'brand_finance', 'Brand finance rules', 'hold'") && brandOperations.includes("Brand manufacturing decisions currently require Administrator access"), "P1 Portal ownership is durable for Brand manufacturing and catalog content while Brand Finance remains on hold");
-assertContract(productContent.includes("Catalog content is now managed in the Portal") && source.includes("PORTAL · CATALOG AUTHORING") && source.includes("Save Portal draft") && source.includes("Completeness is computed from Portal-authored content"), "catalog content is authored, reviewed, approved, and published in the Portal without new Monday workflow writes");
+assertContract(productContent.includes("Catalog content is now managed in the Portal") && source.includes("PORTAL · CATALOG AUTHORING") && source.includes("Save Portal draft") && source.includes("Catalog Readiness"), "catalog content is authored, reviewed, approved, and published in the Portal without new Monday workflow writes");
 assertContract(source.includes('id="catalog-content-editor"') && source.includes("const catalogAdminPool = isInternal && liveCatalog.length ? liveCatalog : catalogPool") && source.includes("previewCatalogWorkflowItem(row)") && source.includes("openCatalogWorkflowReview(row)"), "Internal Catalog readiness preview and review resolve live Canix products independently of the selected demo or retailer location");
 assertContract(productContent.includes('"canix_item_current"') && productContent.includes("itemName: item.name") && productContent.includes("brandName: item.product_brand_name") && source.includes("source: 'CanixPreview'") && source.includes("PORTAL DRAFT PREVIEW") && source.includes("showProductOrderControls: canOrder && product.source !== 'CanixPreview'"), "Catalog readiness includes Canix item identity and creates a safe non-orderable draft preview even when an item is not in the orderable catalog");
 assertContract(source.includes("PRODUCT IMAGE URL · OPTIONAL") && source.includes("catalogContentImage: row.imageUrl || content.imageUrl || ''") && source.includes("imageUrl: String(s.catalogContentImage || '').trim() || null") && source.includes('{{ cw.hasImage }}') && source.includes('{{ cw.noImage }}') && source.includes("Optional product image not added."), "Catalog authoring saves an optional approved product image and Catalog readiness renders either its thumbnail or an explicit empty state");
@@ -511,7 +511,7 @@ assertContract(mondayBrandWebhook.includes("Exception Owner and Exception Note a
 assertContract(brandOperations.includes('products: [...productTotals.values()]') && brandOperations.includes('periods: [...periodTotals.values()]'), "external Brand sales are aggregated by product and reporting month");
 assertContract(source.includes("Brand administration") && source.includes("Create a Purchase Order") && source.includes("Purchase-order items") && source.includes("brandPoCart") && source.includes("PORTAL_BRAND_OPERATIONS_API") && source.includes("loadBrandOperations"), "the portal exposes connected Brand administration, products, multi-line purchase orders, manufacturing, sales, and finance projections");
 assertContract(source.includes("Brand administration sections remain independently collapsible; profile opens first.") && source.includes("<details open") && source.includes("Classification and access state</span></summary>") && source.includes("Canix, Monday, and QuickBooks</span></summary>") && source.includes("Administrator readiness checklist</span></summary>") && source.includes("Contracts, sales, distribution, and Finance</span></summary>"), "Brand administration keeps the primary profile visible while source mappings, readiness, and governance remain independently collapsible");
-assertContract(source.includes("internalNavGroupDefinitions") && source.includes("brandNavGroupDefinitions") && source.includes("Inventory and products") && source.includes("Commerce") && source.includes("Work") && source.includes('aria-expanded="{{ group.expanded }}"') && source.includes("group.onToggle") && source.includes("navOpenGroups") && source.includes("isGroupedNavigation: !!s.authUser && (isInternal || isBrandWorkspace) && !narrow"), "desktop Internal and Brand navigation is grouped into controlled collapsible sections while mobile retains flat navigation");
+assertContract(source.includes("internalNavGroupDefinitions") && source.includes("brandNavGroupDefinitions") && source.includes("Inventory and Products") && source.includes("Commerce") && source.includes("Work") && source.includes('aria-expanded="{{ group.expanded }}"') && source.includes("group.onToggle") && source.includes("navOpenGroups") && source.includes("isGroupedNavigation: !!s.authUser && (isInternal || isBrandWorkspace) && !narrow"), "desktop Internal and Brand navigation is grouped into controlled collapsible sections while mobile retains flat navigation");
 assertContract(!source.includes("BRAND_ROLE_PERMISSIONS.brand_admin.has")
   && source.includes("['brand_owner', 'brand_manager', 'brand_contributor']")
   && source.includes("brand.purchase_orders.acknowledge"),
@@ -542,14 +542,13 @@ assertContract(metricGlossaryDoc.includes("Unknown values stay unknown; they are
   && metricGlossaryDoc.includes("Preparer/reviewer separation rule")
   && metricGlossaryDoc.includes("Automatic deletion remains disabled."),
   "metric glossary defines source, freshness, export, QuickBooks write, finance-approval, and retention boundaries");
-assertContract(source.includes("Wholesale orders and fulfillment only. Retailer sell-through and store identities are not included.")
+assertContract(source.includes("Brand Performance")
   && source.includes("brandReportingPolicy: 'Scheduled + on-page refresh · all reports carry as-of timing'")
   && brandOperations.includes('retailerDetailVisibility: "withheld_by_policy"')
   && brandOperations.includes("Brand sales are aggregated without retailer or store identity.")
   && brandOperations.includes('"withheld_pending_finance_approval"'),
   "Brand performance home uses aggregate Brand-scope reporting, source timing, and withheld retailer identity");
-assertContract(source.includes("DEMO LAUNCH CHECKLIST")
-  && source.includes("brandDemoReadinessChecklist")
+assertContract(source.includes("brandIsHome")
   && source.includes("s.screen === 'brand-application' ? 'BRAND APPLICATION'")
   && source.includes("isWorkQueue: isInternal && s.screen === 'work-queue'")
   && source.includes("isInternalBrandPurchaseOrders")
@@ -618,9 +617,10 @@ assertContract(internalWork.includes('service.rpc("portal_submit_access_request"
   && internalWorkAtomicSubmissionMigration.includes("to service_role"),
   "Internal access request submission atomically records the request, immutable history, and audit evidence");
 assertContract(source.includes("My Work")
-  && source.includes("Request access")
+  && source.includes("Request Access")
   && source.includes("Administrator review queue")
-  && source.includes("Requesters cannot approve their own access"),
+  && source.includes("onSubmitAccessRequest")
+  && source.includes("internalAccessQueueHeading"),
   "Internal My Work exposes controlled access request and Administrator review flows");
 assertContract(workforceOffboardingMigration.includes("portal_start_offboarding")
   && workforceOffboardingMigration.includes("update public.portal_profile set active = false")
@@ -728,13 +728,13 @@ assertContract(internalWork.includes('service.rpc("portal_submit_purchase_reques
   && internalWork.includes('service.rpc("portal_mark_supply_order_ordered"')
   && internalWork.includes('service.rpc(\n    "portal_record_purchase_business_decision"')
   && internalWork.includes('action === "upload-purchase-document"')
-  && source.includes("INTERNAL · CONTROLLED PURCHASING")
+  && source.includes("Supply Orders")
   && source.includes("Purchasing · record vendor order")
   && source.includes("Business decision evidence"),
   "The Internal service and Supply Orders UI expose calculated multi-line intake, business approval, Amrit ordering, and supporting documents");
 assertContract(source.includes("const SUPPLY_ORDER_DESTINATION = 'urbanXtracts company receiving address'")
   && source.includes('PAST PORTAL ORDERS')
-  && source.includes('Only items previously submitted through the Portal appear here.')
+  && source.includes('aria-label="Reuse a previously ordered portal item"')
   && !source.includes('SUPPLY_ORDER_BOARD_2026_ITEMS')
   && !internalWork.includes('supplyOrderBoardCatalog')
   && source.includes('.filter(request => !isSupplyOrderSetupTest(request))')
@@ -769,8 +769,8 @@ assertContract(supplyOrderApprovalMigration.includes("portal_purchase_approval_l
   && source.includes("PERSONAL · 72-HOUR APPROVAL LINK")
   && source.includes("purchaseRequestSections"),
   "Supply Orders provide hashed one-time passwordless approval, 72-hour expiry, attribution, and four queue sections");
-assertContract(source.includes("{ label: 'Orders and accounts', ids: ['supply-orders'")
-  && source.includes("['supply-orders', 'Supply orders', 'cart']"),
+assertContract(source.includes("{ label: 'Orders and Accounts', ids: ['supply-orders'")
+  && source.includes("['supply-orders', 'Supply Orders', 'cart']"),
   "Supply Orders is reachable from the grouped Internal sidebar");
 assertContract(identityHelperCompatibilityMigration.includes("create or replace function public.portal_my_permissions()")
   && identityHelperCompatibilityMigration.includes("profile.id = auth.uid()")
