@@ -199,6 +199,23 @@ async function allSourceItemMappings(): Promise<Row[]> {
   return rows;
 }
 
+async function allItemMatchSuggestions(): Promise<Row[]> {
+  const rows: Row[] = [];
+  const pageSize = 1000;
+  for (let offset = 0;; offset += pageSize) {
+    const { data, error } = await service.from("portal_item_match_suggestion")
+      .select("*").order("source_system", { ascending: true }).order(
+        "source_item_id",
+        { ascending: true },
+      ).range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as Row[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+}
+
 function normalizedLotId(value: unknown): string | null {
   const valueString = clean(value, 80).toUpperCase();
   return /^[A-Z0-9-]{1,40}$/.test(valueString) ? valueString : null;
@@ -237,6 +254,7 @@ async function snapshot(caller: Caller): Promise<Row> {
     owners,
     packageLots,
     items,
+    itemSuggestions,
     lots,
     costObjects,
     parties,
@@ -255,6 +273,7 @@ async function snapshot(caller: Caller): Promise<Row> {
       ascending: false,
     }).limit(5000),
     allSourceItemMappings(),
+    allItemMatchSuggestions(),
     service.from("portal_lot_register").select("*").order("updated_at", {
       ascending: false,
     }).limit(5000),
@@ -266,7 +285,7 @@ async function snapshot(caller: Caller): Promise<Row> {
       "id,party_code,display_name,active",
     ).eq("active", true).order("display_name"),
     service.from("portal_sku_intake").select(
-      "id,reference,brand_name,product_name,status",
+      "id,reference,brand_name,product_name,status,external_sku,inventory_class,master_status,sellable,master_note,updated_at",
     ).order("updated_at", { ascending: false }).limit(2500),
     service.from("portal_product_content").select(
       "canix_item_id,publication_state,workflow_state,completeness_score,approved_at,scheduled_publish_at,updated_at",
@@ -304,6 +323,12 @@ async function snapshot(caller: Caller): Promise<Row> {
   const savedOwnerRows = owners.data ?? [];
   const savedPackageLotRows = packageLots.data ?? [];
   const savedItemRows = items;
+  const suggestionsBySource = new Map(
+    itemSuggestions.map((row) => [
+      `${row.source_system}:${row.source_item_id}`,
+      row,
+    ]),
+  );
   const catalog = catalogRows.data ?? [];
   const savedOwnerById = new Map(
     savedOwnerRows.map((row) => [String(row.canix_owner_id), row]),
@@ -390,18 +415,31 @@ async function snapshot(caller: Caller): Promise<Row> {
     }
   }
 
-  const itemRows: Row[] = savedItemRows.map((source): Row => ({
-    ...source,
-    canix_item_id: source.source_system === "canix"
-      ? Number(source.source_item_id)
-      : null,
-    canix_item_name: source.source_name ?? null,
-    canix_brand_name: source.source_brand_name ?? null,
-    canix_sku: source.source_sku ?? null,
-    canix_item_type: source.source_item_type ?? null,
-    canix_active: source.source_active === true,
-    source_discovery: source.source_present === true,
-  }));
+  const itemRows: Row[] = savedItemRows.map((source): Row => {
+    const suggestion = suggestionsBySource.get(
+      `${source.source_system}:${source.source_item_id}`,
+    ) ?? {};
+    return {
+      ...source,
+      canix_item_id: source.source_system === "canix"
+        ? Number(source.source_item_id)
+        : null,
+      canix_item_name: source.source_name ?? null,
+      canix_brand_name: source.source_brand_name ?? null,
+      canix_sku: source.source_sku ?? null,
+      canix_item_type: source.source_item_type ?? null,
+      canix_active: source.source_active === true,
+      source_discovery: source.source_present === true,
+      suggested_portal_sku_id: suggestion.suggested_portal_sku_id ?? null,
+      suggested_reference: suggestion.suggested_reference ?? null,
+      suggestion_match_method: suggestion.match_method ?? null,
+      suggestion_confidence: suggestion.confidence ?? null,
+      suggestion_candidate_count: suggestion.candidate_count ?? 0,
+      suggestion_status: suggestion.suggestion_status ?? null,
+      suggestion_reasoning: suggestion.reasoning ?? null,
+      suggestion_generated_at: suggestion.generated_at ?? null,
+    };
+  });
   return {
     source: {
       system: "Supabase",
@@ -444,15 +482,26 @@ async function snapshot(caller: Caller): Promise<Row> {
           ) &&
           row.source_present !== false
         ).length,
-      itemToBeMapped: itemRows.filter((row) =>
-        row.decision_status === "to_be_mapped" && row.source_present !== false
-      ).length,
-      canixSourceItems: itemRows.filter((row) =>
-        row.source_system === "canix" && row.source_present !== false
-      ).length,
-      quickBooksSourceItems: itemRows.filter((row) =>
-        row.source_system === "quickbooks" && row.source_present !== false
-      ).length,
+      itemToBeMapped:
+        itemRows.filter((row) =>
+          row.decision_status === "to_be_mapped" && row.source_present !== false
+        ).length,
+      itemSuggested:
+        itemRows.filter((row) =>
+          row.suggestion_status === "suggested" && row.source_present !== false
+        ).length,
+      itemAmbiguous:
+        itemRows.filter((row) =>
+          row.suggestion_status === "ambiguous" && row.source_present !== false
+        ).length,
+      canixSourceItems:
+        itemRows.filter((row) =>
+          row.source_system === "canix" && row.source_present !== false
+        ).length,
+      quickBooksSourceItems:
+        itemRows.filter((row) =>
+          row.source_system === "quickbooks" && row.source_present !== false
+        ).length,
       lots: lotRows.length,
       lotsPending: lotRows.filter((row) =>
         row.approval_status !== "approved" &&
@@ -463,7 +512,14 @@ async function snapshot(caller: Caller): Promise<Row> {
         catalog.filter((row) => row.publication_state !== "published").length,
       sourcePackages: packageSources.length,
       packagesMissingOwner,
-      sourceItems: itemRows.filter((row) => row.source_present !== false).length,
+      sourceItems:
+        itemRows.filter((row) => row.source_present !== false).length,
+      portalSkus: (skuRows.data ?? []).length,
+      activePortalSkus:
+        (skuRows.data ?? []).filter((row) => row.master_status === "active")
+          .length,
+      sellablePortalSkus:
+        (skuRows.data ?? []).filter((row) => row.sellable === true).length,
     },
     ownerMappings: ownerRows,
     packageLots: packageLotRows,
@@ -697,10 +753,13 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
   if (status === "approved") {
     const { data: matchedSku, error: skuError } = await service.from(
       "portal_sku_intake",
-    ).select("id,reference").eq("id", skuId).maybeSingle();
+    ).select("id,reference,master_status").eq("id", skuId).maybeSingle();
     if (skuError) throw skuError;
-    if (!matchedSku || clean(matchedSku.reference, 160) !== skuReference) {
-      throw new Error("Choose an existing Portal SKU for this mapping.");
+    if (
+      !matchedSku || clean(matchedSku.reference, 160) !== skuReference ||
+      matchedSku.master_status !== "active"
+    ) {
+      throw new Error("Choose an active Portal SKU for this mapping.");
     }
   }
   const { data: prior, error: priorError } = await service.from(
@@ -768,6 +827,136 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
     data as Row,
   );
   return data as Row;
+}
+
+async function savePortalSku(caller: Caller, body: Row): Promise<Row> {
+  const id = clean(body.id, 80) || null;
+  const reference = clean(body.reference, 160).toUpperCase() || null;
+  const productName = clean(body.productName, 300);
+  const brandName = clean(body.brandName, 200);
+  const externalSku = clean(body.externalSku, 160) || null;
+  const inventoryClass = clean(body.inventoryClass, 40).toLowerCase();
+  const masterStatus = clean(body.masterStatus, 40).toLowerCase();
+  const sellable = body.sellable === true ||
+    clean(body.sellable, 20) === "true";
+  const note = clean(body.note, 1500);
+  const allowedClasses = new Set([
+    "finished_product",
+    "biomass",
+    "seed",
+    "oil",
+    "rosin",
+    "bulk",
+    "plant_material",
+  ]);
+  const allowedStatuses = new Set(["draft", "active", "inactive", "retired"]);
+  if (!productName || !brandName) {
+    throw new Error("Product name and Brand are required.");
+  }
+  if (!allowedClasses.has(inventoryClass)) {
+    throw new Error("Choose a valid inventory classification.");
+  }
+  if (!allowedStatuses.has(masterStatus)) {
+    throw new Error("Choose a valid SKU master status.");
+  }
+  if (
+    sellable &&
+    (inventoryClass !== "finished_product" || masterStatus !== "active")
+  ) {
+    throw new Error("Only active finished products may be marked sellable.");
+  }
+  if (masterStatus !== "draft" && note.length < 8) {
+    throw new Error("Enter an evidence note of at least 8 characters.");
+  }
+  const prior = id
+    ? await existing("portal_sku_intake", "id", id)
+    : reference
+    ? await existing("portal_sku_intake", "reference", reference)
+    : null;
+  if (id && !prior) throw new Error("The Portal SKU no longer exists.");
+  const row: Row = {
+    brand_name: brandName,
+    product_name: productName,
+    external_sku: externalSku,
+    inventory_class: inventoryClass,
+    master_status: masterStatus,
+    sellable,
+    master_note: note,
+    updated_at: new Date().toISOString(),
+  };
+  if (id) row.id = id;
+  if (reference) row.reference = reference;
+  if (!prior) {
+    row.status = "draft";
+    row.workflow_version = 2;
+    row.created_by = caller.id;
+    row.created_by_email = caller.email;
+  }
+  const { data, error } = await service.from("portal_sku_intake").upsert(row)
+    .select("*").single();
+  if (error) throw error;
+
+  if (!prior) {
+    const sections = [
+      ["product_identity", 1, "Product Identity & Ownership"],
+      ["commercial_ordering", 2, "Commercial & Ordering"],
+      ["formulation_bom", 3, "Formulation & Bill of Materials"],
+      ["packaging_labeling", 4, "Packaging & Labeling"],
+      ["quality_compliance", 5, "Manufacturing, Quality & Compliance"],
+      ["marketing_launch", 6, "Marketing, Integrations & Launch"],
+    ].map(([sectionKey, position, title]) => ({
+      intake_id: data.id,
+      section_key: sectionKey,
+      position,
+      title,
+      status: "not_started",
+      updated_by_email: caller.email,
+    }));
+    const { error: sectionError } = await service.from(
+      "portal_sku_intake_section",
+    ).insert(sections);
+    if (sectionError) {
+      await service.from("portal_sku_intake").delete().eq("id", data.id);
+      throw sectionError;
+    }
+  }
+  const { error: intakeEventError } = await service.from(
+    "portal_sku_intake_event",
+  ).insert({
+    intake_id: data.id,
+    action: prior ? "master_updated" : "master_created",
+    actor_type: "internal",
+    actor_email: caller.email,
+    detail: {
+      inventoryClass,
+      masterStatus,
+      externalSku,
+      sellable,
+      note,
+    },
+  });
+  if (intakeEventError) throw intakeEventError;
+  await event(
+    caller,
+    "portal_sku_master",
+    String(data.reference),
+    prior ? "replaced" : "created",
+    prior,
+    data as Row,
+  );
+  const { error: suggestionError } = await service.rpc(
+    "portal_refresh_item_match_suggestions",
+  );
+  if (suggestionError) throw suggestionError;
+  return data as Row;
+}
+
+async function refreshItemSuggestions(): Promise<Row> {
+  const { data, error } = await service.rpc(
+    "portal_refresh_item_match_suggestions",
+  );
+  if (error) throw error;
+  return (data ?? {}) as Row;
 }
 
 async function saveLot(caller: Caller, body: Row): Promise<Row> {
@@ -913,6 +1102,8 @@ Deno.serve(async (request) => {
       "save-package-lot": () => savePackageLot(caller, body),
       "save-item-mapping": () => saveItem(caller, body),
       "save-source-item-mapping": () => saveSourceItem(caller, body),
+      "save-portal-sku": () => savePortalSku(caller, body),
+      "refresh-item-suggestions": () => refreshItemSuggestions(),
       "save-lot": () => saveLot(caller, body),
     };
     if (!handlers[action]) {

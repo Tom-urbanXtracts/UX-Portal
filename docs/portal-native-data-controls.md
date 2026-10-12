@@ -30,6 +30,7 @@ Every other record enters `Pending review`, including duplicates, missing or mal
 | Physical inventory and compliance package data | Canix |
 | Owner classification and package-to-Lot correction | Supabase Portal overlay |
 | Canix Item to UX OS SKU mapping | Supabase Portal |
+| Portal SKU identity, class, and sellability | Supabase Portal SKU master |
 | Lot Register and Cost Object decision | Supabase Portal |
 | Catalog content and publication | Supabase Portal catalog controls |
 | Historical imported records | Monday, retained as source evidence |
@@ -41,3 +42,13 @@ Every other record enters `Pending review`, including duplicates, missing or mal
 - Every replacement decision creates immutable event history.
 - Canix inventory responses reapply approved overlays after every source refresh.
 - `Not required` is durable but may be replaced by a later authorized decision; it does not silently expire.
+
+## Portal SKU master and assisted matching
+
+- Every Portal SKU has a stable Portal reference, product name, Brand, optional external SKU, inventory class, and lifecycle status.
+- Only an `Active` `Finished product` may be marked sellable.
+- Biomass, Seeds, Oil, Rosin, Bulk, and Plant Material are separate classes and cannot be made sellable through the finished-product catalog.
+- Canix and QuickBooks source items are matched in this order: exact SKU, exact product name plus Brand, then normalized product name plus Brand.
+- Only a unique exact SKU or unique exact product-name-plus-Brand match may auto-approve under the protected matching policy.
+- Normalized matches are suggestions only. Duplicate candidates and conflicts remain in the review queue.
+- The 15-minute source refresh regenerates suggestions while approved source-to-SKU decisions remain durable.

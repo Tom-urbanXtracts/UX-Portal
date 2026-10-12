@@ -286,7 +286,9 @@ async function authenticateCapability(
   const userResponse = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
-  if (!userResponse.ok || !verifiedTokenIsAuthenticated(authorization)) return null;
+  if (!userResponse.ok || !verifiedTokenIsAuthenticated(authorization)) {
+    return null;
+  }
   const user = asObject(await userResponse.json());
   const userId = stringOrNull(user.id);
   if (!userId) return null;
@@ -385,7 +387,8 @@ async function syncItemMaster(force = false): Promise<Json> {
         source_name: item.name,
         source_brand_name: item.product_brand_name ?? item.brand_name ?? null,
         source_sku: item.sku,
-        source_item_type: item.item_type_name ?? item.item_category_name ?? null,
+        source_item_type: item.item_type_name ?? item.item_category_name ??
+          null,
         source_active: item.is_active,
         source_present: true,
         source_updated_at: item.source_updated_at,
@@ -396,6 +399,10 @@ async function syncItemMaster(force = false): Promise<Json> {
         .upsert(sourceRows, { onConflict: "source_system,source_item_id" });
       if (error) throw error;
     }
+    const { error: matchingError } = await service.rpc(
+      "portal_refresh_item_match_suggestions",
+    );
+    if (matchingError) throw matchingError;
     return {
       run_id: runId,
       items: items.length,

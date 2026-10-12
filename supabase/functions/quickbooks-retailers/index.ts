@@ -315,14 +315,15 @@ async function syncQuickBooks(): Promise<
       }).eq("id", 1);
     if (tokenError) throw tokenError;
 
-    const [customers, vendors, invoices, payments, creditMemos, items] = await Promise.all([
-      qboQuery(auth, "Customer", "where Active in (true, false)"),
-      qboQuery(auth, "Vendor", "where Active in (true, false)"),
-      qboQuery(auth, "Invoice"),
-      qboQuery(auth, "Payment"),
-      qboQuery(auth, "CreditMemo"),
-      qboQuery(auth, "Item", "where Active in (true, false)"),
-    ]);
+    const [customers, vendors, invoices, payments, creditMemos, items] =
+      await Promise.all([
+        qboQuery(auth, "Customer", "where Active in (true, false)"),
+        qboQuery(auth, "Vendor", "where Active in (true, false)"),
+        qboQuery(auth, "Invoice"),
+        qboQuery(auth, "Payment"),
+        qboQuery(auth, "CreditMemo"),
+        qboQuery(auth, "Item", "where Active in (true, false)"),
+      ]);
     const now = new Date().toISOString();
     const runId = crypto.randomUUID();
     pendingRunId = runId;
@@ -513,6 +514,10 @@ async function syncQuickBooks(): Promise<
       })),
       "source_system,source_item_id",
     );
+    const { error: matchingError } = await service.rpc(
+      "portal_refresh_item_match_suggestions",
+    );
+    if (matchingError) throw matchingError;
     const { error: stateError } = await service.from("quickbooks_sync_state")
       .update({
         realm_id: auth.realm,
