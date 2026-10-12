@@ -736,6 +736,9 @@ assertContract(supplyOrderMigration.includes("elsif total_amount < 3000")
   && supplyOrderMigration.includes("purchase_request_ready_to_order")
   && supplyOrderMigration.includes("purchase_request_reapproval_required"),
   "Supply Orders preserve exact thresholds, reusable items, checkout totals, substitution controls, and durable notifications");
+assertContract(source.includes("{ label: 'Orders and accounts', ids: ['supply-orders'")
+  && source.includes("['supply-orders', 'Supply orders', 'cart']"),
+  "Supply Orders is reachable from the grouped Internal sidebar");
 assertContract(identityHelperCompatibilityMigration.includes("create or replace function public.portal_my_permissions()")
   && identityHelperCompatibilityMigration.includes("profile.id = auth.uid()")
   && identityHelperCompatibilityMigration.includes("profile.active is true")
