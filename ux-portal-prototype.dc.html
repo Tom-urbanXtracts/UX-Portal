@@ -12184,7 +12184,7 @@ class Component extends DCLogic {
     const dataControlFiltered = dataControlSourceRows.filter(row => (dataControlTab !== 'items'
       || dataControlItemFilter === 'all'
       || (dataControlItemFilter === 'source_missing' ? row.source_present === false
-        : dataControlItemFilter === 'suggested' ? row.suggestion_status === 'suggested'
+        : dataControlItemFilter === 'suggested' ? row.suggestion_status === 'suggested' && ['to_be_mapped', 'pending_review', 'conflict'].includes(row.decision_status)
         : dataControlItemFilter === 'ambiguous' ? row.suggestion_status === 'ambiguous'
         : row.decision_status === dataControlItemFilter))
       && (!dataControlNeedle || Object.values(row || {}).some(value => String(value == null ? '' : value).toLowerCase().includes(dataControlNeedle))));

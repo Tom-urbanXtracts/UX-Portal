@@ -488,7 +488,10 @@ async function snapshot(caller: Caller): Promise<Row> {
         ).length,
       itemSuggested:
         itemRows.filter((row) =>
-          row.suggestion_status === "suggested" && row.source_present !== false
+          row.suggestion_status === "suggested" &&
+          ["to_be_mapped", "pending_review", "conflict"].includes(
+            String(row.decision_status),
+          ) && row.source_present !== false
         ).length,
       itemAmbiguous:
         itemRows.filter((row) =>
@@ -826,6 +829,10 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
     prior as Row,
     data as Row,
   );
+  const { error: suggestionError } = await service.rpc(
+    "portal_refresh_item_match_suggestions",
+  );
+  if (suggestionError) throw suggestionError;
   return data as Row;
 }
 
