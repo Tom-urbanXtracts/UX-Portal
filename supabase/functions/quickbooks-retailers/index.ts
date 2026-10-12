@@ -518,6 +518,10 @@ async function syncQuickBooks(): Promise<
       "portal_refresh_item_match_suggestions",
     );
     if (matchingError) throw matchingError;
+    const { error: classificationError } = await service.rpc(
+      "portal_refresh_source_item_classifications",
+    );
+    if (classificationError) throw classificationError;
     const { error: stateError } = await service.from("quickbooks_sync_state")
       .update({
         realm_id: auth.realm,

@@ -403,6 +403,10 @@ async function syncItemMaster(force = false): Promise<Json> {
       "portal_refresh_item_match_suggestions",
     );
     if (matchingError) throw matchingError;
+    const { error: classificationError } = await service.rpc(
+      "portal_refresh_source_item_classifications",
+    );
+    if (classificationError) throw classificationError;
     return {
       run_id: runId,
       items: items.length,

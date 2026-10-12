@@ -66,6 +66,7 @@ function positiveInteger(value: unknown): number | null {
 function decisionStatus(value: unknown): string {
   const status = clean(value, 40).toLowerCase();
   return new Set([
+      "to_be_mapped",
       "pending_review",
       "approved",
       "conflict",
@@ -497,6 +498,23 @@ async function snapshot(caller: Caller): Promise<Row> {
         itemRows.filter((row) =>
           row.suggestion_status === "ambiguous" && row.source_present !== false
         ).length,
+      itemClassified:
+        itemRows.filter((row) =>
+          ["auto_classified", "approved"].includes(
+            String(row.classification_status),
+          ) && row.source_present !== false
+        ).length,
+      itemClassificationReview:
+        itemRows.filter((row) =>
+          ["unclassified", "needs_review"].includes(
+            String(row.classification_status),
+          ) && row.source_present !== false
+        ).length,
+      activeFinishedProductItems:
+        itemRows.filter((row) =>
+          row.inventory_class === "finished_product" &&
+          row.source_active === true && row.source_present !== false
+        ).length,
       canixSourceItems:
         itemRows.filter((row) =>
           row.source_system === "canix" && row.source_present !== false
@@ -743,28 +761,6 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
   if (!["canix", "quickbooks"].includes(sourceSystem) || !sourceItemId) {
     throw new Error("Choose a valid Canix or QuickBooks source item.");
   }
-  const status = decisionStatus(body.status);
-  const skuReference = clean(body.portalSkuReference, 160) || null;
-  const skuId = clean(body.portalSkuId, 80) || null;
-  if (status === "approved" && (!skuReference || !skuId)) {
-    throw new Error("Approved Item mappings require an existing Portal SKU.");
-  }
-  const note = clean(body.note, 1500);
-  if (status !== "pending_review" && note.length < 8) {
-    throw new Error("Enter an evidence note of at least 8 characters.");
-  }
-  if (status === "approved") {
-    const { data: matchedSku, error: skuError } = await service.from(
-      "portal_sku_intake",
-    ).select("id,reference,master_status").eq("id", skuId).maybeSingle();
-    if (skuError) throw skuError;
-    if (
-      !matchedSku || clean(matchedSku.reference, 160) !== skuReference ||
-      matchedSku.master_status !== "active"
-    ) {
-      throw new Error("Choose an active Portal SKU for this mapping.");
-    }
-  }
   const { data: prior, error: priorError } = await service.from(
     "portal_item_source_mapping",
   ).select("*").eq("source_system", sourceSystem).eq(
@@ -773,13 +769,88 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
   ).maybeSingle();
   if (priorError) throw priorError;
   if (!prior) throw new Error("The source item is no longer available.");
+
+  const status = decisionStatus(body.status);
+  const skuReference = clean(body.portalSkuReference, 160) || null;
+  const skuId = clean(body.portalSkuId, 80) || null;
+  let inventoryClass = clean(body.inventoryClass, 40).toLowerCase() || null;
+  let classificationStatus = clean(body.classificationStatus, 40)
+    .toLowerCase() || clean(prior.classification_status, 40) || "needs_review";
+  const allowedClasses = new Set([
+    "finished_product",
+    "biomass",
+    "clone",
+    "seed",
+    "oil",
+    "rosin",
+    "bulk",
+    "plant_material",
+  ]);
+  const allowedClassificationStatuses = new Set([
+    "auto_classified",
+    "needs_review",
+    "approved",
+    "not_required",
+  ]);
+  if (inventoryClass && !allowedClasses.has(inventoryClass)) {
+    throw new Error("Choose a valid inventory classification.");
+  }
+  if (!allowedClassificationStatuses.has(classificationStatus)) {
+    throw new Error("Choose a valid classification decision.");
+  }
+  if (classificationStatus === "not_required") inventoryClass = null;
+  if (status === "approved" && (!skuReference || !skuId)) {
+    throw new Error("Approved Item mappings require an existing Portal SKU.");
+  }
+  const note = clean(body.note, 1500);
+  if (status === "approved") {
+    const { data: matchedSku, error: skuError } = await service.from(
+      "portal_sku_intake",
+    ).select("id,reference,master_status,inventory_class").eq("id", skuId)
+      .maybeSingle();
+    if (skuError) throw skuError;
+    if (
+      !matchedSku || clean(matchedSku.reference, 160) !== skuReference ||
+      matchedSku.master_status !== "active"
+    ) {
+      throw new Error("Choose an active Portal SKU for this mapping.");
+    }
+    inventoryClass = clean(matchedSku.inventory_class, 40).toLowerCase();
+    classificationStatus = "approved";
+  }
+  if (classificationStatus === "approved" && !inventoryClass) {
+    throw new Error("Approved classifications require an inventory class.");
+  }
+  const identityDecisionChanged = status !== prior.decision_status ||
+    skuReference !== (prior.portal_sku_reference ?? null) ||
+    skuId !== (prior.portal_sku_id ?? null);
+  const classificationChanged = classificationStatus !==
+      prior.classification_status ||
+    inventoryClass !== (prior.inventory_class ?? null);
+  if (
+    note.length < 8 &&
+    ((identityDecisionChanged && !["to_be_mapped", "pending_review"].includes(status)) ||
+      (classificationChanged &&
+        ["approved", "not_required"].includes(classificationStatus)))
+  ) {
+    throw new Error("Enter an evidence note of at least 8 characters.");
+  }
+  const now = new Date().toISOString();
   const row = {
     portal_sku_reference: status === "not_required" ? null : skuReference,
     portal_sku_id: status === "not_required" ? null : skuId,
     decision_status: status,
     decision_note: note,
-    match_method: status === "approved" ? "manual_review" : null,
-    match_confidence: status === "approved" ? 1 : null,
+    match_method: status === "approved"
+      ? "manual_review"
+      : identityDecisionChanged
+      ? null
+      : prior.match_method,
+    match_confidence: status === "approved"
+      ? 1
+      : identityDecisionChanged
+      ? null
+      : prior.match_confidence,
     approved_by: ["approved", "not_required"].includes(status)
       ? caller.id
       : null,
@@ -787,9 +858,26 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
       ? caller.email
       : null,
     approved_at: ["approved", "not_required"].includes(status)
-      ? new Date().toISOString()
+      ? now
       : null,
-    updated_at: new Date().toISOString(),
+    inventory_class: inventoryClass,
+    classification_status: classificationStatus,
+    classification_method: classificationChanged
+      ? "manual_review"
+      : prior.classification_method,
+    classification_confidence: classificationStatus === "approved"
+      ? 1
+      : classificationChanged
+      ? null
+      : prior.classification_confidence,
+    classification_note: classificationChanged
+      ? note
+      : prior.classification_note,
+    classified_at: classificationChanged ? now : prior.classified_at,
+    classified_by_email: classificationChanged
+      ? caller.email
+      : prior.classified_by_email,
+    updated_at: now,
   };
   const { data, error } = await service.from("portal_item_source_mapping")
     .update(row).eq("source_system", sourceSystem).eq(
@@ -800,7 +888,7 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
 
   // Preserve the existing Canix projection used by inventory and catalog
   // consumers while the cross-system register becomes the control surface.
-  if (sourceSystem === "canix") {
+  if (sourceSystem === "canix" && status !== "to_be_mapped") {
     const canixItemId = positiveInteger(sourceItemId);
     if (!canixItemId) throw new Error("The Canix Item ID is invalid.");
     const { error: legacyError } = await service.from(
@@ -833,6 +921,10 @@ async function saveSourceItem(caller: Caller, body: Row): Promise<Row> {
     "portal_refresh_item_match_suggestions",
   );
   if (suggestionError) throw suggestionError;
+  const { error: classificationError } = await service.rpc(
+    "portal_refresh_source_item_classifications",
+  );
+  if (classificationError) throw classificationError;
   return data as Row;
 }
 
@@ -850,6 +942,7 @@ async function savePortalSku(caller: Caller, body: Row): Promise<Row> {
   const allowedClasses = new Set([
     "finished_product",
     "biomass",
+    "clone",
     "seed",
     "oil",
     "rosin",
@@ -955,15 +1048,22 @@ async function savePortalSku(caller: Caller, body: Row): Promise<Row> {
     "portal_refresh_item_match_suggestions",
   );
   if (suggestionError) throw suggestionError;
+  const { error: classificationError } = await service.rpc(
+    "portal_refresh_source_item_classifications",
+  );
+  if (classificationError) throw classificationError;
   return data as Row;
 }
 
 async function refreshItemSuggestions(): Promise<Row> {
-  const { data, error } = await service.rpc(
+  const { data: matching, error } = await service.rpc(
     "portal_refresh_item_match_suggestions",
   );
   if (error) throw error;
-  return (data ?? {}) as Row;
+  const { data: classifications, error: classificationError } = await service
+    .rpc("portal_refresh_source_item_classifications");
+  if (classificationError) throw classificationError;
+  return { matching, classifications } as Row;
 }
 
 async function saveLot(caller: Caller, body: Row): Promise<Row> {
