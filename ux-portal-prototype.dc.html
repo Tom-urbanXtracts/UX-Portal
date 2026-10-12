@@ -238,7 +238,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <sc-if value="{{ internalWorkHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:9px 12px;margin:10px 14px;font-size:11.5px">{{ internalWorkError }}</div></sc-if>
 <div style="display:grid;grid-template-columns:minmax(390px,.9fr) minmax(430px,1.1fr);gap:12px;padding:12px">
 <article style="background:var(--ux-surface);padding:12px;display:grid;gap:8px;align-content:start;min-width:0"><div><div style="font:700 7.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:2px">NEW REQUEST</div><h2 style="font:800 16px Archivo,sans-serif;margin:0">Order details</h2></div>
-<details open style="background:#fff;border:1px solid rgba(23,14,11,.18);padding:7px 8px"><summary style="cursor:pointer;font:700 8.5px Archivo,sans-serif">SUPPLY ORDER BOARD 2026 CATALOG · {{ supplyOrderCatalogCount }} ITEMS</summary><div style="display:grid;gap:5px;margin-top:7px"><select aria-label="Add an item from Supply Order Board 2026" value="{{ purchaseRequestCatalogId }}" onChange="{{ onPurchaseRequestCatalog }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font-size:10.5px"><option value="">Choose an item to add</option><sc-for list="{{ supplyOrderCatalogItems }}" as="item" hint-placeholder-count="8"><option value="{{ item.id }}">{{ item.label }}</option></sc-for></select><select aria-label="Reuse a previously ordered portal item" value="{{ purchaseRequestHistoryId }}" onChange="{{ onPurchaseRequestHistory }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font-size:10.5px"><option value="">Or reuse a portal order item</option><sc-for list="{{ supplyItemHistory }}" as="item" hint-placeholder-count="4"><option value="{{ item.id }}">{{ item.label }}</option></sc-for></select><div style="font-size:8.5px;line-height:1.35;color:var(--ux-muted)">Source labels needing cleanup remain marked for review rather than being silently renamed.</div></div></details>
+<div style="background:#fff;border:1px solid rgba(23,14,11,.18);padding:7px 8px;display:grid;gap:5px"><label for="past-portal-order-item" style="font:700 8.5px Archivo,sans-serif">PAST PORTAL ORDERS</label><select id="past-portal-order-item" aria-label="Reuse a previously ordered portal item" value="{{ purchaseRequestHistoryId }}" onChange="{{ onPurchaseRequestHistory }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff;font-size:10.5px"><option value="">Choose a previously ordered item</option><sc-for list="{{ supplyItemHistory }}" as="item" hint-placeholder-count="4"><option value="{{ item.id }}">{{ item.label }}</option></sc-for></select><div style="font-size:8.5px;line-height:1.35;color:var(--ux-muted)">Only items previously submitted through the Portal appear here.</div></div>
 <div style="display:grid;grid-template-columns:1fr .7fr;gap:6px"><label><span style="display:block;font:700 7px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">DEPARTMENT</span><select value="{{ purchaseRequestDepartment }}" onChange="{{ onPurchaseRequestDepartment }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestDepartmentOptions }}" as="option" hint-placeholder-count="7"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 7px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">PRIORITY</span><select value="{{ purchaseRequestPriority }}" onChange="{{ onPurchaseRequestPriority }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff"><sc-for list="{{ purchaseRequestPriorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></div>
 <sc-if value="{{ purchaseRequestBrandVisible }}" hint-placeholder-val="{{ false }}"><label><span style="display:block;font:700 7px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:3px">BRAND *</span><select aria-label="Brand" value="{{ purchaseRequestBrandId }}" onChange="{{ onPurchaseRequestBrand }}" style="width:100%;padding:8px;border:1px solid rgba(23,14,11,.3);background:#fff"><option value="">Choose an active Brand</option><sc-for list="{{ purchaseRequestBrandOptions }}" as="option" hint-placeholder-count="6"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></sc-if>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><input value="{{ purchaseRequestVendor }}" onInput="{{ onPurchaseRequestVendor }}" aria-label="Vendor" placeholder="Vendor / supplier *" style="padding:8px;border:1px solid rgba(23,14,11,.3)"><input value="{{ purchaseRequestNeededBy }}" onInput="{{ onPurchaseRequestNeededBy }}" aria-label="Needed by date" inputMode="numeric" maxLength="10" placeholder="Need by MM/DD/YYYY" style="padding:8px;border:1px solid rgba(23,14,11,.3)"></div>
@@ -3840,33 +3840,6 @@ const SUPPLY_ORDER_DEPARTMENTS = [
   ['marketing', 'Marketing'], ['process', 'Process'], ['develop', 'Develop'],
   ['brand', 'Brand']
 ].map(([value, label]) => ({ value, label }));
-const SUPPLY_ORDER_BOARD_2026_ITEMS = [
-  { id: 'so26-maint-01', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Amazon Basics 2-Ply Soft Toilet Paper, 30 Rolls', vendorName: 'Amazon' },
-  { id: 'so26-maint-02', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Amazon Basics Liquid Hand Soap Refill, Milk and Honey Scent, Triclosan-free', vendorName: 'Amazon' },
-  { id: 'so26-maint-03', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Amazon — Ice Melt & Shovel', vendorName: 'Amazon' },
-  { id: 'so26-maint-04', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Premium Ice Melt, Blue (50 lb Bag) — Fast-Acting, Industrial-Grade Snow Melter' },
-  { id: 'so26-maint-05', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Tork Multifold Hand Towel, Natural' },
-  { id: 'so26-maint-06', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'Virgin White Toilet Paper, size 10×10, 2-ply, 500 sheets per roll, 96 rolls per box' },
-  { id: 'so26-maint-07', department: 'Maintenance', departmentKey: 'maintenance', itemDescription: 'XPCARE 24-inch Caution Wet Floor Sign, 5-pack, bilingual double-sided safety signs', vendorName: 'Amazon' },
-  { id: 'so26-admin-01', department: 'Administration', departmentKey: 'administration', itemDescription: 'Admin — Omeed Turan — Amazon', vendorName: 'Amazon', needsReview: true },
-  { id: 'so26-quality-01', department: 'Compliance', departmentKey: 'compliance', itemDescription: 'Compliance — Katy Walker — Staples', vendorName: 'Staples', needsReview: true },
-  { id: 'so26-grow-01', department: 'Grow', departmentKey: 'grow', itemDescription: 'Invivo fertilizer, 9 × 55-gallon drums, including transport', vendorName: 'Invivo' },
-  { id: 'so26-grow-02', department: 'Grow', departmentKey: 'grow', itemDescription: 'Grow — Franklin — Amazon', vendorName: 'Amazon', needsReview: true },
-  { id: 'so26-grow-03', department: 'Grow', departmentKey: 'grow', itemDescription: 'Grow — Justin Gagnon — Amazon', vendorName: 'Amazon', needsReview: true },
-  { id: 'so26-grow-04', department: 'Grow', departmentKey: 'grow', itemDescription: 'IHORT Q-PLUG 40/40 Square Plug, 1.25 × 1.57 inches — case of 2,100', vendorName: 'IHORT' },
-  { id: 'so26-market-01', department: 'Marketing', departmentKey: 'marketing', itemDescription: 'Incoming form answer', needsReview: true },
-  { id: 'so26-market-02', department: 'Marketing', departmentKey: 'marketing', itemDescription: 'Marketing materials', needsReview: true },
-  { id: 'so26-market-03', department: 'Marketing', departmentKey: 'marketing', itemDescription: 'Merch stickers' },
-  { id: 'so26-process-01', department: 'Process', departmentKey: 'process', itemDescription: '20 × 22 × 2 MERV 13 pleated air filter' },
-  { id: 'so26-process-02', department: 'Process', departmentKey: 'process', itemDescription: '20 × 25 × 2 MERV 8 pleated air filter' },
-  { id: 'so26-process-03', department: 'Process', departmentKey: 'process', itemDescription: 'BOJACK Microwave Fuse, 20A ceramic, 250V slow-blow, 10-pack', vendorName: 'Amazon' },
-  { id: 'so26-process-04', department: 'Process', departmentKey: 'process', itemDescription: 'Pre-roll tubes' },
-  { id: 'so26-process-05', department: 'Process', departmentKey: 'process', itemDescription: 'Process — Ian Sforza — Amazon', vendorName: 'Amazon', needsReview: true },
-  { id: 'so26-process-06', department: 'Process', departmentKey: 'process', itemDescription: 'Process — Ian Sforza — ROZN Inc.', vendorName: 'ROZN Inc.', needsReview: true },
-  { id: 'so26-process-07', department: 'Process', departmentKey: 'process', itemDescription: 'Process — Tiffany Talt — USALab', vendorName: 'USALab', needsReview: true },
-  { id: 'so26-wana-01', department: 'Brand — Wana', departmentKey: 'brand', brandName: 'Wana', itemDescription: 'Licensed (Wana) — Dave Henderson — McFona', vendorName: 'McFona', needsReview: true },
-  { id: 'so26-wana-02', department: 'Brand — Wana', departmentKey: 'brand', brandName: 'Wana', itemDescription: 'Licensed (Wana) — Dave Henderson — McFona — 06/11/2026', vendorName: 'McFona', needsReview: true }
-];
 const isSupplyOrderSetupTest = request => {
   const lines = Array.isArray(request && request.portal_purchase_request_line) ? request.portal_purchase_request_line : [];
   const text = [request && request.reference, request && request.vendor_name, request && request.purpose]
@@ -5058,7 +5031,7 @@ class Component extends DCLogic {
     purchaseRequestNeededBy: '',
     purchaseRequestRecurring: false, purchaseRequestPaymentMethod: '', purchaseRequestPurpose: '',
     purchaseRequestRecipient: '', purchaseRequestDeliveryLocation: '', purchaseRequestShipping: '',
-    purchaseRequestTax: '', purchaseRequestDiscount: '', purchaseRequestHistoryId: '', purchaseRequestCatalogId: '',
+    purchaseRequestTax: '', purchaseRequestDiscount: '', purchaseRequestHistoryId: '',
     purchaseRequestLines: [{ id: 'purchase-line-1', itemDescription: '', sku: '', purchaseUrl: '', imageUrl: '', selectedOptions: '', substitutionPolicy: 'contact_requester', quantity: '1', unitCost: '', expenseCategory: 'supplies' }],
     purchaseRequestDecisionNotes: {}, purchaseBusinessDecisionNotes: {}, purchaseDocumentDrafts: {}, purchaseOrderDrafts: {},
     notificationRecipientDepartment: 'operations', notificationRecipientType: 'inbox',
@@ -8101,7 +8074,7 @@ class Component extends DCLogic {
         purchaseRequestBrandId: '',
         purchaseRequestNeededBy: '',
         purchaseRequestRecurring: false, purchaseRequestPaymentMethod: '', purchaseRequestPurpose: '',
-        purchaseRequestRecipient: '', purchaseRequestDeliveryLocation: '', purchaseRequestShipping: '', purchaseRequestTax: '', purchaseRequestDiscount: '', purchaseRequestCatalogId: '',
+        purchaseRequestRecipient: '', purchaseRequestDeliveryLocation: '', purchaseRequestShipping: '', purchaseRequestTax: '', purchaseRequestDiscount: '',
         purchaseRequestLines: [{ id: 'purchase-line-' + Date.now(), itemDescription: '', sku: '', purchaseUrl: '', imageUrl: '', selectedOptions: '', substitutionPolicy: 'contact_requester', quantity: '1', unitCost: '', expenseCategory: 'supplies' }],
         toast: 'The supply order was submitted.', toastKind: 'SUPPLY ORDER REQUESTED' }))
       .catch(error => this.set({ internalWorkPending: null,
@@ -8120,28 +8093,6 @@ class Component extends DCLogic {
         itemDescription: item.item_description || '', sku: item.sku || '', purchaseUrl: item.purchase_url || '',
         imageUrl: item.image_url || '', selectedOptions: item.selected_options || '', substitutionPolicy: 'contact_requester',
         quantity: '1', unitCost: String(item.last_unit_cost || ''), expenseCategory: item.expense_category || 'supplies' }] });
-  }
-
-  addSupplyCatalogItem(item) {
-    if (!item) return;
-    const nextLine = { id: 'purchase-line-' + Date.now() + '-' + Math.random().toString(16).slice(2),
-      itemDescription: item.itemDescription || '', sku: item.sku || '', purchaseUrl: item.purchaseUrl || '', imageUrl: '', selectedOptions: '',
-      substitutionPolicy: 'contact_requester', quantity: '1', unitCost: item.unitCost === null || item.unitCost === undefined ? '' : String(item.unitCost),
-      expenseCategory: item.expenseCategory || 'supplies' };
-    this.setState(current => {
-      const currentLines = current.purchaseRequestLines || [];
-      const replaceBlank = currentLines.length === 1 && !String(currentLines[0].itemDescription || '').trim();
-      const activeBrands = Array.isArray(current.internalWorkData && current.internalWorkData.activeBrands)
-        ? current.internalWorkData.activeBrands : [];
-      const matchedBrand = item.brandName ? activeBrands.find(brand =>
-        String(brand.displayName || brand.legalName || '').trim().toLowerCase() === String(item.brandName).trim().toLowerCase()) : null;
-      return { purchaseRequestCatalogId: '',
-        purchaseRequestDepartment: item.departmentKey || current.purchaseRequestDepartment,
-        purchaseRequestBrandId: item.departmentKey === 'brand' ? (matchedBrand && matchedBrand.id || '') : '',
-        purchaseRequestVendor: current.purchaseRequestVendor || item.vendorName || '',
-        purchaseRequestLines: replaceBlank ? [nextLine] : currentLines.concat(nextLine),
-        toast: item.itemDescription + ' was added to the request.', toastKind: 'ITEM ADDED' };
-    });
   }
 
   markSupplyOrderOrdered(request) {
@@ -15127,10 +15078,6 @@ class Component extends DCLogic {
       ? (purchaseAmount <= 500 ? 'Eric Stewart' : purchaseAmount < 3000 ? 'Omeed / Jonathan / Drew' : 'Eran Sherin') : 'Enter an amount';
     const supplyItemHistory = supplyItemHistorySource.map(item => ({ ...item,
       label: item.item_description + ' · ' + item.vendor_name + ' · ' + Number(item.last_unit_cost || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) }));
-    const liveSupplyOrderCatalog = Array.isArray(s.internalWorkData && s.internalWorkData.supplyOrderCatalog) && s.internalWorkData.supplyOrderCatalog.length
-      ? s.internalWorkData.supplyOrderCatalog : SUPPLY_ORDER_BOARD_2026_ITEMS;
-    const supplyOrderCatalogItems = liveSupplyOrderCatalog.map(item => ({ ...item,
-      label: item.department + ' · ' + item.itemDescription + (item.needsReview ? ' · review source label' : '') }));
     const accessRequestTargetOptions = internalWorkProfiles.map(profile => ({ value: profile.id,
       label: (profile.full_name || 'Unnamed user') + ' · ' + String(profile.staff_role || 'viewer').replace(/_/g, ' ') }));
     const offboardingTargetOptions = internalWorkProfiles.filter(profile => profile.id !== (s.authUser && s.authUser.id))
@@ -15868,10 +15815,6 @@ class Component extends DCLogic {
       onPurchaseRequestDiscount: event => this.set({ purchaseRequestDiscount: event.target.value }),
       purchaseRequestHistoryId: s.purchaseRequestHistoryId,
       onPurchaseRequestHistory: event => { const item = supplyItemHistorySource.find(row => String(row.id) === String(event.target.value)); this.usePurchaseHistoryItem(item || null); },
-      purchaseRequestCatalogId: s.purchaseRequestCatalogId,
-      onPurchaseRequestCatalog: event => { const item = liveSupplyOrderCatalog.find(row => row.id === event.target.value); this.addSupplyCatalogItem(item || null); },
-      supplyOrderCatalogItems,
-      supplyOrderCatalogCount: supplyOrderCatalogItems.length,
       supplyOrderDestination: SUPPLY_ORDER_DESTINATION,
       purchaseRequestDefaultSubstitution: ((s.purchaseRequestLines || [])[0] || {}).substitutionPolicy || 'contact_requester',
       onPurchaseRequestDefaultSubstitution: event => this.setState(current => ({ purchaseRequestLines: (current.purchaseRequestLines || []).map(line => ({ ...line, substitutionPolicy: event.target.value })) })),

@@ -733,12 +733,14 @@ assertContract(internalWork.includes('service.rpc("portal_submit_purchase_reques
   && source.includes("Business decision evidence"),
   "The Internal service and Supply Orders UI expose calculated multi-line intake, business approval, Amrit ordering, and supporting documents");
 assertContract(source.includes("const SUPPLY_ORDER_DESTINATION = 'urbanXtracts company receiving address'")
-  && source.includes('const SUPPLY_ORDER_BOARD_2026_ITEMS = [')
-  && source.includes('supplyOrderCatalogCount: supplyOrderCatalogItems.length')
+  && source.includes('PAST PORTAL ORDERS')
+  && source.includes('Only items previously submitted through the Portal appear here.')
+  && !source.includes('SUPPLY_ORDER_BOARD_2026_ITEMS')
+  && !internalWork.includes('supplyOrderBoardCatalog')
   && source.includes('.filter(request => !isSupplyOrderSetupTest(request))')
   && internalWork.includes('const SUPPLY_ORDER_DESTINATION = "urbanXtracts company receiving address"')
   && internalWork.includes('.filter((request) => !isSupplyOrderSetupTest(request))'),
-  "Supply Orders use the fixed company destination, expose the Board 2026 item catalog, and keep setup tests out of the working queue");
+  "Supply Orders use the fixed company destination, reuse only past Portal orders, and keep setup tests out of the working queue");
 assertContract(source.includes("['maintenance', 'Maintenance']")
   && source.includes("['marketing', 'Marketing']")
   && source.includes("['brand', 'Brand']")
