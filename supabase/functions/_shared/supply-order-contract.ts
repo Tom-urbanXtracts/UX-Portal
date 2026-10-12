@@ -91,12 +91,6 @@ export function supplyOrderValidation(
     if (!present(line.expenseCategory)) {
       missing.add(`${label}: expense category`);
     }
-    if (!present(line.expenseSubcategory)) {
-      missing.add(`${label}: expense sub-category`);
-    }
-    if (!present(line.chartOfAccounts)) {
-      missing.add(`${label}: chart of accounts`);
-    }
   });
 
   const roundedTotal = Math.round(total * 100) / 100;

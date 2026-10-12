@@ -185,12 +185,9 @@ Deno.test("supply order validation blocks placeholder request data", () => {
   );
   assert(result.missing.includes("Item 1: SKU"), "placeholder SKU is missing");
   assert(
-    result.missing.includes("Item 1: expense sub-category"),
-    "sub-category is required",
-  );
-  assert(
-    result.missing.includes("Item 1: chart of accounts"),
-    "COA is required",
+    !result.missing.includes("Item 1: expense sub-category") &&
+      !result.missing.includes("Item 1: chart of accounts"),
+    "removed accounting fields do not block an order",
   );
 });
 

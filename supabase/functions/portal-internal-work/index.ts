@@ -10,6 +10,7 @@ import {
   scanContent,
   sha256Hex,
 } from "../_shared/content-scanner.ts";
+import { mondayAccessToken } from "../_shared/monday-connection.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -22,6 +23,12 @@ const PORTAL_EMAIL_FROM = Deno.env.get("PORTAL_EMAIL_FROM") ??
 const PORTAL_URL = "https://portal.urbanxtracts.com";
 const SUPPLY_ORDER_AGENT_EMAIL = "amrit@urbanxtracts.com";
 const SUPPLY_ORDER_DESTINATION = "urbanXtracts company receiving address";
+const MONDAY_CLIENT_ID = Deno.env.get("MONDAY_CLIENT_ID") ?? "";
+const MONDAY_CLIENT_SECRET = Deno.env.get("MONDAY_CLIENT_SECRET") ?? "";
+const MONDAY_TOKEN_ENCRYPTION_KEY =
+  Deno.env.get("MONDAY_TOKEN_ENCRYPTION_KEY") ?? "";
+const MONDAY_SUPPLY_ORDER_BOARD_ID =
+  Deno.env.get("MONDAY_SUPPLY_ORDER_BOARD_ID") ?? "18393924684";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -104,6 +111,169 @@ function isSupplyOrderSetupTest(request: Row): boolean {
     .concat(lines.map((line) => line.item_description)).filter(Boolean).join(" ");
   return /\b(?:do not fulfill|test approval routing|controlled test|supply order test)\b/i.test(text) ||
     /^(?:test|test vendor)$/i.test(clean(request.vendor_name, 200));
+}
+
+const SUPPLY_BOARD_PARENT_COLUMNS = [
+  "short_text82ua243b", // Vendor
+  "single_selectksq7r27", // Department
+];
+const SUPPLY_BOARD_LINE_COLUMNS = [
+  "link_mkx0rd2a", // Purchase link
+  "numeric_mkx0zqnw", // Unit cost
+  "text_mkx0y7qp", // SKU
+  "color_mkx092ce", // Department
+  "dropdown_mkztj5p7", // Expense category
+];
+
+function mondayColumnMap(item: Row): Map<string, Row> {
+  const values = Array.isArray(item.column_values)
+    ? item.column_values as Row[]
+    : [];
+  return new Map(values.map((value) => [String(value.id ?? ""), value]));
+}
+
+function mondayColumnText(values: Map<string, Row>, id: string): string {
+  return clean(values.get(id)?.text, 500);
+}
+
+function mondayLink(values: Map<string, Row>, id: string): string {
+  const column = values.get(id);
+  try {
+    const parsed = JSON.parse(String(column?.value ?? "{}")) as Row;
+    return clean(parsed.url, 1200) || clean(column?.text, 1200);
+  } catch {
+    return clean(column?.text, 1200);
+  }
+}
+
+function supplyDepartment(value: unknown): { key: string; label: string } {
+  const label = clean(value, 120);
+  const normalized = label.toLowerCase();
+  if (/maint/.test(normalized)) return { key: "maintenance", label: "Maintenance" };
+  if (/admin/.test(normalized)) return { key: "administration", label: "Administration" };
+  if (/compliance|quality/.test(normalized)) return { key: "compliance", label: "Compliance" };
+  if (/distribution/.test(normalized)) return { key: "distribution", label: "Distribution" };
+  if (/human|\bhr\b/.test(normalized)) return { key: "human_resources", label: "Human Resources" };
+  if (/grow/.test(normalized)) return { key: "grow", label: "Grow" };
+  if (/market/.test(normalized)) return { key: "marketing", label: "Marketing" };
+  if (/process/.test(normalized)) return { key: "process", label: "Process" };
+  if (/develop/.test(normalized)) return { key: "develop", label: "Develop" };
+  if (/brand|licensed/.test(normalized)) return { key: "brand", label: label || "Brand" };
+  return { key: "administration", label: label || "Administration" };
+}
+
+async function mondayGraphql(
+  accessToken: string,
+  query: string,
+  variables: Row,
+): Promise<Row> {
+  const response = await fetch("https://api.monday.com/v2", {
+    method: "POST",
+    headers: {
+      authorization: accessToken,
+      "content-type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const body = await response.json().catch(() => ({})) as Row;
+  if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    throw new Error("The Supply Order board catalog could not be read.");
+  }
+  return body.data && typeof body.data === "object" ? body.data as Row : {};
+}
+
+async function supplyOrderBoardCatalog(): Promise<Row[]> {
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: MONDAY_TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read"]);
+  if (!accessToken) return [];
+
+  const itemFields = `
+    id name
+    column_values(ids: $parentColumns) { id text value }
+    subitems {
+      id name
+      column_values(ids: $lineColumns) { id text value }
+    }
+  `;
+  let data = await mondayGraphql(
+    accessToken,
+    `query SupplyCatalog($boardIds: [ID!], $parentColumns: [String!], $lineColumns: [String!]) {
+      boards(ids: $boardIds) {
+        items_page(limit: 100) { cursor items { ${itemFields} } }
+      }
+    }`,
+    {
+      boardIds: [MONDAY_SUPPLY_ORDER_BOARD_ID],
+      parentColumns: SUPPLY_BOARD_PARENT_COLUMNS,
+      lineColumns: SUPPLY_BOARD_LINE_COLUMNS,
+    },
+  );
+  let page = ((Array.isArray(data.boards) ? data.boards[0] : null) as Row | null)
+    ?.items_page as Row | undefined;
+  const parentItems: Row[] = [];
+  for (let pageNumber = 0; page && pageNumber < 20; pageNumber += 1) {
+    if (Array.isArray(page.items)) parentItems.push(...page.items as Row[]);
+    const cursor = clean(page.cursor, 2000);
+    if (!cursor) break;
+    data = await mondayGraphql(
+      accessToken,
+      `query SupplyCatalogNext($cursor: String!, $parentColumns: [String!], $lineColumns: [String!]) {
+        next_items_page(limit: 100, cursor: $cursor) { cursor items { ${itemFields} } }
+      }`,
+      {
+        cursor,
+        parentColumns: SUPPLY_BOARD_PARENT_COLUMNS,
+        lineColumns: SUPPLY_BOARD_LINE_COLUMNS,
+      },
+    );
+    page = data.next_items_page as Row | undefined;
+  }
+
+  const unique = new Map<string, Row>();
+  for (const parent of parentItems) {
+    const parentValues = mondayColumnMap(parent);
+    const vendorName = mondayColumnText(parentValues, "short_text82ua243b");
+    const parentDepartment = mondayColumnText(parentValues, "single_selectksq7r27");
+    const subitems = Array.isArray(parent.subitems) ? parent.subitems as Row[] : [];
+    for (const subitem of subitems) {
+      const itemDescription = clean(subitem.name, 500);
+      if (!itemDescription || /^(?:subitem|item)$/i.test(itemDescription)) continue;
+      const values = mondayColumnMap(subitem);
+      const sku = mondayColumnText(values, "text_mkx0y7qp");
+      const department = supplyDepartment(
+        mondayColumnText(values, "color_mkx092ce") || parentDepartment,
+      );
+      const purchaseUrl = mondayLink(values, "link_mkx0rd2a");
+      const unitCostText = mondayColumnText(values, "numeric_mkx0zqnw")
+        .replace(/[$,]/g, "");
+      const unitCost = Number(unitCostText);
+      const dedupeKey = [itemDescription, sku, vendorName]
+        .map((value) => value.toLowerCase().replace(/\s+/g, " ").trim())
+        .join("|");
+      if (!unique.has(dedupeKey)) {
+        unique.set(dedupeKey, {
+          id: `monday-${clean(subitem.id, 80)}`,
+          sourceItemId: clean(subitem.id, 80),
+          itemDescription,
+          sku,
+          vendorName,
+          department: department.label,
+          departmentKey: department.key,
+          purchaseUrl,
+          unitCost: Number.isFinite(unitCost) && unitCost >= 0 ? unitCost : null,
+          expenseCategory: mondayColumnText(values, "dropdown_mkztj5p7") || "supplies",
+        });
+      }
+    }
+  }
+  return Array.from(unique.values()).sort((left, right) =>
+    String(left.department).localeCompare(String(right.department)) ||
+    String(left.itemDescription).localeCompare(String(right.itemDescription))
+  );
 }
 
 function interpolate(
@@ -604,6 +774,16 @@ async function overview(actor: Actor): Promise<Row> {
     profiles = result.data ?? [];
   }
 
+  let supplyOrderCatalog: Row[] = [];
+  let supplyOrderCatalogState = "live";
+  try {
+    supplyOrderCatalog = await supplyOrderBoardCatalog();
+    if (!supplyOrderCatalog.length) supplyOrderCatalogState = "unavailable";
+  } catch (error) {
+    console.error("supply-order-catalog", error);
+    supplyOrderCatalogState = "unavailable";
+  }
+
   const actorPurchaseApprovalTiers = (purchaseApproversResult.data ?? []).filter(
     (approver) => String(approver.approver_email).toLowerCase() === actor.email,
   ).map((approver) => String(approver.approval_tier));
@@ -650,6 +830,8 @@ async function overview(actor: Actor): Promise<Row> {
     actorPurchaseApprovalTiers,
     canPlaceSupplyOrders: actor.administrator || actor.email === SUPPLY_ORDER_AGENT_EMAIL,
     supplyItemHistory: supplyItemHistoryResult.data ?? [],
+    supplyOrderCatalog,
+    supplyOrderCatalogState,
     activeBrands: ((activeBrandsResult.data ?? []) as Row[]).map((brand) => ({
       id: brand.id,
       displayName: brand.display_name,
@@ -854,8 +1036,6 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   const purpose = clean(body.purpose, 4000);
   const priority = clean(body.priority || "normal", 20);
   const neededBy = isoDate(body.neededBy);
-  const deliveryStartOn = isoDate(body.deliveryStartOn);
-  const deliveryEndOn = isoDate(body.deliveryEndOn);
   const paymentMethod = clean(body.paymentMethod, 100);
   const recipientName = clean(body.recipientName, 160);
   const deliveryLocation = SUPPLY_ORDER_DESTINATION;
@@ -874,7 +1054,7 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   ]);
   if (
     !/^[a-z0-9_]{2,40}$/.test(departmentKey) || vendorName.length < 2 ||
-    purpose.length < 12 || recipientName.length < 2 ||
+    purpose.length < 5 || recipientName.length < 2 ||
     !Number.isFinite(estimatedShipping) || estimatedShipping < 0 ||
     !Number.isFinite(estimatedTax) || estimatedTax < 0 ||
     !Number.isFinite(estimatedDiscount) || estimatedDiscount < 0 ||
@@ -916,7 +1096,6 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
     const purchaseUrl = clean(line.purchaseUrl, 1200);
     const imageUrl = clean(line.imageUrl, 1200);
     const substitutionPolicy = clean(line.substitutionPolicy || "contact_requester", 80);
-    const requiredDeliveryOn = isoDate(line.requiredDeliveryOn);
     if (
       itemDescription.length < 2 || !Number.isFinite(quantity) || quantity <= 0 ||
       !Number.isFinite(unitCost) || unitCost < 0 ||
@@ -940,9 +1119,9 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       quantity,
       unitCost,
       expenseCategory,
-      expenseSubcategory: clean(line.expenseSubcategory, 160),
-      chartOfAccounts: clean(line.chartOfAccounts, 200),
-      requiredDeliveryOn,
+      expenseSubcategory: null,
+      chartOfAccounts: null,
+      requiredDeliveryOn: null,
     };
   });
   const merchandiseSubtotal = normalizedLines.reduce(
@@ -968,8 +1147,8 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
     p_purpose: purpose,
     p_priority: priority,
     p_needed_by: neededBy,
-    p_delivery_start_on: deliveryStartOn,
-    p_delivery_end_on: deliveryEndOn,
+    p_delivery_start_on: null,
+    p_delivery_end_on: null,
     p_recurring_purchase: recurringPurchase,
     p_payment_method: paymentMethod,
     p_recipient_name: recipientName,
