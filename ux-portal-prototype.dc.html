@@ -234,6 +234,7 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <section class="supply-order-compact" style="margin-top:14px;border-top:2px solid var(--ux-accent);background:#fff"><style>.supply-order-compact input,.supply-order-compact select,.supply-order-compact textarea{min-width:0;max-width:100%;box-sizing:border-box}.supply-order-compact article,.supply-order-compact label,.supply-order-compact div{min-width:0}@media(max-width:980px){.supply-order-compact>div[style*="grid-template-columns:minmax(390px"]{grid-template-columns:1fr!important}}</style>
 <div style="padding:12px 14px;border-bottom:1px solid rgba(23,14,11,.18);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:3px">INTERNAL · CONTROLLED PURCHASING</div><h1 style="font:800 24px/1.1 Archivo,sans-serif;margin:0 0 4px">Supply orders</h1><p style="font-size:11px;color:var(--ux-muted);line-height:1.4;margin:0">Build a request, route approval, and hand approved orders to purchasing.</p></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><sc-for list="{{ supplyOrderReportCards }}" as="card" hint-placeholder-count="4"><div style="min-width:88px;padding:6px 8px;background:var(--ux-surface);border:1px solid rgba(23,14,11,.12)"><div style="font:700 7px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:2px">{{ card.label }}</div><strong style="font:800 14px Archivo,sans-serif">{{ card.value }}</strong></div></sc-for><button type="button" onClick="{{ onInternalWorkRefresh }}" aria-disabled="{{ internalWorkLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:700 9px Archivo,sans-serif;cursor:pointer">{{ internalWorkRefreshLabel }}</button></div></div>
 <div style="padding:7px 14px;background:#f3eee9;border-bottom:1px solid rgba(23,14,11,.14);font:700 8px ui-monospace,monospace;color:var(--ux-muted)">SETUP MODE · EMAIL NOTIFICATIONS ARE HELD UNTIL LAUNCH</div>
+<div style="display:flex;overflow:auto;border-bottom:1px solid rgba(23,14,11,.18)"><sc-for list="{{ purchaseRequestSections }}" as="section" hint-placeholder-count="4"><button type="button" onClick="{{ section.onPick }}" aria-pressed="{{ section.pressed }}" style="{{ section.style }}">{{ section.label }} · {{ section.count }}</button></sc-for></div>
 <sc-if value="{{ internalWorkHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:9px 12px;margin:10px 14px;font-size:11.5px">{{ internalWorkError }}</div></sc-if>
 <div style="display:grid;grid-template-columns:minmax(390px,.9fr) minmax(430px,1.1fr);gap:12px;padding:12px">
 <article style="background:var(--ux-surface);padding:12px;display:grid;gap:8px;align-content:start;min-width:0"><div><div style="font:700 7.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:2px">NEW REQUEST</div><h2 style="font:800 16px Archivo,sans-serif;margin:0">Order details</h2></div>
@@ -514,6 +515,25 @@ main h1{font-size:28px!important;line-height:1.12!important;margin-bottom:5px!im
 <button type="button" onClick="{{ onLeaveReset }}" style="background:var(--ux-accent);color:#fff;border:0;padding:12px 16px;font:700 12.5px Archivo,sans-serif;cursor:pointer;min-height:44px">Sign in</button>
 </div>
 </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPurchaseApproval }}" hint-placeholder-val="{{ false }}">
+<div style="width:min(900px,100%);margin:34px auto 70px">
+<div style="font:700 9px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:7px">PERSONAL · 72-HOUR APPROVAL LINK</div>
+<h1 style="font:800 32px/1.1 Archivo,sans-serif;margin:0 0 9px">Supply Order approval</h1>
+<p style="font-size:13px;color:var(--ux-muted);line-height:1.55;margin:0 0 22px">Review the complete request before deciding. This link is personal, works without signing in, and must not be forwarded.</p>
+<sc-if value="{{ purchaseApprovalLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:18px">Opening the secure approval…</div></sc-if>
+<sc-if value="{{ purchaseApprovalHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:12px 0 12px 14px;margin-bottom:16px">{{ purchaseApprovalError }}</div></sc-if>
+<sc-if value="{{ purchaseApprovalReady }}" hint-placeholder-val="{{ false }}">
+<section style="border-top:2px solid var(--ux-ink);background:#fff;padding:18px 20px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ purchaseApprovalReference }} · {{ purchaseApprovalAuthority }}</div><h2 style="font:800 21px Archivo,sans-serif;margin:0 0 5px">{{ purchaseApprovalVendor }}</h2><p style="font-size:12px;line-height:1.5;color:var(--ux-muted);margin:0">{{ purchaseApprovalPurpose }}</p></div><strong style="font:800 24px Archivo,sans-serif">{{ purchaseApprovalAmount }}</strong></div>
+<div style="font-size:10.5px;color:var(--ux-muted);margin-top:10px">Intended approver: {{ purchaseApprovalApprover }} · Expires {{ purchaseApprovalExpires }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:4px">{{ purchaseApprovalBreakdown }}</div>
+<div style="display:grid;gap:8px;margin-top:16px"><sc-for list="{{ purchaseApprovalLines }}" as="line" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:minmax(200px,1fr) auto;gap:12px;border-top:1px solid rgba(23,14,11,.15);padding-top:9px"><div><strong style="font-size:12px">{{ line.item_description }}</strong><div style="font-size:10px;color:var(--ux-muted);margin-top:3px">{{ line.meta }}</div></div><strong style="font-size:12px">{{ line.amountLabel }}</strong></div></sc-for></div>
+<sc-if value="{{ purchaseApprovalDecided }}" hint-placeholder-val="{{ false }}"><div style="margin-top:18px;background:var(--ux-accent-wash);border-left:4px solid var(--ux-accent);padding:13px 14px"><strong>Decision recorded: {{ purchaseApprovalDecisionLabel }}</strong><div style="font-size:11px;color:var(--ux-muted);margin-top:4px">No further action is available from this link.</div></div></sc-if>
+<sc-if value="{{ purchaseApprovalExpired }}" hint-placeholder-val="{{ false }}"><div style="margin-top:18px;background:var(--ux-signal-tint);border-left:4px solid var(--ux-signal);padding:13px 14px"><strong>This approval link has expired.</strong></div></sc-if>
+<sc-if value="{{ purchaseApprovalIsReject }}" hint-placeholder-val="{{ false }}"><label style="display:block;margin-top:17px"><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">REJECTION REASON *</span><textarea value="{{ purchaseApprovalNote }}" onInput="{{ onPurchaseApprovalNote }}" rows="3" placeholder="Explain why the request is rejected" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.3);resize:vertical"></textarea></label></sc-if>
+<button type="button" onClick="{{ onPurchaseApprovalSubmit }}" aria-disabled="{{ purchaseApprovalPending }}" style="margin-top:17px;{{ purchaseApprovalSubmitStyle }}">{{ purchaseApprovalSubmitLabel }}</button>
+</section></sc-if>
 </div>
 </sc-if>
 
@@ -4540,6 +4560,8 @@ const PORTAL_WORK_QUEUE_API = PORTAL_CONFIG.portalWorkQueueUrl
   || SUPABASE_URL + '/functions/v1/portal-work-queue';
 const PORTAL_INTERNAL_WORK_API = PORTAL_CONFIG.portalInternalWorkUrl
   || SUPABASE_URL + '/functions/v1/portal-internal-work';
+const PORTAL_PURCHASE_APPROVAL_API = PORTAL_CONFIG.portalPurchaseApprovalUrl
+  || SUPABASE_URL + '/functions/v1/portal-purchase-approval';
 const PORTAL_NOTIFICATIONS_API = PORTAL_CONFIG.portalNotificationsUrl
   || SUPABASE_URL + '/functions/v1/portal-notifications';
 const PORTAL_CLAIMS_API = PORTAL_CONFIG.portalClaimsUrl
@@ -4778,6 +4800,17 @@ function hasBrandApplicationRoute() {
 const BRAND_APPLICATION_ROUTE = hasBrandApplicationRoute();
 const BRAND_APPLICATION_TOKEN = readBrandApplicationToken();
 
+function readPurchaseApprovalRoute() {
+  const out = { token: '', decision: 'approved' };
+  if (typeof location === 'undefined' || !location.hash) return out;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const token = String(params.get('purchase-approval') || '');
+  if (/^[A-Za-z0-9_-]{40,80}$/.test(token)) out.token = token;
+  if (params.get('decision') === 'denied') out.decision = 'denied';
+  return out;
+}
+const PURCHASE_APPROVAL_ROUTE = readPurchaseApprovalRoute();
+
 // SKU Intake follows the same section-by-section pattern as Company &
 // Onboarding. A contributor link exposes one section and one record only.
 const SKU_INTAKE_SECTIONS = [
@@ -4912,7 +4945,7 @@ function storePortalSession(accessToken, refreshToken, email, sso) {
   } catch (_) {}
 }
 
-const RESTORED_SESSION = !PUBLIC_KIOSK_TOKEN && !SKU_SECTION_TOKEN && !BRAND_APPLICATION_ROUTE && !RECOVERY.active && !SSO_RETURN.token ? readStoredPortalSession() : null;
+const RESTORED_SESSION = !PURCHASE_APPROVAL_ROUTE.token && !PUBLIC_KIOSK_TOKEN && !SKU_SECTION_TOKEN && !BRAND_APPLICATION_ROUTE && !RECOVERY.active && !SSO_RETURN.token ? readStoredPortalSession() : null;
 
 // Leaked-password rejection without Supabase Pro, against the same source its
 // paid feature uses. The browser hashes the password and sends only the first
@@ -5046,7 +5079,7 @@ class Component extends DCLogic {
     onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
     turnstileToken: '', turnstileError: null,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token || !!RESTORED_SESSION,
-    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', workspaces: [], activeWorkspaceId: null, activeWorkspace: null, workspaceResolution: null, screen: BRAND_APPLICATION_ROUTE ? 'brand-application' : SKU_SECTION_TOKEN ? 'sku-section' : PUBLIC_KIOSK_TOKEN ? 'public-kiosk' : RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
+    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', workspaces: [], activeWorkspaceId: null, activeWorkspace: null, workspaceResolution: null, screen: PURCHASE_APPROVAL_ROUTE.token ? 'purchase-approval' : BRAND_APPLICATION_ROUTE ? 'brand-application' : SKU_SECTION_TOKEN ? 'sku-section' : PUBLIC_KIOSK_TOKEN ? 'public-kiosk' : RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
     rstStage: null, rstNote: null,
     fpBusy: false, fpMsg: null,
@@ -5133,6 +5166,10 @@ class Component extends DCLogic {
     kioskCreatedUrl: '', kioskCreatedQr: '',
     publicKioskToken: PUBLIC_KIOSK_TOKEN, publicKioskData: null, publicKioskLoading: !!PUBLIC_KIOSK_TOKEN, publicKioskError: null,
     publicKioskProductId: null,
+    purchaseApprovalToken: PURCHASE_APPROVAL_ROUTE.token, purchaseApprovalDecision: PURCHASE_APPROVAL_ROUTE.decision,
+    purchaseApprovalData: null, purchaseApprovalLoading: !!PURCHASE_APPROVAL_ROUTE.token,
+    purchaseApprovalError: null, purchaseApprovalNote: '', purchaseApprovalPending: false,
+    purchaseRequestSection: 'requested',
     skuSectionToken: SKU_SECTION_TOKEN, skuContributorData: null, skuContributorLoading: !!SKU_SECTION_TOKEN,
     skuContributorError: null, skuIntakes: [], skuIntakeLoading: false, skuIntakeLoaded: false, skuIntakeError: null,
     skuIntakeSelectedId: null, skuIntakeSelectedSectionId: null, skuIntakeCreateOpen: false,
@@ -9722,6 +9759,47 @@ class Component extends DCLogic {
     if (image.complete) popup.setTimeout(() => popup.print(), 50);
   }
 
+  purchaseApprovalService(payload) {
+    return fetch(PORTAL_PURCHASE_APPROVAL_API, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(response => response.json().catch(() => ({})).then(body => ({ ok: response.ok, status: response.status, body })))
+      .then(({ ok, status, body }) => {
+        if (!ok) throw new Error((body && body.error) || ('Approval service returned ' + status + '.'));
+        return body;
+      });
+  }
+
+  loadPurchaseApproval(token) {
+    if (!token) return;
+    this.set({ screen: 'purchase-approval', purchaseApprovalToken: token,
+      purchaseApprovalLoading: true, purchaseApprovalError: null, purchaseApprovalData: null });
+    this.purchaseApprovalService({ action: 'review', token })
+      .then(body => this.set({ purchaseApprovalData: body, purchaseApprovalLoading: false,
+        purchaseApprovalError: null }))
+      .catch(error => this.set({ purchaseApprovalData: null, purchaseApprovalLoading: false,
+        purchaseApprovalError: error.message || 'This approval link is invalid or no longer active.' }));
+  }
+
+  decidePurchaseApprovalLink() {
+    const s = this.state;
+    const decision = s.purchaseApprovalDecision === 'denied' ? 'denied' : 'approved';
+    if (s.purchaseApprovalPending || !s.purchaseApprovalToken) return;
+    if (decision === 'denied' && String(s.purchaseApprovalNote || '').trim().length < 8) {
+      this.set({ purchaseApprovalError: 'Add a rejection reason of at least 8 characters.' }); return;
+    }
+    this.set({ purchaseApprovalPending: true, purchaseApprovalError: null });
+    this.purchaseApprovalService({ action: 'decide', token: s.purchaseApprovalToken,
+      decision, note: s.purchaseApprovalNote })
+      .then(body => this.set({ purchaseApprovalPending: false,
+        purchaseApprovalData: { ...(s.purchaseApprovalData || {}), result: body, link: {
+          ...((s.purchaseApprovalData || {}).link || {}), decided: true, decision } },
+        purchaseApprovalError: null }))
+      .catch(error => this.set({ purchaseApprovalPending: false,
+        purchaseApprovalError: error.message || 'The decision could not be recorded.' }));
+  }
+
   loadPublicKiosk(token) {
     if (!token) return;
     this.set({ screen: 'public-kiosk', publicKioskToken: token, publicKioskLoading: true,
@@ -10992,7 +11070,9 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._onResize();
     this.mountTurnstile();
-    if (BRAND_APPLICATION_TOKEN) {
+    if (PURCHASE_APPROVAL_ROUTE.token) {
+      this.loadPurchaseApproval(PURCHASE_APPROVAL_ROUTE.token);
+    } else if (BRAND_APPLICATION_TOKEN) {
       this.loadBrandApplication(BRAND_APPLICATION_TOKEN);
     } else if (SKU_SECTION_TOKEN) {
       this.loadSkuContributor(SKU_SECTION_TOKEN);
@@ -14951,7 +15031,15 @@ class Component extends DCLogic {
         onReturn: () => this.decideDepartmentRequest(request, 'returned'),
         onComplete: () => this.decideDepartmentRequest(request, 'completed') };
     });
-    const purchaseRequests = internalPurchaseRequests.map(request => {
+    const purchaseRequestSection = s.purchaseRequestSection || 'requested';
+    const purchaseRequestMatchesSection = request => purchaseRequestSection === 'requested'
+      ? ['submitted','under_review','returned'].includes(String(request.status))
+      : purchaseRequestSection === 'approved'
+        ? request.business_approval_status === 'approved'
+        : purchaseRequestSection === 'awaiting_order'
+          ? String(request.status) === 'awaiting_order'
+          : ['ordered','partially_received','received','completed'].includes(String(request.status));
+    const purchaseRequests = internalPurchaseRequests.filter(purchaseRequestMatchesSection).map(request => {
       const note = (s.purchaseRequestDecisionNotes || {})[request.id] || '';
       const businessNote = (s.purchaseBusinessDecisionNotes || {})[request.id] || '';
       const documentDraft = (s.purchaseDocumentDrafts || {})[request.id] || {};
@@ -14967,8 +15055,12 @@ class Component extends DCLogic {
         amountLabel: Number(request.amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
         neededByLabel: request.needed_by ? isoDateToUs(request.needed_by) : 'No required date',
         categoryLabel: String(request.expense_category || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
-        statusLabel: String(request.status || '').replace(/_/g, ' ').toUpperCase(),
+        statusLabel: String(request.status || '').replace(/_/g, ' ').toUpperCase()
+          + (request.business_approver_name ? ' · ' + request.business_approver_name : ''),
         businessStatusLabel: String(request.business_approval_status || 'pending').replace(/_/g, ' ').toUpperCase(),
+        approvalAttribution: request.business_approver_name
+          ? 'Approved by ' + request.business_approver_name + (request.business_decided_at ? ' · ' + formatDateTimeUs(request.business_decided_at) : '')
+          : request.business_approver_email ? 'Decision by ' + request.business_approver_email : 'Awaiting decision',
         priorityLabel: String(request.priority || 'normal').toUpperCase(),
         recurringLabel: request.recurring_purchase ? 'Recurring' : 'One-time',
         checkoutBreakdown: 'Merchandise ' + Number(request.merchandise_subtotal || request.amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
@@ -15150,11 +15242,20 @@ class Component extends DCLogic {
         onApprove: () => this.decideEmergencyChange(change, 'approved'), onReturn: () => this.decideEmergencyChange(change, 'returned') };
     });
     const openInternalAccessRequests = internalWorkSourceRequests.filter(request => reviewableAccessStates.has(request.status)).length;
+    const purchaseApprovalData = s.purchaseApprovalData || {};
+    const purchaseApprovalRequest = purchaseApprovalData.request || {};
+    const purchaseApprovalLink = purchaseApprovalData.link || {};
+    const purchaseApprovalLines = Array.isArray(purchaseApprovalRequest.portal_purchase_request_line)
+      ? purchaseApprovalRequest.portal_purchase_request_line.slice().sort((a, b) => Number(a.line_number || 0) - Number(b.line_number || 0)).map(line => ({
+        ...line,
+        amountLabel: Number(line.subtotal || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+        meta: Number(line.quantity || 0) + ' × ' + Number(line.unit_cost || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+      })) : [];
     return {
-      roleBadge: s.screen === 'brand-application' ? 'BRAND APPLICATION' : s.screen === 'sku-section' ? 'SKU CONTRIBUTOR' : s.screen === 'public-kiosk' ? 'PUBLIC KIOSK' : !s.authUser ? ''
+      roleBadge: s.screen === 'purchase-approval' ? 'SUPPLY ORDER APPROVAL' : s.screen === 'brand-application' ? 'BRAND APPLICATION' : s.screen === 'sku-section' ? 'SKU CONTRIBUTOR' : s.screen === 'public-kiosk' ? 'PUBLIC KIOSK' : !s.authUser ? ''
         : isBrandWorkspace ? 'BRAND · ' + String(activeWorkspace && activeWorkspace.memberRole || 'MEMBER').replace(/^brand_/, '').replace(/_/g, ' ').toUpperCase()
           : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
-      roleBadgeStyle: !s.authUser && !['public-kiosk','sku-section','brand-application'].includes(s.screen) ? 'display:none' : '',
+      roleBadgeStyle: !s.authUser && !['purchase-approval','public-kiosk','sku-section','brand-application'].includes(s.screen) ? 'display:none' : '',
       showWorkspaceSwitcher: !!s.authUser && !s.impersonating && workspaceOptions.length > 1,
       workspaceOptions,
       isBrandWorkspace,
@@ -15739,6 +15840,14 @@ class Component extends DCLogic {
       onSubmitDepartmentRequest: () => this.submitDepartmentRequest(),
       purchaseRequests,
       purchaseRequestsEmpty: s.internalWorkLoaded && !purchaseRequests.length,
+      purchaseRequestSections: [
+        ['requested','Requested',internalPurchaseRequests.filter(row => ['submitted','under_review','returned'].includes(String(row.status))).length],
+        ['approved','Approved',internalPurchaseRequests.filter(row => row.business_approval_status === 'approved').length],
+        ['awaiting_order','Awaiting order',internalPurchaseRequests.filter(row => String(row.status) === 'awaiting_order').length],
+        ['completed','Completed',internalPurchaseRequests.filter(row => ['ordered','partially_received','received','completed'].includes(String(row.status))).length]
+      ].map(([id,label,count]) => ({ id, label, count: String(count), pressed: purchaseRequestSection === id ? 'true' : 'false',
+        style: 'border:0;border-right:1px solid rgba(23,14,11,.18);padding:10px 13px;background:' + (purchaseRequestSection === id ? 'var(--ux-ink)' : '#fff') + ';color:' + (purchaseRequestSection === id ? '#fff' : 'var(--ux-ink)') + ';font:700 10px Archivo,sans-serif;cursor:pointer',
+        onPick: () => this.set({ purchaseRequestSection: id }) })),
       purchaseRequestQueueHeading: internalWorkActor.administrator ? 'Supply order queue' : actorPurchaseApprovalTiers.length ? 'Supply order approvals and your requests' : 'Your supply orders',
       purchaseRequestDepartment: s.purchaseRequestDepartment,
       purchaseRequestDepartmentOptions,
@@ -16119,6 +16228,33 @@ class Component extends DCLogic {
       publicKioskProducts, publicKioskCount: publicKioskProducts.length + (publicKioskProducts.length === 1 ? ' published product' : ' published products'),
       publicKioskNoProducts: !!s.publicKioskData && publicKioskProducts.length === 0,
       onPublicKioskSignIn: () => this.leavePublicKiosk(),
+      isPurchaseApproval: !s.authUser && s.screen === 'purchase-approval',
+      purchaseApprovalLoading: s.purchaseApprovalLoading,
+      purchaseApprovalHasError: !!s.purchaseApprovalError,
+      purchaseApprovalError: s.purchaseApprovalError || '',
+      purchaseApprovalReady: !!purchaseApprovalRequest.id && !s.purchaseApprovalLoading,
+      purchaseApprovalReference: purchaseApprovalRequest.reference || '',
+      purchaseApprovalVendor: purchaseApprovalRequest.vendor_name || '',
+      purchaseApprovalPurpose: purchaseApprovalRequest.purpose || '',
+      purchaseApprovalAuthority: purchaseApprovalRequest.approval_authority || '',
+      purchaseApprovalApprover: purchaseApprovalLink.approverName || '',
+      purchaseApprovalExpires: purchaseApprovalLink.expiresAt ? formatDateTimeUs(purchaseApprovalLink.expiresAt) : '',
+      purchaseApprovalExpired: purchaseApprovalLink.expired === true,
+      purchaseApprovalDecided: purchaseApprovalLink.decided === true,
+      purchaseApprovalDecisionLabel: String(purchaseApprovalLink.decision || purchaseApprovalRequest.business_approval_status || '').replace(/_/g, ' ').toUpperCase(),
+      purchaseApprovalDecision: s.purchaseApprovalDecision,
+      purchaseApprovalIsReject: s.purchaseApprovalDecision === 'denied',
+      purchaseApprovalNote: s.purchaseApprovalNote,
+      onPurchaseApprovalNote: event => this.set({ purchaseApprovalNote: event.target.value, purchaseApprovalError: null }),
+      purchaseApprovalLines,
+      purchaseApprovalAmount: Number(purchaseApprovalRequest.amount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+      purchaseApprovalBreakdown: 'Merchandise ' + Number(purchaseApprovalRequest.merchandise_subtotal || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+        + ' · Shipping ' + Number(purchaseApprovalRequest.estimated_shipping || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+        + ' · Tax ' + Number(purchaseApprovalRequest.estimated_tax || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+        + ' · Discount −' + Number(purchaseApprovalRequest.estimated_discount || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
+      purchaseApprovalSubmitLabel: s.purchaseApprovalPending ? 'Recording decision…' : s.purchaseApprovalDecision === 'denied' ? 'Reject Supply Order' : 'Approve Supply Order',
+      purchaseApprovalSubmitStyle: 'background:' + (s.purchaseApprovalDecision === 'denied' ? 'var(--ux-signal)' : 'var(--ux-accent)') + ';color:#fff;border:0;padding:11px 15px;font:700 11px Archivo,sans-serif;cursor:' + (s.purchaseApprovalPending || purchaseApprovalLink.expired || purchaseApprovalLink.decided ? 'not-allowed;opacity:.45' : 'pointer;opacity:1'),
+      onPurchaseApprovalSubmit: () => this.decidePurchaseApprovalLink(),
       isLicense: s.screen === 'license' && !!s.authUser,
       isBrandApplication: !s.authUser && s.screen === 'brand-application',
       brandApplicationIsStart: !s.brandApplicationToken,

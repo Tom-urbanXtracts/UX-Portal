@@ -139,6 +139,7 @@ async function sendDepartmentNotification(
   recipientEmail: string,
   variables: Row,
   eventKey: string,
+  storedVariables: Row = variables,
 ): Promise<string> {
   // Notifications remain launch-gated until the portal workflow and recipients
   // have completed setup. Enabling delivery requires an explicit environment
@@ -173,7 +174,9 @@ async function sendDepartmentNotification(
     recipient_email: recipientEmail.toLowerCase(),
     state: "pending",
     channel: "email",
-    payload: variables,
+    // Capability URLs are delivery-only values. The durable outbox stores the
+    // order context, never a raw passwordless approval token.
+    payload: storedVariables,
     updated_at: new Date().toISOString(),
   }).select("*").single();
   if (outboxError) throw outboxError;
@@ -202,6 +205,9 @@ async function sendDepartmentNotification(
     allowed,
   );
   const text = interpolate(String(template.text_template), variables, allowed);
+  const html = emailHtml(text) + (variables.approveUrl && variables.rejectUrl
+    ? `<div style="font-family:Arial,sans-serif;margin:24px 0"><a href="${clean(variables.approveUrl, 2000)}" style="display:inline-block;background:#1b5c37;color:#fff;text-decoration:none;padding:12px 18px;margin-right:10px;font-weight:700">Approve</a><a href="${clean(variables.rejectUrl, 2000)}" style="display:inline-block;background:#a33116;color:#fff;text-decoration:none;padding:12px 18px;font-weight:700">Reject</a></div>`
+    : "");
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -214,7 +220,7 @@ async function sendDepartmentNotification(
       to: [recipientEmail],
       subject,
       text,
-      html: emailHtml(text),
+      html,
       tags: [{ name: "template", value: templateKey }],
     }),
   });
@@ -329,6 +335,8 @@ async function notifyPurchaseApprovers(
   eventPrefix: string,
   excludeEmail = "",
 ): Promise<string[]> {
+  if (!PORTAL_NOTIFICATIONS_ENABLED) return ["held_launch"];
+  const purchaseRequestId = uuid(variables.purchaseRequestId, "purchase request");
   const { data, error } = await service.from("portal_purchase_approver")
     .select("display_name,approver_email").eq("approval_tier", approvalTier)
     .eq("active", true);
@@ -340,14 +348,56 @@ async function notifyPurchaseApprovers(
       recipients.set(email, clean(row.display_name, 160) || email);
     }
   }
-  return await Promise.all([...recipients].map(([email, name]) =>
-    sendDepartmentNotification(
+  await service.from("portal_purchase_approval_link").update({
+    revoked_at: new Date().toISOString(),
+  }).eq("purchase_request_id", purchaseRequestId).is("consumed_at", null).is(
+    "revoked_at",
+    null,
+  );
+  return await Promise.all([...recipients].map(async ([email, name]) => {
+    const tokenBytes = crypto.getRandomValues(new Uint8Array(32));
+    const token = btoa(String.fromCharCode(...tokenBytes)).replace(/\+/g, "-")
+      .replace(/\//g, "_").replace(/=+$/g, "");
+    const tokenHash = await sha256Hex(new TextEncoder().encode(token));
+    const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+    const { error: linkError } = await service.from(
+      "portal_purchase_approval_link",
+    ).insert({
+      purchase_request_id: purchaseRequestId,
+      approval_tier: approvalTier,
+      approver_name: name,
+      approver_email: email,
+      token_hash: tokenHash,
+      expires_at: expiresAt.toISOString(),
+    });
+    if (linkError) throw linkError;
+    const approveUrl = `${PORTAL_URL}/#purchase-approval=${token}&decision=approved`;
+    const rejectUrl = `${PORTAL_URL}/#purchase-approval=${token}&decision=denied`;
+    const deliveryVariables = {
+      ...variables,
+      recipientName: name,
+      expiresAt: expiresAt.toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        dateStyle: "medium",
+        timeStyle: "short",
+      }) + " ET",
+      approveUrl,
+      rejectUrl,
+    };
+    const storedVariables = {
+      ...variables,
+      recipientName: name,
+      expiresAt: expiresAt.toISOString(),
+      approvalLink: "withheld_from_outbox",
+    };
+    return await sendDepartmentNotification(
       "purchase_request_approval_required",
       email,
-      { ...variables, recipientName: name },
+      deliveryVariables,
       `${eventPrefix}:${email}`,
-    )
-  ));
+      storedVariables,
+    );
+  }));
 }
 
 async function requesterRecipient(
@@ -934,6 +984,53 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
     style: "currency",
     currency: "USD",
   }).format(amount);
+  const money = (value: number) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
+  const departmentNames: Record<string, string> = {
+    maintenance: "Maintenance",
+    administration: "Administration",
+    compliance: "Compliance",
+    distribution: "Distribution",
+    human_resources: "Human Resources",
+    grow: "Grow",
+    marketing: "Marketing",
+    process: "Process",
+    develop: "Develop",
+    brand: "Brand",
+  };
+  let brandName = "Not applicable";
+  if (brandOrganizationId) {
+    const { data: brand } = await service.from("portal_organization")
+      .select("display_name").eq("id", brandOrganizationId).maybeSingle();
+    brandName = clean(brand?.display_name, 200) || "Brand assignment pending";
+  }
+  const approvalVariables: Row = {
+    purchaseRequestId: data.id,
+    requestReference: data.reference,
+    requesterName: actor.fullName,
+    requesterEmail: actor.email,
+    departmentName: departmentNames[departmentKey] || departmentKey,
+    brandName,
+    vendorName: data.vendor_name,
+    purpose: data.purpose,
+    priority: String(data.priority || priority).toUpperCase(),
+    neededBy: data.needed_by
+      ? new Date(`${data.needed_by}T12:00:00Z`).toLocaleDateString("en-US")
+      : "No required date",
+    lineItems: normalizedLines.map((line, index) =>
+      `${index + 1}. ${line.itemDescription} — ${line.quantity} × ${money(line.unitCost)} = ${money(line.quantity * line.unitCost)}`
+    ).join("\n"),
+    merchandiseSubtotal: money(merchandiseSubtotal),
+    shipping: money(estimatedShipping),
+    tax: money(estimatedTax),
+    discount: money(estimatedDiscount),
+    amount: amountLabel,
+    deliveryRecipient: recipientName,
+    deliveryLocation,
+    approvalAuthority: route.authority,
+  };
   let notificationState = "not_attempted";
   try {
     notificationState = await sendDepartmentNotification(
@@ -948,26 +1045,9 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       },
       `purchase-request-received:${data.id}:${data.version}`,
     );
-    await notifyTeam(
-      "finance",
-      "purchase_request_approval_required",
-      {
-        requestReference: data.reference,
-        vendorName: data.vendor_name,
-        amount: amountLabel,
-        approvalAuthority: route.authority,
-      },
-      `purchase-request-approval-required:${data.id}:${data.version}`,
-      actor.email,
-    );
     await notifyPurchaseApprovers(
       route.tier,
-      {
-        requestReference: data.reference,
-        vendorName: data.vendor_name,
-        amount: amountLabel,
-        approvalAuthority: route.authority,
-      },
+      approvalVariables,
       `purchase-request-business-approval:${data.id}:${data.version}`,
       actor.email,
     );

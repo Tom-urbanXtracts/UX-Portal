@@ -123,6 +123,11 @@ verify_jwt = false
 [functions.portal-internal-work]
 verify_jwt = false
 
+# Public passwordless Supply Order decisions authenticate with a hashed,
+# single-use, 72-hour capability token validated inside the function.
+[functions.portal-purchase-approval]
+verify_jwt = false
+
 [functions.portal-notifications]
 verify_jwt = false
 

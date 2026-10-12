@@ -45,6 +45,8 @@ const departmentNotificationMigration = await readFile(resolve(root, "supabase/m
 const financePurchaseMigration = await readFile(resolve(root, "supabase/migrations/20261008053155_finance_purchase_requests_and_notification_routing.sql"), "utf8");
 const supplyOrderMigration = await readFile(resolve(root, "supabase/migrations/20261012133000_supply_order_workspace_v1.sql"), "utf8");
 const supplyOrderBrandMigration = await readFile(resolve(root, "supabase/migrations/20261012143000_supply_order_departments_and_brand_scope.sql"), "utf8");
+const supplyOrderApprovalMigration = await readFile(resolve(root, "supabase/migrations/20261012150000_supply_order_passwordless_approvals.sql"), "utf8");
+const supplyOrderApproval = await readFile(resolve(root, "supabase/functions/portal-purchase-approval/index.ts"), "utf8");
 const notificationSuppressionMigration = await readFile(resolve(root, "supabase/migrations/20261008161122_suppress_test_notification_recipients.sql"), "utf8");
 const notificationSuppressionGateMigration = await readFile(resolve(root, "supabase/migrations/20261008161710_enforce_notification_suppression.sql"), "utf8");
 const identityHelperCompatibilityMigration = await readFile(resolve(root, "supabase/migrations/20261008164743_restore_public_identity_helpers.sql"), "utf8");
@@ -548,7 +550,7 @@ assertContract(source.includes("Wholesale orders and fulfillment only. Retailer 
   "Brand performance home uses aggregate Brand-scope reporting, source timing, and withheld retailer identity");
 assertContract(source.includes("DEMO LAUNCH CHECKLIST")
   && source.includes("brandDemoReadinessChecklist")
-  && source.includes("roleBadge: s.screen === 'brand-application'")
+  && source.includes("s.screen === 'brand-application' ? 'BRAND APPLICATION'")
   && source.includes("isWorkQueue: isInternal && s.screen === 'work-queue'")
   && source.includes("isInternalBrandPurchaseOrders")
   && source.includes("isInternalBrandApplications"),
@@ -753,6 +755,18 @@ assertContract(supplyOrderMigration.includes("elsif total_amount < 3000")
   && supplyOrderMigration.includes("purchase_request_ready_to_order")
   && supplyOrderMigration.includes("purchase_request_reapproval_required"),
   "Supply Orders preserve exact thresholds, reusable items, checkout totals, substitution controls, and durable notifications");
+assertContract(supplyOrderApprovalMigration.includes("portal_purchase_approval_link")
+  && supplyOrderApprovalMigration.includes("token_hash ~ '^[0-9a-f]{64}$'")
+  && supplyOrderApprovalMigration.includes("72-hour")
+  && supplyOrderApprovalMigration.includes("portal_decide_purchase_by_token")
+  && supplyOrderApprovalMigration.includes("business_approver_name")
+  && supplyOrderApprovalMigration.includes("decisionSource','secure_email_link'")
+  && internalWork.includes("withheld_from_outbox")
+  && internalWork.includes("72 * 60 * 60 * 1000")
+  && supplyOrderApproval.includes('action === "review"')
+  && source.includes("PERSONAL · 72-HOUR APPROVAL LINK")
+  && source.includes("purchaseRequestSections"),
+  "Supply Orders provide hashed one-time passwordless approval, 72-hour expiry, attribution, and four queue sections");
 assertContract(source.includes("{ label: 'Orders and accounts', ids: ['supply-orders'")
   && source.includes("['supply-orders', 'Supply orders', 'cart']"),
   "Supply Orders is reachable from the grouped Internal sidebar");
@@ -770,7 +784,7 @@ for (const name of functionNames) {
 
 for (const name of functionNames) {
   const text = await readFile(resolve(root, "supabase/functions", name, "index.ts"), "utf8");
-  assertContract(text.includes("authorization") || text.includes("x-ux-") || text.includes("x-cron-secret"), `${name} has an authentication boundary`);
+  assertContract(text.includes("authorization") || text.includes("x-ux-") || text.includes("x-cron-secret") || (name === "portal-purchase-approval" && text.includes("capability token")), `${name} has an authentication boundary`);
   if (["monday-webhook", "monday-brand-webhook", "monday-supply-order-webhook"].includes(name)) {
     assertContract(!text.includes("access-control-allow-origin"), `${name} remains server-to-server and does not expose a browser CORS surface`);
     if (name === "monday-supply-order-webhook") {
@@ -779,6 +793,11 @@ for (const name of functionNames) {
         && text.includes("SUPPLY_ORDER_WEBHOOK_SECRET"),
       "monday-supply-order-webhook validates a shared secret or signed Monday token before processing");
     }
+  } else if (name === "portal-purchase-approval") {
+    assertContract(text.includes("tokenDigest")
+      && text.includes("portal_purchase_approval_link")
+      && text.includes("portal_decide_purchase_by_token"),
+    `${name} requires a validated single-use capability token`);
   } else {
     assertContract(text.includes('"https://portal.urbanxtracts.com"'), `${name} permits the production portal origin`);
     assertContract(text.includes("verifiedTokenIsAuthenticated"), `${name} requires a validated authenticated user session`);
