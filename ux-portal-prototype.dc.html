@@ -394,7 +394,7 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;background:var(--ux-surface);padding:13px 14px;margin-bottom:18px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SEARCH WORK</span><input type="search" value="{{ workQueueSearch }}" onInput="{{ onWorkQueueSearch }}" placeholder="Title, reference, workflow, or summary" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STATUS</span><select value="{{ workQueueFilter }}" onChange="{{ onWorkQueueFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueFilterOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">WORKFLOW</span><select value="{{ workQueueWorkflowFilter }}" onChange="{{ onWorkQueueWorkflowFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueWorkflowOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></div>
 <sc-if value="{{ workQueueLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:16px;font-size:12.5px;color:var(--ux-muted)">Loading protected work items…</div></sc-if>
 <sc-if value="{{ workQueueEmpty }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:16px;font-size:12.5px;color:var(--ux-muted)">No work items match this view.</div></sc-if>
-<div style="display:grid;gap:13px"><sc-for list="{{ workQueueItems }}" as="item" hint-placeholder-count="5"><article style="border:1px solid rgba(23,14,11,.22);background:#fff;padding:16px 17px"><div style="display:flex;justify-content:space-between;gap:14px;align-items:start;flex-wrap:wrap"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ item.priority }} · {{ item.workflowLabel }} · {{ item.sourceLabel }}</div><h3 style="font:800 16px Archivo,sans-serif;margin:0 0 5px">{{ item.title }}</h3><div style="font-size:11.5px;color:var(--ux-muted)">{{ item.reference }} · {{ item.summary }}</div></div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted)">{{ item.activity }}</div></div><div style="display:grid;grid-template-columns:minmax(150px,.7fr) minmax(100px,.4fr) minmax(150px,.6fr) auto;gap:9px;align-items:end;margin-top:13px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.statusValue }}" onChange="{{ item.onStatus }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.statusOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ item.priorityValue }}" onChange="{{ item.onPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.priorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE · MM/DD/YYYY</span><input type="text" value="{{ item.dueValue }}" onInput="{{ item.onDue }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button></div><div style="display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:end;margin-top:10px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">COMMENT</span><input value="{{ item.comment }}" onInput="{{ item.onComment }}" placeholder="Add an operational note" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onAddComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.commentLabel }}</button><label style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.evidenceLabel }}<input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ item.onEvidence }}" style="display:none"></label></div></article></sc-for></div>
+<div style="display:grid;gap:9px"><sc-for list="{{ workQueueItems }}" as="item" hint-placeholder-count="5"><article style="border:1px solid rgba(23,14,11,.22);background:#fff"><button type="button" onClick="{{ item.onToggle }}" aria-expanded="{{ item.expanded }}" style="width:100%;border:0;background:#fff;padding:14px 16px;text-align:left;cursor:pointer"><div style="display:grid;grid-template-columns:minmax(260px,1.4fr) minmax(180px,.65fr) minmax(150px,.55fr) auto;gap:14px;align-items:center"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ item.priority }} · {{ item.workflowLabel }}</div><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 4px">{{ item.title }}</h3><div style="font-size:11.5px;color:var(--ux-muted);line-height:1.45">{{ item.summary }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.ownerLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.scopeLabel }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TIMING</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.dueLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.updatedLabel }}</div></div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span style="padding:6px 8px;background:var(--ux-surface);font:700 8px ui-monospace,monospace">{{ item.statusLabel }}</span><span aria-hidden="true" style="font:800 16px Archivo,sans-serif">{{ item.expandMark }}</span></div></div></button><sc-if value="{{ item.expanded }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid rgba(23,14,11,.18);padding:15px 16px 16px;background:var(--ux-ground)"><div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:14px;margin-bottom:14px"><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Work details</h4><div style="display:grid;gap:7px"><sc-for list="{{ item.detailRows }}" as="detail" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:11px"><span style="font:700 8px ui-monospace,monospace;color:var(--ux-muted)">{{ detail.label }}</span><span>{{ detail.value }}</span></div></sc-for></div></section><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Recent activity</h4><sc-if value="{{ item.hasRecentActivity }}" hint-placeholder-val="{{ true }}"><div style="display:grid;gap:8px"><sc-for list="{{ item.recentActivity }}" as="activity" hint-placeholder-count="3"><div style="font-size:11px;line-height:1.4"><strong>{{ activity.label }}</strong> · {{ activity.detail }}<div style="font-size:9.5px;color:var(--ux-muted);margin-top:2px">{{ activity.when }}</div></div></sc-for></div></sc-if><sc-if value="{{ item.hasNoRecentActivity }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:var(--ux-muted)">No comments or evidence have been added.</div></sc-if></section></div><div style="display:grid;grid-template-columns:minmax(150px,.7fr) minmax(100px,.4fr) minmax(150px,.6fr) auto;gap:9px;align-items:end"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.statusValue }}" onChange="{{ item.onStatus }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.statusOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ item.priorityValue }}" onChange="{{ item.onPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.priorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE · MM/DD/YYYY</span><input type="text" value="{{ item.dueValue }}" onInput="{{ item.onDue }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button></div><div style="display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:end;margin-top:10px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORK NOTE</span><input value="{{ item.comment }}" onInput="{{ item.onComment }}" placeholder="Add a decision, blocker, handoff, or next step" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onAddComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.commentLabel }}</button><label style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.evidenceLabel }}<input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ item.onEvidence }}" style="display:none"></label></div></div></sc-if></article></sc-for></div>
 </div>
 </sc-if>
 
@@ -4918,7 +4918,7 @@ class Component extends DCLogic {
     workQueueData: null, workQueueLoading: false, workQueueLoaded: false, workQueueError: null,
     workQueuePending: null, workQueueStatusDrafts: {}, workQueuePriorityDrafts: {},
     workQueueDueDrafts: {}, workQueueCommentDrafts: {}, workQueueFilter: 'open',
-    workQueueSearch: '', workQueueWorkflowFilter: 'all',
+    workQueueSearch: '', workQueueWorkflowFilter: 'all', workQueueExpanded: {},
     internalWorkData: null, internalWorkLoading: false, internalWorkLoaded: false,
     internalWorkError: null, internalWorkPending: null,
     accessRequestTargetId: '', accessRequestRole: 'viewer', accessRequestDepartment: '',
@@ -14805,11 +14805,25 @@ class Component extends DCLogic {
         transitionLabel: s.brandPoPending === 'transition:' + order.id ? 'Saving…' : 'Apply status' };
     });
     const workQueueData = s.workQueueData || {};
-    const workQueueSummary = workQueueData.summary || {};
     const workQueueFilterOptions = [
       ['open', 'Open work'], ['P0', 'P0 only'], ['waiting', 'Waiting'], ['completed', 'Completed'], ['all', 'All work']
     ].map(([value, label]) => ({ value, label }));
-    const workQueueSourceItems = Array.isArray(workQueueData.items) ? workQueueData.items : [];
+    const workQueueControls = new Map((Array.isArray(workQueueData.controls) ? workQueueData.controls : [])
+      .map(control => [String(control.workflow_key || ''), String(control.display_name || '')]));
+    const workQueueIsBetaRecord = item => {
+      const record = [item.title, item.summary, item.target_id, item.source_record_id]
+        .filter(Boolean).join(' ').toLowerCase();
+      return !/\b(?:demo|synthetic|sample)\b/.test(record) && !record.includes('no action is required');
+    };
+    const workQueueSourceItems = (Array.isArray(workQueueData.items) ? workQueueData.items : [])
+      .filter(workQueueIsBetaRecord);
+    const workQueueVisibleCounts = workQueueSourceItems.reduce((counts, item) => {
+      counts.total += 1;
+      counts[item.status] = (counts[item.status] || 0) + 1;
+      if (item.due_at && !['completed','cancelled'].includes(item.status)
+        && new Date(item.due_at).getTime() < Date.now()) counts.overdue += 1;
+      return counts;
+    }, { total: 0, not_started: 0, in_progress: 0, waiting: 0, completed: 0, cancelled: 0, overdue: 0 });
     const workQueueWorkflowOptions = [{ value: 'all', label: 'All workflows' }].concat(
       Array.from(new Set(workQueueSourceItems.map(item => String(item.workflow_key || '')).filter(Boolean)))
         .sort((a, b) => a.localeCompare(b))
@@ -14821,21 +14835,81 @@ class Component extends DCLogic {
         || (s.workQueueFilter === 'P0' && item.priority === 'P0' && !['completed','cancelled'].includes(item.status))
         || item.status === s.workQueueFilter;
       const matchesWorkflow = s.workQueueWorkflowFilter === 'all' || item.workflow_key === s.workQueueWorkflowFilter;
-      const searchable = [item.title, item.reference, item.summary, item.workflow_key, item.status, item.priority]
+      const searchable = [item.title, item.reference, item.summary, item.workflow_key, item.status, item.priority,
+        item.assigned_department, item.assigned_user_name, item.organization_name, item.store_name,
+        item.target_type, item.target_id, item.source_record_id]
         .filter(Boolean).join(' ').replace(/_/g, ' ').toLowerCase();
       return matchesStatus && matchesWorkflow && (!workQueueNeedle || searchable.includes(workQueueNeedle));
+    }).sort((a, b) => {
+      const priorityOrder = { P0: 0, P1: 1, P2: 2, P3: 3 };
+      const priorityDifference = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+      if (priorityDifference) return priorityDifference;
+      const aDue = a.due_at ? new Date(a.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = b.due_at ? new Date(b.due_at).getTime() : Number.MAX_SAFE_INTEGER;
+      return aDue - bDue || new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
     });
     const workQueueItems = workQueueFilteredItems.map(item => {
       const comments = Array.isArray(item.portal_work_item_comment) ? item.portal_work_item_comment : [];
       const evidence = Array.isArray(item.portal_work_item_evidence) ? item.portal_work_item_evidence : [];
       const events = Array.isArray(item.portal_work_item_event) ? item.portal_work_item_event : [];
+      const metadata = item.metadata && typeof item.metadata === 'object' ? item.metadata : {};
       const statusValue = (s.workQueueStatusDrafts || {})[item.id] || item.status;
       const priorityValue = (s.workQueuePriorityDrafts || {})[item.id] || item.priority;
       const dueValue = (s.workQueueDueDrafts || {})[item.id] !== undefined
         ? s.workQueueDueDrafts[item.id] : (item.due_at ? isoDateToUs(String(item.due_at).slice(0, 10)) : '');
+      const workflowLabel = workQueueControls.get(String(item.workflow_key || ''))
+        || String(item.workflow_key || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+      const genericSummary = !item.summary || /^portal catalog content$/i.test(String(item.summary).trim());
+      const summary = genericSummary && item.workflow_key === 'catalog_content'
+        ? 'Complete the product information, imagery, and publication review.'
+        : String(item.summary || 'Review the linked record and record the next action.');
+      const scopeParts = [item.organization_name, item.store_name,
+        item.store_license && !item.store_name ? item.store_license : null].filter(Boolean);
+      const metadataRows = Object.entries(metadata).filter(([key, value]) =>
+        value !== null && value !== '' && ['string','number','boolean'].includes(typeof value)
+        && !/(token|secret|password|hash|credential)/i.test(key))
+        .slice(0, 5).map(([key, value]) => ({
+          label: key.replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+          value: String(value)
+        }));
+      const detailRows = [
+        { label: 'Work reference', value: item.reference || 'Not assigned' },
+        { label: 'Linked record', value: [String(item.target_type || '').replace(/_/g, ' '), item.target_id].filter(Boolean).join(' · ') || 'Not linked' },
+        { label: 'Source record', value: item.source_record_id || 'No external source record' },
+        { label: 'Assigned to', value: item.assigned_user_name || item.assigned_department || 'Unassigned' },
+        { label: 'Created', value: item.created_at ? formatDateTimeUs(item.created_at) : 'Not recorded' },
+        { label: 'Last updated', value: item.updated_at ? formatDateTimeUs(item.updated_at) : 'Not recorded' }
+      ].concat(metadataRows);
+      const recentActivity = comments.map(comment => ({
+        kind: 'comment', label: 'Note', detail: comment.body,
+        when: [comment.created_by_email, comment.created_at ? formatDateTimeUs(comment.created_at) : null].filter(Boolean).join(' · '),
+        sortAt: new Date(comment.created_at || 0).getTime()
+      })).concat(evidence.map(file => ({
+        kind: 'evidence', label: 'Evidence', detail: (file.original_name || file.external_reference || 'Evidence file')
+          + ' · ' + String(file.scan_state || 'not applicable').replace(/_/g, ' '),
+        when: [file.created_by_email, file.created_at ? formatDateTimeUs(file.created_at) : null].filter(Boolean).join(' · '),
+        sortAt: new Date(file.created_at || 0).getTime()
+      }))).concat(events.map(event => ({
+        kind: 'event', label: String(event.action || 'Update').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+        detail: [event.from_status ? String(event.from_status).replace(/_/g, ' ') : null,
+          event.to_status ? 'to ' + String(event.to_status).replace(/_/g, ' ') : null].filter(Boolean).join(' ') || 'Work item updated',
+        when: [event.actor_email, event.created_at ? formatDateTimeUs(event.created_at) : null].filter(Boolean).join(' · '),
+        sortAt: new Date(event.created_at || 0).getTime()
+      }))).sort((a, b) => b.sortAt - a.sortAt).slice(0, 4);
+      const expanded = !!(s.workQueueExpanded || {})[item.id];
       return { ...item,
-        workflowLabel: String(item.workflow_key || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
-        sourceLabel: String(item.source_mode || 'portal').replace(/_/g, ' ').toUpperCase(),
+        workflowLabel, summary,
+        ownerLabel: item.assigned_user_name || (item.assigned_department ? item.assigned_department + ' queue' : 'Unassigned'),
+        scopeLabel: scopeParts.join(' · ') || 'Internal work',
+        dueLabel: dueValue ? 'Due ' + dueValue : 'No due date',
+        updatedLabel: item.updated_at ? 'Updated ' + formatDateUs(item.updated_at) : 'Update not recorded',
+        statusLabel: String(statusValue || '').replace(/_/g, ' ').toUpperCase(),
+        detailRows, recentActivity, hasRecentActivity: recentActivity.length > 0,
+        hasNoRecentActivity: recentActivity.length === 0,
+        expanded, expandMark: expanded ? '−' : '+',
+        onToggle: () => this.setState(current => ({ workQueueExpanded: {
+          ...(current.workQueueExpanded || {}), [item.id]: !(current.workQueueExpanded || {})[item.id]
+        } })),
         statusValue, priorityValue, dueValue,
         statusOptions: ['not_started','in_progress','waiting','completed','cancelled'].map(value => ({ value, label: value.replace(/_/g, ' ').toUpperCase() })),
         priorityOptions: ['P0','P1','P2','P3'].map(value => ({ value, label: value })),
@@ -14848,10 +14922,7 @@ class Component extends DCLogic {
         onEvidence: event => this.chooseWorkQueueEvidence(item, event),
         pending: !!s.workQueuePending, saveLabel: s.workQueuePending === 'update:' + item.id ? 'Saving…' : 'Save work item',
         commentLabel: s.workQueuePending === 'comment:' + item.id ? 'Adding…' : 'Add comment',
-        evidenceLabel: s.workQueuePending === 'evidence:' + item.id ? 'Scanning…' : 'Attach evidence',
-        activity: comments.length + ' comment' + (comments.length === 1 ? '' : 's') + ' · '
-          + evidence.length + ' evidence file' + (evidence.length === 1 ? '' : 's') + ' · '
-          + events.length + ' audit event' + (events.length === 1 ? '' : 's') };
+        evidenceLabel: s.workQueuePending === 'evidence:' + item.id ? 'Scanning…' : 'Attach evidence' };
     });
     const internalWorkData = s.internalWorkData || {};
     const internalWorkActor = internalWorkData.actor || {};
@@ -15675,10 +15746,10 @@ class Component extends DCLogic {
       workQueueWorkflowOptions,
       onWorkQueueWorkflowFilter: event => this.set({ workQueueWorkflowFilter: event.target.value }),
       workQueueSummary: [
-        { label: 'OPEN', value: Number(workQueueSummary.total || 0) - Number(workQueueSummary.completed || 0) - Number(workQueueSummary.cancelled || 0) },
-        { label: 'IN PROGRESS', value: Number(workQueueSummary.inProgress || 0) },
-        { label: 'WAITING', value: Number(workQueueSummary.waiting || 0) },
-        { label: 'OVERDUE', value: Number(workQueueSummary.overdue || 0) }
+        { label: 'OPEN', value: Number(workQueueVisibleCounts.total || 0) - Number(workQueueVisibleCounts.completed || 0) - Number(workQueueVisibleCounts.cancelled || 0) },
+        { label: 'IN PROGRESS', value: Number(workQueueVisibleCounts.in_progress || 0) },
+        { label: 'WAITING', value: Number(workQueueVisibleCounts.waiting || 0) },
+        { label: 'OVERDUE', value: Number(workQueueVisibleCounts.overdue || 0) }
       ],
       workQueueRefreshLabel: s.workQueueLoading ? 'Refreshing…' : 'Refresh',
       onWorkQueueRefresh: () => this.loadWorkQueue(true),

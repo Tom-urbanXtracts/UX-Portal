@@ -106,12 +106,15 @@ async function administratorFor(request: Request): Promise<Administrator> {
 }
 
 async function queueOverview(): Promise<Row> {
-  const [controlResult, itemResult, claimPolicyResult, retentionResult] =
+  const [controlResult, itemResult, profileResult, organizationResult, storeResult, claimPolicyResult, retentionResult] =
     await Promise.all([
       service.from("portal_workflow_control").select("*").order("display_name"),
       service.from("portal_work_item").select(
         "*,portal_work_item_comment(id,body,visibility,created_by_email,created_at),portal_work_item_evidence(id,evidence_type,original_name,content_type,size_bytes,scan_state,external_reference,created_by_email,created_at),portal_work_item_event(id,action,from_status,to_status,actor_email,detail,created_at)",
       ).order("priority").order("created_at"),
+      service.from("portal_profile").select("id,full_name,active"),
+      service.from("portal_organization").select("id,display_name,kind,status"),
+      service.from("portal_store").select("license_number,display_name,organization,active"),
       service.from("portal_receiving_claim_policy").select("*").eq("id", 1)
         .maybeSingle(),
       service.from("portal_document_retention_rule").select(
@@ -122,11 +125,34 @@ async function queueOverview(): Promise<Row> {
     const result of [
       controlResult,
       itemResult,
+      profileResult,
+      organizationResult,
+      storeResult,
       claimPolicyResult,
       retentionResult,
     ]
   ) if (result.error) throw result.error;
-  const items = (itemResult.data ?? []) as Row[];
+  const profileNames = new Map((profileResult.data ?? []).map((row) => [
+    String(row.id), String(row.full_name || "Assigned user"),
+  ]));
+  const organizationNames = new Map((organizationResult.data ?? []).map((row) => [
+    String(row.id), String(row.display_name || "Organization"),
+  ]));
+  const storeNames = new Map((storeResult.data ?? []).map((row) => [
+    String(row.license_number), String(row.display_name || row.license_number),
+  ]));
+  const items = ((itemResult.data ?? []) as Row[]).map((item) => ({
+    ...item,
+    assigned_user_name: item.assigned_user
+      ? profileNames.get(String(item.assigned_user)) ?? "Assigned user"
+      : null,
+    organization_name: item.organization_id
+      ? organizationNames.get(String(item.organization_id)) ?? null
+      : null,
+    store_name: item.store_license
+      ? storeNames.get(String(item.store_license)) ?? null
+      : null,
+  }));
   const counts = items.reduce((summary: Record<string, number>, item) => {
     const state = String(item.status);
     summary[state] = (summary[state] ?? 0) + 1;
