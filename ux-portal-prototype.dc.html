@@ -391,10 +391,27 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:22px"><h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0">Work Queues</h1><button type="button" onClick="{{ onWorkQueueRefresh }}" aria-disabled="{{ workQueueLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif;cursor:pointer">{{ workQueueRefreshLabel }}</button></div>
 <sc-if value="{{ workQueueHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:4px solid var(--ux-signal);padding:11px 0 11px 14px;margin-bottom:16px;font-size:12.5px">{{ workQueueError }}</div></sc-if>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border-top:2px solid var(--ux-ink);border-bottom:2px solid var(--ux-ink);margin-bottom:20px"><sc-for list="{{ workQueueSummary }}" as="summary" hint-placeholder-count="4"><div style="padding:15px 14px;border-right:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:6px">{{ summary.label }}</div><div style="font:800 22px Archivo,sans-serif">{{ summary.value }}</div></div></sc-for></div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;background:var(--ux-surface);padding:13px 14px;margin-bottom:18px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SEARCH WORK</span><input type="search" value="{{ workQueueSearch }}" onInput="{{ onWorkQueueSearch }}" placeholder="Title, reference, workflow, or summary" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STATUS</span><select value="{{ workQueueFilter }}" onChange="{{ onWorkQueueFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueFilterOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">WORKFLOW</span><select value="{{ workQueueWorkflowFilter }}" onChange="{{ onWorkQueueWorkflowFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueWorkflowOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;align-items:end;background:var(--ux-surface);padding:13px 14px;margin-bottom:18px">
+<label style="grid-column:span 2"><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SEARCH WORK</span><input type="search" value="{{ workQueueSearch }}" onInput="{{ onWorkQueueSearch }}" placeholder="Title, reference, owner, Brand, store, or summary" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STATUS</span><select value="{{ workQueueFilter }}" onChange="{{ onWorkQueueFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueFilterOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">WORKFLOW</span><select value="{{ workQueueWorkflowFilter }}" onChange="{{ onWorkQueueWorkflowFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueWorkflowOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">ASSIGNEE</span><select value="{{ workQueueAssigneeFilter }}" onChange="{{ onWorkQueueAssigneeFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueAssigneeOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">ORGANIZATION</span><select value="{{ workQueueOrganizationFilter }}" onChange="{{ onWorkQueueOrganizationFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueOrganizationOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">BRAND</span><select value="{{ workQueueBrandFilter }}" onChange="{{ onWorkQueueBrandFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueBrandOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+<label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STORE</span><select value="{{ workQueueStoreFilter }}" onChange="{{ onWorkQueueStoreFilter }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ workQueueStoreOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label>
+</div>
 <sc-if value="{{ workQueueLoading }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:16px;font-size:12.5px;color:var(--ux-muted)">Loading protected work items…</div></sc-if>
 <sc-if value="{{ workQueueEmpty }}" hint-placeholder-val="{{ false }}"><div style="background:var(--ux-surface);padding:16px;font-size:12.5px;color:var(--ux-muted)">No work items match this view.</div></sc-if>
-<div style="display:grid;gap:9px"><sc-for list="{{ workQueueItems }}" as="item" hint-placeholder-count="5"><article style="border:1px solid rgba(23,14,11,.22);background:#fff"><button type="button" onClick="{{ item.onToggle }}" aria-expanded="{{ item.expanded }}" style="width:100%;border:0;background:#fff;padding:14px 16px;text-align:left;cursor:pointer"><div style="display:grid;grid-template-columns:minmax(260px,1.4fr) minmax(180px,.65fr) minmax(150px,.55fr) auto;gap:14px;align-items:center"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ item.priority }} · {{ item.workflowLabel }}</div><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 4px">{{ item.title }}</h3><div style="font-size:11.5px;color:var(--ux-muted);line-height:1.45">{{ item.summary }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.ownerLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.scopeLabel }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TIMING</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.dueLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.updatedLabel }}</div></div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><span style="padding:6px 8px;background:var(--ux-surface);font:700 8px ui-monospace,monospace">{{ item.statusLabel }}</span><span aria-hidden="true" style="font:800 16px Archivo,sans-serif">{{ item.expandMark }}</span></div></div></button><sc-if value="{{ item.expanded }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid rgba(23,14,11,.18);padding:15px 16px 16px;background:var(--ux-ground)"><div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:14px;margin-bottom:14px"><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Work details</h4><div style="display:grid;gap:7px"><sc-for list="{{ item.detailRows }}" as="detail" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:11px"><span style="font:700 8px ui-monospace,monospace;color:var(--ux-muted)">{{ detail.label }}</span><span>{{ detail.value }}</span></div></sc-for></div></section><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Recent activity</h4><sc-if value="{{ item.hasRecentActivity }}" hint-placeholder-val="{{ true }}"><div style="display:grid;gap:8px"><sc-for list="{{ item.recentActivity }}" as="activity" hint-placeholder-count="3"><div style="font-size:11px;line-height:1.4"><strong>{{ activity.label }}</strong> · {{ activity.detail }}<div style="font-size:9.5px;color:var(--ux-muted);margin-top:2px">{{ activity.when }}</div></div></sc-for></div></sc-if><sc-if value="{{ item.hasNoRecentActivity }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:var(--ux-muted)">No comments or evidence have been added.</div></sc-if></section></div><div style="display:grid;grid-template-columns:minmax(150px,.7fr) minmax(100px,.4fr) minmax(150px,.6fr) auto;gap:9px;align-items:end"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.statusValue }}" onChange="{{ item.onStatus }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.statusOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ item.priorityValue }}" onChange="{{ item.onPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.priorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE · MM/DD/YYYY</span><input type="text" value="{{ item.dueValue }}" onInput="{{ item.onDue }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button></div><div style="display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:end;margin-top:10px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORK NOTE</span><input value="{{ item.comment }}" onInput="{{ item.onComment }}" placeholder="Add a decision, blocker, handoff, or next step" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onAddComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.commentLabel }}</button><label style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.evidenceLabel }}<input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ item.onEvidence }}" style="display:none"></label></div></div></sc-if></article></sc-for></div>
+<div style="display:grid;gap:9px"><sc-for list="{{ workQueueItems }}" as="item" hint-placeholder-count="5">
+<article style="border:1px solid rgba(23,14,11,.22);background:#fff">
+<button type="button" onClick="{{ item.onToggle }}" aria-expanded="{{ item.expanded }}" style="width:100%;border:0;background:#fff;padding:14px 16px;text-align:left;cursor:pointer"><div style="display:grid;grid-template-columns:minmax(260px,1.4fr) minmax(180px,.65fr) minmax(165px,.58fr) auto;gap:14px;align-items:center"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ item.priority }} · {{ item.workflowLabel }}</div><h3 style="font:800 15px Archivo,sans-serif;margin:0 0 4px">{{ item.title }}</h3><div style="font-size:11.5px;color:var(--ux-muted);line-height:1.45">{{ item.summary }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">OWNER</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.ownerLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.scopeLabel }}</div></div><div><div style="font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">TIMING</div><div style="font:700 11.5px Archivo,sans-serif">{{ item.dueLabel }}</div><div style="font-size:10.5px;color:var(--ux-muted);margin-top:3px">{{ item.slaLabel }}</div><div style="font-size:10px;color:var(--ux-muted);margin-top:2px">{{ item.updatedLabel }}</div></div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;flex-wrap:wrap"><sc-if value="{{ item.isBlocked }}" hint-placeholder-val="{{ false }}"><span style="padding:6px 8px;background:var(--ux-signal);color:#fff;font:700 8px ui-monospace,monospace">BLOCKED</span></sc-if><span style="padding:6px 8px;background:var(--ux-surface);font:700 8px ui-monospace,monospace">{{ item.statusLabel }}</span><span aria-hidden="true" style="font:800 16px Archivo,sans-serif">{{ item.expandMark }}</span></div></div></button>
+<sc-if value="{{ item.expanded }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid rgba(23,14,11,.18);padding:15px 16px 16px;background:var(--ux-ground)">
+<div style="display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:14px;margin-bottom:14px"><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Work details</h4><div style="display:grid;gap:7px"><sc-for list="{{ item.detailRows }}" as="detail" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:11px"><span style="font:700 8px ui-monospace,monospace;color:var(--ux-muted)">{{ detail.label }}</span><span>{{ detail.value }}</span></div></sc-for></div></section><section style="background:#fff;padding:13px 14px"><h4 style="font:800 12px Archivo,sans-serif;margin:0 0 9px">Recent activity</h4><sc-if value="{{ item.hasRecentActivity }}" hint-placeholder-val="{{ true }}"><div style="display:grid;gap:8px"><sc-for list="{{ item.recentActivity }}" as="activity" hint-placeholder-count="3"><div style="font-size:11px;line-height:1.4"><strong>{{ activity.label }}</strong> · {{ activity.detail }}<div style="font-size:9.5px;color:var(--ux-muted);margin-top:2px">{{ activity.when }}</div></div></sc-for></div></sc-if><sc-if value="{{ item.hasNoRecentActivity }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:var(--ux-muted)">No comments or evidence have been added.</div></sc-if></section></div>
+<div style="display:grid;grid-template-columns:minmax(145px,.65fr) minmax(90px,.35fr) minmax(145px,.55fr) minmax(145px,.55fr) auto;gap:9px;align-items:end"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STATUS</span><select value="{{ item.statusValue }}" onChange="{{ item.onStatus }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.statusOptions }}" as="option" hint-placeholder-count="5"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">PRIORITY</span><select value="{{ item.priorityValue }}" onChange="{{ item.onPriority }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11.5px Archivo,sans-serif"><sc-for list="{{ item.priorityOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">DUE · MM/DD/YYYY</span><input type="text" value="{{ item.dueValue }}" onInput="{{ item.onDue }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">SLA TARGET · MM/DD/YYYY</span><input type="text" value="{{ item.slaValue }}" onInput="{{ item.onSla }}" inputMode="numeric" maxLength="10" placeholder="MM/DD/YYYY" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onSave }}" aria-disabled="{{ item.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:10px 12px;font:700 10.5px Archivo,sans-serif;cursor:pointer">{{ item.saveLabel }}</button></div>
+<sc-if value="{{ item.showBlockedReason }}" hint-placeholder-val="{{ false }}"><label style="display:block;margin-top:10px"><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-signal-text);margin-bottom:4px">BLOCKED REASON *</span><input value="{{ item.blockedReason }}" onInput="{{ item.onBlockedReason }}" placeholder="What is preventing this work from moving forward?" style="width:100%;padding:9px;border:1px solid var(--ux-signal);font:11.5px Archivo,sans-serif"></label></sc-if>
+<div style="display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:end;margin-top:10px"><label><span style="display:block;font:700 8px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">WORK NOTE</span><input value="{{ item.comment }}" onInput="{{ item.onComment }}" placeholder="Add a decision, blocker, handoff, or next step" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);font:11.5px Archivo,sans-serif"></label><button type="button" onClick="{{ item.onAddComment }}" aria-disabled="{{ item.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:9px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.commentLabel }}</button><label style="background:transparent;border:1px solid rgba(23,14,11,.35);padding:8px 11px;font:700 10px Archivo,sans-serif;cursor:pointer">{{ item.evidenceLabel }}<input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ item.onEvidence }}" style="display:none"></label></div>
+</div></sc-if></article></sc-for></div>
+<sc-if value="{{ workQueueHasPagination }}" hint-placeholder-val="{{ true }}"><nav aria-label="Work queue pages" style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid rgba(23,14,11,.2)"><div style="font-size:11px;color:var(--ux-muted)">{{ workQueuePageLabel }}</div><div style="display:flex;align-items:center;gap:8px"><label style="font:700 8px ui-monospace,monospace;color:var(--ux-muted)">ROWS <select value="{{ workQueuePageSize }}" onChange="{{ onWorkQueuePageSize }}" style="margin-left:5px;padding:7px;border:1px solid rgba(23,14,11,.3);background:#fff;font:11px Archivo,sans-serif"><sc-for list="{{ workQueuePageSizeOptions }}" as="option" hint-placeholder-count="3"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><button type="button" onClick="{{ onWorkQueuePreviousPage }}" aria-disabled="{{ workQueuePreviousDisabled }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:700 10px Archivo,sans-serif;cursor:pointer;{{ workQueuePreviousStyle }}">Previous</button><span style="font:700 10px ui-monospace,monospace">{{ workQueuePageNumberLabel }}</span><button type="button" onClick="{{ onWorkQueueNextPage }}" aria-disabled="{{ workQueueNextDisabled }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px;font:700 10px Archivo,sans-serif;cursor:pointer;{{ workQueueNextStyle }}">Next</button></div></nav></sc-if>
 </div>
 </sc-if>
 
@@ -4917,8 +4934,12 @@ class Component extends DCLogic {
     brandManufacturingExceptionOwner: '', brandManufacturingExceptionNote: '', brandManufacturingPending: false,
     workQueueData: null, workQueueLoading: false, workQueueLoaded: false, workQueueError: null,
     workQueuePending: null, workQueueStatusDrafts: {}, workQueuePriorityDrafts: {},
-    workQueueDueDrafts: {}, workQueueCommentDrafts: {}, workQueueFilter: 'open',
-    workQueueSearch: '', workQueueWorkflowFilter: 'all', workQueueExpanded: {},
+    workQueueDueDrafts: {}, workQueueSlaDrafts: {}, workQueueBlockedDrafts: {},
+    workQueueCommentDrafts: {}, workQueueFilter: 'open', workQueueSearch: '',
+    workQueueWorkflowFilter: 'all', workQueueAssigneeFilter: 'all',
+    workQueueOrganizationFilter: 'all', workQueueBrandFilter: 'all',
+    workQueueStoreFilter: 'all', workQueuePage: 1, workQueuePageSize: 10,
+    workQueueExpanded: {},
     internalWorkData: null, internalWorkLoading: false, internalWorkLoaded: false,
     internalWorkError: null, internalWorkPending: null,
     accessRequestTargetId: '', accessRequestRole: 'viewer', accessRequestDepartment: '',
@@ -8265,15 +8286,35 @@ class Component extends DCLogic {
     const priority = (s.workQueuePriorityDrafts || {})[item.id] || item.priority;
     const dueText = String((s.workQueueDueDrafts || {})[item.id] ?? (item.due_at ? isoDateToUs(String(item.due_at).slice(0, 10)) : '')).trim();
     const dueDate = dueText ? usDateToIso(dueText) : '';
+    const slaText = String((s.workQueueSlaDrafts || {})[item.id] ?? (item.sla_due_at ? isoDateToUs(String(item.sla_due_at).slice(0, 10)) : '')).trim();
+    const slaDate = slaText ? usDateToIso(slaText) : '';
+    const blockedReason = String((s.workQueueBlockedDrafts || {})[item.id] ?? item.blocked_reason ?? '').trim();
     if (dueText && !dueDate) {
       this.set({ workQueueError: 'Enter the due date as MM/DD/YYYY.' }); return;
+    }
+    if (slaText && !slaDate) {
+      this.set({ workQueueError: 'Enter the SLA target as MM/DD/YYYY.' }); return;
+    }
+    if (status === 'waiting' && blockedReason.length < 5) {
+      this.set({ workQueueError: 'Add a blocked reason before placing work in Waiting.' }); return;
     }
     this.set({ workQueuePending: 'update:' + item.id, workQueueError: null });
     this.workQueueService('POST', { action: 'update-item', workItemId: item.id,
       expectedVersion: item.version, status, priority,
-      dueAt: dueDate ? dueDate + 'T23:59:59.000Z' : null })
+      dueAt: dueDate ? dueDate + 'T23:59:59.000Z' : null,
+      slaDueAt: slaDate ? slaDate + 'T23:59:59.000Z' : null,
+      blockedReason })
       .then(() => this.loadWorkQueue(true))
-      .then(() => this.set({ workQueuePending: null, toast: item.reference + ' was updated.', toastKind: 'WORK QUEUE UPDATED' }))
+      .then(() => this.setState(current => {
+        const withoutItem = source => Object.fromEntries(Object.entries(source || {}).filter(([key]) => key !== item.id));
+        return { workQueuePending: null,
+          workQueueStatusDrafts: withoutItem(current.workQueueStatusDrafts),
+          workQueuePriorityDrafts: withoutItem(current.workQueuePriorityDrafts),
+          workQueueDueDrafts: withoutItem(current.workQueueDueDrafts),
+          workQueueSlaDrafts: withoutItem(current.workQueueSlaDrafts),
+          workQueueBlockedDrafts: withoutItem(current.workQueueBlockedDrafts),
+          toast: item.reference + ' was updated.', toastKind: 'WORK QUEUE UPDATED' };
+      }))
       .catch(error => this.set({ workQueuePending: null,
         workQueueError: error.message || 'The work item was not updated.' }));
   }
@@ -14810,6 +14851,19 @@ class Component extends DCLogic {
     ].map(([value, label]) => ({ value, label }));
     const workQueueControls = new Map((Array.isArray(workQueueData.controls) ? workQueueData.controls : [])
       .map(control => [String(control.workflow_key || ''), String(control.display_name || '')]));
+    const workQueueServerFilters = workQueueData.filterOptions || {};
+    const workQueueAssigneeOptions = [{ value: 'all', label: 'All assignees' }, { value: 'unassigned', label: 'Unassigned' }]
+      .concat((Array.isArray(workQueueServerFilters.assignees) ? workQueueServerFilters.assignees : [])
+        .map(option => ({ value: String(option.id || ''), label: String(option.label || 'Assigned user') })));
+    const workQueueOrganizations = Array.isArray(workQueueServerFilters.organizations) ? workQueueServerFilters.organizations : [];
+    const workQueueOrganizationOptions = [{ value: 'all', label: 'All organizations' }]
+      .concat(workQueueOrganizations.map(option => ({ value: String(option.id || ''), label: String(option.label || 'Organization') })));
+    const workQueueBrandOptions = [{ value: 'all', label: 'All Brands' }]
+      .concat(workQueueOrganizations.filter(option => option.kind === 'brand')
+        .map(option => ({ value: String(option.id || ''), label: String(option.label || 'Brand') })));
+    const workQueueStoreOptions = [{ value: 'all', label: 'All stores' }]
+      .concat((Array.isArray(workQueueServerFilters.stores) ? workQueueServerFilters.stores : [])
+        .map(option => ({ value: String(option.id || ''), label: String(option.label || 'Store') })));
     const workQueueIsBetaRecord = item => {
       const record = [item.title, item.summary, item.target_id, item.source_record_id]
         .filter(Boolean).join(' ').toLowerCase();
@@ -14835,11 +14889,21 @@ class Component extends DCLogic {
         || (s.workQueueFilter === 'P0' && item.priority === 'P0' && !['completed','cancelled'].includes(item.status))
         || item.status === s.workQueueFilter;
       const matchesWorkflow = s.workQueueWorkflowFilter === 'all' || item.workflow_key === s.workQueueWorkflowFilter;
+      const matchesAssignee = s.workQueueAssigneeFilter === 'all'
+        || (s.workQueueAssigneeFilter === 'unassigned' && !item.assigned_user)
+        || item.assigned_user === s.workQueueAssigneeFilter;
+      const matchesOrganization = s.workQueueOrganizationFilter === 'all'
+        || item.organization_id === s.workQueueOrganizationFilter;
+      const matchesBrand = s.workQueueBrandFilter === 'all'
+        || item.organization_id === s.workQueueBrandFilter;
+      const matchesStore = s.workQueueStoreFilter === 'all'
+        || item.store_license === s.workQueueStoreFilter;
       const searchable = [item.title, item.reference, item.summary, item.workflow_key, item.status, item.priority,
         item.assigned_department, item.assigned_user_name, item.organization_name, item.store_name,
         item.target_type, item.target_id, item.source_record_id]
         .filter(Boolean).join(' ').replace(/_/g, ' ').toLowerCase();
-      return matchesStatus && matchesWorkflow && (!workQueueNeedle || searchable.includes(workQueueNeedle));
+      return matchesStatus && matchesWorkflow && matchesAssignee && matchesOrganization
+        && matchesBrand && matchesStore && (!workQueueNeedle || searchable.includes(workQueueNeedle));
     }).sort((a, b) => {
       const priorityOrder = { P0: 0, P1: 1, P2: 2, P3: 3 };
       const priorityDifference = (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
@@ -14848,7 +14912,12 @@ class Component extends DCLogic {
       const bDue = b.due_at ? new Date(b.due_at).getTime() : Number.MAX_SAFE_INTEGER;
       return aDue - bDue || new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
     });
-    const workQueueItems = workQueueFilteredItems.map(item => {
+    const workQueuePageSize = Math.max(10, Number(s.workQueuePageSize) || 10);
+    const workQueueTotalPages = Math.max(1, Math.ceil(workQueueFilteredItems.length / workQueuePageSize));
+    const workQueuePage = Math.min(Math.max(1, Number(s.workQueuePage) || 1), workQueueTotalPages);
+    const workQueuePageStart = (workQueuePage - 1) * workQueuePageSize;
+    const workQueuePageItems = workQueueFilteredItems.slice(workQueuePageStart, workQueuePageStart + workQueuePageSize);
+    const workQueueItems = workQueuePageItems.map(item => {
       const comments = Array.isArray(item.portal_work_item_comment) ? item.portal_work_item_comment : [];
       const evidence = Array.isArray(item.portal_work_item_evidence) ? item.portal_work_item_evidence : [];
       const events = Array.isArray(item.portal_work_item_event) ? item.portal_work_item_event : [];
@@ -14857,6 +14926,10 @@ class Component extends DCLogic {
       const priorityValue = (s.workQueuePriorityDrafts || {})[item.id] || item.priority;
       const dueValue = (s.workQueueDueDrafts || {})[item.id] !== undefined
         ? s.workQueueDueDrafts[item.id] : (item.due_at ? isoDateToUs(String(item.due_at).slice(0, 10)) : '');
+      const slaValue = (s.workQueueSlaDrafts || {})[item.id] !== undefined
+        ? s.workQueueSlaDrafts[item.id] : (item.sla_due_at ? isoDateToUs(String(item.sla_due_at).slice(0, 10)) : '');
+      const blockedReason = (s.workQueueBlockedDrafts || {})[item.id] !== undefined
+        ? s.workQueueBlockedDrafts[item.id] : String(item.blocked_reason || '');
       const workflowLabel = workQueueControls.get(String(item.workflow_key || ''))
         || String(item.workflow_key || '').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
       const genericSummary = !item.summary || /^portal catalog content$/i.test(String(item.summary).trim());
@@ -14898,25 +14971,37 @@ class Component extends DCLogic {
         sortAt: new Date(event.created_at || 0).getTime()
       }))).sort((a, b) => b.sortAt - a.sortAt).slice(0, 4);
       const expanded = !!(s.workQueueExpanded || {})[item.id];
+      const slaTimestamp = item.sla_due_at ? new Date(item.sla_due_at).getTime() : 0;
+      const completedTimestamp = item.completed_at ? new Date(item.completed_at).getTime() : 0;
+      const slaState = !slaTimestamp ? 'No SLA target'
+        : item.status === 'completed' ? (completedTimestamp && completedTimestamp <= slaTimestamp ? 'SLA met' : 'SLA missed')
+        : item.status === 'cancelled' ? 'SLA closed'
+        : slaTimestamp < Date.now() ? 'SLA breached'
+        : slaTimestamp - Date.now() <= 86400000 ? 'SLA due within 24 hours'
+        : 'SLA on track';
       return { ...item,
         workflowLabel, summary,
         ownerLabel: item.assigned_user_name || (item.assigned_department ? item.assigned_department + ' queue' : 'Unassigned'),
         scopeLabel: scopeParts.join(' · ') || 'Internal work',
         dueLabel: dueValue ? 'Due ' + dueValue : 'No due date',
+        slaLabel: slaValue ? slaState + ' · ' + slaValue : slaState,
         updatedLabel: item.updated_at ? 'Updated ' + formatDateUs(item.updated_at) : 'Update not recorded',
         statusLabel: String(statusValue || '').replace(/_/g, ' ').toUpperCase(),
+        isBlocked: statusValue === 'waiting', showBlockedReason: statusValue === 'waiting',
         detailRows, recentActivity, hasRecentActivity: recentActivity.length > 0,
         hasNoRecentActivity: recentActivity.length === 0,
         expanded, expandMark: expanded ? '−' : '+',
         onToggle: () => this.setState(current => ({ workQueueExpanded: {
           ...(current.workQueueExpanded || {}), [item.id]: !(current.workQueueExpanded || {})[item.id]
         } })),
-        statusValue, priorityValue, dueValue,
+        statusValue, priorityValue, dueValue, slaValue, blockedReason,
         statusOptions: ['not_started','in_progress','waiting','completed','cancelled'].map(value => ({ value, label: value.replace(/_/g, ' ').toUpperCase() })),
         priorityOptions: ['P0','P1','P2','P3'].map(value => ({ value, label: value })),
         onStatus: event => this.setState(current => ({ workQueueStatusDrafts: { ...(current.workQueueStatusDrafts || {}), [item.id]: event.target.value } })),
         onPriority: event => this.setState(current => ({ workQueuePriorityDrafts: { ...(current.workQueuePriorityDrafts || {}), [item.id]: event.target.value } })),
         onDue: event => this.setState(current => ({ workQueueDueDrafts: { ...(current.workQueueDueDrafts || {}), [item.id]: event.target.value } })),
+        onSla: event => this.setState(current => ({ workQueueSlaDrafts: { ...(current.workQueueSlaDrafts || {}), [item.id]: event.target.value } })),
+        onBlockedReason: event => this.setState(current => ({ workQueueBlockedDrafts: { ...(current.workQueueBlockedDrafts || {}), [item.id]: event.target.value } })),
         comment: (s.workQueueCommentDrafts || {})[item.id] || '',
         onComment: event => this.setState(current => ({ workQueueCommentDrafts: { ...(current.workQueueCommentDrafts || {}), [item.id]: event.target.value } })),
         onSave: () => this.updateWorkQueueItem(item), onAddComment: () => this.addWorkQueueComment(item),
@@ -15740,12 +15825,35 @@ class Component extends DCLogic {
       workQueueLoading: s.workQueueLoading, workQueueHasError: !!s.workQueueError,
       workQueueError: s.workQueueError || '', workQueueEmpty: s.workQueueLoaded && !workQueueItems.length,
       workQueueItems, workQueueFilter: s.workQueueFilter,
-      workQueueFilterOptions, onWorkQueueFilter: event => this.set({ workQueueFilter: event.target.value }),
+      workQueueFilterOptions, onWorkQueueFilter: event => this.set({ workQueueFilter: event.target.value, workQueuePage: 1 }),
       workQueueSearch: s.workQueueSearch,
-      onWorkQueueSearch: event => this.set({ workQueueSearch: event.target.value }),
+      onWorkQueueSearch: event => this.set({ workQueueSearch: event.target.value, workQueuePage: 1 }),
       workQueueWorkflowFilter: s.workQueueWorkflowFilter,
       workQueueWorkflowOptions,
-      onWorkQueueWorkflowFilter: event => this.set({ workQueueWorkflowFilter: event.target.value }),
+      onWorkQueueWorkflowFilter: event => this.set({ workQueueWorkflowFilter: event.target.value, workQueuePage: 1 }),
+      workQueueAssigneeFilter: s.workQueueAssigneeFilter, workQueueAssigneeOptions,
+      onWorkQueueAssigneeFilter: event => this.set({ workQueueAssigneeFilter: event.target.value, workQueuePage: 1 }),
+      workQueueOrganizationFilter: s.workQueueOrganizationFilter, workQueueOrganizationOptions,
+      onWorkQueueOrganizationFilter: event => this.set({ workQueueOrganizationFilter: event.target.value, workQueuePage: 1 }),
+      workQueueBrandFilter: s.workQueueBrandFilter, workQueueBrandOptions,
+      onWorkQueueBrandFilter: event => this.set({ workQueueBrandFilter: event.target.value, workQueuePage: 1 }),
+      workQueueStoreFilter: s.workQueueStoreFilter, workQueueStoreOptions,
+      onWorkQueueStoreFilter: event => this.set({ workQueueStoreFilter: event.target.value, workQueuePage: 1 }),
+      workQueueHasPagination: workQueueFilteredItems.length > 0,
+      workQueuePageSize: String(workQueuePageSize),
+      workQueuePageSizeOptions: [10,20,50].map(value => ({ value: String(value), label: String(value) })),
+      onWorkQueuePageSize: event => this.set({ workQueuePageSize: Number(event.target.value), workQueuePage: 1 }),
+      workQueuePageLabel: workQueueFilteredItems.length
+        ? 'Showing ' + (workQueuePageStart + 1) + '–' + Math.min(workQueuePageStart + workQueuePageSize, workQueueFilteredItems.length)
+          + ' of ' + workQueueFilteredItems.length + ' work items'
+        : 'No work items',
+      workQueuePageNumberLabel: 'Page ' + workQueuePage + ' of ' + workQueueTotalPages,
+      workQueuePreviousDisabled: workQueuePage <= 1,
+      workQueueNextDisabled: workQueuePage >= workQueueTotalPages,
+      workQueuePreviousStyle: workQueuePage <= 1 ? 'opacity:.45;pointer-events:none' : '',
+      workQueueNextStyle: workQueuePage >= workQueueTotalPages ? 'opacity:.45;pointer-events:none' : '',
+      onWorkQueuePreviousPage: () => this.set({ workQueuePage: Math.max(1, workQueuePage - 1) }),
+      onWorkQueueNextPage: () => this.set({ workQueuePage: Math.min(workQueueTotalPages, workQueuePage + 1) }),
       workQueueSummary: [
         { label: 'OPEN', value: Number(workQueueVisibleCounts.total || 0) - Number(workQueueVisibleCounts.completed || 0) - Number(workQueueVisibleCounts.cancelled || 0) },
         { label: 'IN PROGRESS', value: Number(workQueueVisibleCounts.in_progress || 0) },

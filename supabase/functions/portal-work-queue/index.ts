@@ -84,6 +84,16 @@ function choice(
   return candidate;
 }
 
+function optionalTimestamp(value: unknown, label: string): string | null {
+  const candidate = clean(value, 40);
+  if (!candidate) return null;
+  const parsed = new Date(candidate);
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new QueueError(400, `Enter a valid ${label}.`);
+  }
+  return parsed.toISOString();
+}
+
 async function administratorFor(request: Request): Promise<Administrator> {
   const authorization = request.headers.get("authorization") ?? "";
   if (
@@ -161,6 +171,19 @@ async function queueOverview(): Promise<Row> {
   return {
     controls: controlResult.data ?? [],
     items,
+    filterOptions: {
+      assignees: (profileResult.data ?? []).filter((row) => row.active !== false)
+        .map((row) => ({ id: row.id, label: row.full_name || "Assigned user" }))
+        .sort((left, right) => String(left.label).localeCompare(String(right.label))),
+      organizations: (organizationResult.data ?? [])
+        .filter((row) => row.status !== "inactive")
+        .map((row) => ({ id: row.id, label: row.display_name || "Organization", kind: row.kind }))
+        .sort((left, right) => String(left.label).localeCompare(String(right.label))),
+      stores: (storeResult.data ?? []).filter((row) => row.active !== false)
+        .map((row) => ({ id: row.license_number, label: row.display_name || row.license_number,
+          organizationId: row.organization }))
+        .sort((left, right) => String(left.label).localeCompare(String(right.label))),
+    },
     summary: {
       total: items.length,
       notStarted: counts.not_started ?? 0,
@@ -189,18 +212,29 @@ async function updateItem(actor: Administrator, body: Row): Promise<Row> {
   if (!Number.isInteger(expectedVersion) || expectedVersion < 1) {
     throw new QueueError(400, "Refresh the work item before saving it.");
   }
-  const changes: Row = {
-    status: choice(
+  const status = choice(
       body.status,
       ["not_started", "in_progress", "waiting", "completed", "cancelled"],
       "status",
-    ),
+    );
+  const blockedReason = clean(body.blockedReason, 1000);
+  if (status === "waiting" && blockedReason.length < 5) {
+    throw new QueueError(400, "Add a blocked reason before placing work in Waiting.");
+  }
+  const { data: current, error: currentError } = await service.from("portal_work_item")
+    .select("status,blocked_reason,sla_due_at").eq("id", id).maybeSingle();
+  if (currentError) throw currentError;
+  if (!current) throw new QueueError(404, "Work item not found.");
+  const changes: Row = {
+    status,
     priority: choice(body.priority, ["P0", "P1", "P2", "P3"], "priority"),
     assigned_department: "Administrator",
     assigned_user: body.assignedUserId
       ? uuid(body.assignedUserId, "assignee")
       : null,
-    due_at: clean(body.dueAt, 40) || null,
+    due_at: optionalTimestamp(body.dueAt, "due date"),
+    blocked_reason: status === "waiting" ? blockedReason : null,
+    sla_due_at: optionalTimestamp(body.slaDueAt, "SLA target"),
     updated_by: actor.id,
   };
   const { data, error } = await service.from("portal_work_item").update(changes)
@@ -215,7 +249,7 @@ async function updateItem(actor: Administrator, body: Row): Promise<Row> {
   await service.from("portal_work_item_event").insert({
     work_item_id: id,
     action: "administrator_decision",
-    from_status: null,
+    from_status: current.status,
     to_status: changes.status,
     actor_id: actor.id,
     actor_email: actor.email,
@@ -223,6 +257,10 @@ async function updateItem(actor: Administrator, body: Row): Promise<Row> {
       priority: changes.priority,
       assignedDepartment: "Administrator",
       dueAt: changes.due_at,
+      blockedReason: changes.blocked_reason,
+      previousBlockedReason: current.blocked_reason,
+      slaDueAt: changes.sla_due_at,
+      previousSlaDueAt: current.sla_due_at,
     },
   });
   return { workItem: data };
