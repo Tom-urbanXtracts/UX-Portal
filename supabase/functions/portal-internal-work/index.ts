@@ -18,6 +18,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const PORTAL_EMAIL_FROM = Deno.env.get("PORTAL_EMAIL_FROM") ??
   "urbanXtracts Portal <portal@updates.urbanxtracts.com>";
 const PORTAL_URL = "https://portal.urbanxtracts.com";
+const SUPPLY_ORDER_AGENT_EMAIL = "amrit@urbanxtracts.com";
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -428,6 +429,7 @@ async function overview(actor: Actor): Promise<Row> {
     governanceReviewsResult,
     systemsResult,
     emergencyChangesResult,
+    supplyItemHistoryResult,
   ] = await Promise.all([
     service.from("portal_department").select(
       "department_key,display_name,status,platform_owner,business_owner,backup_owner,sensitive_tier",
@@ -496,6 +498,8 @@ async function overview(actor: Actor): Promise<Row> {
       ? service.from("portal_emergency_change").select("*")
         .order("created_at", { ascending: false }).limit(100)
       : Promise.resolve({ data: [], error: null }),
+    service.from("portal_supply_item_history").select("*").eq("active", true)
+      .order("last_ordered_at", { ascending: false }).limit(100),
   ]);
   for (
     const result of [
@@ -511,6 +515,7 @@ async function overview(actor: Actor): Promise<Row> {
       governanceReviewsResult,
       systemsResult,
       emergencyChangesResult,
+      supplyItemHistoryResult,
     ]
   ) {
     if (result.error) throw result.error;
@@ -530,7 +535,8 @@ async function overview(actor: Actor): Promise<Row> {
   ).map((approver) => String(approver.approval_tier));
   const purchaseRequests = ((purchaseRequestsResult.data ?? []) as Row[]).filter(
     (request) =>
-      actor.administrator || String(request.requester_id) === actor.id ||
+      actor.administrator || actor.email === SUPPLY_ORDER_AGENT_EMAIL ||
+      String(request.requester_id) === actor.id ||
       actorPurchaseApprovalTiers.includes(String(request.approval_tier)),
   );
   let purchaseEvidence: Row[] = [];
@@ -568,6 +574,23 @@ async function overview(actor: Actor): Promise<Row> {
     }),
     purchaseApprovers: purchaseApproversResult.data ?? [],
     actorPurchaseApprovalTiers,
+    canPlaceSupplyOrders: actor.administrator || actor.email === SUPPLY_ORDER_AGENT_EMAIL,
+    supplyItemHistory: supplyItemHistoryResult.data ?? [],
+    supplyOrderReport: {
+      totalRequests: purchaseRequests.length,
+      awaitingApproval: purchaseRequests.filter((row) =>
+        ["submitted", "under_review", "returned"].includes(String(row.status))
+      ).length,
+      awaitingOrder: purchaseRequests.filter((row) =>
+        String(row.status) === "awaiting_order"
+      ).length,
+      ordered: purchaseRequests.filter((row) =>
+        ["ordered", "partially_received", "received", "completed"].includes(String(row.status))
+      ).length,
+      orderedValue: purchaseRequests.filter((row) =>
+        ["ordered", "partially_received", "received", "completed"].includes(String(row.status))
+      ).reduce((sum, row) => sum + Number(row.actual_order_total || row.amount || 0), 0),
+    },
     notificationRecipients: notificationRecipientsResult.data ?? [],
     items: itemsResult.data ?? [],
     offboardingCases: offboardingResult.data ?? [],
@@ -754,6 +777,11 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   const deliveryStartOn = isoDate(body.deliveryStartOn);
   const deliveryEndOn = isoDate(body.deliveryEndOn);
   const paymentMethod = clean(body.paymentMethod, 100);
+  const recipientName = clean(body.recipientName, 160);
+  const deliveryLocation = clean(body.deliveryLocation, 500);
+  const estimatedShipping = Number(body.estimatedShipping || 0);
+  const estimatedTax = Number(body.estimatedTax || 0);
+  const estimatedDiscount = Number(body.estimatedDiscount || 0);
   const recurringPurchase = body.recurringPurchase === true;
   const lines = Array.isArray(body.lines) ? body.lines as Row[] : [];
   const categories = new Set([
@@ -766,7 +794,11 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
   ]);
   if (
     !/^[a-z0-9_]{2,40}$/.test(departmentKey) || vendorName.length < 2 ||
-    purpose.length < 12 || !new Set(["low", "normal", "high", "urgent"])
+    purpose.length < 12 || recipientName.length < 2 || deliveryLocation.length < 4 ||
+    !Number.isFinite(estimatedShipping) || estimatedShipping < 0 ||
+    !Number.isFinite(estimatedTax) || estimatedTax < 0 ||
+    !Number.isFinite(estimatedDiscount) || estimatedDiscount < 0 ||
+    !new Set(["low", "normal", "high", "urgent"])
       .has(priority) || lines.length < 1 || lines.length > 50
   ) {
     throw new InternalWorkError(
@@ -780,12 +812,16 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
     const unitCost = Number(line.unitCost);
     const expenseCategory = clean(line.expenseCategory, 30);
     const purchaseUrl = clean(line.purchaseUrl, 1200);
+    const imageUrl = clean(line.imageUrl, 1200);
+    const substitutionPolicy = clean(line.substitutionPolicy || "contact_requester", 80);
     const requiredDeliveryOn = isoDate(line.requiredDeliveryOn);
     if (
       itemDescription.length < 2 || !Number.isFinite(quantity) || quantity <= 0 ||
       !Number.isFinite(unitCost) || unitCost < 0 ||
       !categories.has(expenseCategory) ||
-      (purchaseUrl && !/^https:\/\//i.test(purchaseUrl))
+      !new Set(["no_substitutions", "comparable_within_approved_total", "contact_requester"]).has(substitutionPolicy) ||
+      (purchaseUrl && !/^https:\/\//i.test(purchaseUrl)) ||
+      (imageUrl && !/^https:\/\//i.test(imageUrl))
     ) {
       throw new InternalWorkError(
         400,
@@ -796,6 +832,9 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       itemDescription,
       sku: clean(line.sku, 160),
       purchaseUrl,
+      imageUrl,
+      selectedOptions: clean(line.selectedOptions, 500),
+      substitutionPolicy,
       quantity,
       unitCost,
       expenseCategory,
@@ -804,10 +843,11 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       requiredDeliveryOn,
     };
   });
-  const amount = normalizedLines.reduce(
+  const merchandiseSubtotal = normalizedLines.reduce(
     (total, line) => total + Math.round(line.quantity * line.unitCost * 100) / 100,
     0,
   );
+  const amount = Math.round((merchandiseSubtotal + estimatedShipping + estimatedTax - estimatedDiscount) * 100) / 100;
   let route;
   try {
     route = purchaseApprovalRoute(amount);
@@ -817,7 +857,7 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
       "Enter a purchase amount greater than zero.",
     );
   }
-  const { data, error } = await service.rpc("portal_submit_purchase_request_v2", {
+  const { data, error } = await service.rpc("portal_submit_purchase_request_v3", {
     p_actor_id: actor.id,
     p_actor_email: actor.email,
     p_department_key: departmentKey,
@@ -829,6 +869,11 @@ async function createPurchaseRequest(actor: Actor, body: Row): Promise<Row> {
     p_delivery_end_on: deliveryEndOn,
     p_recurring_purchase: recurringPurchase,
     p_payment_method: paymentMethod,
+    p_recipient_name: recipientName,
+    p_delivery_location: deliveryLocation,
+    p_estimated_shipping: estimatedShipping,
+    p_estimated_tax: estimatedTax,
+    p_estimated_discount: estimatedDiscount,
     p_lines: normalizedLines,
   });
   if (error) throw error;
@@ -931,6 +976,90 @@ async function decidePurchaseBusinessApproval(
         decisionNote: data.business_approval_note,
       },
       `purchase-request-business-updated:${data.id}:${data.version}:${decision}`,
+    );
+  }
+  if (decision === "approved") {
+    await sendDepartmentNotification(
+      "purchase_request_ready_to_order",
+      SUPPLY_ORDER_AGENT_EMAIL,
+      {
+        recipientName: "Amrit",
+        requestReference: data.reference,
+        vendorName: data.vendor_name,
+        amount: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" })
+          .format(Number(data.amount || 0)),
+      },
+      `purchase-request-ready-to-order:${data.id}:${data.version}`,
+    );
+  }
+  return { request: data };
+}
+
+async function markSupplyOrderOrdered(actor: Actor, body: Row): Promise<Row> {
+  if (!actor.administrator && actor.email !== SUPPLY_ORDER_AGENT_EMAIL) {
+    throw new InternalWorkError(403, "Amrit or an Administrator must record ordering.");
+  }
+  const requestId = uuid(body.requestId, "supply order");
+  const expectedVersion = Number(body.expectedVersion);
+  const actualTotal = Number(body.actualTotal);
+  const vendorOrderNumber = clean(body.vendorOrderNumber, 200);
+  const expectedDeliveryOn = isoDate(body.expectedDeliveryOn);
+  const note = clean(body.note, 4000);
+  if (!Number.isInteger(expectedVersion) || expectedVersion < 1 ||
+    !Number.isFinite(actualTotal) || actualTotal <= 0 || vendorOrderNumber.length < 2 ||
+    !expectedDeliveryOn || note.length < 8) {
+    throw new InternalWorkError(
+      400,
+      "Enter the checkout total, vendor order number, expected delivery date, and ordering evidence.",
+    );
+  }
+  const { data, error } = await service.rpc("portal_mark_supply_order_ordered", {
+    p_actor_id: actor.id,
+    p_actor_email: actor.email,
+    p_request_id: requestId,
+    p_expected_version: expectedVersion,
+    p_actual_total: actualTotal,
+    p_vendor_order_number: vendorOrderNumber,
+    p_expected_delivery_on: expectedDeliveryOn,
+    p_note: note,
+  });
+  if (error) {
+    const message = String(error.message || "");
+    if (message.includes("changed")) {
+      throw new InternalWorkError(409, "This supply order changed. Refresh before recording it.");
+    }
+    throw error;
+  }
+  const recipient = await requesterRecipient(String(data.requester_id));
+  const money = (value: unknown) => new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(value || 0));
+  if (String(data.status) === "ordered" && recipient) {
+    await sendDepartmentNotification(
+      "purchase_request_ordered",
+      recipient.email,
+      {
+        recipientName: recipient.name,
+        requestReference: data.reference,
+        vendorName: data.vendor_name,
+        vendorOrderNumber: data.vendor_order_number,
+        actualTotal: money(data.actual_order_total),
+        expectedDelivery: data.expected_delivery_on || "Pending",
+      },
+      `purchase-request-ordered:${data.id}:${data.version}`,
+    );
+  } else if (String(data.status) === "returned" && recipient) {
+    await sendDepartmentNotification(
+      "purchase_request_reapproval_required",
+      recipient.email,
+      {
+        recipientName: recipient.name,
+        requestReference: data.reference,
+        approvedTotal: money(data.amount),
+        actualTotal: money(data.actual_order_total),
+      },
+      `purchase-request-reapproval:${data.id}:${data.version}`,
     );
   }
   return { request: data };
@@ -1747,6 +1876,9 @@ Deno.serve(async (request) => {
     }
     if (action === "decide-purchase-business-approval") {
       return json(request, await decidePurchaseBusinessApproval(actor, body));
+    }
+    if (action === "mark-supply-order-ordered") {
+      return json(request, await markSupplyOrderOrdered(actor, body));
     }
     if (action === "upload-purchase-document") {
       return json(request, await uploadPurchaseDocument(actor, body), 201);

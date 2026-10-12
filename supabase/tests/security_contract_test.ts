@@ -142,12 +142,12 @@ Deno.test("purchase approvals follow the approved spending thresholds", () => {
     "$500.01 routes to leadership",
   );
   assert(
-    purchaseApprovalRoute(3000).authority === "Omeed, Drew or Jonathan",
-    "$3,000 routes to leadership",
+    purchaseApprovalRoute(2999.99).authority === "Omeed / Jonathan / Drew",
+    "$2,999.99 routes to leadership",
   );
   assert(
-    purchaseApprovalRoute(3000.01).tier === "eran_3000",
-    "over $3,000 routes to Eran",
+    purchaseApprovalRoute(3000).tier === "eran_3000",
+    "$3,000 routes to Eran",
   );
   let rejected = false;
   try {
@@ -205,8 +205,8 @@ Deno.test("supply order routing returns monday users by threshold", () => {
     "leadership users get the middle tier",
   );
   assert(
-    supplyOrderApprovalRoute(3000.01).mondayUserIds.join(",") === "50263474",
-    "Eran gets the over-$3000 tier",
+    supplyOrderApprovalRoute(3000).mondayUserIds.join(",") === "50263474",
+    "Eran gets the $3,000-and-up tier",
   );
 });
 

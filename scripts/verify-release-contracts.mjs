@@ -43,6 +43,7 @@ const departmentRequestMigration = await readFile(resolve(root, "supabase/migrat
 const departmentRequestAuditRepairMigration = await readFile(resolve(root, "supabase/migrations/20261008052705_repair_department_request_audit.sql"), "utf8");
 const departmentNotificationMigration = await readFile(resolve(root, "supabase/migrations/20261008051633_department_request_notifications.sql"), "utf8");
 const financePurchaseMigration = await readFile(resolve(root, "supabase/migrations/20261008053155_finance_purchase_requests_and_notification_routing.sql"), "utf8");
+const supplyOrderMigration = await readFile(resolve(root, "supabase/migrations/20261012133000_supply_order_workspace_v1.sql"), "utf8");
 const notificationSuppressionMigration = await readFile(resolve(root, "supabase/migrations/20261008161122_suppress_test_notification_recipients.sql"), "utf8");
 const notificationSuppressionGateMigration = await readFile(resolve(root, "supabase/migrations/20261008161710_enforce_notification_suppression.sql"), "utf8");
 const identityHelperCompatibilityMigration = await readFile(resolve(root, "supabase/migrations/20261008164743_restore_public_identity_helpers.sql"), "utf8");
@@ -720,14 +721,21 @@ assertContract(financePurchaseMigration.includes("portal_department_notification
   && internalWork.includes('staff_role", "administrator"')
   && internalWork.includes('in("member_role", ["department_head", "backup_owner"])'),
   "Department notifications reach configured owners, inboxes, department leaders, and every active Administrator");
-assertContract(internalWork.includes('service.rpc("portal_submit_purchase_request_v2"')
-  && internalWork.includes('service.rpc("portal_decide_purchase_request"')
+assertContract(internalWork.includes('service.rpc("portal_submit_purchase_request_v3"')
+  && internalWork.includes('service.rpc("portal_mark_supply_order_ordered"')
   && internalWork.includes('service.rpc(\n    "portal_record_purchase_business_decision"')
   && internalWork.includes('action === "upload-purchase-document"')
-  && source.includes("FINANCE · SUPPLY ORDER PATTERN")
-  && source.includes("Administrator processing evidence")
+  && source.includes("INTERNAL · CONTROLLED PURCHASING")
+  && source.includes("AMRIT · PURCHASING QUEUE")
   && source.includes("Business decision evidence"),
-  "The Internal service and My Work UI expose calculated multi-line purchase intake, business approval, Administrator processing, and supporting documents");
+  "The Internal service and Supply Orders UI expose calculated multi-line intake, business approval, Amrit ordering, and supporting documents");
+assertContract(supplyOrderMigration.includes("elsif total_amount < 3000")
+  && supplyOrderMigration.includes("portal_supply_item_history")
+  && supplyOrderMigration.includes("estimated_shipping")
+  && supplyOrderMigration.includes("substitution_policy")
+  && supplyOrderMigration.includes("purchase_request_ready_to_order")
+  && supplyOrderMigration.includes("purchase_request_reapproval_required"),
+  "Supply Orders preserve exact thresholds, reusable items, checkout totals, substitution controls, and durable notifications");
 assertContract(identityHelperCompatibilityMigration.includes("create or replace function public.portal_my_permissions()")
   && identityHelperCompatibilityMigration.includes("profile.id = auth.uid()")
   && identityHelperCompatibilityMigration.includes("profile.active is true")
