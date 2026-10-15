@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-15",
+  "productionProject": "cbhsavfbtcpdyxcvguay",
+  "basis": "Explicit reviewed candidate list required by migration-baseline-reconciliation.json releaseStrategy and conclusions. Apply in listed order. Automatic database push remains prohibited against the staging ledger and against production.",
+  "approvalStatus": "drafted_for_review",
+  "approvedBy": null,
+  "approvedAt": null,
+  "candidates": [
+    {
+      "order": 1,
+      "version": "20261014213000",
+      "name": "approve_store_workspace_activation_planning",
+      "md5": "1dfa554a42797959a3ee0dfbcb1660c9",
+      "kind": "dml",
+      "productionLedgerRow": "absent",
+      "productionEffects": "already_applied_out_of_band",
+      "productionEffectsSource": "docs/store-workspace-dependency-review-2026-10-14.md DEP-12",
+      "stagingApplication": "not_applied",
+      "rerunSafe": true,
+      "rerunSafeBasis": "Fixed-value UPDATE on portal_readiness_task; INSERT into portal_readiness_evidence guarded by NOT EXISTS on the same label.",
+      "gates": [],
+      "notes": "Records planning status only. Enables no capability. Re-applying restates the same values and adds the ledger row that production currently lacks."
+    },
+    {
+      "order": 2,
+      "version": "20261014215429",
+      "name": "store_membership_access_foundation",
+      "md5": "204804aabab22580d43c530450d8d0af",
+      "kind": "ddl",
+      "productionLedgerRow": "absent",
+      "productionEffects": "not_applied",
+      "stagingApplication": "applied_as_raw_sql_outside_ledger",
+      "stagingApplicationSource": "scripts/bootstrap-store-staging.mjs",
+      "rerunSafe": false,
+      "rerunSafeBasis": "Creates portal_store_access_control and portal_membership_store without IF NOT EXISTS; a second apply fails.",
+      "gates": [
+        "supabase/functions/_shared/store-context.ts",
+        "all 21 handlers importing _shared/request-workspace.ts"
+      ],
+      "notes": "Creates portal_resolve_store_context and portal_revoke_store_membership. The service-only Store access switch it creates defaults disabled; applying this migration does not enable Store access."
+    },
+    {
+      "order": 3,
+      "version": "20261014220938",
+      "name": "store_endpoint_access_commands",
+      "md5": "3790c37cb7a7ed696c0810ad7ae06fde",
+      "kind": "ddl",
+      "productionLedgerRow": "absent",
+      "productionEffects": "not_applied",
+      "stagingApplication": "applied_as_raw_sql_outside_ledger",
+      "stagingApplicationSource": "scripts/bootstrap-store-staging.mjs",
+      "rerunSafe": false,
+      "rerunSafeBasis": "Adds columns and creates functions/indexes without IF NOT EXISTS guards.",
+      "gates": [
+        "supabase/functions/_shared/request-workspace.ts storeCommand",
+        "all 21 handlers importing _shared/request-workspace.ts"
+      ],
+      "revokesBrowserAccess": [
+        "portal_store",
+        "portal_profile_store",
+        "portal_order",
+        "portal_order_line",
+        "portal_order_event",
+        "portal_price_proposal",
+        "portal_store_price",
+        "portal_receiving_claim",
+        "portal_receiving_claim_evidence",
+        "portal_inventory_commitment"
+      ],
+      "revokeImpactReview": "REVOKE targets public, anon and authenticated only; service_role retains access. No deployed edge function on main constructs a Supabase database client with the anon key, and neither the deployed nor the candidate frontend performs direct .from(table) access. Reviewed 2026-10-15 against main and the candidate branch.",
+      "notes": "Highest-blast-radius candidate. Adds nullable retailer_account_id to portal_order and portal_receiving_claim plus two scope indexes."
+    },
+    {
+      "order": 4,
+      "version": "20261014223749",
+      "name": "store_membership_administration",
+      "md5": "f11fe4dcc2dde9341c36a7b708b7f4af",
+      "kind": "ddl",
+      "productionLedgerRow": "absent",
+      "productionEffects": "not_applied",
+      "stagingApplication": "applied_as_raw_sql_outside_ledger",
+      "stagingApplicationSource": "scripts/bootstrap-store-staging.mjs",
+      "rerunSafe": false,
+      "rerunSafeBasis": "Creates portal_store_membership_change without IF NOT EXISTS.",
+      "gates": [
+        "supabase/functions/portal-admin/index.ts"
+      ],
+      "notes": "Creates the service-only membership-change receipt and portal_manage_store_membership. Links existing identities only; new-account invitation remains held."
+    },
+    {
+      "order": 5,
+      "version": "20261015003000",
+      "name": "provision_workforce_workspace_membership",
+      "md5": "a392d28dcb294b80e9cbf3020736ccd3",
+      "kind": "ddl_and_repair",
+      "productionLedgerRow": "absent",
+      "productionEffects": "not_applied",
+      "stagingApplication": "applied_through_ledger",
+      "rerunSafe": true,
+      "rerunSafeBasis": "CREATE OR REPLACE function, trigger recreated, inserts use ON CONFLICT DO NOTHING; the repair call is idempotent.",
+      "gates": [
+        "all 21 handlers importing _shared/request-workspace.ts"
+      ],
+      "selfExecutingRepair": true,
+      "notes": "requestWorkspace requires an active portal_organization_membership row. The prior Auth trigger created a profile without that membership, so this must be applied before the handlers deploy or affected workforce identities receive 403. The migration calls portal_repair_workforce_workspace_memberships() itself and fails closed when the active Internal organization is absent."
+    }
+  ],
+  "ordering": [
+    "Apply candidates 1 through 5 in listed order before deploying any handler that imports _shared/request-workspace.ts.",
+    "Candidate 5 must precede handler deployment so existing workforce identities retain an active Internal membership.",
+    "Candidates 2 and 3 must both be applied before any handler deployment; storeCommand and resolveStoreContext fail closed (503/403) when their functions are absent, which degrades Store paths rather than opening them.",
+    "Internal and Brand request paths return before resolveStoreContext is reached, so they are unaffected by candidate 2 and 3 timing."
+  ],
+  "prohibited": [
+    "supabase db push against production or the staging project",
+    "replaying historical repository migrations against the staging schema-only baseline",
+    "applying candidate 2, 3 or 4 twice without an explicit repair review",
+    "enabling Store access or releasing the Store ordering hold as part of applying this list"
+  ]
+}

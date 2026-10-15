@@ -29,6 +29,8 @@ The [baseline reconciliation artifact](../artifacts/store-demo-release-2026-10-1
 
 The staging database was intentionally created from a schema-only production baseline and reviewed candidate migrations. Historical migrations must not be replayed against it. Production rollout must use an explicit reviewed candidate list, not an automatic database push.
 
+That candidate list is now recorded as [production-candidate-migrations.json](../artifacts/store-demo-release-2026-10-15/production-candidate-migrations.json), with its apply order, re-run safety and gating in [deployment readiness](deployment-readiness.md#store-release-candidate-migrations--15-october-2026) and the execution sequence in the [deployment runbook](store-release-deployment-runbook-2026-10-15.md). `npm run verify:migration-baseline` fails if the list drifts. The list is drafted for review and carries no approver or date.
+
 ## Source and automation boundary
 
 - Canix Shop uses a controlled supervised refresh. No Canix Support request will be sent, and unattended Shop refresh is outside this release plan.
@@ -47,7 +49,7 @@ No production deployment may begin until every applicable blocker is closed and 
 
 ## Resume handoff
 
-- Pull request [#2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2) is at verified head `d14683e`.
+- Pull request [#2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2) is at head `e36ef47`. The one commit after the verified head `d14683e` is documentation only, so no recorded test evidence is affected.
 - All release checks already recorded in this document are complete and green: local verification, isolated staging, authenticated browser journeys, malware-scanner acceptance, migration reconciliation, concurrency coverage and rollback rehearsal. The current GitHub checks are also green. No test or validation run is in flight.
 - Production is unchanged. Store access remains disabled, Store ordering remains held and notifications remain off.
 - The remaining approvals are unchanged: coordinated review and approval of PR #2; Finance, Operations, catalog-rule, recipient/export and real-pilot inputs from the decision register; and named pilot users before external Store acceptance. IT must record release acceptance before any production deployment.
