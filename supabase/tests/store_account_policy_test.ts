@@ -1,6 +1,7 @@
 import {
-  COMPLIANCE_REMINDER_CONFIG, DEFAULT_PAYMENT_TERMS, effectivePaymentTerms, financialControlRole, financialOrderBlock,
-  licenseControlRole, licenseDocumentAccess, licenseOrderPause, licenseReminderRecipients, orderGates, planLicenseRenewalReminders, quickBooksFreshness,
+  COMPLIANCE_REMINDER_CONFIG, DEFAULT_PAYMENT_TERMS, DESIGNATED_MAIN_CONTACT_SOURCE, effectivePaymentTerms, financialControlRole, financialOrderBlock,
+  licenseControlRole, licenseDocumentAccess, licenseOrderPause, licenseReminderRecipients, MISSING_ACCOUNT_RECIPIENT_ACTION, orderGates, planLicenseRenewalCycle, planLicenseRenewalReminders,
+  planReminderRecipientException, quickBooksFreshness,
   reminderSendDecision, storeFinancialAccess, type InternalActor,
 } from "../functions/_shared/store-account-policy.ts";
 function assert(value: unknown, message = "Assertion failed"): asserts value { if (!value) throw new Error(message); }
@@ -74,7 +75,8 @@ Deno.test("Expiration pauses ordering independently; only the verified expiratio
     accounting: { overdueInvoice: false, balanceCents: 0, freshness: "current" } }).blocks, ["onboarding_incomplete"]);
 });
 Deno.test("T-30 reminder plans exactly one email and one in-portal intent per recipient, delivery disabled", () => {
-  assert(COMPLIANCE_REMINDER_CONFIG.email === "tom@urbanxtracts.com" && COMPLIANCE_REMINDER_CONFIG.prelaunchReview === "replace_or_reaffirm_required");
+  assert(COMPLIANCE_REMINDER_CONFIG.email === "tom@urbanxtracts.com" && COMPLIANCE_REMINDER_CONFIG.recipientReview === "reaffirmed" && COMPLIANCE_REMINDER_CONFIG.reviewedOn === "2026-10-15");
+  assert(!("prelaunchReview" in COMPLIANCE_REMINDER_CONFIG), "the recipient is no longer awaiting replace-or-reaffirm review");
   assert(COMPLIANCE_REMINDER_CONFIG.deliveryEnabled === false && COMPLIANCE_REMINDER_CONFIG.leadDays === 30);
   const recipients = licenseReminderRecipients({ activeOwnerProfileIds: ["owner-1"], mainContactEmail: null,
     compliance: { email: COMPLIANCE_REMINDER_CONFIG.email, profileId: "compliance-profile" } });
@@ -123,4 +125,42 @@ Deno.test("License documents: owning Account Owner plus Compliance, Finance and 
   for (const actor of [SALES, VIEWER]) assert(!licenseDocumentAccess({ workspace: "internal", actor }, doc));
   assert(!licenseDocumentAccess({ workspace: "store", memberRole: "store_owner", retailerAccountId: "acct-a" }, { retailerAccountId: "" }), "unattributed document");
   assert(!licenseDocumentAccess({ workspace: "brand" } as never, doc));
+});
+Deno.test("Missing Owner and missing designated main contact plan one deduplicated exception, never a guessed recipient", () => {
+  assert(DESIGNATED_MAIN_CONTACT_SOURCE === "portal_retailer_account.account_owner_email");
+  const base = { licenseNumber: "OCM-9", retailerAccountId: "acct-9", expiresOn: "2026-11-14", today: "2026-10-15", existingKeys: [] as string[] };
+  const exception = planReminderRecipientException({ ...base, activeOwnerProfileIds: [], mainContactEmail: "not-an-email" })!;
+  assert(exception && exception.kind === "missing_account_recipient" && exception.retailerAccountId === "acct-9" && exception.dueOn === "2026-10-15");
+  assert(exception.dedupeKey === "license-renewal-exception:OCM-9:2026-11-14:missing_account_recipient" && exception.deliveryState === "disabled_pending_release");
+  assert(exception.requiredAction === MISSING_ACCOUNT_RECIPIENT_ACTION && /Store Owner/.test(exception.requiredAction) && /no recipient was guessed/.test(exception.requiredAction));
+  // Retries and late runs deduplicate; an Owner or a valid main contact means no exception.
+  assert(planReminderRecipientException({ ...base, activeOwnerProfileIds: [], mainContactEmail: null, existingKeys: [exception.dedupeKey] }) === null);
+  assert(planReminderRecipientException({ ...base, today: "2026-11-15", activeOwnerProfileIds: [], mainContactEmail: null }) === null, "after expiration");
+  assert(planReminderRecipientException({ ...base, today: "2026-10-14", activeOwnerProfileIds: [], mainContactEmail: null }) === null, "before T-30");
+  assert(planReminderRecipientException({ ...base, activeOwnerProfileIds: ["owner-1"], mainContactEmail: null }) === null);
+  assert(planReminderRecipientException({ ...base, activeOwnerProfileIds: [], mainContactEmail: "main@example.invalid" }) === null);
+});
+Deno.test("Simulated T-30 run: Owner, designated main-contact fallback, missing-both exception; Compliance always planned; delivery off", () => {
+  const compliance = { email: COMPLIANCE_REMINDER_CONFIG.email, profileId: null };
+  const run = (accounts: { license: string; owners: string[]; main: string | null }[], existing: string[] = []) => accounts.map(a =>
+    planLicenseRenewalCycle({ licenseNumber: a.license, retailerAccountId: "acct-" + a.license, expiresOn: "2026-11-14", today: "2026-10-15",
+      activeOwnerProfileIds: a.owners, mainContactEmail: a.main, compliance, existingKeys: existing }));
+  const accounts = [{ license: "OWN", owners: ["owner-1"], main: "main@example.invalid" }, { license: "MAIN", owners: [], main: "Main@Example.invalid" },
+    { license: "NONE", owners: [], main: null }];
+  const [owner, fallback, none] = run(accounts);
+  const kinds = (cycle: typeof owner) => cycle.intents.map(i => i.recipientKind + ":" + i.channel + ":" + i.recipientId);
+  assert(JSON.stringify(kinds(owner)) === JSON.stringify(["account_owner:email:owner-1", "account_owner:in_portal:owner-1", "internal_compliance:email:tom@urbanxtracts.com"]) && owner.exception === null);
+  assert(JSON.stringify(kinds(fallback)) === JSON.stringify(["main_contact:email:main@example.invalid", "internal_compliance:email:tom@urbanxtracts.com"]) && fallback.exception === null);
+  // No account recipient is guessed; Internal Compliance still receives its disabled intent and an exception is raised.
+  assert(JSON.stringify(kinds(none)) === JSON.stringify(["internal_compliance:email:tom@urbanxtracts.com"]) && none.exception?.licenseNumber === "NONE");
+  for (const cycle of [owner, fallback, none]) assert(cycle.deliveryEnabled === false && cycle.intents.every(i => i.deliveryState === "disabled_pending_release"));
+  // A second run with stored keys plans nothing new and raises no duplicate exception.
+  const stored = [owner, fallback, none].flatMap(c => [...c.intents.map(i => i.dedupeKey), ...(c.exception ? [c.exception.dedupeKey] : [])]);
+  for (const cycle of run(accounts, stored)) assert(cycle.intents.length === 0 && cycle.exception === null);
+  // Send time: still locked even for an authorized, released-looking request path.
+  for (const intent of [...owner.intents, ...fallback.intents, ...none.intents]) {
+    const decision = reminderSendDecision(intent, { deliveryReleased: false, activeOwnerProfileIds: intent.licenseNumber === "OWN" ? ["owner-1"] : [],
+      mainContactEmail: intent.licenseNumber === "MAIN" ? "main@example.invalid" : null, complianceEmail: COMPLIANCE_REMINDER_CONFIG.email, complianceProfileId: null });
+    assert(decision.send === false && decision.reason === "delivery_disabled_pending_release" && decision.recipientAuthorized === true, intent.dedupeKey);
+  }
 });

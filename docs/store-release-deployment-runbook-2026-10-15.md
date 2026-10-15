@@ -56,7 +56,7 @@ If any step fails, stop. Do not attempt the next migration and do not deploy fun
 
 ### 3.3 Deploy the edge functions
 
-Deploy all 38 together, after the migrations. `portal-admin` additionally requires candidate 4.
+Deploy all 38 together, after the migrations. `portal-admin` additionally requires candidate 4, and its `store_billing` membership administration requires candidate 6 (without it the database refuses the role with 22023, so the handler fails closed with 400).
 
 Deploying handlers before the migrations degrades closed, not open: `resolveStoreContext` and `storeCommand` return 503 or 403 when their database functions are absent, and `requestWorkspace` returns on the Internal and Brand branches before either is reached. That is a safety property, not a licence to reorder.
 

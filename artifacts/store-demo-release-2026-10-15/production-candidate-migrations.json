@@ -109,7 +109,7 @@
       "order": 6,
       "version": "20261015120000",
       "name": "store_financial_hold_and_license_lifecycle",
-      "md5": "3e8427010802cf427486bc87ba15b794",
+      "md5": "1f5ad20bdc6b01d0fba71987258b72f5",
       "kind": "ddl",
       "productionLedgerRow": "absent",
       "productionEffects": "not_applied",
@@ -118,17 +118,19 @@
       "rerunSafeBasis": "CREATE TABLE/INDEX IF NOT EXISTS, CREATE OR REPLACE functions, DROP ... IF EXISTS before every trigger, constraint and retired signature, ON CONFLICT DO NOTHING seeds, and a guarded one-time rename of portal_store_command; supabase/tests/store_account_controls_database_test.mjs applies it twice in a disposable container.",
       "dependsOn": [
         "20261014215429",
-        "20261014220938"
+        "20261014220938",
+        "20261014223749"
       ],
       "gates": [
         "supabase/functions/portal-retailers/index.ts",
+        "supabase/functions/portal-admin/index.ts",
         "supabase/functions/quickbooks-financials/index.ts",
         "supabase/functions/portal-license-document/index.ts",
         "supabase/functions/portal-store-demo/index.ts",
         "all 21 handlers importing _shared/request-workspace.ts"
       ],
       "blockingDecision": "Every portal_order insert pauses (UXL01) at a location without an audited verification of its current expiration, including locations activated before this migration and staff-entered orders. A verification backfill or plan must be approved before apply.",
-      "notes": "Approved 2026-10-15 Store account policy: manual-hold-only financial block, inherited account payment terms, document-UUID license verification, atomic state-bound onboarding completion, license order boundary, store_billing role, T-30 reminder intents with delivery locked off, audited license-document access. Replaces portal_resolve_store_context and renames portal_store_command to portal_store_command_core behind a wrapper. Store access remains disabled."
+      "notes": "Approved 2026-10-15 Store account policy: manual-hold-only financial block, inherited account payment terms, document-UUID license verification, atomic state-bound onboarding completion, license order boundary, store_billing role, T-30 reminder intents with delivery locked off, audited license-document access. Local checkpoint 2026-10-15 (same version, re-reviewed checksum): Internal Compliance recipient seeded as confirmed and reaffirmed rather than pending review; account recipient is the active Account Owner else the designated main contact (legacy portal_retailer_account.account_owner_email); a due license with neither records one append-only, deduplicated portal_license_reminder_exception and no guessed recipient; portal_manage_store_membership is replaced to admit store_billing with zero location assignments. Replaces portal_resolve_store_context and portal_manage_store_membership, and renames portal_store_command to portal_store_command_core behind a wrapper. Store access remains disabled. Live Storage and Auth integration is untested."
     }
   ],
   "ordering": [
@@ -136,7 +138,7 @@
     "Candidate 5 must precede handler deployment so existing workforce identities retain an active Internal membership.",
     "Candidates 2 and 3 must both be applied before any handler deployment; storeCommand and resolveStoreContext fail closed (503/403) when their functions are absent, which degrades Store paths rather than opening them.",
     "Internal and Brand request paths return before resolveStoreContext is reached, so they are unaffected by candidate 2 and 3 timing.",
-    "Candidate 6 follows candidates 2 and 3 (it replaces portal_resolve_store_context and wraps portal_store_command) and deploys only together with its gated handlers, after its blocking decision is closed."
+    "Candidate 6 follows candidates 2, 3 and 4 (it replaces portal_resolve_store_context and portal_manage_store_membership, and wraps portal_store_command) and deploys only together with its gated handlers, after its blocking decision is closed."
   ],
   "prohibited": [
     "supabase db push against production or the staging project",

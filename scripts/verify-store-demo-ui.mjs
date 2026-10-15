@@ -63,7 +63,10 @@ if (mode === 'submit-sections') {
   await role('internal'); await click('Account & License');
   await click('Overdue Invoice');
   const p = await observeReady();
-  if (!p.includes('invoice overdue') || !p.includes('Manual financial hold: None') || !p.includes('never block ordering')) throw new Error('Overdue warning-only state not visible.');
+  if (!p.includes('invoice overdue') || !p.includes('Manual financial hold') || !p.includes('Ordering is not on manual hold') || !p.includes('never block ordering')
+    || !p.includes('WARNING · NEVER BLOCKS ORDERING') || p.includes('MANUAL FINANCIAL HOLD')) throw new Error('Overdue warning-only state not visible.');
+  // The synthetic invoice row renders populated, not blank.
+  for (const text of ['DEMO-INV-001', 'Overdue', '$1,200.00']) if (!p.includes(text)) throw new Error('Synthetic invoice row missing: ' + text);
 } else if (mode === 'budtender') {
   const page = await role('budtender');
   const p = page.slice(page.indexOf('region "Internal Administrator Store Demo"'));
@@ -75,11 +78,19 @@ if (mode === 'submit-sections') {
   // Billing is read-only own-account financials: one finance tab, no ordering, onboarding, license or internal controls.
   const page = await role('billing');
   const p = page.slice(page.indexOf('region "Internal Administrator Store Demo"'));
-  if (!p.includes('button "Account Financials"') || !p.includes('Account financials · Read only') || !p.includes('Payment terms:')) throw new Error('Billing did not land on Account Financials.');
+  if (!p.includes('button "Account Financials"') || !p.includes('Account financials · Read only') || !p.includes('Payment terms') || !p.includes('Account-wide · Demo Store #1, Demo Store #2')) throw new Error('Billing did not land on account-wide Account Financials.');
   for (const label of ['Catalog & Cart','Orders','Company & Onboarding','Activity & Reset','Add to Draft','Save Draft','Submit Order','Save Account Terms','Place Manual Hold','Release Manual Hold','Overdue Invoice','Record Renewed License (synthetic, no file)','Verify Renewed License','Reset My Demo']) {
     if (p.includes('button "' + label + '"')) throw new Error('Billing has an ordering/admin action: ' + label);
   }
   if (p.includes('Product ID ') || p.includes('Snapshot displayed') || p.includes('Control Audit') || p.includes('Ordering paused')) throw new Error('Billing received catalog, audit or ordering-gate content.');
+} else if (mode === 'pause-guidance') {
+  // Run on a fresh or reset demo: it is paused for compliance reasons only; each pause names a next step and nothing is sent.
+  const p = await role('owner');
+  for (const text of ['Ordering paused', 'COMPLIANCE PAUSE · AUTOMATIC', 'Onboarding not yet approved', 'Store license not verified', 'Next step:', 'Your draft is preserved']) {
+    if (!p.includes(text)) throw new Error('Missing pause guidance: ' + text);
+  }
+  if (p.includes('MANUAL FINANCIAL HOLD')) throw new Error('A compliance pause was shown as a financial hold.');
+  await click('Open Company & Onboarding');
 } else if (mode === 'paused') {
   const p = await click('Refresh');
   if (!p.includes('Store demonstration is paused.')) throw new Error('Emergency pause was not enforced.');
@@ -110,6 +121,7 @@ if (mode === 'submit-sections') {
   await role('buyer'); await click('Catalog & Cart');
   p = await click('Submit Order');
   if (!p.includes('Ordering is on hold for this account') || !p.includes('Cart quantity for UXT - Berry Lemonade - Cannabis Flower - 14g')) throw new Error('Hold did not preserve the Buyer draft.');
+  if (!p.includes('ACCOUNT HOLD') || p.includes('MANUAL FINANCIAL HOLD') || !p.includes('Contact your Account Owner')) throw new Error('Buyer saw the hold category or no next step.');
   await role('internal'); await click('Account & License');
   await click('Release Manual Hold');
   // An overdue warning after release does not block the Buyer.

@@ -113,6 +113,35 @@ const BLOCK_MESSAGES: Record<string, string> = {
 // Buyers receive ordering information only, so the hold reason category is not disclosed to them.
 const blockMessage = (block: string, role: DemoRole) => role === "buyer" && block === "financial_hold"
   ? "Ordering is on hold for this account. Your draft is preserved; contact your Account Owner." : BLOCK_MESSAGES[block];
+// Every pause names its kind and a safe next step for the viewing role. A
+// compliance pause (onboarding or license) is automatic; the financial hold is
+// only ever the explicit manual one. No next step sends anything.
+const PAUSE_KIND: Record<string, "compliance_pause" | "manual_financial_hold"> = {
+  onboarding_incomplete: "compliance_pause", license_expired: "compliance_pause", license_unverified: "compliance_pause", financial_hold: "manual_financial_hold" };
+const PAUSE_TITLE: Record<string, string> = { onboarding_incomplete: "Onboarding not yet approved", license_expired: "Store license expired",
+  license_unverified: "Store license not verified", financial_hold: "Manual hold on this account" };
+const PAUSE_SECTION: Record<string, string> = { onboarding_incomplete: "company", license_expired: "finance", license_unverified: "finance", financial_hold: "finance" };
+const NEXT_STEPS: Record<string, Partial<Record<DemoRole, string>>> = {
+  onboarding_incomplete: { owner: "Complete and submit each section under Company & Onboarding. urbanXtracts reviews it; nothing is sent.",
+    buyer: "Ask your Account Owner to finish onboarding. Keep building this draft meanwhile.",
+    internal: "Review the submitted sections under Company & Onboarding." },
+  license_expired: { owner: "Record the renewed license under Account & License. Ordering resumes once Compliance verifies it.",
+    buyer: "Ask your Account Owner to record the renewed license. Keep building this draft meanwhile.",
+    internal: "Verify the recorded renewal with evidence under Account & License, or wait for the Owner to record it." },
+  license_unverified: { owner: "Submit the license section, or record the renewed license under Account & License, for Compliance to verify.",
+    buyer: "Ask your Account Owner to complete license verification. Keep building this draft meanwhile.",
+    internal: "Verify the license with evidence under Company & Onboarding or Account & License." },
+  financial_hold: { owner: "Contact your urbanXtracts representative to resolve the hold. This demo sends nothing.",
+    buyer: "Contact your Account Owner. Keep building this draft meanwhile.",
+    internal: "Release the manual hold with a reason and evidence under Account & License, if appropriate." },
+};
+// A Buyer learns only that the account is on hold, never that it is a financial one.
+const pauseFor = (block: string, role: DemoRole) => {
+  const masked = role === "buyer" && block === "financial_hold";
+  return { code: masked ? "account_hold" : block, kind: masked ? "account_hold" : PAUSE_KIND[block],
+    title: masked ? "Ordering on hold for this account" : PAUSE_TITLE[block], message: blockMessage(block, role),
+    nextStep: NEXT_STEPS[block][role] || "", section: role === "buyer" ? null : PAUSE_SECTION[block], draftPreserved: true };
+};
 function requireControlText(body: Row) {
   const reason = String(body.reason || "").trim().slice(0, 1000), evidence = String(body.evidence || "").trim().slice(0, 1000);
   requireValue(reason && evidence, "Add a reason and evidence reference.");
@@ -326,7 +355,8 @@ export function projectDemo(state: DemoState, role: DemoRole, revision: number, 
   const unknown = gates.freshness.state === "unknown";
   return { synthetic: true, organization: "urbanXtracts Store", revision, role, ...(billing ? { readOnly: true } : { catalog, products }),
     stores: DEMO_STORES.filter(s => demoStoreAllowed(role, s.id)),
-    ...(commercial ? { orderingReady: gates.allowed, ordering: { allowed: gates.allowed, blocks: gates.blocks.map(b => blockMessage(b, role)) },
+    ...(commercial ? { orderingReady: gates.allowed, ordering: { allowed: gates.allowed, blocks: gates.blocks.map(b => blockMessage(b, role)),
+      pauses: gates.blocks.map(b => pauseFor(b, role)) },
       orders: allowedOrders, drafts: Object.fromEntries(Object.entries(state.drafts).filter(([key]) => key.startsWith(role + ":"))) } : {}),
     ...(financial ? {
       finance: { terms: terms.terms, termsSource: terms.source, warnings: gates.warnings,

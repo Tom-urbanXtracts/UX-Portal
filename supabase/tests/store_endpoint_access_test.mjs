@@ -216,6 +216,36 @@ test('Scoped membership administration forwards server Auth eligibility, never b
   assert.equal(proof.p_actor_id,actor);assert.equal(proof.p_actor_membership_id,membership);
   assert.equal(proof.p_verified_identities.find(row=>row.id===target).eligible,false);
 });
+test('Scoped administration forwards store_billing with no locations, and rejects unlisted Billing labels before any database call',async()=>{
+  const f=fixture(),target=uuid(40),targetOrg=uuid(41);
+  f.service.auth={admin:{getUserById:async id=>({data:{user:{id,app_metadata:{}}},error:null})}};
+  const original=f.service.rpc,calls=[];
+  f.service.rpc=(name,args)=>{
+    if(name!=='portal_manage_store_membership')return original(name,args);
+    calls.push(args);return Promise.resolve({data:{memberRole:args.p_member_role,licenses:[],emailSent:false,globalAccountChanged:false},error:null});
+  };
+  const api=module('portal-admin/index.ts',f.dependencies,['actorFor','manageStoreAccess']),actorProfile=await api.actorFor(f.request());
+  const body=role=>({organizationId:targetOrg,profileId:target,memberRole:role,status:'active',licenses:[],reason:'Synthetic billing grant',requestId:uuid(44)});
+  const result=await api.manageStoreAccess(actorProfile,body('store_billing'));
+  assert.equal(result.result.memberRole,'store_billing');assert.equal(calls.length,1);
+  assert.equal(calls[0].p_member_role,'store_billing');assert.deepEqual(calls[0].p_licenses,[]);assert.equal(calls[0].p_actor_id,actor);
+  for(const role of ['billing','Billing','billing_contact','store_manager','owner'])
+    await assert.rejects(api.manageStoreAccess(actorProfile,body(role)),/Choose a retailer/,role);
+  assert.equal(calls.length,1,'rejected labels never reach the database');
+  // A database refusal (for example Billing with a location) surfaces as a conflict, not a partial grant.
+  f.service.rpc=(name,args)=>name==='portal_manage_store_membership'
+    ?Promise.resolve({data:null,error:{code:'23514',message:'Owner and Billing use all stores; Buyer needs assignments; Budtender needs exactly one'}}):original(name,args);
+  await assert.rejects(api.manageStoreAccess(actorProfile,{...body('store_billing'),licenses:['LIC-A1']}),e=>e.status===409&&/Owner and Billing use all stores/.test(e.message));
+});
+test('Store Billing cannot reach user administration at all, and a Store Owner cannot grant Billing',async()=>{
+  // Billing holds financials.read only, so the admin endpoint refuses its workspace before any action.
+  const billing=fixture({kind:'store',memberRole:'store_billing'});
+  const billingApi=module('portal-admin/index.ts',billing.dependencies,['actorFor','manageStoreAccess']);
+  await assert.rejects(billingApi.actorFor(billing.request()),e=>e instanceof store.StoreAccessError&&e.status===403);
+  const owner=fixture({kind:'store',memberRole:'store_owner'});
+  const ownerApi=module('portal-admin/index.ts',owner.dependencies,['actorFor','manageStoreAccess']);
+  await assert.rejects(ownerApi.manageStoreAccess(await ownerApi.actorFor(owner.request()),{memberRole:'store_billing'}),/Only an Internal Administrator/);
+});
 test('Store Owner and Internal Viewer cannot invoke scoped membership writes',async()=>{
   for(const options of [{kind:'store',memberRole:'store_owner'},{kind:'internal',memberRole:'viewer'}]){
     const f=fixture(options),api=module('portal-admin/index.ts',f.dependencies,['actorFor','manageStoreAccess']),actorProfile=await api.actorFor(f.request());

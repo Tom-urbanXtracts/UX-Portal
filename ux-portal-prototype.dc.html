@@ -153,18 +153,130 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 <main style="{{ contentStyle }}" id="main-content">
 
 <sc-if value="{{ isStoreDemo }}" hint-placeholder-val="{{ false }}">
-<section aria-label="Internal Administrator Store Demo" style="max-width:1200px">
-<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h1>urbanXtracts Store</h1><p style="margin:5px 0;font-size:12px;color:var(--ux-muted)">Synthetic demo · Internal Administrators only · No emails or live system writes</p></div><button onClick="{{ onStoreDemoRefresh }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Refresh</button></div>
-<div role="group" aria-label="Demo controls" style="display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end;padding:12px 14px;background:var(--ux-surface)"><label style="display:flex;flex-direction:column;flex:0 1 260px;min-width:180px;font:600 11px Archivo,sans-serif;letter-spacing:.02em;color:var(--ux-muted-strong)">Demo view <select aria-label="Demo view" value="{{ storeDemoRole }}" onChange="{{ onStoreDemoRole }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><option value="owner">Store Owner</option><option value="buyer">Store Buyer</option><option value="billing">Billing</option><option value="budtender">Budtender</option><option value="internal">Internal Review</option></select></label><label style="display:flex;flex-direction:column;flex:0 1 260px;min-width:180px;font:600 11px Archivo,sans-serif;letter-spacing:.02em;color:var(--ux-muted-strong)">Location <select aria-label="Demo location" value="{{ storeDemoStore }}" onChange="{{ onStoreDemoStore }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><sc-for list="{{ storeDemoStores }}" as="store"><option value="{{ store.id }}">{{ store.name }}</option></sc-for></select></label></div>
-<section aria-label="Demo status" style="border:1px solid var(--ux-faint-2);border-top:0;border-left:3px solid {{ storeDemoStatusColor }};background:#fff;padding:10px 14px 11px;margin-bottom:14px"><div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:{{ storeDemoStatusColor }}">{{ storeDemoStatusLabel }}</div><ul style="margin:6px 0 0;padding-left:18px;font-size:12.5px;line-height:1.55;color:var(--ux-ink);max-width:90ch"><sc-for list="{{ storeDemoStatusItems }}" as="item"><li style="margin:2px 0">{{ item.text }}</li></sc-for></ul></section>
-<div role="status" style="font-size:12px;margin-bottom:10px">{{ storeDemoMessage }}</div>
-<nav aria-label="Store demo sections" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px"><sc-for list="{{ storeDemoTabs }}" as="tab"><button onClick="{{ tab.onPick }}" aria-pressed="{{ tab.selected }}" style="{{ tab.style }}">{{ tab.label }}</button></sc-for></nav>
-<sc-if value="{{ storeDemoCompany }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px"><sc-for list="{{ storeDemoSections }}" as="section"><section style="border:1px solid var(--ux-faint-2);padding:14px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><h2 style="font-size:16px;margin:0 0 12px">{{ section.name }}</h2><span style="font-size:10px">{{ section.status }}</span></div><sc-for list="{{ section.fields }}" as="field"><label style="display:block;font-size:11px;margin-bottom:8px">{{ field.label }}<input aria-label="{{ field.label }}" value="{{ field.value }}" onInput="{{ field.onInput }}" readOnly="{{ section.readOnly }}" style="{{ storeDemoInput }}"></label></sc-for><p style="font-size:11px;color:var(--ux-signal)">{{ section.note }}</p><sc-if value="{{ section.canEdit }}"><div style="display:flex;gap:8px"><button onClick="{{ section.onSave }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ section.onSubmit }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Section</button></div></sc-if><sc-if value="{{ section.canReview }}"><label style="font-size:11px">Review note<input value="{{ section.reviewNote }}" onInput="{{ section.onNote }}" style="{{ storeDemoInput }}"></label><div style="display:flex;gap:8px;margin-top:8px"><button onClick="{{ section.onApprove }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Approve Section</button><button onClick="{{ section.onReturn }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Return Section</button></div></sc-if></section></sc-for></div></sc-if>
-<sc-if value="{{ storeDemoCatalog }}"><p role="note" style="font-size:11px;color:var(--ux-muted);border-left:3px solid var(--ux-faint);padding:6px 10px;margin:0 0 12px">{{ storeDemoCatalogNotice }}</p><div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px"><label>Search <input aria-label="Demo product search" value="{{ storeDemoSearch }}" onInput="{{ onStoreDemoSearch }}" placeholder="Name, brand or Product ID" style="{{ storeDemoInput }}"></label><label>Brand <select aria-label="Demo Brand filter" value="{{ storeDemoBrand }}" onChange="{{ onStoreDemoBrand }}" style="{{ storeDemoInput }}"><option value="all">All Brands</option><sc-for list="{{ storeDemoBrandOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label>Category <select aria-label="Demo Category filter" value="{{ storeDemoCategory }}" onChange="{{ onStoreDemoCategory }}" style="{{ storeDemoInput }}"><option value="all">All Categories</option><sc-for list="{{ storeDemoCategoryOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><span style="font-size:12px;padding-bottom:12px">{{ storeDemoResultCount }}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px"><sc-for list="{{ storeDemoProducts }}" as="product"><article style="border:1px solid var(--ux-faint-2);background:#fff;padding:16px"><div style="height:150px;margin:-16px -16px 12px;background:var(--ux-surface);display:flex;align-items:center;justify-content:center;overflow:hidden"><sc-if value="{{ product.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ product.imageUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:contain"></sc-if><sc-if value="{{ product.noImage }}" hint-placeholder-val="{{ true }}"><span style="font:700 8.5px ui-monospace,monospace;color:var(--ux-faint);letter-spacing:.08em">NO IMAGE IN SOURCE</span></sc-if></div><div style="font-size:11px;color:var(--ux-muted)">{{ product.brand }} · {{ product.category }}</div><h2 style="font-size:17px;margin:8px 0">{{ product.name }}</h2><sc-if value="{{ storeDemoCommercial }}"><p style="font-size:12px;margin:0 0 4px">{{ product.price }} per {{ product.saleUnit }} · Minimum {{ product.minimumOrderQuantity }} {{ product.saleUnit }}</p><div style="font-size:12px;margin-bottom:4px">{{ product.availability }}</div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:10px">Product ID {{ product.id }}</div><sc-if value="{{ storeDemoCanOrder }}"><label style="font-size:11px">Quantity<input aria-label="{{ product.quantityLabel }}" type="number" min="{{ product.minimumOrderQuantity }}" step="1" max="{{ product.available }}" value="{{ product.quantity }}" onChange="{{ product.onQuantity }}" style="{{ storeDemoInput }}"></label><button onClick="{{ product.onAdd }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Add to Draft</button></sc-if></sc-if></article></sc-for></div>
-<sc-if value="{{ storeDemoCanOrder }}"><section style="background:var(--ux-surface);padding:16px;margin-top:18px"><h2 style="font-size:18px;margin:0 0 10px">Draft Order</h2><sc-for list="{{ storeDemoCart }}" as="line"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--ux-faint-2)"><span style="flex:1;min-width:180px">{{ line.name }}</span><label>Units <input aria-label="{{ line.quantityLabel }}" type="number" value="{{ line.quantity }}" onChange="{{ line.onQuantity }}" min="{{ line.minimum }}" step="1" style="width:72px;padding:8px"></label><span>{{ line.total }}</span><button onClick="{{ line.onRemove }}" style="{{ storeDemoButton }}">Remove</button></div></sc-for><p>{{ storeDemoCartTotal }}</p><div style="display:flex;gap:8px"><button onClick="{{ onStoreDemoSaveDraft }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ onStoreDemoSubmitOrder }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Order</button></div></section></sc-if></sc-if>
-<sc-if value="{{ storeDemoOrders }}"><p style="font-size:12px">{{ storeDemoOrderCount }}</p><sc-for list="{{ storeDemoOrderRows }}" as="order"><article style="border:1px solid var(--ux-faint-2);padding:16px;margin-bottom:10px;background:#fff"><div style="display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap"><strong>{{ order.id }} · {{ order.location }}</strong><span>{{ order.status }} · {{ order.total }}</span></div><div style="font-size:12px;margin-top:8px">{{ order.linesLabel }}</div><div style="font-size:11px;color:var(--ux-muted);margin:8px 0">{{ order.reviewLabel }}</div><div style="display:flex;gap:8px"><sc-for list="{{ order.actions }}" as="action"><button onClick="{{ action.onClick }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">{{ action.label }}</button></sc-for></div></article></sc-for></sc-if>
-<sc-if value="{{ storeDemoFinance }}"><section style="border:1px solid var(--ux-faint-2);padding:16px;max-width:760px;background:#fff"><h2 style="font-size:18px;margin-top:0">Account Terms, Holds &amp; License</h2><p>{{ storeDemoFinanceSummary }}</p><p role="note" style="font-size:12px;border-left:3px solid var(--ux-faint);padding:6px 10px">{{ storeDemoAccountingNotice }}</p><sc-if value="{{ storeDemoInternal }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"><label>Account payment terms (blank = Net 30 default)<input aria-label="Demo account payment terms" value="{{ storeDemoTerms }}" onInput="{{ onStoreDemoTerms }}" style="{{ storeDemoInput }}"></label><label>Reason<input aria-label="Demo control reason" value="{{ storeDemoControlReason }}" onInput="{{ onStoreDemoControlReason }}" style="{{ storeDemoInput }}"></label><label>Evidence reference<input aria-label="Demo control evidence" value="{{ storeDemoControlEvidence }}" onInput="{{ onStoreDemoControlEvidence }}" style="{{ storeDemoInput }}"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button onClick="{{ onStoreDemoSetTerms }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Save Account Terms</button><button onClick="{{ onStoreDemoPlaceHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Place Manual Hold</button><button onClick="{{ onStoreDemoReleaseHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Release Manual Hold</button></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;align-items:center">Simulate synthetic accounting (warning only):<sc-for list="{{ storeDemoAccountingScenarios }}" as="scenario"><button onClick="{{ scenario.onClick }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">{{ scenario.label }}</button></sc-for></div></sc-if><h3 style="font-size:15px">Synthetic Invoice</h3><p style="font-size:12px">{{ storeDemoInvoice }}</p><h3 style="font-size:15px">License</h3><p style="font-size:12px">{{ storeDemoLicenseSummary }}</p><sc-if value="{{ storeDemoCanUploadRenewal }}"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><label>Renewed license expiration<input type="text" inputMode="numeric" maxLength="10" aria-label="Demo renewed license expiration" placeholder="MM/DD/YYYY" value="{{ storeDemoRenewalDate }}" onInput="{{ onStoreDemoRenewalDate }}" style="{{ storeDemoInput }}"></label><button onClick="{{ onStoreDemoUploadRenewal }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Record Renewed License (synthetic, no file)</button></div></sc-if><sc-if value="{{ storeDemoCanVerifyRenewal }}"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button onClick="{{ onStoreDemoVerifyLicense }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Verify Renewed License</button><button onClick="{{ onStoreDemoRejectLicense }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Reject Renewal</button></div></sc-if><sc-if value="{{ storeDemoInternal }}"><h3 style="font-size:15px">Control Audit (append-only)</h3><sc-for list="{{ storeDemoControlEvents }}" as="event"><p style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--ux-faint-2)">{{ event.label }}</p></sc-for></sc-if></section></sc-if>
-<sc-if value="{{ storeDemoActivity }}"><h2 style="font-size:18px">Demo Activity</h2><sc-for list="{{ storeDemoEvents }}" as="event"><p style="font-size:12px;padding:9px;border-bottom:1px solid var(--ux-faint-2)">{{ event.label }}</p></sc-for><button onClick="{{ onStoreDemoReset }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Reset My Demo</button></sc-if>
+<style id="store-demo-workspace">
+.sd{max-width:1200px;min-width:0}
+.sd *{min-width:0}
+.sd-head{display:flex;gap:12px 16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.sd-kicker{font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-accent-text);margin:0 0 6px}
+.sd-sub{margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ux-muted)}
+.sd-btn{min-height:40px;padding:9px 13px;border:1px solid var(--ux-ink);background:#fff;color:var(--ux-ink);font:700 12px Archivo,sans-serif;cursor:pointer;text-align:center}
+.sd-btn:hover{background:var(--ux-surface)}
+.sd-btn-primary{background:var(--ux-accent);border-color:var(--ux-accent);color:#fff}
+.sd-btn-primary:hover{background:var(--ux-accent-press)}
+.sd-btn:disabled{opacity:.5;cursor:not-allowed}
+.sd-input{display:block;width:100%;max-width:100%;min-height:40px;padding:9px;margin:0;border:1px solid var(--ux-faint);background:#fff;color:var(--ux-ink);font:13px Archivo,sans-serif}
+.sd-field{display:flex;flex-direction:column;gap:5px;font:700 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted-strong)}
+.sd-field .sd-input{font:13px Archivo,sans-serif;letter-spacing:0;text-transform:none}
+.sd-workspace{border:1px solid var(--ux-faint-2);border-top:2px solid var(--ux-ink);background:#fff;margin:0 0 12px}
+.sd-context{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr);gap:12px 18px;align-items:end;padding:14px 16px;background:var(--ux-surface)}
+.sd-scope{font-size:12px;line-height:1.45;color:var(--ux-muted-strong)}
+.sd-scope strong{display:block;font:800 15px/1.25 Archivo,sans-serif;color:var(--ux-ink);margin-bottom:2px}
+.sd-fixed{min-height:40px;display:flex;align-items:center;padding:9px;border:1px dashed var(--ux-faint);background:#fff;font:13px Archivo,sans-serif;letter-spacing:0;text-transform:none;color:var(--ux-ink)}
+.sd-status{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:10px 20px;padding:14px 16px;border-top:1px solid var(--ux-faint-2);border-left:4px solid var(--ux-muted-strong)}
+.sd-state{font:700 11px/1.3 ui-monospace,monospace!important;letter-spacing:.07em;text-transform:uppercase!important;margin:0 0 6px}
+.sd-status-note{font-size:12px;line-height:1.5;color:var(--ux-muted)}
+.sd-list{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55}
+.sd-pauses{display:grid;gap:10px}
+.sd-pause{border:1px solid var(--ux-faint-2);border-left:3px solid var(--ux-ink);background:var(--ux-ground);padding:10px 12px}
+.sd-pause h3{font:800 14px/1.3 Archivo,sans-serif;margin:6px 0 4px;text-transform:none!important}
+.sd-pause p{margin:3px 0;font-size:12.5px;line-height:1.5}
+.sd-next{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.sd-tag{display:inline-block;font:700 9px ui-monospace,monospace;letter-spacing:.07em;padding:3px 6px;color:#fff;background:var(--ux-ink)}
+.sd-warnings{border-top:1px dashed var(--ux-faint-2);margin-top:10px;padding-top:9px;font-size:12px;line-height:1.5}
+.sd-nav{display:flex;flex-wrap:wrap;border-top:1px solid var(--ux-faint-2)}
+.sd-tab{min-height:44px;padding:11px 16px;border:0;border-right:1px solid var(--ux-faint-2);background:#fff;color:var(--ux-ink);font:700 12px Archivo,sans-serif;cursor:pointer}
+.sd-tab:hover{background:var(--ux-surface)}
+.sd-tab[aria-pressed="true"]{background:var(--ux-ink);color:var(--ux-ground)}
+.sd-message{min-height:18px;font-size:12px;margin:0 0 10px;color:var(--ux-muted-strong)}
+.sd-field-error{font-size:11.5px;line-height:1.45;color:var(--ux-signal-text);border-left:3px solid var(--ux-signal);padding:4px 0 4px 8px;margin:6px 0 0}
+.sd-panel{border:1px solid var(--ux-faint-2);background:#fff;padding:16px 18px;margin-bottom:14px}
+.sd-panel-head{display:flex;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;align-items:baseline;border-bottom:2px solid var(--ux-ink);padding-bottom:8px;margin:0 0 12px}
+.sd-panel-head h2{font:800 18px/1.2 Archivo,sans-serif;margin:0}
+.sd-note{font-size:11.5px;line-height:1.5;color:var(--ux-muted);border-left:3px solid var(--ux-faint);padding:6px 10px;margin:0 0 12px}
+.sd-toolbar{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:10px 12px;align-items:end;margin:0 0 12px}
+.sd-toolbar-meta{display:flex;gap:6px 12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font:600 11px ui-monospace,monospace;color:var(--ux-muted-strong);margin:0 0 12px}
+.sd-products{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:12px}
+.sd-card{display:flex;flex-direction:column;border:1px solid var(--ux-faint-2);background:#fff}
+.sd-media{aspect-ratio:4/3;background:var(--ux-surface);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sd-media img{width:100%;height:100%;object-fit:contain}
+.sd-placeholder{font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);letter-spacing:.08em;text-align:center;padding:10px}
+.sd-card-body{display:flex;flex-direction:column;gap:5px;padding:12px 14px 14px;flex:1}
+.sd-meta{font-size:11px;color:var(--ux-muted)}
+.sd-card h3{font:800 15px/1.3 Archivo,sans-serif;margin:2px 0 4px;text-transform:none!important;overflow-wrap:anywhere}
+.sd-price{font:800 16px Archivo,sans-serif}
+.sd-price small{font:600 11px Archivo,sans-serif;color:var(--ux-muted-strong)}
+.sd-small{font-size:12px;line-height:1.45}
+.sd-mono{font:10px ui-monospace,monospace;color:var(--ux-muted);overflow-wrap:anywhere}
+.sd-add{display:grid;grid-template-columns:minmax(0,96px) minmax(0,1fr);gap:8px;align-items:end;margin-top:auto;padding-top:8px}
+.sd-draft-line{display:grid;grid-template-columns:minmax(0,1fr) 110px 110px auto;gap:8px 12px;align-items:end;padding:10px 0;border-bottom:1px solid var(--ux-faint-2)}
+.sd-draft-name{font-size:13px;font-weight:600;overflow-wrap:anywhere;align-self:center}
+.sd-total{font:800 15px Archivo,sans-serif;margin:12px 0}
+.sd-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sd-paused-note{border-left:3px solid var(--ux-signal);background:var(--ux-signal-tint);padding:8px 10px;font-size:12px;line-height:1.5;margin:0 0 10px}
+.sd-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+.sd-section{border:1px solid var(--ux-faint-2);padding:14px;background:#fff}
+.sd-section-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:10px}
+.sd-section-head h2{font:800 15px/1.25 Archivo,sans-serif;margin:0}
+.sd-section label{display:block;font-size:11px;margin-bottom:8px}
+.sd-order{border:1px solid var(--ux-faint-2);padding:14px 16px;margin-bottom:10px;background:#fff}
+.sd-order-head{display:flex;gap:6px 12px;justify-content:space-between;flex-wrap:wrap;align-items:baseline}
+.sd-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));border:1px solid var(--ux-faint-2);margin:0 0 14px}
+.sd-stat{padding:12px 14px;border-right:1px solid var(--ux-faint-2);border-bottom:1px solid var(--ux-faint-2);margin:0}
+.sd-stat dt{font:700 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)}
+.sd-stat dd{margin:5px 0 3px;font:800 17px/1.2 Archivo,sans-serif;overflow-wrap:anywhere}
+.sd-stat small{display:block;font-size:11px;line-height:1.4;color:var(--ux-muted-strong)}
+.sd-table{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 10px}
+.sd-table th{text-align:left;font:700 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted);border-bottom:2px solid var(--ux-ink);padding:6px 8px 6px 0}
+.sd-table td{border-bottom:1px solid var(--ux-faint-2);padding:9px 8px 9px 0;vertical-align:top}
+.sd-controls{border:1px solid var(--ux-faint-2);background:var(--ux-ground);padding:12px 14px;margin:0 0 14px}
+.sd-controls legend{font:700 9.5px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;padding:0 6px}
+.sd-control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px;margin-bottom:10px}
+.sd-h3{font:800 15px Archivo,sans-serif;margin:16px 0 6px}
+.sd-audit{font-size:12px;padding:6px 0;border-bottom:1px solid var(--ux-faint-2);overflow-wrap:anywhere;margin:0}
+@media (max-width:820px){
+  .sd-context{grid-template-columns:minmax(0,1fr);padding:12px}
+  .sd-status{grid-template-columns:minmax(0,1fr);padding:12px}
+  .sd-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sd-tab{border-bottom:1px solid var(--ux-faint-2);padding:11px 10px;white-space:normal}
+  .sd-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .sd-toolbar>label:first-child{grid-column:1/-1}
+  .sd-panel{padding:14px 12px}
+  .sd-draft-line{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .sd-draft-name{grid-column:1/-1}
+  .sd-btn,.sd-input,.sd-fixed{min-height:44px}
+  .sd-actions .sd-btn,.sd-next .sd-btn{flex:1 1 160px}
+  .sd-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .sd-table tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-bottom:1px solid var(--ux-faint-2);padding:6px 0}
+  .sd-table td{border:0;padding:4px 8px 4px 0}
+  .sd-table td::before{content:attr(data-label);display:block;font:700 9px ui-monospace,monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--ux-muted)}
+}
+</style>
+<section aria-label="Internal Administrator Store Demo" class="sd">
+<header class="sd-head"><div><p class="sd-kicker">Store workspace · synthetic account</p><h1>urbanXtracts Store</h1><p class="sd-sub">Synthetic demo · Internal Administrators only · No emails or live system writes</p></div><button type="button" onClick="{{ onStoreDemoRefresh }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Refresh</button></header>
+<div class="sd-workspace">
+<div role="group" aria-label="Demo controls" class="sd-context">
+<label class="sd-field">Demo view<select aria-label="Demo view" value="{{ storeDemoRole }}" onChange="{{ onStoreDemoRole }}" disabled="{{ storeDemoBusy }}" class="sd-input"><option value="owner">Store Owner</option><option value="buyer">Store Buyer</option><option value="billing">Billing</option><option value="budtender">Budtender</option><option value="internal">Internal Review</option></select></label>
+<sc-if value="{{ storeDemoShowLocationSelect }}" hint-placeholder-val="{{ true }}"><label class="sd-field">{{ storeDemoLocationLabel }}<select aria-label="Demo location" value="{{ storeDemoStore }}" onChange="{{ onStoreDemoStore }}" disabled="{{ storeDemoBusy }}" class="sd-input"><sc-for list="{{ storeDemoStores }}" as="store"><option value="{{ store.id }}">{{ store.name }}</option></sc-for></select></label></sc-if>
+<sc-if value="{{ storeDemoLocationFixed }}" hint-placeholder-val="{{ false }}"><div class="sd-field"><span>Locations</span><div class="sd-fixed">{{ storeDemoLocationFixedText }}</div></div></sc-if>
+<div class="sd-scope" aria-live="polite"><strong>{{ storeDemoRoleLabel }} · {{ storeDemoLocationScope }}</strong>{{ storeDemoRoleScope }}<br>{{ storeDemoAccountLabel }}</div>
+</div>
+<section aria-label="Demo status" class="sd-status" style="border-left-color:{{ storeDemoStatusColor }}">
+<div><h2 class="sd-state" style="color:{{ storeDemoStatusColor }}">{{ storeDemoStatusLabel }}</h2><p class="sd-status-note">{{ storeDemoStatusNote }}</p></div>
+<div>
+<sc-if value="{{ storeDemoHasStatusItems }}" hint-placeholder-val="{{ true }}"><ul class="sd-list"><sc-for list="{{ storeDemoStatusItems }}" as="item"><li>{{ item.text }}</li></sc-for></ul></sc-if>
+<sc-if value="{{ storeDemoHasPauses }}" hint-placeholder-val="{{ false }}"><div class="sd-pauses"><sc-for list="{{ storeDemoPauses }}" as="pause"><article class="sd-pause" style="{{ pause.style }}"><span class="sd-tag" style="{{ pause.tagStyle }}">{{ pause.kindLabel }}</span><h3>{{ pause.title }}</h3><p>{{ pause.message }}</p><div class="sd-next"><p><strong>Next step:</strong> {{ pause.nextStep }}</p><sc-if value="{{ pause.hasAction }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ pause.onAction }}" class="sd-btn">{{ pause.actionLabel }}</button></sc-if></div></article></sc-for></div></sc-if>
+<sc-if value="{{ storeDemoHasWarnings }}" hint-placeholder-val="{{ false }}"><div class="sd-warnings"><span class="sd-tag" style="background:var(--ux-muted-strong)">WARNING · NEVER BLOCKS ORDERING</span><ul class="sd-list" style="margin-top:6px"><sc-for list="{{ storeDemoWarnings }}" as="warning"><li>{{ warning.label }}</li></sc-for></ul></div></sc-if>
+</div>
+</section>
+<nav aria-label="Store demo sections" class="sd-nav"><sc-for list="{{ storeDemoTabs }}" as="tab"><button type="button" onClick="{{ tab.onPick }}" aria-pressed="{{ tab.selected }}" class="sd-tab">{{ tab.label }}</button></sc-for></nav>
+</div>
+<div role="status" class="sd-message">{{ storeDemoMessage }}</div>
+<sc-if value="{{ storeDemoCompany }}"><div class="sd-sections"><sc-for list="{{ storeDemoSections }}" as="section"><section class="sd-section"><div class="sd-section-head"><h2>{{ section.name }}</h2><span class="sd-tag" style="{{ section.statusStyle }}">{{ section.status }}</span></div><sc-for list="{{ section.fields }}" as="field"><label>{{ field.label }}<input aria-label="{{ field.label }}" value="{{ field.value }}" onInput="{{ field.onInput }}" readOnly="{{ section.readOnly }}" class="sd-input" style="margin-top:5px"></label></sc-for><sc-if value="{{ section.hasNote }}" hint-placeholder-val="{{ false }}"><p style="font-size:11.5px;color:var(--ux-signal-text);margin:4px 0 8px">{{ section.note }}</p></sc-if><sc-if value="{{ section.canEdit }}"><div class="sd-actions"><button type="button" onClick="{{ section.onSave }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Save Draft</button><button type="button" onClick="{{ section.onSubmit }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Submit Section</button></div></sc-if><sc-if value="{{ section.canReview }}"><label>Review note<input value="{{ section.reviewNote }}" onInput="{{ section.onNote }}" class="sd-input" style="margin-top:5px"></label><div class="sd-actions"><button type="button" onClick="{{ section.onApprove }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Approve Section</button><button type="button" onClick="{{ section.onReturn }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Return Section</button></div></sc-if></section></sc-for></div></sc-if>
+<sc-if value="{{ storeDemoCatalog }}"><section class="sd-panel" aria-labelledby="store-demo-catalog-heading"><div class="sd-panel-head"><h2 id="store-demo-catalog-heading">{{ storeDemoCatalogTitle }}</h2><span class="sd-mono">{{ storeDemoResultCount }}</span></div><p role="note" class="sd-note">{{ storeDemoCatalogNotice }}</p><div class="sd-toolbar"><label class="sd-field">Search <input aria-label="Demo product search" value="{{ storeDemoSearch }}" onInput="{{ onStoreDemoSearch }}" placeholder="Name, brand or Product ID" class="sd-input"></label><label class="sd-field">Brand <select aria-label="Demo Brand filter" value="{{ storeDemoBrand }}" onChange="{{ onStoreDemoBrand }}" class="sd-input"><option value="all">All Brands</option><sc-for list="{{ storeDemoBrandOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label class="sd-field">Category <select aria-label="Demo Category filter" value="{{ storeDemoCategory }}" onChange="{{ onStoreDemoCategory }}" class="sd-input"><option value="all">All Categories</option><sc-for list="{{ storeDemoCategoryOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><sc-if value="{{ storeDemoFiltered }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ onStoreDemoClearFilters }}" class="sd-btn">Clear filters</button></sc-if></div><sc-if value="{{ storeDemoCanOrder }}"><div class="sd-toolbar-meta"><span>{{ storeDemoDraftSummary }}</span><button type="button" onClick="{{ onStoreDemoGoDraft }}" class="sd-btn">Review draft order</button></div></sc-if><sc-if value="{{ storeDemoNoResults }}" hint-placeholder-val="{{ false }}"><p class="sd-note">No listings match these filters. Clear filters to see all {{ storeDemoListingTotal }} listings.</p></sc-if><div class="sd-products"><sc-for list="{{ storeDemoProducts }}" as="product"><article class="sd-card"><div class="sd-media"><sc-if value="{{ product.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ product.imageUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer"></sc-if><sc-if value="{{ product.noImage }}" hint-placeholder-val="{{ true }}"><span class="sd-placeholder">NO IMAGE IN SOURCE</span></sc-if></div><div class="sd-card-body"><div class="sd-meta">{{ product.brand }} · {{ product.category }}</div><h3>{{ product.name }}</h3><sc-if value="{{ storeDemoCommercial }}"><p class="sd-price" style="margin:0">{{ product.price }} <small>per {{ product.saleUnit }} · Minimum {{ product.minimumOrderQuantity }} {{ product.saleUnit }}</small></p><div class="sd-small">{{ product.availability }}</div><div class="sd-mono">Product ID {{ product.id }}</div><sc-if value="{{ storeDemoCanOrder }}"><div class="sd-add"><label class="sd-field">Quantity<input aria-label="{{ product.quantityLabel }}" aria-describedby="{{ product.addErrorId }}" aria-invalid="{{ product.addInvalid }}" type="number" min="{{ product.minimumOrderQuantity }}" step="1" max="{{ product.available }}" value="{{ product.quantity }}" onChange="{{ product.onQuantity }}" class="sd-input"></label><button type="button" onClick="{{ product.onAdd }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Add to Draft</button></div><sc-if value="{{ product.hasAddError }}" hint-placeholder-val="{{ false }}"><p id="{{ product.addErrorId }}" role="alert" class="sd-field-error">{{ product.addError }}</p></sc-if></sc-if></sc-if></div></article></sc-for></div></section>
+<sc-if value="{{ storeDemoCanOrder }}"><section id="store-demo-draft" class="sd-panel" aria-labelledby="store-demo-draft-heading" style="background:var(--ux-ground)"><div class="sd-panel-head"><h2 id="store-demo-draft-heading">Draft Order</h2><span class="sd-mono">{{ storeDemoDraftLocation }}</span></div><sc-if value="{{ storeDemoDraftEmpty }}" hint-placeholder-val="{{ true }}"><p class="sd-small" style="color:var(--ux-muted)">No lines yet. Add products above; drafts are kept per location and never reserve inventory.</p></sc-if><sc-for list="{{ storeDemoCart }}" as="line"><div class="sd-draft-line"><span class="sd-draft-name">{{ line.name }}</span><label class="sd-field">Units<input aria-label="{{ line.quantityLabel }}" type="number" value="{{ line.quantity }}" onChange="{{ line.onQuantity }}" min="{{ line.minimum }}" step="1" class="sd-input"></label><span class="sd-small" style="align-self:center">{{ line.total }}</span><button type="button" onClick="{{ line.onRemove }}" class="sd-btn">Remove</button></div></sc-for><p class="sd-total">{{ storeDemoCartTotal }}</p><sc-if value="{{ storeDemoSubmitPaused }}" hint-placeholder-val="{{ false }}"><p class="sd-paused-note">{{ storeDemoSubmitPausedNote }}</p></sc-if><div class="sd-actions"><button type="button" onClick="{{ onStoreDemoSaveDraft }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Save Draft</button><button type="button" onClick="{{ onStoreDemoSubmitOrder }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Submit Order</button></div></section></sc-if></sc-if>
+<sc-if value="{{ storeDemoOrders }}"><section class="sd-panel" aria-labelledby="store-demo-orders-heading"><div class="sd-panel-head"><h2 id="store-demo-orders-heading">Demo Orders</h2><span class="sd-mono">{{ storeDemoOrderCount }}</span></div><sc-for list="{{ storeDemoOrderRows }}" as="order"><article class="sd-order"><div class="sd-order-head"><strong>{{ order.id }} · {{ order.location }}</strong><span><span class="sd-tag" style="{{ order.statusStyle }}">{{ order.status }}</span> {{ order.total }}</span></div><div class="sd-small" style="margin-top:8px">{{ order.linesLabel }}</div><div class="sd-mono" style="margin:8px 0">{{ order.reviewLabel }}</div><div class="sd-actions"><sc-for list="{{ order.actions }}" as="action"><button type="button" onClick="{{ action.onClick }}" disabled="{{ storeDemoBusy }}" class="sd-btn">{{ action.label }}</button></sc-for></div></article></sc-for></section></sc-if>
+<sc-if value="{{ storeDemoFinance }}"><section class="sd-panel" aria-labelledby="store-demo-finance-heading"><div class="sd-panel-head"><h2 id="store-demo-finance-heading">{{ storeDemoFinanceTitle }}</h2><span class="sd-mono">{{ storeDemoFinanceScope }}</span></div><dl class="sd-stats"><sc-for list="{{ storeDemoStats }}" as="stat"><div class="sd-stat"><dt>{{ stat.label }}</dt><dd>{{ stat.value }}</dd><small>{{ stat.note }}</small></div></sc-for></dl><p role="note" class="sd-note">{{ storeDemoAccountingNotice }}</p><sc-if value="{{ storeDemoInternal }}"><fieldset class="sd-controls"><legend>Internal controls · reason and evidence required</legend><div class="sd-control-grid"><label class="sd-field">Account payment terms (blank = Net 30 default)<input aria-label="Demo account payment terms" value="{{ storeDemoTerms }}" onInput="{{ onStoreDemoTerms }}" class="sd-input"></label><label class="sd-field">Reason<input aria-label="Demo control reason" value="{{ storeDemoControlReason }}" onInput="{{ onStoreDemoControlReason }}" class="sd-input"></label><label class="sd-field">Evidence reference<input aria-label="Demo control evidence" value="{{ storeDemoControlEvidence }}" onInput="{{ onStoreDemoControlEvidence }}" class="sd-input"></label></div><div class="sd-actions"><button type="button" onClick="{{ onStoreDemoSetTerms }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Save Account Terms</button><button type="button" onClick="{{ onStoreDemoPlaceHold }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Place Manual Hold</button><button type="button" onClick="{{ onStoreDemoReleaseHold }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Release Manual Hold</button></div><p class="sd-small" style="margin:12px 0 6px">Simulate synthetic accounting (warning only):</p><div class="sd-actions"><sc-for list="{{ storeDemoAccountingScenarios }}" as="scenario"><button type="button" onClick="{{ scenario.onClick }}" disabled="{{ storeDemoBusy }}" class="sd-btn">{{ scenario.label }}</button></sc-for></div></fieldset></sc-if><h3 class="sd-h3">Synthetic Invoice</h3><sc-if value="{{ storeDemoHasInvoices }}" hint-placeholder-val="{{ true }}"><table class="sd-table"><thead><tr><th scope="col">Invoice</th><th scope="col">Status</th><th scope="col">Amount</th><th scope="col">Balance</th></tr></thead><tbody><tr><td data-label="Invoice">{{ storeDemoInvoiceNumber }}</td><td data-label="Status">{{ storeDemoInvoiceStatus }}</td><td data-label="Amount">{{ storeDemoInvoiceAmount }}</td><td data-label="Balance">{{ storeDemoInvoiceBalance }}</td></tr></tbody></table></sc-if><p class="sd-small">{{ storeDemoFinancialNotice }}</p><h3 class="sd-h3">License</h3><p class="sd-small">{{ storeDemoLicenseSummary }}</p><sc-if value="{{ storeDemoCanUploadRenewal }}"><div class="sd-add" style="grid-template-columns:minmax(0,220px) minmax(0,auto);max-width:560px"><label class="sd-field">Renewed license expiration<input type="text" inputMode="numeric" maxLength="10" aria-label="Demo renewed license expiration" placeholder="MM/DD/YYYY" value="{{ storeDemoRenewalDate }}" onInput="{{ onStoreDemoRenewalDate }}" class="sd-input"></label><button type="button" onClick="{{ onStoreDemoUploadRenewal }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Record Renewed License (synthetic, no file)</button></div></sc-if><sc-if value="{{ storeDemoCanVerifyRenewal }}"><div class="sd-actions" style="margin-top:8px"><button type="button" onClick="{{ onStoreDemoVerifyLicense }}" disabled="{{ storeDemoBusy }}" class="sd-btn sd-btn-primary">Verify Renewed License</button><button type="button" onClick="{{ onStoreDemoRejectLicense }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Reject Renewal</button></div></sc-if><sc-if value="{{ storeDemoInternal }}"><h3 class="sd-h3">Control Audit (append-only)</h3><sc-for list="{{ storeDemoControlEvents }}" as="event"><p class="sd-audit">{{ event.label }}</p></sc-for></sc-if></section></sc-if>
+<sc-if value="{{ storeDemoActivity }}"><section class="sd-panel" aria-labelledby="store-demo-activity-heading"><div class="sd-panel-head"><h2 id="store-demo-activity-heading">Demo Activity</h2></div><sc-for list="{{ storeDemoEvents }}" as="event"><p class="sd-audit">{{ event.label }}</p></sc-for><div class="sd-actions" style="margin-top:12px"><button type="button" onClick="{{ onStoreDemoReset }}" disabled="{{ storeDemoBusy }}" class="sd-btn">Reset My Demo</button></div></section></sc-if>
 </section>
 </sc-if>
 
@@ -2386,10 +2498,10 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <label>Retailer organization<select aria-label="Store retailer organization" value="{{ storeAccessOrganizationId }}" onChange="{{ onStoreAccessOrganization }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Choose retailer</option><sc-for list="{{ storeAccessOrganizations }}" as="so"><option value="{{ so.id }}">{{ so.name }}</option></sc-for></select></label>
 <label>Membership<select aria-label="Store membership" value="{{ storeAccessMembershipId }}" onChange="{{ onStoreAccessMembership }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Add an existing portal user</option><sc-for list="{{ storeAccessMembers }}" as="sm"><option value="{{ sm.id }}">{{ sm.label }}</option></sc-for></select></label>
 <sc-if value="{{ storeAccessNew }}" hint-placeholder-val="{{ true }}"><label>Existing user<select aria-label="Existing Store user" value="{{ storeAccessProfileId }}" onChange="{{ onStoreAccessProfile }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Choose existing user</option><sc-for list="{{ storeAccessProfiles }}" as="sp"><option value="{{ sp.id }}">{{ sp.name }}</option></sc-for></select></label></sc-if>
-<label>Store role<select aria-label="Store membership role" value="{{ storeAccessRole }}" onChange="{{ onStoreAccessRole }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="store_owner">Store Owner</option><option value="store_buyer">Store Buyer</option><option value="store_staff">Budtender</option></select></label>
+<label>Store role<select aria-label="Store membership role" value="{{ storeAccessRole }}" onChange="{{ onStoreAccessRole }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="store_owner">Store Owner</option><option value="store_buyer">Store Buyer</option><option value="store_billing">Billing</option><option value="store_staff">Budtender</option></select></label>
 <label>Status<select aria-label="Store membership status" value="{{ storeAccessStatus }}" onChange="{{ onStoreAccessStatus }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
 </div>
-<sc-if value="{{ storeAccessOwner }}" hint-placeholder-val="{{ false }}"><p>Owners have access to all active locations in this retailer organization.</p></sc-if>
+<sc-if value="{{ storeAccessOwner }}" hint-placeholder-val="{{ false }}"><p>{{ storeAccessScopeNote }}</p></sc-if>
 <sc-if value="{{ storeAccessAssigned }}" hint-placeholder-val="{{ true }}"><fieldset style="margin-top:12px"><legend>Assigned locations</legend><sc-for list="{{ storeAccessStores }}" as="ss"><button type="button" aria-pressed="{{ ss.pressed }}" onClick="{{ ss.onPick }}" style="margin:5px;padding:9px">{{ ss.name }} · {{ ss.license }}</button></sc-for></fieldset></sc-if>
 <label style="display:block;margin-top:12px">Reason<textarea aria-label="Store access change reason" value="{{ storeAccessReason }}" onInput="{{ onStoreAccessReason }}" style="display:block;width:100%;padding:9px;margin:5px 0 12px"></textarea></label>
 <button type="button" onClick="{{ onStoreAccessSave }}" aria-disabled="{{ storeAccessSaveDisabled }}">Save Store membership</button>
@@ -2426,9 +2538,10 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Role</div>
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
 <sc-for list="{{ auRoles }}" as="ar" hint-placeholder-count="3">
-<button type="button" onClick="{{ ar.onPick }}" style="{{ ar.style }}">{{ ar.label }}</button>
+<button type="button" onClick="{{ ar.onPick }}" aria-pressed="{{ ar.pressed }}" style="{{ ar.style }}">{{ ar.label }}</button>
 </sc-for>
 </div>
+<sc-if value="{{ auSynthetic }}" hint-placeholder-val="{{ false }}"><div role="note" style="border-left:3px solid var(--ux-accent);background:var(--ux-surface);padding:10px 12px;margin-bottom:14px;font-size:12px;line-height:1.5">{{ auSyntheticNote }}</div></sc-if>
 <sc-if value="{{ auShowAccountType }}" hint-placeholder-val="{{ false }}">
 <div style="font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--ux-muted);margin-bottom:7px">Account type</div>
 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><sc-for list="{{ auAccountTypeOptions }}" as="type" hint-placeholder-count="2"><button type="button" onClick="{{ type.onPick }}" style="{{ type.style }}">{{ type.label }}</button></sc-for></div>
@@ -2480,10 +2593,11 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <sc-if value="{{ u.actionOpen }}" hint-placeholder-val="{{ false }}">
 <div style="border-bottom:1px solid rgba(23,14,11,.2);background:var(--ux-surface);padding:15px 16px;margin-bottom:2px">
 <div style="display:grid;grid-template-columns:minmax(180px,.7fr) minmax(260px,1.5fr) auto;gap:14px;align-items:start">
-<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">ROLE</span><select value="{{ u.actionRole }}" onChange="{{ u.onActionRole }}" style="width:100%;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="owner">Store Owner</option><option value="buyer">Buyer</option><option value="budtender">Budtender</option></select></label>
-<div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STORE ACCESS</div><sc-if value="{{ u.actionOwner }}" hint-placeholder-val="false"><div style="background:#fff;border:1px solid rgba(23,14,11,.2);padding:10px;font-size:12px">Store Owners automatically receive every active store in their retailer organization.</div></sc-if><sc-if value="{{ u.actionScoped }}" hint-placeholder-val="true"><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ u.actionStores }}" as="us" hint-placeholder-count="3"><button type="button" onClick="{{ us.onPick }}" aria-pressed="{{ us.pressed }}" style="{{ us.style }}">{{ us.name }} <span style="opacity:.65">{{ us.license }}</span></button></sc-for></div><sc-if value="{{ u.actionNoStores }}" hint-placeholder-val="false"><div style="font-size:12px;color:var(--ux-signal-text)">No qualified portal stores are available for this organization yet. Complete Store Onboarding first.</div></sc-if></sc-if></div>
+<label><span style="display:block;font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">ROLE</span><select aria-label="Store role for {{ u.name }}" value="{{ u.actionRole }}" onChange="{{ u.onActionRole }}" style="width:100%;min-height:40px;padding:9px;border:1px solid rgba(23,14,11,.3);background:#fff;font:12px Archivo,sans-serif"><option value="owner">Store Owner</option><option value="buyer">Buyer</option><option value="billing">Billing</option><option value="budtender">Budtender</option></select></label>
+<div><div style="font:600 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">STORE ACCESS</div><sc-if value="{{ u.actionOwner }}" hint-placeholder-val="false"><div style="background:#fff;border:1px solid rgba(23,14,11,.2);padding:10px;font-size:12px">{{ u.actionScopeNote }}</div></sc-if><sc-if value="{{ u.actionScoped }}" hint-placeholder-val="true"><div style="display:flex;gap:7px;flex-wrap:wrap"><sc-for list="{{ u.actionStores }}" as="us" hint-placeholder-count="3"><button type="button" onClick="{{ us.onPick }}" aria-pressed="{{ us.pressed }}" style="{{ us.style }}">{{ us.name }} <span style="opacity:.65">{{ us.license }}</span></button></sc-for></div><sc-if value="{{ u.actionNoStores }}" hint-placeholder-val="false"><div style="font-size:12px;color:var(--ux-signal-text)">No qualified portal stores are available for this organization yet. Complete Store Onboarding first.</div></sc-if></sc-if></div>
 <div style="display:flex;gap:8px;align-items:center;padding-top:17px"><button type="button" onClick="{{ u.onActionSave }}" aria-disabled="{{ u.actionPending }}" style="background:var(--ux-ink);color:var(--ux-ground);border:0;padding:10px 12px;font:700 11.5px Archivo,sans-serif;cursor:pointer">{{ u.actionSaveLabel }}</button><button type="button" onClick="{{ u.onManage }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 11px;font:700 11.5px Archivo,sans-serif;cursor:pointer">Cancel</button></div>
 </div>
+<sc-if value="{{ u.actionHasLocalNote }}" hint-placeholder-val="{{ false }}"><p style="font-size:11.5px;color:var(--ux-muted-strong);margin:10px 0 0">{{ u.actionLocalNote }}</p></sc-if>
 <sc-if value="{{ u.actionHasError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:8px 0 8px 12px;margin-top:10px;font-size:12px">{{ u.actionError }}</div></sc-if>
 </div>
 </sc-if>
@@ -3726,6 +3840,33 @@ const USERS = [
   { name: 'Toni Alvarez', email: 'toni@urbanxtracts.com', org: 'urbanXtracts', role: 'Account management', locs: 'Assigned accounts', last: '24 Aug 2026' }
 ];
 
+/* Legacy Users tooling: retailer roles map explicitly. Anything unrecognized
+   maps to null and is refused, so Billing can never fall back to Owner or Buyer. */
+const LEGACY_STORE_ROLE_LABELS = { owner: 'Store owner', buyer: 'Buyer', billing: 'Billing contact', budtender: 'Budtender' };
+const LEGACY_STORE_ROLE_BY_LABEL = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Billing': 'billing', 'Billing contact': 'billing', 'Budtender': 'budtender' };
+const legacyStoreRoleKey = user => {
+  if (!user) return null;
+  if (Object.prototype.hasOwnProperty.call(LEGACY_STORE_ROLE_LABELS, user.sourceRole)) return user.sourceRole;
+  return LEGACY_STORE_ROLE_BY_LABEL[String(user.role || '')] || null;
+};
+/* Synthetic demo retailer users exist only in this browser session. They need
+   a reserved .invalid address, are never invited or emailed, and never reach
+   the live directory. Their locations are the Store Demo's synthetic stores. */
+const SYNTHETIC_DEMO_ROLE_CHOICES = ['Store owner', 'Buyer', 'Billing', 'Budtender'];
+const isSyntheticDemoEmail = value => /^[^@\s]+@[^@\s]+\.invalid$/i.test(String(value || '').trim());
+const SYNTHETIC_STORE_LOCATIONS = [
+  { id: 'DEMO-UX-STORE-001', name: 'Demo Store #1', license: 'DEMO-UX-STORE-001' },
+  { id: 'DEMO-UX-STORE-002', name: 'Demo Store #2', license: 'DEMO-UX-STORE-002' }
+];
+// Owner and Billing receive every active location; Buyer at least one; Budtender exactly one.
+const legacyStoreLocationRule = (role, selected, all) => {
+  if (role === 'owner' || role === 'billing') return { ok: true, licenses: all.slice(), label: 'All ' + all.length + ' locations' };
+  if (role === 'buyer' && !selected.length) return { ok: false, error: 'A Buyer must have at least one store.' };
+  if (role === 'budtender' && selected.length !== 1) return { ok: false, error: 'A Budtender must have exactly one store.' };
+  if (!LEGACY_STORE_ROLE_LABELS[role]) return { ok: false, error: 'Choose Store Owner, Buyer, Billing or Budtender.' };
+  return { ok: true, licenses: selected.slice(), label: selected.join(', ') };
+};
+
 const SEED_AUDIT = [];
 
 const SESSION_STATES = [
@@ -4390,7 +4531,7 @@ function legacyWorkspaceRows(profile) {
   const workspace = role === 'internal' ? 'internal' : role === 'brand' ? 'brand' : 'store';
   const memberRole = role === 'internal' ? (profile.staff_role || 'viewer')
     : role === 'brand' ? 'brand_viewer'
-      : role === 'owner' ? 'store_owner' : role === 'buyer' ? 'store_buyer' : 'store_staff';
+      : role === 'owner' ? 'store_owner' : role === 'buyer' ? 'store_buyer' : role === 'billing' ? 'store_billing' : 'store_staff';
   const organization = String(profile.org || (workspace === 'internal' ? 'urbanXtracts' : 'Organization'));
   return [{ id: 'legacy:' + workspace + ':' + organization.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
     organizationId: null, organizationKind: workspace === 'store' ? 'retailer' : workspace,
@@ -4398,7 +4539,13 @@ function legacyWorkspaceRows(profile) {
 }
 
 function normalizeWorkspaceRows(rows, profile) {
-  const allowed = new Set(['internal', 'brand', 'store']);
+  // Explicit membership roles per workspace. A row with any other role is not a
+  // selectable workspace, so it can never be opened as a nearby role.
+  const memberRoles = {
+    internal: ['administrator', 'operations', 'sales', 'quality', 'viewer'],
+    brand: ['brand_owner', 'brand_manager', 'brand_contributor', 'brand_viewer'],
+    store: ['store_owner', 'store_buyer', 'store_billing', 'store_staff']
+  };
   const normalized = (Array.isArray(rows) ? rows : []).map(row => ({
     id: String(row.membership_id || row.id || ''),
     organizationId: row.organization_id || row.organizationId || null,
@@ -4409,7 +4556,8 @@ function normalizeWorkspaceRows(rows, profile) {
     isDefault: row.is_default === true || row.isDefault === true,
     resolution: row.resolution || 'membership',
     permissions: Array.isArray(row.permissions) ? row.permissions.filter(value=>typeof value==='string') : []
-  })).filter(row => row.id && row.organization && allowed.has(row.workspace));
+  })).filter(row => row.id && row.organization && Object.prototype.hasOwnProperty.call(memberRoles, row.workspace)
+    && memberRoles[row.workspace].includes(row.memberRole));
   const unique = normalized.filter((row, index) => normalized.findIndex(candidate => candidate.id === row.id) === index);
   return unique;
 }
@@ -5200,7 +5348,7 @@ class Component extends DCLogic {
   storeDemoChangeRole(role) {
     if (this.state.storeDemoBusy) return;
     // Billing has only the account financials tab; never land it on a hidden catalog tab.
-    this.set({ storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoTab: role === 'billing' ? 'finance' : 'catalog' });
+    this.set({ storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoAddErrors: {}, storeDemoTab: role === 'billing' ? 'finance' : 'catalog' });
     this.storeDemoCall('read', {}, role);
   }
   storeDemoChangeStore(store) {
@@ -5211,7 +5359,17 @@ class Component extends DCLogic {
   storeDemoAdd(product) {
     if (!['owner','buyer'].includes(this.state.storeDemoRole || 'owner')) return;
     const quantity = Number((this.state.storeDemoQuantities || {})[product.id] ?? product.minimumOrderQuantity);
-    this.setState(st => ({ storeDemoCart: (st.storeDemoCart || []).filter(l => l.productId !== product.id).concat([{ productId: product.id, quantity }]) }));
+    // Fail fast at the source minimum (a minimum, not a multiple); a refusal leaves the draft untouched.
+    const refusal = !Number.isInteger(quantity) ? 'Enter a whole quantity for ' + product.name + '. Nothing was added.'
+      : quantity < product.minimumOrderQuantity ? 'Minimum ' + product.minimumOrderQuantity + ' ' + product.saleUnit + ' for ' + product.name + '. Nothing was added.' : '';
+    if (refusal) {
+      this.setState(st => ({ storeDemoAddErrors: { ...(st.storeDemoAddErrors || {}), [product.id]: refusal } }));
+      return;
+    }
+    this.setState(st => {
+      const { [product.id]: cleared, ...storeDemoAddErrors } = st.storeDemoAddErrors || {};
+      return { storeDemoAddErrors, storeDemoCart: (st.storeDemoCart || []).filter(l => l.productId !== product.id).concat([{ productId: product.id, quantity }]) };
+    });
   }
   storeDemoSaveOrder(submit) {
     return this.storeDemoCall(submit ? 'submit-order' : 'save-draft', {
@@ -5696,16 +5854,24 @@ class Component extends DCLogic {
   }
 
   finishLoginIdentity({ me, token, email, weak, permissions, workspaces, workspaceResolution, refreshToken, sso }) {
+    // Resolve the membership before any session state is kept. An unrecognized
+    // workspace or role leaves the user signed out with nothing stored or scheduled.
+    const verified=normalizeWorkspaceRows(workspaces, me);
+    const preferred=verified.find(row=>row.isDefault)||verified[0];
+    const roleLabel=!preferred?null:preferred.workspace==='internal'?'Account management':preferred.workspace==='brand'?'Brand member'
+      :({store_owner:'Store owner',store_buyer:'Buyer',store_billing:'Billing contact',store_staff:'Budtender'}[preferred.memberRole]);
+    if(!roleLabel) throw new Error('access not assigned');
     this._sessionEpoch = (this._sessionEpoch || 0) + 1;
     this._sessionRefreshPromise = null;
-    const preferred=workspaces.find(row=>row.isDefault)||workspaces[0];
-    const roleLabel=preferred.workspace==='internal'?'Account management':preferred.workspace==='brand'?'Brand member'
-      :({store_owner:'Store owner',store_buyer:'Buyer',store_billing:'Billing contact',store_staff:'Budtender'}[preferred.memberRole]);
     this.set({ loginBusy: false, sessionRestoring: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
       loginUser: '', loginPass: '', token: token, refreshToken: refreshToken || null, pwNotice: weak || null });
-    this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
+    const signedIn=this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
       staffRole: preferred.workspace==='internal'?preferred.memberRole:null, permissions: preferred.permissions || [],
-      workspaces: normalizeWorkspaceRows(workspaces, me), workspaceResolution: workspaceResolution || 'legacy' });
+      workspaces: verified, workspaceResolution: workspaceResolution || 'legacy' });
+    if(!signedIn){
+      this.set({ token: null, refreshToken: null, pwNotice: null });
+      throw new Error('access not assigned');
+    }
     storePortalSession(token, refreshToken || null, email, !!sso || me.role === 'internal');
     this.scheduleSessionRefresh(token, refreshToken || null);
   }
@@ -5779,21 +5945,28 @@ class Component extends DCLogic {
   }
 
   signIn(u) {
-    const map = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender', 'Account management': 'internal', 'Brand member': 'brand' };
+    // Explicit labels only; an unlisted label is refused, never mapped to a nearby role.
+    const map = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Billing': 'billing', 'Billing contact': 'billing', 'Budtender': 'budtender',
+      'Account management': 'internal', 'Brand member': 'brand' };
     const role = map[u.role];
-    if (!role) { this.set({ toast: 'That account has no portal role, so there is nothing to sign in to.', toastKind: 'NO ROLE' }); return; }
-    this.logAudit('Signed in', u.name, u.role + ' at ' + u.org + '. Role comes from the account, not from a choice in the interface.', u.name);
-    const demoAccount = isDemoOrganization(u.org);
-    const workspaces = Array.isArray(u.workspaces) && u.workspaces.length
-      ? u.workspaces : legacyWorkspaceRows({ role, org: u.org, staff_role: u.staffRole });
+    const refuse = () => { this.set({ toast: 'That account has no portal role, so there is nothing to sign in to.', toastKind: 'NO ROLE' }); return false; };
+    if (!role) return refuse();
+    // Supplied memberships are re-checked against the role allowlist; only an
+    // account with no memberships at all falls back to its legacy profile row.
+    const workspaces = normalizeWorkspaceRows(Array.isArray(u.workspaces) && u.workspaces.length
+      ? u.workspaces : legacyWorkspaceRows({ role, org: u.org, staff_role: u.staffRole }));
     const preferredWorkspace = workspaces.find(workspace => workspace.isDefault)
       || workspaces.find(workspace => workspace.workspace === (role === 'internal' ? 'internal' : role === 'brand' ? 'brand' : 'store'))
       || workspaces[0];
+    const workspaceRole = !preferredWorkspace ? null
+      : preferredWorkspace.workspace === 'internal' ? 'internal' : preferredWorkspace.workspace === 'brand' ? 'brand'
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[preferredWorkspace.memberRole] || null);
+    if (!workspaceRole) return refuse();
+    this.logAudit('Signed in', u.name, u.role + ' at ' + u.org + '. Role comes from the account, not from a choice in the interface.', u.name);
+    const demoAccount = isDemoOrganization(u.org);
     const landing = preferredWorkspace.workspace === 'brand' ? 'brand-home'
       : preferredWorkspace.memberRole === 'store_staff' && preferredWorkspace.workspace === 'store' ? 'kiosk'
       : preferredWorkspace.memberRole === 'store_billing' && preferredWorkspace.workspace === 'store' ? 'receivables' : 'dash';
-    const workspaceRole = preferredWorkspace.workspace === 'internal' ? 'internal' : preferredWorkspace.workspace === 'brand' ? 'brand'
-      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[preferredWorkspace.memberRole] || 'budtender');
     this.set({ authUser: { ...u, workspaces,staffRole:preferredWorkspace.workspace==='internal'?preferredWorkspace.memberRole:null,
       permissions:preferredWorkspace.permissions || [] }, role: workspaceRole, workspaces, activeWorkspaceId: preferredWorkspace.id,
       verifiedStoreLocations: [], pricingLoaded: false,
@@ -5833,18 +6006,24 @@ class Component extends DCLogic {
       communicationsData: null, communicationsLoaded: false, communicationsError: null, communicationRecipient: '', communicationPending: null,
       claimsData: null, claimsLoaded: false, claimsError: null, claimPending: null,
       toast: 'Signed in as ' + u.name + '.', toastKind: 'SIGNED IN' });
+    return true;
   }
 
   switchWorkspace(workspaceId) {
     const workspace = (this.state.workspaces || []).find(item => item.id === workspaceId);
-    if (!workspace || !['internal', 'brand', 'store'].includes(workspace.workspace)) return;
+    if (!workspace) return;
+    const role = normalizeWorkspaceRows([workspace]).length !== 1 ? null
+      : workspace.workspace === 'internal' ? 'internal' : workspace.workspace === 'brand' ? 'brand'
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[workspace.memberRole] || null);
+    if (!role) {
+      this.set({ toast: 'That workspace has no recognized portal role, so it was not opened.', toastKind: 'BLOCKED \u2014 ACCESS' });
+      return;
+    }
     this._workspaceEpoch = (this._workspaceEpoch || 0) + 1;
     this._storeDemoSequence = (this._storeDemoSequence || 0) + 1;
     const landing = workspace.workspace === 'brand' ? 'brand-home'
       : workspace.memberRole === 'store_staff' && workspace.workspace === 'store' ? 'kiosk'
       : workspace.memberRole === 'store_billing' && workspace.workspace === 'store' ? 'receivables' : 'dash';
-    const role = workspace.workspace === 'internal' ? 'internal' : workspace.workspace === 'brand' ? 'brand'
-      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[workspace.memberRole] || 'budtender');
     this.logAudit('Workspace changed', workspace.organization, workspace.workspace + ' workspace selected.');
     // A workspace change is a security-boundary change. Discard every loaded
     // connected projection so data from the previous scope cannot remain in
@@ -5923,7 +6102,7 @@ class Component extends DCLogic {
     }
     this.set({
       storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoRole: 'owner', storeDemoTab: 'catalog',
-      storeDemoMessage: '', storeDemoBusy: false, storeDemoQuantities: {}, storeDemoReviewNotes: {},
+      storeDemoMessage: '', storeDemoBusy: false, storeDemoQuantities: {}, storeDemoAddErrors: {}, storeDemoReviewNotes: {},
       storeDemoTerms: undefined, storeDemoControlReason: '', storeDemoControlEvidence: '', storeDemoRenewalDate: '', storeDemoRequestId: null,
       authUser: null, token: null, refreshToken: null, sessionRestoring: false, workspaces: [], activeWorkspaceId: null,
       activeWorkspace: null, workspaceResolution: null, screen: 'signin', order: null, confirmed: null, toast: null,
@@ -7151,6 +7330,9 @@ class Component extends DCLogic {
       || (s.role === 'internal' && this.hasPermission('financials.read'));
     if (!s.authUser || !s.token || !allowed || this.loc().demo || s.financialLoading
       || (!force && s.financialLoaded)) return Promise.resolve();
+    // No View as session (Owner, Billing or any other retailer role) reads live QuickBooks data under the
+    // Administrator's own token; previews use synthetic/local data only.
+    if (s.impersonating) return Promise.resolve();
     const headers = { 'Accept': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + s.token };
     this.set({ financialLoading: true, financialError: null });
     const syncFirst = force && s.role === 'internal' && this.hasPermission('accounts.manage')
@@ -7597,7 +7779,8 @@ class Component extends DCLogic {
     this.set({storeAccessPending:true,storeAccessError:'',storeAccessMessage:'',storeAccessRequestId:requestId});
     this.portalAdmin('manage-store-access',{organizationId:s.storeAccessOrganizationId,profileId:s.storeAccessProfileId,
       membershipId:member?member.id:null,expectedUpdatedAt:member?member.updated_at:null,memberRole:s.storeAccessRole,
-      status:s.storeAccessStatus,licenses:s.storeAccessRole==='store_owner'||s.storeAccessStatus==='disabled'?[]:s.storeAccessLicenses,
+      // Owner and Billing are account-wide: the server refuses any location assignment for either.
+      status:s.storeAccessStatus,licenses:['store_owner','store_billing'].includes(s.storeAccessRole)||s.storeAccessStatus==='disabled'?[]:s.storeAccessLicenses,
       reason:s.storeAccessReason.trim(),requestId})
       .then(()=>{this.set({storeAccessPending:false,storeAccessMessage:'Store membership saved. Other workspaces and the global account were not changed. No email was sent.'});
         this.loadStoreAccess(s.storeAccessOrganizationId);})
@@ -10964,7 +11147,7 @@ class Component extends DCLogic {
   changeUserRole(user) {
     if (!user || this.state.accessPending) return;
     if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'change user roles')) return;
-    const roles = ['Store owner', 'Buyer', 'Budtender'];
+    const roles = ['Store owner', 'Buyer', 'Billing contact', 'Budtender'];
     const current = (this.state.userOverrides[user.email] || {}).role || user.role;
     if (!roles.includes(current)) {
       this.set({ toast: 'Workforce access uses staff presets and is changed separately from retailer roles.', toastKind: 'STAFF PRESET' });
@@ -10973,7 +11156,7 @@ class Component extends DCLogic {
     const next = roles[(roles.indexOf(current) + 1) % roles.length];
     const apply = () => {
       this.logAudit('Permission changed', user.name, current + ' \u2192 ' + next + '. Visible to ' + user.org);
-      this.setState(st => ({ userOverrides: { ...st.userOverrides, [user.email]: { ...(st.userOverrides[user.email] || {}), role: next } },
+      this.setState(st => ({ userOverrides: { ...st.userOverrides, [user.email]: { ...(st.userOverrides[user.email] || {}), role: next, sourceRole: LEGACY_STORE_ROLE_BY_LABEL[next] } },
         accessPending: null, toast: user.name + ' is now ' + next + '.', toastKind: 'ACCESS UPDATED' }));
     };
     if (/\.invalid$/i.test(user.email)) { apply(); return; }
@@ -10983,16 +11166,23 @@ class Component extends DCLogic {
       .catch(error => this.set({ accessPending: null, toast: 'Access was not changed: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
+  // Stores a user may be assigned: the synthetic demo stores for synthetic users, else the retailer's portal stores.
+  userActionStores(user) {
+    if (user && user.synthetic) return SYNTHETIC_STORE_LOCATIONS.slice();
+    return (this.state.retailerAccounts || []).filter(account =>
+      String(account.organizationName || account.company || account.name || '') === String((user && user.org) || ''))
+      .flatMap(account => Array.isArray(account.stores) ? account.stores : []);
+  }
+
   openUserActions(user) {
     if (!user || this.state.accessPending || this.state.impersonating) return;
     if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'manage user access')) return;
-    const role = ['owner', 'buyer', 'budtender'].includes(user.sourceRole)
-      ? user.sourceRole : ({ 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender' }[user.role] || 'buyer');
-    const stores = (this.state.retailerAccounts || []).filter(account =>
-      String(account.organizationName || account.company || account.name || '') === String(user.org || ''))
-      .flatMap(account => Array.isArray(account.stores) ? account.stores : []);
+    // No fallback: an unrecognized role is refused rather than opened as Buyer or Owner.
+    const role = legacyStoreRoleKey(user);
+    if (!role) { this.set({ toast: 'Only Store Owner, Buyer, Billing and Budtender access can be managed here.', toastKind: 'NOT AVAILABLE' }); return; }
+    const stores = this.userActionStores(user);
     const locationText = String(user.locs || '').toLowerCase();
-    const selected = role === 'owner' ? stores.map(store => store.license)
+    const selected = role === 'owner' || role === 'billing' ? stores.map(store => store.license)
       : stores.filter(store => locationText.includes(String(store.license || '').toLowerCase())
         || locationText.includes(String(store.name || '').toLowerCase())).map(store => store.license);
     this.set({ userActionEmail: user.email, userActionRole: role, userActionLocations: selected,
@@ -11012,31 +11202,42 @@ class Component extends DCLogic {
     if (!user || s.accessPending || s.impersonating || s.userActionEmail !== user.email) return;
     if (s.role !== 'internal' || !this.requirePermission('users.manage', 'manage user access')) return;
     const role = s.userActionRole;
-    const selected = s.userActionLocations || [];
-    if (role === 'buyer' && !selected.length) {
-      this.set({ userActionError: 'A Buyer must have at least one store.' }); return;
+    const stores = this.userActionStores(user);
+    const rule = legacyStoreLocationRule(role, s.userActionLocations || [], stores.map(store => store.license));
+    if (!rule.ok) { this.set({ userActionError: rule.error }); return; }
+    const locations = rule.label;
+    const roleLabel = { owner: 'Store Owner', buyer: 'Buyer', billing: 'Billing', budtender: 'Budtender' }[role];
+    if (user.synthetic) {
+      // Local synthetic demo change only: no live permission, invitation, email or directory write.
+      if (!isSyntheticDemoEmail(user.email)) { this.set({ userActionError: 'Synthetic demo users must keep a .invalid address.' }); return; }
+      this.logAudit('Synthetic demo access changed', user.name + ' · ' + user.org, roleLabel + ' for ' + locations + '. Local demo only; no live permission changed and nothing was sent.');
+      this.setState(st => ({ userOverrides: { ...st.userOverrides, [user.email]: { ...(st.userOverrides[user.email] || {}),
+          role: LEGACY_STORE_ROLE_LABELS[role], sourceRole: role, locs: locations } },
+        userActionEmail: null, userActionLocations: [], userActionError: null,
+        toast: user.name + ' now has synthetic ' + roleLabel + ' access for ' + locations + '. Local demo only; no live permission changed and nothing was sent.',
+        toastKind: 'DEMO ACCESS UPDATED' }));
+      return;
     }
-    if (role === 'budtender' && selected.length !== 1) {
-      this.set({ userActionError: 'A Budtender must have exactly one store.' }); return;
-    }
-    const stores = (s.retailerAccounts || []).filter(account =>
-      String(account.organizationName || account.company || account.name || '') === String(user.org || ''))
-      .flatMap(account => Array.isArray(account.stores) ? account.stores : []);
-    const locations = role === 'owner' ? 'All ' + stores.length + ' locations' : selected.join(', ');
     this.set({ accessPending: user.email, userActionError: null });
     this.portalAdmin('update-user', { email: user.email, org: user.org, role, locations, active: true })
       .then(() => this.loadUsers(true))
       .then(() => this.set({ accessPending: null, userActionEmail: null, userActionLocations: [],
-        toast: user.name + ' now has ' + ({ owner: 'Store Owner', buyer: 'Buyer', budtender: 'Budtender' }[role])
-          + ' access for ' + locations + '.', toastKind: 'ACCESS UPDATED' }))
+        toast: user.name + ' now has ' + roleLabel + ' access for ' + locations + '.', toastKind: 'ACCESS UPDATED' }))
       .catch(error => this.set({ accessPending: null, userActionError: 'Access was not changed: ' + error.message }));
   }
 
   reactivateUser(user) {
     if (!user || this.state.accessPending || this.state.impersonating) return;
     if (this.state.role !== 'internal' || !this.requirePermission('users.manage', 'reactivate users')) return;
-    const role = user.sourceRole || ({ 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender' }[user.role]);
+    const role = legacyStoreRoleKey(user);
     if (!role) return;
+    if (user.synthetic) {
+      this.logAudit('Synthetic demo user reactivated', user.name + ' · ' + user.org, 'Local demo only; no live permission changed.');
+      this.setState(st => ({ deactivated: st.deactivated.filter(email => email !== user.email),
+        userOverrides: { ...st.userOverrides, [user.email]: { ...(st.userOverrides[user.email] || {}), active: true } },
+        toast: user.name + ' is active again in the synthetic demo.', toastKind: 'DEMO ACCESS RESTORED' }));
+      return;
+    }
     this.set({ accessPending: user.email });
     this.portalAdmin('update-user', { email: user.email, org: user.org, role, locations: user.locs, active: true })
       .then(() => this.loadUsers(true))
@@ -11048,8 +11249,10 @@ class Component extends DCLogic {
     if (!user || this.state.accessPending) return;
     if (this.state.role === 'internal' && !this.requirePermission('users.manage', 'deactivate users')) return;
     const apply = () => {
-      this.logAudit('User revoked', user.name, 'Access ended immediately and live sessions closed. Visible to ' + user.org);
+      this.logAudit(user.synthetic ? 'Synthetic demo user deactivated' : 'User revoked', user.name,
+        user.synthetic ? 'Local demo only; no live permission changed.' : 'Access ended immediately and live sessions closed. Visible to ' + user.org);
       this.setState(st => ({ deactivated: st.deactivated.includes(user.email) ? st.deactivated : st.deactivated.concat([user.email]),
+        userOverrides: user.synthetic ? { ...st.userOverrides, [user.email]: { ...(st.userOverrides[user.email] || {}), active: false } } : st.userOverrides,
         accessPending: null, toast: user.name + ' is deactivated.', toastKind: 'ACCESS REVOKED' }));
     };
     if (/\.invalid$/i.test(user.email)) { apply(); return; }
@@ -11528,16 +11731,20 @@ class Component extends DCLogic {
       ? (st.auLocs.indexOf(id) === -1 ? [id] : [])
       : st.auLocs.indexOf(id) === -1 ? st.auLocs.concat([id]) : st.auLocs.filter(x => x !== id) }));
   }
+  // Synthetic demo roles pick from the Store Demo's synthetic stores, never live locations.
+  auLocationPool() {
+    return SYNTHETIC_DEMO_ROLE_CHOICES.includes(this.state.auRole) ? SYNTHETIC_STORE_LOCATIONS.slice() : this.availableLocations();
+  }
   auLocAll() {
     if (this.state.auRole === 'Budtender') {
       this.set({ toast: 'A Budtender can access exactly one store. Choose it from the list.', toastKind: 'ONE STORE ONLY' });
       return;
     }
-    const locations = this.availableLocations();
+    const locations = this.auLocationPool();
     this.setState(st => ({ auLocs: st.auLocs.length === locations.length ? [] : locations.map(l => l.id) }));
   }
   auLocText(ids) {
-    const locations = this.availableLocations();
+    const locations = this.auLocationPool();
     if (!ids.length) return '';
     if (ids.length === locations.length) return 'All ' + locations.length + ' locations';
     return locations.filter(l => ids.indexOf(l.id) !== -1).map(l => l.name).join(', ');
@@ -11584,47 +11791,33 @@ class Component extends DCLogic {
           auErr: 'Administrator access was not completed: ' + error.message }));
       return;
     }
-    if (!s.auLocs.length) { this.set({ auErr: 'Pick at least one location. A user with no location has nothing to order for.' }); return; }
-    if (s.auRole === 'Budtender' && s.auLocs.length !== 1) { this.set({ auErr: 'A Budtender must be assigned to exactly one store.' }); return; }
-    const org = s.role === 'internal' && s.auRole === 'Account management' ? 'urbanXtracts' : this.actingOrg();
-    const locs = this.auLocText(s.auLocs);
-    const intakeLocations = s.auLocs.map(id => LOCATIONS.find(location => location.id === id)).filter(Boolean)
-      .map(location => ({ name: location.name, license: location.license, address: '' }));
-    const dbRole = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender', 'Account management': 'internal' }[s.auRole];
-    const u = { name: s.auName.trim(), email: email, org, role: s.auRole, locs: locs, last: 'Never signed in',
-      accountType, accessExpiresOn: contractorExpiresOn };
-    this.logAudit('User invited', u.name, u.role + ' at ' + org + ', ' + locs
-      + (accountType === 'contractor' ? '. Contractor access expires ' + isoDateToUs(contractorExpiresOn) + ' and needs IT plus Executive approval.' : '')
-      + '. Access begins only after the secure invitation is accepted.');
-    const invite = /\.invalid$/i.test(email)
-      ? Promise.resolve({ demo: true })
-      : this.portalAdmin('invite-user', { email: email, fullName: u.name, org: org, role: dbRole, locations: locs,
-        accountType, accessExpiresOn: contractorExpiresOn });
-    this.set({ accessPending: email });
-    invite
-      .then(result => {
-        this.setState(st => ({ extraUsers: st.extraUsers.concat([u]), auOpen: false, auName: '', auEmail: '',
-          auAccountType: 'standard', auContractorExpiresOn: '', auLocs: [], auLocOpen: false, auErr: null, accessPending: null,
-          toast: result && result.demo
-            ? u.name + ' added to the isolated executive demo. No email was sent.'
-            : u.name + ' was invited as ' + u.role + ' for ' + locs + '.',
-          toastKind: result && result.demo ? 'DEMO USER ADDED' : 'INVITATION SENT' }));
-        if (!(result && result.demo)) this.loadUsers(true);
-        if ((result && result.demo) || s.auRole === 'Account management' || !intakeLocations.length) return;
-        this.post('onboarding', {
-          clientRequestId: this.newClientRequestId(),
-          summary: 'People change \u00b7 ' + u.name + ' as ' + u.role,
-          board: 'Store Onboarding', submissionType: 'Existing store, people change',
-          legalEntity: org, locations: intakeLocations,
-          owner: s.auRole === 'Store owner' ? { name: u.name, email: u.email } : { name: '', email: '' },
-          buyer: s.auRole === 'Buyer' ? { name: u.name, email: u.email } : { name: '', email: '' },
-          budtenders: s.auRole === 'Budtender' ? [{ name: u.name, email: u.email, location: u.locs }] : [],
-          budtenderCount: s.auRole === 'Budtender' ? 1 : 0,
-          submittedBy: s.authUser ? s.authUser.name : 'Unknown'
-        });
-      })
-      .catch(error => this.set({ accessPending: null,
-        toast: u.name + ' was not invited: ' + error.message, toastKind: 'NOT SAVED' }));
+    if (SYNTHETIC_DEMO_ROLE_CHOICES.includes(s.auRole)) {
+      // Synthetic demo retailer user: session-local only. Never invited, emailed or written to the live directory.
+      if (s.role !== 'internal' || !this.requirePermission('users.manage', 'add synthetic demo users')) return;
+      if (!isSyntheticDemoEmail(email)) {
+        this.set({ auErr: 'Synthetic demo users need a reserved .invalid address, for example billing@example.invalid. Live retailer invitations remain held; nothing was sent.' }); return;
+      }
+      if (USERS.concat(s.extraUsers, s.liveUsers || []).some(row => String(row.email || '').toLowerCase() === email)) {
+        this.set({ auErr: 'That address is already listed. Use Manage on the existing row.' }); return;
+      }
+      const roleKey = LEGACY_STORE_ROLE_BY_LABEL[s.auRole];
+      const pool = SYNTHETIC_STORE_LOCATIONS;
+      const rule = legacyStoreLocationRule(roleKey, s.auLocs.filter(id => pool.some(location => location.id === id)), pool.map(location => location.id));
+      if (!rule.ok) { this.set({ auErr: rule.error }); return; }
+      const locs = roleKey === 'owner' || roleKey === 'billing' ? 'All ' + pool.length + ' locations'
+        : pool.filter(location => rule.licenses.includes(location.id)).map(location => location.name).join(', ');
+      const u = { name: s.auName.trim(), email, org: DEMO_ORG, role: LEGACY_STORE_ROLE_LABELS[roleKey], sourceRole: roleKey, locs,
+        last: 'Never signed in', accountType: 'standard', accessExpiresOn: '', synthetic: true,
+        testDemo: true, testDemoReason: 'Synthetic demo user (this browser session only)' };
+      this.logAudit('Synthetic demo user added', u.name + ' \u00b7 ' + u.org, u.role + ' for ' + locs + '. Local demo only: no invitation, email or live directory write.');
+      this.setState(st => ({ extraUsers: st.extraUsers.concat([u]), auOpen: false, auName: '', auEmail: '', auRole: 'Administrator',
+        auAccountType: 'standard', auContractorExpiresOn: '', auLocs: [], auLocOpen: false, auErr: null,
+        toast: u.name + ' added as a synthetic demo ' + s.auRole + ' user for ' + locs + '. No invitation or email was sent and the live directory was not changed.',
+        toastKind: 'DEMO USER ADDED' }));
+      return;
+    }
+    // Live retailer invitations remain held. No path here invites a retailer user or sends mail.
+    this.set({ auErr: 'Live retailer invitations remain held. Add a synthetic demo user with a .invalid address, or grant an existing account under Store access.' });
   }
 
   onbDraftData() {
@@ -11971,11 +12164,15 @@ class Component extends DCLogic {
 
   impersonate(u) {
     if (!this.requirePermission('users.manage', 'view the portal as another user')) return;
+    // Explicit role only. Billing enters its read-only Financials workspace, never Owner or Buyer.
+    const role = legacyStoreRoleKey(u);
+    if (!role) { this.set({ toast: 'View as is available for Store Owner, Buyer, Billing and Budtender users only. No session was started.', toastKind: 'NOT AVAILABLE' }); return; }
     const demoAccount = isDemoOrganization(u.org);
-    this.setState({ impersonating: u, role: u.role === 'Buyer' ? 'buyer' : u.role === 'Budtender' ? 'budtender' : 'owner',
-      loc: demoAccount ? 'l-demo' : 'l1', screen: u.role === 'Budtender' ? 'kiosk' : 'dash',
+    this.setState({ impersonating: { ...u, sourceRole: role }, role,
+      loc: demoAccount ? 'l-demo' : 'l1', screen: role === 'budtender' ? 'kiosk' : role === 'billing' ? 'receivables' : 'dash',
+      financialData: null, financialLoaded: false, financialError: null,
       demoTourActive: false, demoTourStep: 0, demoTourCompleted: true,
-      toast: 'Viewing as ' + u.name + '. Read-only, cost withheld, and recorded in ' + u.org + '\u2019s audit history.', toastKind: 'VIEWING AS USER' });
+      toast: 'Viewing as ' + u.name + (role === 'billing' ? ' (Billing). Read-only financials only' : '') + '. Read-only, cost withheld, and recorded in ' + u.org + '\u2019s audit history.', toastKind: 'VIEWING AS USER' });
     this.logAudit('Administrator viewed a user\u2019s screen', u.name + ' · ' + u.org, 'Read-only session, cost withheld, visible to the organisation', 'Administrator');
   }
 
@@ -12714,9 +12911,6 @@ class Component extends DCLogic {
     const storeDemo = s.storeDemoData || {};
     const storeDemoRole = s.storeDemoRole || 'owner';
     const storeDemoTab = s.storeDemoTab || 'catalog';
-    const storeDemoButton = 'padding:9px 12px;border:1px solid var(--ux-faint);background:#fff;color:var(--ux-ink);font:600 12px Archivo,sans-serif;cursor:pointer';
-    const storeDemoPrimary = storeDemoButton + ';background:var(--ux-accent);border-color:var(--ux-accent);color:#fff';
-    const storeDemoInput = 'display:block;width:100%;padding:9px;margin:5px 0;border:1px solid var(--ux-faint);background:#fff;font:12px Archivo,sans-serif';
     // Brand and category options come from the served snapshot, never a hardcoded list.
     const storeDemoOptions = key => [...new Set((storeDemo.products || []).map(p => p[key]))].sort((a, b) => a.localeCompare(b)).map(value => ({ value, label: value }));
     const storeDemoBrandFilter = s.storeDemoBrand || 'all', storeDemoCategoryFilter = s.storeDemoCategory || 'all';
@@ -12726,7 +12920,13 @@ class Component extends DCLogic {
       && (!storeDemoSearch || [p.name, p.brand, p.category, p.id].some(v => String(v).toLowerCase().includes(storeDemoSearch)))).map(p => ({ ...p,
       noImage: !p.hasImage, price: MONEY(p.priceCents), quantity: (s.storeDemoQuantities || {})[p.id] ?? p.minimumOrderQuantity, quantityLabel: 'Quantity for ' + p.name,
       availability: 'Snapshot displayed: ' + Number(p.snapshotAvailableQuantity).toLocaleString('en-US') + ' · Demo remaining: ' + Number(p.available).toLocaleString('en-US'),
-      onQuantity: e => this.setState(st => ({ storeDemoQuantities: { ...(st.storeDemoQuantities || {}), [p.id]: e.target.value } })),
+      addError: (s.storeDemoAddErrors || {})[p.id] || '', hasAddError: !!(s.storeDemoAddErrors || {})[p.id],
+      addInvalid: (s.storeDemoAddErrors || {})[p.id] ? 'true' : 'false', addErrorId: 'store-demo-add-error-' + p.id,
+      // Editing the quantity retracts that product's refusal; the next Add rechecks it.
+      onQuantity: e => this.setState(st => {
+        const { [p.id]: cleared, ...storeDemoAddErrors } = st.storeDemoAddErrors || {};
+        return { storeDemoAddErrors, storeDemoQuantities: { ...(st.storeDemoQuantities || {}), [p.id]: e.target.value } };
+      }),
       onAdd: () => this.storeDemoAdd(p) }));
     const storeDemoCart = (s.storeDemoCart || []).map(l => {
       const p = (storeDemo.products || []).find(p => p.id === l.productId) || {};
@@ -12742,6 +12942,7 @@ class Component extends DCLogic {
       const draft = (s.storeDemoSectionDrafts || {})[section.id] || {};
       return { ...section, readOnly: !editable, canEdit: editable, canReview: storeDemoRole === 'internal' && section.status === 'submitted',
         status: String(section.status).replace(/_/g, ' ').toUpperCase(), reviewNote: (s.storeDemoReviewNotes || {})[section.id] || '',
+        hasNote: !!section.note, statusStyle: 'background:' + ({ approved: 'var(--ux-accent)', returned: 'var(--ux-signal)', submitted: 'var(--ux-ink)' }[section.status] || 'var(--ux-muted-strong)'),
         fields: section.fields.map(key => ({ label: demoFieldLabels[key] || key,
           value: draft[key] !== undefined ? draft[key] : key === 'expiration' ? isoDateToUs(section.values[key]) : section.values[key] || '',
           onInput: e => this.setState(st => ({ storeDemoSectionDrafts: { ...(st.storeDemoSectionDrafts || {}), [section.id]: { ...((st.storeDemoSectionDrafts || {})[section.id] || {}), [key]: e.target.value } } })) })),
@@ -12754,12 +12955,46 @@ class Component extends DCLogic {
       const decisions = storeDemoRole === 'owner' && o.status === 'awaiting_owner' ? [['ordered','Approve Buyer Order'],['declined','Decline']]
         : storeDemoRole === 'internal' ? ({ ordered: [['approved','Approve Order']], approved: [['shipped','Mark Shipped']], shipped: [['delivered','Mark Delivered']] }[o.status] || []) : [];
       return { ...o, location: ((storeDemo.stores || []).find(t => t.id === o.storeId) || {}).name || '',
+        statusStyle: 'background:' + ({ awaiting_owner: 'var(--ux-signal)', declined: 'var(--ux-muted-strong)', delivered: 'var(--ux-accent)' }[o.status] || 'var(--ux-ink)'),
         status: ({ awaiting_owner: 'Awaiting Owner Approval', ordered: 'Ordered', approved: 'Approved', shipped: 'Shipped', delivered: 'Delivered', declined: 'Declined' })[o.status] || o.status,
         total: MONEY(o.totalCents), linesLabel: (o.lines || []).map(l => l.name + ' × ' + l.quantity + (l.preorder ? ' (Pre-Order)' : '')).join(' · '),
         reviewLabel: (o.reviewedBy ? 'Reviewed by ' + o.reviewedBy + ' · ' : '') + formatDateUs(o.updatedAt || o.createdAt),
         actions: decisions.map(([decision,label]) => ({ label, onClick: () => this.storeDemoCall('transition-order', { orderId: o.id, decision }) })) };
     });
     const storeDemoFinance = storeDemo.finance || {};
+    // Role and location context. Owner, Billing and Internal reach every account location; Buyer and Budtender one.
+    const storeDemoRoleInfo = ({
+      owner: { label: 'Store Owner', scope: 'Orders, Buyer approvals, onboarding, license renewal and own-account financials.' },
+      buyer: { label: 'Store Buyer', scope: 'Ordering information for the assigned location only. No financials or onboarding.' },
+      billing: { label: 'Billing', scope: 'Read-only own-account terms, invoices, balances and hold status. No catalog, orders, onboarding, license documents or audit.' },
+      budtender: { label: 'Budtender', scope: 'Product education for one location. No prices, availability or ordering.' },
+      internal: { label: 'Internal Review', scope: 'Administrator controls for terms, manual holds, license verification, onboarding review and order processing.' }
+    })[storeDemoRole] || { label: 'Unknown view', scope: '' };
+    const storeDemoAccountWide = ['owner', 'billing', 'internal'].includes(storeDemoRole);
+    const storeDemoCurrentStore = (storeDemo.stores || []).find(store => store.id === s.storeDemoStore) || (storeDemo.stores || [])[0] || {};
+    // Every pause names whether it is an automatic compliance pause or the explicit manual financial hold.
+    const storeDemoTabIds = storeDemoRole === 'buyer' ? ['catalog', 'orders'] : storeDemoRole === 'internal' ? ['catalog', 'orders', 'company', 'finance', 'activity'] : ['catalog', 'orders', 'company', 'finance'];
+    const storeDemoPauseKinds = {
+      compliance_pause: { label: 'COMPLIANCE PAUSE · AUTOMATIC', color: 'var(--ux-ink)' },
+      manual_financial_hold: { label: 'MANUAL FINANCIAL HOLD', color: 'var(--ux-signal)' },
+      account_hold: { label: 'ACCOUNT HOLD', color: 'var(--ux-signal)' }
+    };
+    const storeDemoPauses = (((storeDemo.ordering || {}).pauses) || []).map(pause => {
+      const kind = storeDemoPauseKinds[pause.kind] || { label: 'PAUSED', color: 'var(--ux-signal)' };
+      const target = pause.section && storeDemoTabIds.includes(pause.section) ? pause.section : null;
+      return { ...pause, kindLabel: kind.label, tagStyle: 'background:' + kind.color, style: 'border-left-color:' + kind.color,
+        hasAction: !!target && target !== storeDemoTab,
+        actionLabel: target === 'company' ? 'Open Company & Onboarding' : 'Open Account & License',
+        onAction: () => target && this.set({ storeDemoTab: target }) };
+    });
+    const storeDemoWarningLabels = { invoice_overdue: 'Invoice overdue', balance_outstanding: 'Balance outstanding',
+      accounting_stale: 'Accounting data stale (last sync over 24 hours ago)', accounting_unknown: 'Accounting sync time unknown — balances withheld, not zero' };
+    const storeDemoWarnings = (storeDemoFinance.warnings || []).map(code => ({ label: storeDemoWarningLabels[code] || String(code).replace(/_/g, ' ') }));
+    const storeDemoCartCents = (s.storeDemoCart || []).reduce((total,l) => total + Number(l.quantity || 0) * Number(((storeDemo.products || []).find(p => p.id === l.productId) || {}).priceCents || 0), 0);
+    const storeDemoBalanceUnknown = (storeDemoFinance.accounting || {}).state === 'unknown';
+    const storeDemoMoney = cents => (Number(cents || 0) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    // The synthetic projection exposes at most one invoice, rendered from flat fields rather than a loop inside the table body.
+    const storeDemoInvoice = storeDemoBalanceUnknown ? null : (storeDemo.invoices || [])[0] || null;
     const dataControlData = s.dataControlData || {};
     const dataControlSummaryData = dataControlData.summary || {};
     const dataControlTab = ['owners', 'package_lots', 'sku_master', 'items', 'lots', 'cost_objects', 'catalog', 'history'].includes(s.dataControlTab)
@@ -13552,9 +13787,11 @@ class Component extends DCLogic {
       accessExpiresOn: row.accessExpiresOn || '', accessExpired: !!row.accessExpired,
       testDemo: !!row.testDemo, testDemoReason: row.testDemoReason || '', sourceRole: row.role
     }));
+    // Synthetic demo users (local to this session) list beside the live directory for Internal Administrators.
+    const syntheticUsers = s.extraUsers.filter(u => u.synthetic === true && isSyntheticDemoEmail(u.email));
     const userSource = actingOrg === DEMO_ORG
       ? USERS.concat(s.extraUsers).filter(u => isDemoOrganization(u.org))
-      : connectedUsers;
+      : connectedUsers.concat(isInternal && canStaff('users.manage') ? syntheticUsers : []);
     const users = userSource.filter(u => actingOrg === null || u.org === actingOrg).map(u => {
       const ownOrg = actingOrg === null || u.org === actingOrg;
       const override = s.userOverrides[u.email] || {};
@@ -13565,20 +13802,21 @@ class Component extends DCLogic {
         ? ' \u00b7 expires ' + isoDateToUs(effective.accessExpiresOn)
         : '';
       const expiredLabel = effective.accessExpired ? ' \u00b7 expired' : '';
-      const retailerIdentity = ['owner', 'buyer', 'budtender'].includes(effective.sourceRole)
-        || ['Store owner', 'Buyer', 'Budtender'].includes(effective.role);
-      const testLabel = effective.testDemo ? ' \u00b7 test/demo' : '';
+      const retailerRole = legacyStoreRoleKey(effective);
+      const retailerIdentity = retailerRole !== null;
+      // Only session-local synthetic users are manageable here; live retailer changes stay on the held server path.
+      const syntheticManageable = isInternal && canStaff('users.manage') && !s.impersonating && retailerIdentity
+        && effective.synthetic === true && isSyntheticDemoEmail(effective.email);
+      const testLabel = effective.synthetic ? ' \u00b7 synthetic demo' : effective.testDemo ? ' \u00b7 test/demo' : '';
       const actionOpen = s.userActionEmail === effective.email;
-      const actionStores = (s.retailerAccounts || []).filter(account =>
-        String(account.organizationName || account.company || account.name || '') === String(effective.org || ''))
-        .flatMap(account => Array.isArray(account.stores) ? account.stores : [])
+      const actionStores = effective.synthetic ? SYNTHETIC_STORE_LOCATIONS : this.userActionStores(effective)
         .filter(store => store.active !== false && store.licenseStatus === 'active');
       return {
         ...effective,
         canImpersonate: canStaff('users.manage') && !s.impersonating && retailerIdentity && !isDeactivated,
-        canChangeRole: false,
-        canDeactivate: false,
-        canReactivate: false,
+        canChangeRole: syntheticManageable && !isDeactivated,
+        canDeactivate: syntheticManageable && !isDeactivated,
+        canReactivate: syntheticManageable && isDeactivated,
         canRemoveTest: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !!effective.testDemo,
         role: isDeactivated ? effective.role + testLabel + accountTypeLabel + expiryLabel + expiredLabel + ' \u00b7 deactivated' : effective.role + testLabel + accountTypeLabel + expiryLabel + expiredLabel,
         roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (effective.testDemo ? 'var(--ux-signal)' : effective.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (effective.testDemo || effective.role !== 'Kiosk device' ? 'var(--ux-ground)' : 'var(--ux-muted-strong)'),
@@ -13587,7 +13825,12 @@ class Component extends DCLogic {
         onRoleChange: () => this.changeUserRole(effective),
         onManage: () => actionOpen ? this.set({ userActionEmail: null, userActionLocations: [], userActionError: null }) : this.openUserActions(effective),
         manageLabel: actionOpen ? 'Close actions' : 'Manage', actionOpen,
-        actionRole: s.userActionRole, actionOwner: s.userActionRole === 'owner', actionScoped: s.userActionRole !== 'owner',
+        actionRole: s.userActionRole, actionOwner: ['owner', 'billing'].includes(s.userActionRole), actionScoped: !['owner', 'billing'].includes(s.userActionRole),
+        actionScopeNote: s.userActionRole === 'billing'
+          ? 'Billing receives every active location in this retailer organization, read-only and financials only: no catalog, ordering, onboarding, license documents or audit.'
+          : 'Store Owners automatically receive every active store in their retailer organization.',
+        actionLocalNote: effective.synthetic ? 'Synthetic demo user: saving changes this browser session only. No live permission, invitation or email.' : '',
+        actionHasLocalNote: !!effective.synthetic,
         actionNoStores: actionStores.length === 0,
         actionStores: actionStores.map(store => {
           const on = (s.userActionLocations || []).includes(store.license);
@@ -13597,7 +13840,8 @@ class Component extends DCLogic {
             onPick: () => this.toggleUserActionLocation(store.license) };
         }),
         onActionRole: event => this.set({ userActionRole: event.target.value,
-          userActionLocations: event.target.value === 'budtender' ? (s.userActionLocations || []).slice(0, 1) : s.userActionLocations,
+          userActionLocations: event.target.value === 'budtender' ? (s.userActionLocations || []).slice(0, 1)
+            : ['owner', 'billing'].includes(event.target.value) ? actionStores.map(store => store.license) : s.userActionLocations,
           userActionError: null }),
         actionHasError: actionOpen && !!s.userActionError, actionError: actionOpen ? (s.userActionError || '') : '',
         actionPending: s.accessPending === effective.email ? 'true' : 'false',
@@ -17152,28 +17396,53 @@ class Component extends DCLogic {
 
       isDash: s.screen === 'dash' && !isBrandWorkspace, isCatalog: s.screen === 'catalog' && !isBrandWorkspace, isProduct: s.screen === 'product' && !isBrandWorkspace,
       isStoreDemo: s.screen === 'store-demo' && isInternal && s.authUser && s.authUser.staffRole === 'administrator' && canStaff('store.demo'),
-      storeDemoButton, storeDemoPrimary, storeDemoInput, storeDemoRole, storeDemoStore: s.storeDemoStore || '', storeDemoStores: storeDemo.stores || [],
+      storeDemoRole, storeDemoStore: s.storeDemoStore || '', storeDemoStores: storeDemo.stores || [],
       storeDemoBusy: !!s.storeDemoBusy, storeDemoMessage: s.storeDemoMessage || '',
       storeDemoCommercial: !['budtender','billing'].includes(storeDemoRole), storeDemoCanOrder: ['owner','buyer'].includes(storeDemoRole), storeDemoInternal: storeDemoRole === 'internal',
+      // Context: who is viewing, which locations that role reaches, and which synthetic account.
+      storeDemoRoleLabel: storeDemoRoleInfo.label, storeDemoRoleScope: storeDemoRoleInfo.scope,
+      storeDemoAccountLabel: 'Account: urbanXtracts Store — Synthetic · ' + (storeDemoAccountWide ? 'every location (' + (storeDemo.stores || []).length + ')'
+        : (storeDemo.stores || []).length + ' assigned location' + ((storeDemo.stores || []).length === 1 ? '' : 's')),
+      storeDemoLocationScope: storeDemoAccountWide ? 'All account locations' : (storeDemoCurrentStore.name || 'Assigned location'),
+      storeDemoShowLocationSelect: storeDemoRole !== 'billing', storeDemoLocationFixed: storeDemoRole === 'billing',
+      storeDemoLocationLabel: ['buyer','budtender'].includes(storeDemoRole) ? 'Location (assigned)' : 'Location',
+      storeDemoLocationFixedText: 'Account-wide · ' + ((storeDemo.stores || []).map(store => store.name).join(', ') || 'Loading'),
       // Status panel: Billing is read-only account financials and Budtender is education only; neither shows an ordering gate.
       storeDemoStatusLabel: storeDemoRole === 'billing' ? 'Account financials · Read only' : storeDemoRole === 'budtender' ? 'Product education only · No ordering'
         : !s.storeDemoData ? 'Ordering status loading' : storeDemo.orderingReady ? 'Demo ordering ready' : 'Ordering paused',
       storeDemoStatusColor: storeDemoRole === 'billing' || storeDemoRole === 'budtender' || !s.storeDemoData ? 'var(--ux-muted-strong)' : storeDemo.orderingReady ? 'var(--ux-accent)' : 'var(--ux-signal)',
-      storeDemoStatusItems: (storeDemoRole === 'billing' ? ['Own-account terms, invoices, balances and manual-hold status across every location on this account. No ordering, onboarding or license document controls.']
-        : storeDemoRole === 'budtender' ? ['Product education fields only. Prices, availability and ordering are not shown.']
-        : ((storeDemo.ordering || {}).blocks || [])).map(text => ({ text })),
+      storeDemoStatusNote: storeDemoRole === 'billing' ? 'Owner-equivalent location scope, financials only. Nothing here can change.'
+        : storeDemoRole === 'budtender' ? 'One assigned location. Education fields only.'
+        : !s.storeDemoData ? '' : storeDemo.orderingReady ? 'Orders can be submitted for ' + (storeDemoCurrentStore.name || 'this location') + '.'
+        : 'Your draft is preserved. Each pause below names its reason and a next step; nothing is sent.',
+      storeDemoStatusItems: (storeDemoRole === 'billing' ? ['Own-account terms, invoices, balances and manual-hold status across every location on this account. No ordering, onboarding or license document controls.',
+          (storeDemoFinance.hold || {}).active ? 'Manual financial hold: Active — Finance has paused ordering for this account.' : 'Manual financial hold: None.']
+        : storeDemoRole === 'budtender' ? ['Product education fields only. Prices, availability and ordering are not shown.'] : []).map(text => ({ text })),
+      storeDemoHasStatusItems: ['billing','budtender'].includes(storeDemoRole),
+      storeDemoPauses, storeDemoHasPauses: storeDemoPauses.length > 0,
+      storeDemoWarnings, storeDemoHasWarnings: storeDemoWarnings.length > 0,
       storeDemoTabs: [['catalog','Catalog & Cart'],['orders','Orders'],['company','Company & Onboarding'],['finance','Account & License'],['activity','Activity & Reset']]
         .filter(([id]) => storeDemoRole === 'budtender' ? id === 'catalog' : storeDemoRole === 'billing' ? id === 'finance' : storeDemoRole === 'buyer' ? !['company','finance','activity'].includes(id) : id !== 'activity' || storeDemoRole === 'internal')
-        .map(([id,label]) => ({ label: storeDemoRole === 'budtender' && id === 'catalog' ? 'Product Education' : storeDemoRole === 'billing' && id === 'finance' ? 'Account Financials' : label, selected: String(id === storeDemoTab), style: id === storeDemoTab ? storeDemoPrimary : storeDemoButton, onPick: () => this.set({ storeDemoTab: id }) })),
+        .map(([id,label]) => ({ label: storeDemoRole === 'budtender' && id === 'catalog' ? 'Product Education' : storeDemoRole === 'billing' && id === 'finance' ? 'Account Financials' : label, selected: String(id === storeDemoTab), onPick: () => this.set({ storeDemoTab: id }) })),
       storeDemoCompany: storeDemoTab === 'company' && ['owner','internal'].includes(storeDemoRole),
       storeDemoCatalog: storeDemoTab === 'catalog' && storeDemoRole !== 'billing', storeDemoOrders: storeDemoTab === 'orders' && !['budtender','billing'].includes(storeDemoRole),
       storeDemoFinance: storeDemoTab === 'finance' && ['owner','billing','internal'].includes(storeDemoRole), storeDemoActivity: storeDemoTab === 'activity' && storeDemoRole === 'internal',
       storeDemoProducts, storeDemoCart, storeDemoSections, storeDemoOrderRows, storeDemoOrderCount: storeDemoOrderRows.length + ' Demo Orders at This Location',
-      storeDemoCartTotal: 'Total: ' + MONEY((s.storeDemoCart || []).reduce((total,l) => total + Number(l.quantity || 0) * Number(((storeDemo.products || []).find(p => p.id === l.productId) || {}).priceCents || 0), 0)),
+      storeDemoCartTotal: 'Total: ' + MONEY(storeDemoCartCents),
+      storeDemoDraftEmpty: storeDemoCart.length === 0, storeDemoDraftLocation: 'For ' + (storeDemoCurrentStore.name || 'this location'),
+      storeDemoDraftSummary: 'Draft for ' + (storeDemoCurrentStore.name || 'this location') + ': ' + storeDemoCart.length + (storeDemoCart.length === 1 ? ' line' : ' lines') + ' · ' + MONEY(storeDemoCartCents),
+      onStoreDemoGoDraft: () => { const draft = document.getElementById('store-demo-draft'); if (draft) draft.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+      // Ordering paused: Submit is still offered (the server refuses it) and Save Draft keeps the lines.
+      storeDemoSubmitPaused: !!s.storeDemoData && storeDemo.orderingReady === false,
+      storeDemoSubmitPausedNote: 'Ordering is paused, so Submit Order will be refused. Save Draft keeps these lines for this location; see the status above for the next step.',
+      storeDemoCatalogTitle: storeDemoRole === 'budtender' ? 'Product Education' : 'Catalog',
       storeDemoBrand: storeDemoBrandFilter, onStoreDemoBrand: e => this.set({ storeDemoBrand: e.target.value }),
       storeDemoCategory: storeDemoCategoryFilter, onStoreDemoCategory: e => this.set({ storeDemoCategory: e.target.value }),
       storeDemoBrandOptions: storeDemoOptions('brand'), storeDemoCategoryOptions: storeDemoOptions('category'),
       storeDemoSearch: s.storeDemoSearch || '', onStoreDemoSearch: e => this.set({ storeDemoSearch: e.target.value }),
+      storeDemoFiltered: storeDemoBrandFilter !== 'all' || storeDemoCategoryFilter !== 'all' || !!storeDemoSearch,
+      onStoreDemoClearFilters: () => this.set({ storeDemoBrand: 'all', storeDemoCategory: 'all', storeDemoSearch: '' }),
+      storeDemoNoResults: !!s.storeDemoData && storeDemoProducts.length === 0, storeDemoListingTotal: (storeDemo.products || []).length,
       storeDemoResultCount: 'Showing ' + storeDemoProducts.length + ' of ' + (storeDemo.products || []).length + ' listings',
       storeDemoCatalogNotice: (storeDemo.catalog || {}).notice || '',
       onStoreDemoRefresh: () => this.storeDemoCall('read'), onStoreDemoRole: e => this.storeDemoChangeRole(e.target.value), onStoreDemoStore: e => this.storeDemoChangeStore(e.target.value),
@@ -17186,16 +17455,30 @@ class Component extends DCLogic {
       onStoreDemoPlaceHold: () => this.storeDemoControl('place-hold'), onStoreDemoReleaseHold: () => this.storeDemoControl('release-hold'),
       storeDemoAccountingScenarios: [['current','Current'],['overdue','Overdue Invoice'],['stale','Stale (24h)'],['unknown','Unknown Sync']]
         .map(([scenario,label]) => ({ label, onClick: () => this.storeDemoCall('simulate-accounting', { scenario }) })),
-      // Terms, hold state and accounting warnings. Warnings never block; only an explicit manual hold does.
-      storeDemoFinanceSummary: 'Payment terms: ' + (storeDemoFinance.terms || 'Unavailable')
-        + (storeDemoFinance.termsSource === 'account_override' ? ' (account override, applies to every location)' : ' (global default)')
-        + ' · Manual financial hold: ' + ((storeDemoFinance.hold || {}).active ? 'ACTIVE — ordering blocked' : 'None')
-        + (storeDemoRole === 'internal' && (storeDemoFinance.hold || {}).active && storeDemoFinance.hold.reason ? ' — ' + storeDemoFinance.hold.reason : ''),
+      storeDemoFinanceTitle: storeDemoRole === 'billing' ? 'Account Financials' : 'Account Terms, Holds & License',
+      storeDemoFinanceScope: storeDemoRole === 'billing' ? 'Read only · every location on this account' : 'Account-level · applies to every location',
+      // Terms, hold state and accounting. Warnings never block; only an explicit manual hold does.
+      storeDemoStats: [
+        { label: 'Payment terms', value: storeDemoFinance.terms || 'Unavailable',
+          note: storeDemoFinance.termsSource === 'account_override' ? 'Account override, applies to every location' : 'Global default' },
+        { label: 'Manual financial hold', value: (storeDemoFinance.hold || {}).active ? 'Active' : 'None',
+          note: ((storeDemoFinance.hold || {}).active ? 'Ordering blocked until Finance releases it' : 'Ordering is not on manual hold')
+            + (storeDemoRole === 'internal' && (storeDemoFinance.hold || {}).active && storeDemoFinance.hold.reason ? ' — ' + storeDemoFinance.hold.reason : '') },
+        { label: 'Synthetic QuickBooks sync', value: String((storeDemoFinance.accounting || {}).state || 'unknown').toUpperCase(),
+          note: (storeDemoFinance.accounting || {}).lastSuccessfulSyncAt ? 'Last success ' + formatDateTimeUs(storeDemoFinance.accounting.lastSuccessfulSyncAt) : 'No successful sync recorded' },
+        { label: 'Open balance', value: storeDemoBalanceUnknown ? 'Withheld' : storeDemoMoney((storeDemo.invoices || []).reduce((total, i) => total + Number(i.balanceCents || 0), 0)),
+          note: storeDemoBalanceUnknown ? 'Not shown as zero while the sync time is unknown' : 'Synthetic invoices · warning only, never a block' }
+      ],
       storeDemoAccountingNotice: (() => { const a = storeDemoFinance.accounting || {}, w = storeDemoFinance.warnings || [];
         return 'Synthetic QuickBooks last successful sync: ' + (a.lastSuccessfulSyncAt ? formatDateTimeUs(a.lastSuccessfulSyncAt) : 'unknown')
           + ' · ' + String(a.state || 'unknown').toUpperCase() + (a.state === 'stale' ? ' (older than 24 hours)' : '')
           + (w.length ? ' · Warnings: ' + w.map(x => x.replace(/_/g, ' ')).join(', ') : '') + '. Warnings only — they never block ordering.'; })(),
-      storeDemoInvoice: (storeDemo.invoices || []).map(i => i.id + ' · ' + i.status + ' · Balance ' + MONEY(i.balanceCents)).join(' · ') + ' ' + (storeDemo.financialNotice || ''),
+      storeDemoHasInvoices: !!storeDemoInvoice,
+      storeDemoInvoiceNumber: storeDemoInvoice ? String(storeDemoInvoice.id || '') : '',
+      storeDemoInvoiceStatus: storeDemoInvoice ? String(storeDemoInvoice.status || '') : '',
+      storeDemoInvoiceAmount: storeDemoInvoice ? storeDemoMoney(storeDemoInvoice.amountCents) : '',
+      storeDemoInvoiceBalance: storeDemoInvoice ? storeDemoMoney(storeDemoInvoice.balanceCents) : '',
+      storeDemoFinancialNotice: storeDemo.financialNotice || '',
       storeDemoLicenseSummary: (() => { const l = storeDemo.license || {};
         return (l.verifiedExpiresOn ? 'Verified license valid through ' + formatDateUs(l.verifiedExpiresOn) : 'No verified license on record')
           + ((l.pendingRenewal || l.renewalAwaitingVerification) ? ' · Renewed license recorded and awaiting verification — ordering stays paused until Compliance, Finance or an Internal Administrator verifies it.' : '')
@@ -18573,7 +18856,18 @@ class Component extends DCLogic {
         const open = invoiceFiltered.filter(i => i.state !== 'paid');
         const source = data.source || {};
         const mappingMissing = Array.isArray(data.mappingIncomplete) ? data.mappingIncomplete : [];
-        const notice = loc.demo
+        const billingPreview = !!s.impersonating && role === 'billing';
+        // Any other retailer View as session also stays off live QuickBooks; the isolated demo snapshot remains synthetic.
+        const viewAsPreview = !!s.impersonating && !billingPreview && !loc.demo;
+        const notice = billingPreview
+          ? { label: 'VIEW AS BILLING \u00b7 READ ONLY',
+              text: 'This preview shows the Billing workspace and its scope: own-account terms, invoices, balances and payment history across every location, with no catalog, ordering, onboarding, license documents or audit. Live QuickBooks history is not loaded under your Administrator session, so no other account can appear here. Use Store Demo \u2192 Billing for synthetic figures.',
+              color: 'var(--ux-accent-text)' }
+          : viewAsPreview
+          ? { label: 'VIEW AS \u00b7 READ ONLY',
+              text: 'Live QuickBooks history is not loaded under your Administrator session, so no other account can appear here. Use Store Demo for synthetic figures.',
+              color: 'var(--ux-accent-text)' }
+          : loc.demo
           ? { label: 'ISOLATED EXECUTIVE-DEMO SNAPSHOT',
               text: 'These invoices and payments are synthetic and reset with the demo. No QuickBooks record is read or changed.',
               color: 'var(--ux-accent-text)' }
@@ -18613,7 +18907,9 @@ class Component extends DCLogic {
           })),
           financialRefreshLabel: s.financialLoading ? 'Refreshing\u2026' : loc.demo ? 'Demo snapshot'
             : (isInternal && canStaff('accounts.manage') ? 'Sync QuickBooks' : 'Refresh view'),
-          onFinancialRefresh: () => loc.demo
+          onFinancialRefresh: () => billingPreview || viewAsPreview
+            ? this.set({ toast: (billingPreview ? 'View as Billing' : 'View as') + ' is read-only and does not load live QuickBooks data.', toastKind: 'BLOCKED \u2014 READ ONLY' })
+            : loc.demo
             ? this.set({ toast: 'The isolated demo financial snapshot is stable until an administrator resets the demo.',
                 toastKind: 'DEMO SNAPSHOT' })
             : this.loadFinancials(true),
@@ -18982,9 +19278,12 @@ class Component extends DCLogic {
       storeAccessProfiles:(s.liveUsers || []).filter(row=>row.active&&row.id).map(row=>({id:row.id,name:row.fullName+' · '+row.email})),
       onStoreAccessProfile:e=>this.changeStoreAccess({storeAccessProfileId:e.target.value}),
       storeAccessRole:s.storeAccessRole,onStoreAccessRole:e=>this.changeStoreAccess({storeAccessRole:e.target.value,
-        storeAccessLicenses:e.target.value==='store_owner'?[]:e.target.value==='store_staff'?s.storeAccessLicenses.slice(0,1):s.storeAccessLicenses}),
+        storeAccessLicenses:['store_owner','store_billing'].includes(e.target.value)?[]:e.target.value==='store_staff'?s.storeAccessLicenses.slice(0,1):s.storeAccessLicenses}),
       storeAccessStatus:s.storeAccessStatus,onStoreAccessStatus:e=>this.changeStoreAccess({storeAccessStatus:e.target.value}),
-      storeAccessOwner:s.storeAccessRole==='store_owner',storeAccessAssigned:s.storeAccessRole!=='store_owner',
+      storeAccessOwner:['store_owner','store_billing'].includes(s.storeAccessRole),storeAccessAssigned:!['store_owner','store_billing'].includes(s.storeAccessRole),
+      storeAccessScopeNote:s.storeAccessRole==='store_billing'
+        ?'Billing has read-only access to own-account financials across all active locations in this retailer organization. It cannot order, approve, manage users or open license documents.'
+        :'Owners have access to all active locations in this retailer organization.',
       storeAccessStores:((s.storeAccessData || {}).stores || []).filter(row=>row.active&&!row.closed_at).map(row=>({license:row.license_number,name:row.display_name,
         pressed:s.storeAccessLicenses.includes(row.license_number)?'true':'false',onPick:()=>this.changeStoreAccess({storeAccessLicenses:s.storeAccessLicenses.includes(row.license_number)
           ?s.storeAccessLicenses.filter(v=>v!==row.license_number):s.storeAccessRole==='store_staff'?[row.license_number]:s.storeAccessLicenses.concat(row.license_number)})})),
@@ -19064,21 +19363,26 @@ class Component extends DCLogic {
       onAuToggle: () => this.auToggle(),
       auName: s.auName, onAuName: e => this.set({ auName: e.target.value }),
       auEmail: s.auEmail, onAuEmail: e => this.set({ auEmail: e.target.value }),
-      auShowAccountType: isInternal && s.auRole !== 'Administrator',
-      auIsContractor: isInternal && s.auAccountType === 'contractor' && s.auRole !== 'Administrator',
+      auShowAccountType: isInternal && s.auRole !== 'Administrator' && !SYNTHETIC_DEMO_ROLE_CHOICES.includes(s.auRole),
+      auIsContractor: isInternal && s.auAccountType === 'contractor' && s.auRole !== 'Administrator' && !SYNTHETIC_DEMO_ROLE_CHOICES.includes(s.auRole),
+      auSynthetic: SYNTHETIC_DEMO_ROLE_CHOICES.includes(s.auRole),
+      auSyntheticNote: 'Synthetic demo user: use a reserved .invalid address. No invitation or email is sent and nothing is written to the live directory; the user exists only in this browser session. '
+        + (['Store owner', 'Billing'].includes(s.auRole) ? s.auRole + ' receives every synthetic location (' + SYNTHETIC_STORE_LOCATIONS.map(l => l.name).join(', ') + ')'
+          + (s.auRole === 'Billing' ? ', read-only and financials only.' : '.')
+          : s.auRole === 'Budtender' ? 'Budtender uses exactly one location.' : 'Buyer needs at least one location.'),
       auContractorExpiresOn: s.auContractorExpiresOn,
       onAuContractorExpiresOn: e => this.set({ auContractorExpiresOn: e.target.value, auErr: null }),
       auLocOpen: s.auLocOpen,
-      auStoreLocations: s.auRole !== 'Administrator', auWorkforceAdmin: isInternal && s.auRole === 'Administrator',
+      auStoreLocations: s.auRole !== 'Administrator' && !['Store owner', 'Billing'].includes(s.auRole), auWorkforceAdmin: isInternal && s.auRole === 'Administrator',
       auPending: !!s.accessPending,
       auSubmitLabel: s.accessPending ? 'Saving…' : s.auRole === 'Administrator' ? 'Add Administrator' : 'Add the user',
       onAuLocOpen: () => this.auLocOpenToggle(),
       auLocLabel: s.auLocs.length ? this.auLocText(s.auLocs) : 'Choose locations',
-      auLocCount: s.auLocs.length + ' of ' + visibleLocations.length,
+      auLocCount: s.auLocs.length + ' of ' + this.auLocationPool().length,
       auLocAllLabel: s.auRole === 'Budtender' ? 'Budtenders use one store'
-        : s.auLocs.length === visibleLocations.length ? 'Clear all locations' : 'Select all locations',
+        : s.auLocs.length === this.auLocationPool().length ? 'Clear all locations' : 'Select all locations',
       onAuLocAll: () => this.auLocAll(),
-      auLocOptions: visibleLocations.map(l => {
+      auLocOptions: this.auLocationPool().map(l => {
         const on = s.auLocs.indexOf(l.id) !== -1;
         return { id: l.id, name: l.name, mark: on ? '\u2713' : '',
           aria: (on ? 'Remove ' : 'Add ') + l.name,
@@ -19096,10 +19400,14 @@ class Component extends DCLogic {
           + (s.auAccountType === type ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
         onPick: () => this.set({ auAccountType: type, auContractorExpiresOn: type === 'contractor' ? s.auContractorExpiresOn : '', auErr: null })
       })),
-      auRoles: (isInternal && !loc.demo ? ['Administrator'] : []).map(r => ({
-        label: r, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
+      auRoles: (isInternal && !loc.demo ? ['Administrator'].concat(canStaff('users.manage') && !s.impersonating ? SYNTHETIC_DEMO_ROLE_CHOICES : []) : []).map(r => ({
+        label: SYNTHETIC_DEMO_ROLE_CHOICES.includes(r) ? r + ' (synthetic demo)' : r,
+        pressed: s.auRole === r ? 'true' : 'false',
+        style: 'min-height:40px;padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.auRole === r ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
-        onPick: () => this.set({ auRole: r, auLocs: r === 'Administrator' ? [] : r === 'Budtender' && s.auLocs.length > 1 ? s.auLocs.slice(0, 1) : s.auLocs,
+        // Locations never carry over between the live and synthetic pools; Budtender keeps at most one.
+        onPick: () => this.set({ auRole: r, auLocs: r === 'Administrator' || SYNTHETIC_DEMO_ROLE_CHOICES.includes(r) !== SYNTHETIC_DEMO_ROLE_CHOICES.includes(s.auRole) ? []
+            : r === 'Budtender' ? s.auLocs.slice(0, 1) : s.auLocs,
           auAccountType: r === 'Administrator' ? 'standard' : s.auAccountType,
           auContractorExpiresOn: r === 'Administrator' ? '' : s.auContractorExpiresOn,
           auLocOpen: false, auErr: null }) })),

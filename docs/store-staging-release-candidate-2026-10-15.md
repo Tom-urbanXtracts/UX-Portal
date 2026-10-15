@@ -48,6 +48,16 @@ This document deliberately records no current PR head. Writing the head into a c
 - Commits after `d14683e` are not all documentation. They add the reviewed migration candidate list (`artifacts/store-demo-release-2026-10-15/production-candidate-migrations.json`) and its `verify:migration-baseline` check. They also remove the Store/Brand credit cap from the synthetic Store demo, the QuickBooks financial summary and the portal UI, and add one release contract and one Deno regression for that removal. Focused checks for these changes are not the full staging evidence above.
 - Before PR #2 approval, CI and `npm run verify` must pass at the exact head being approved. That head is then the one IT records in release acceptance. A later commit that changes executable code, migrations or `dist` voids the approval for that head.
 
+## Local/demo checkpoint — 15 October 2026
+
+Local code only after `13e90d1`; nothing was committed, pushed, deployed or applied, and no live service, permission or message changed. Staging is deferred for this checkpoint and is **not** a blocker for it.
+
+- **Store Demo workspace.** Header, demo context (role, location scope, account), role-aware status and section navigation form one workspace. Status distinguishes automatic compliance pauses (onboarding, license) from the explicit manual financial hold; overdue, nonzero-balance, stale and unknown QuickBooks data are warnings only. Every pause names its reason, states that the draft is preserved and gives a role-safe next step that sends nothing. Billing shows the read-only financial summary; catalog text, images, prices, availability, minimums and source disclosures are unchanged. Controls, navigation, cards, tables and actions reflow at 820px or narrower with 44px targets.
+- **Billing in legacy Users tooling.** Billing never falls back to Owner or Buyer. View as Billing opens the read-only Financials workspace and never loads live QuickBooks data under the Administrator token. Synthetic demo users (reserved `.invalid` address only, session-local, never invited or emailed) can be managed as Store Owner, Buyer, Billing or Budtender with the location rules (Owner and Billing every location, Buyer at least one, Budtender exactly one). Live retailer invitations and live user changes stay held. Scoped Internal Administrator membership administration (`portal_manage_store_membership`, candidate 6) admits `store_billing` with zero locations; Billing gains no mutation or document permission.
+- **Reminder recipients.** Closed as recorded in the notifications table above.
+- **Evidence.** `npm run verify`, `npm run verify:store-account-controls` (disposable PostgreSQL), `npm run verify:migration-baseline`, `npm run build` and `git diff --check` pass locally. Browser testing of this checkpoint has not been done; it is pending separately.
+- **Untested integration.** Live Supabase Storage and Auth integration is untested and stays untested until an eventual, separately approved deployment. Candidate 6 remains `drafted_for_review` with its existing-location license backfill decision open.
+
 ## Approval checklist
 
 This is the single list of open approvals and inputs. Each row links the detailed record; **the linked record is authoritative** and this list only summarizes it. No production deployment may begin until every row applicable to the release is closed and IT records release acceptance. Store access and Store ordering stay off until their own separate decisions. Synthetic demonstration evidence cannot close any row in section B.
@@ -131,6 +141,8 @@ None of these is needed for the Internal-only synthetic demo. All are required b
 | --- | --- | --- |
 | Delivery behavior | Approved transactional templates only. Scope is rechecked at send time, and recipients are suppressed rather than widened. Budtenders receive only approved education/support notices. | Proposed/default (shared-service contract) |
 | Store audiences, event/template matrix, priority and quota behavior | None documented. Store email stays held. | Unanswered |
+| License-renewal reminder recipients (T-30) | Account: the active Account Owner; with none, the designated main contact (current source: legacy `portal_retailer_account.account_owner_email`, a contact address only, never proof an Owner exists). With neither: one deduplicated, append-only internal exception for that license and expiration; no recipient is guessed. Internal Compliance: `tom@urbanxtracts.com`, confirmed and reaffirmed 10/15/2026 as the temporary address. Send-time authority re-checks and dedupe remain. | Decided 10/15/2026; implemented locally, not deployed |
+| License-renewal reminder delivery | Structurally disabled: a database constraint and code constant keep delivery off; only intents and exceptions are recorded, with no outbox, email or SMS write. | Decided; off until notification release approval |
 
 **Operations with IT** — pilot support and rollback — [SW-IN-10](deferred-items-decision-brief.md#store-activation--remaining-inputs-10142026)
 

@@ -1,5 +1,6 @@
 import { DemoError, DEMO_CATALOG, DEMO_PRODUCTS, DEMO_SECTIONS, DEMO_STORES, initialDemoState, mutateDemo, normalizeDemoState, projectDemo, demoRole, type DemoState, type DemoRole } from "../functions/_shared/store-demo.ts";
 import snapshot from "../../data/canix-marketplace-listings-2026-10-14.json" with { type: "json" };
+import invoiceProjection from "./fixtures/store_demo_invoice_projection.json" with { type: "json" };
 function assert(value: unknown, message = "Assertion failed"): asserts value { if (!value) throw new Error(message); }
 const now = "2026-10-14T21:00:00.000Z", actor = "Internal Administrator Test";
 const apply = (s: DemoState, role: DemoRole, body: Record<string, unknown>, at = now) => mutateDemo(s, role, body, actor, at);
@@ -130,6 +131,50 @@ Deno.test("Exact source minimum order quantity: below fails, minimum and non-mul
   assert(apply(ready(), "owner", order(8, undefined, undefined, BERRY_KUSH)).orders[0].totalCents === 8 * 4500);
   assert(apply(ready(), "owner", order(9, undefined, undefined, BERRY_KUSH)).orders.length === 1, "minimum is not a multiple");
   rejects(() => apply(ready(), "owner", order(1331, undefined, undefined, BERRY_KUSH)), 400);
+});
+Deno.test("Draft-line save independently rejects a below-minimum line and leaves the saved draft unchanged", () => {
+  const key = "owner:" + DEMO_STORES[0].id;
+  const saved = apply(ready(), "owner", { ...order(9, undefined, undefined, BERRY_KUSH), action: "save-draft" });
+  const before = JSON.stringify(saved);
+  // A forged direct request: below-minimum line, client price and an extra valid line.
+  for (const lines of [[{ productId: BERRY_KUSH, quantity: 7 }], [{ productId: BERRY_KUSH, quantity: 7, priceCents: 1 }, { productId: BERRY_LEMONADE, quantity: 1 }],
+    [{ productId: BERRY_LEMONADE, quantity: 2 }, { productId: BERRY_KUSH, quantity: 1 }]]) {
+    for (const role of ["owner", "buyer"] as DemoRole[]) {
+      try {
+        apply(saved, role, { action: "save-draft", requestId: "00000000-0000-4000-8000-000000000001", storeId: DEMO_STORES[0].id, lines });
+        throw new Error("Expected minimum denial");
+      } catch (e) {
+        assert(e instanceof DemoError && e.status === 400 && e.message === "Minimum order for " + product(BERRY_KUSH).name + " is 8 each.", String(e));
+      }
+    }
+  }
+  assert(JSON.stringify(saved) === before, "rejection mutates neither the saved draft nor any other state");
+  const savedLines = saved.drafts[key].lines as Record<string, number>[];
+  assert(savedLines.length === 1 && savedLines[0].quantity === 9);
+  // Exact minimum and a non-multiple above it save; the line carries the server price, not the client's.
+  for (const quantity of [8, 13]) {
+    const s = apply(saved, "owner", { action: "save-draft", requestId: "00000000-0000-4000-8000-000000000001", storeId: DEMO_STORES[0].id,
+      lines: [{ productId: BERRY_KUSH, quantity, priceCents: 1 }] });
+    const line = (s.drafts[key].lines as Record<string, number>[])[0];
+    assert(line.quantity === quantity && line.totalCents === quantity * 4500, String(quantity));
+  }
+});
+Deno.test("A stored below-minimum draft from before this guard stays visible and unaltered but is blocked at submission", () => {
+  const key = "owner:" + DEMO_STORES[0].id, requestId = "00000000-0000-4000-8000-000000000009";
+  const legacyLine = { productId: BERRY_KUSH, name: product(BERRY_KUSH).name, quantity: 7, priceCents: 4500, totalCents: 31500 };
+  const stored = JSON.parse(JSON.stringify({ ...ready(), drafts: { [key]: { requestId, storeId: DEMO_STORES[0].id, lines: [legacyLine], savedAt: now } } }));
+  const loaded = normalizeDemoState(stored);
+  assert(JSON.stringify(loaded.drafts) === JSON.stringify(stored.drafts), "loading never rewrites stored draft data");
+  const projected = projectDemo(loaded, "owner", 1) as Record<string, any>;
+  assert(projected.drafts[key].lines[0].quantity === 7, "the invalid draft remains visible to its Owner");
+  const before = JSON.stringify(loaded);
+  try {
+    apply(loaded, "owner", { action: "submit-order", requestId, storeId: DEMO_STORES[0].id, lines: [{ productId: BERRY_KUSH, quantity: 7 }] });
+    throw new Error("Expected submission denial");
+  } catch (e) {
+    assert(e instanceof DemoError && e.status === 400 && e.message === "Minimum order for " + product(BERRY_KUSH).name + " is 8 each.", String(e));
+  }
+  assert(JSON.stringify(loaded) === before && loaded.orders.length === 0, "a blocked submission preserves the stored draft and creates no order");
 });
 Deno.test("Submission idempotency prevents duplicates and rejects changed payload reuse", () => {
   const s = apply(ready(), "owner", order(1));
@@ -417,4 +462,67 @@ Deno.test("Billing view is read-only: every mutation is denied and state is unch
   ];
   for (const [state, body] of attempts) rejects(() => apply(state, "billing", body), 403);
   assert(JSON.stringify(withOrder) === copy);
+});
+type Pause = { code: string; kind: string; title: string; message: string; nextStep: string; section: string | null; draftPreserved: boolean };
+const pauses = (s: DemoState, role: DemoRole, at = now) => ((projectDemo(s, role, 1, at).ordering as { pauses: Pause[] }).pauses);
+Deno.test("Every pause names its kind, explains the reason, preserves the draft and gives a role-safe next step", () => {
+  // Fresh account: automatic compliance pauses only (onboarding and license), never a financial hold.
+  const fresh = initialDemoState();
+  for (const role of ["owner", "buyer", "internal"] as DemoRole[]) {
+    const list = pauses(fresh, role);
+    assert(JSON.stringify(list.map(p => p.code)) === JSON.stringify(["onboarding_incomplete", "license_unverified"]), role);
+    assert(list.every(p => p.kind === "compliance_pause" && p.draftPreserved && /draft is preserved/i.test(p.message) && p.nextStep.length > 20 && p.title), role);
+    assert(list.every(p => !/\b(sent|emailed|notified)\b/i.test(p.nextStep) || /nothing is sent|sends nothing/i.test(p.nextStep)), role);
+  }
+  // Owner and Internal see the manual hold as a distinct manual financial hold; overdue alone adds no pause.
+  const held = hold(accounting(ready(), "overdue"));
+  for (const role of ["owner", "internal"] as DemoRole[]) {
+    const list = pauses(held, role);
+    assert(list.length === 1 && list[0].code === "financial_hold" && list[0].kind === "manual_financial_hold" && list[0].section === "finance", role);
+  }
+  assert(pauses(accounting(ready(), "overdue"), "owner").length === 0 && pauses(accounting(ready(), "unknown"), "owner").length === 0, "warnings never pause");
+  // Buyer learns only that the account is on hold, and is pointed to the Account Owner.
+  const buyer = pauses(held, "buyer");
+  assert(buyer.length === 1 && buyer[0].code === "account_hold" && buyer[0].kind === "account_hold" && buyer[0].section === null && /Account Owner/.test(buyer[0].nextStep));
+  assert(!/financial|balance|overdue|terms/i.test(JSON.stringify(buyer)));
+  // Both kinds at once stay distinct, and a verified renewal never clears the hold.
+  const expired = { ...held, license: { ...held.license, verifiedExpiresOn: "2026-12-31" } } as DemoState;
+  assert(JSON.stringify(pauses(expired, "owner", orderAt).map(p => p.kind).sort()) === JSON.stringify(["compliance_pause", "manual_financial_hold"]));
+  // The blocked submit keeps the saved draft intact.
+  const drafted = apply(expired, "owner", { ...order(), action: "save-draft" }, orderAt);
+  rejects(() => apply(drafted, "owner", order(), orderAt), 409);
+  assert(Object.keys(drafted.drafts).length === 1 && drafted.orders.length === 0);
+});
+Deno.test("Pause details never reach Billing or Budtender, and Billing has no license document or audit fields", () => {
+  const s = hold(initialDemoState());
+  for (const role of ["billing", "budtender"] as DemoRole[]) {
+    const body = projectDemo(s, role, 1);
+    assert(!("ordering" in body) && !JSON.stringify(body).includes("nextStep"), role);
+  }
+  const billing = JSON.stringify(projectDemo(s, "billing", 1));
+  for (const leak of ["documentId", "pendingRenewal", "controlEvents", "events", "sections", "evidence"]) assert(!billing.includes(leak), leak);
+});
+Deno.test("Availability is checked against the snapshot and prior demo orders at submission", () => {
+  const p = product(WANA_MANGO);
+  rejects(() => apply(ready(), "owner", order(p.availableQuantity + 1, undefined, undefined, WANA_MANGO)), 400);
+  const first = apply(ready(), "owner", order(p.availableQuantity - 1, undefined, undefined, WANA_MANGO));
+  const remaining = (projectDemo(first, "owner", 1).products as Record<string, any>[]).find(x => x.id === WANA_MANGO)!;
+  assert(remaining.available === 1 && remaining.snapshotAvailableQuantity === p.availableQuantity);
+  rejects(() => apply(first, "owner", order(2, "00000000-0000-4000-8000-000000000009", undefined, WANA_MANGO)), 409);
+});
+Deno.test("Invoice projection fixture used by the Store Demo UI test matches the real projection, at most one invoice", () => {
+  // Only the invoice-relevant subset: accounting state and invoices. Buyer and Budtender receive neither.
+  const pick = (body: Record<string, unknown>) => ({
+    ...("finance" in body ? { finance: { accounting: { state: (body.finance as Record<string, any>).accounting.state } } } : {}),
+    ...("invoices" in body ? { invoices: body.invoices } : {}),
+  });
+  for (const role of ["owner", "billing", "internal", "buyer", "budtender"] as DemoRole[]) {
+    for (const scenario of ["current", "overdue", "unknown"]) {
+      const body = projectDemo(accounting(ready(), scenario), role, 1, now);
+      const expected = (invoiceProjection as unknown as Record<string, Record<string, unknown>>)[role][scenario];
+      assert(JSON.stringify(pick(body)) === JSON.stringify(expected), role + " " + scenario + ": " + JSON.stringify(pick(body)));
+      // The UI renders a single invoice row; more than one would need a different template.
+      assert(((body.invoices as unknown[] | undefined) || []).length <= 1, role + " " + scenario);
+    }
+  }
 });

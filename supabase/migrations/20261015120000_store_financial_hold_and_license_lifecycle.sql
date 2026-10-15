@@ -10,10 +10,16 @@
 -- * Every portal_order insert pauses on missing, unverified, expired, inactive or
 --   closed license scope (UXL01), independently of a financial hold (UXH01).
 -- * Authorized billing user (store_billing): own-account invoices, balances,
---   payment history and terms only. Store access itself remains disabled.
+--   payment history and terms only. Store access itself remains disabled. Scoped
+--   Internal Administrator membership administration may grant it, account-wide
+--   with no location assignment, exactly like the Owner's location scope.
 -- * T-30 renewal reminders are planned as deduplicated intents only, each with an
---   authorized destination identity re-checked at send time. Delivery is disabled
---   by constraint until notification release approval.
+--   authorized destination identity re-checked at send time. The account
+--   recipient is the active Account Owner, else the designated main contact;
+--   with neither, one deduplicated internal exception is recorded and no
+--   recipient is guessed. The Internal Compliance recipient was confirmed and
+--   reaffirmed on 2026-10-15. Delivery is disabled by constraint until
+--   notification release approval.
 -- * License-document access is tenant-scoped and every allowed read is audited.
 -- Existing account terms are NOT migrated (decision pending). Nothing is sent.
 
@@ -143,8 +149,8 @@ create index if not exists portal_store_control_event_request_idx on public.port
 create table if not exists public.portal_license_reminder_config (
   id boolean primary key default true check (id),
   compliance_email text not null check (compliance_email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'),
-  compliance_email_review text not null default 'prelaunch_replace_or_reaffirm_required'
-    check (compliance_email_review in ('prelaunch_replace_or_reaffirm_required', 'reaffirmed', 'replaced')),
+  compliance_email_review text not null default 'reaffirmed' check (compliance_email_review in ('reaffirmed', 'replaced')),
+  review_note text not null check (length(btrim(review_note)) between 1 and 2000),
   lead_days integer not null default 30 check (lead_days = 30),
   -- Delivery stays off until notification release approval changes this constraint.
   delivery_enabled boolean not null default false check (delivery_enabled = false),
@@ -152,8 +158,13 @@ create table if not exists public.portal_license_reminder_config (
   reviewed_at timestamptz,
   updated_at timestamptz not null default now()
 );
--- Temporary recipient: prelaunch review must replace or explicitly reaffirm it.
-insert into public.portal_license_reminder_config(id, compliance_email) values (true, 'tom@urbanxtracts.com') on conflict (id) do nothing;
+-- Confirmed and reaffirmed by urbanXtracts on 2026-10-15 as the temporary
+-- Internal Compliance recipient. A later change uses the audited Administrator
+-- replacement below. Delivery remains disabled whatever the recipient.
+insert into public.portal_license_reminder_config(id, compliance_email, compliance_email_review, review_note, reviewed_at)
+values (true, 'tom@urbanxtracts.com', 'reaffirmed',
+  'Confirmed and reaffirmed 2026-10-15 as the temporary Internal Compliance reminder recipient; delivery remains disabled.',
+  '2026-10-15 00:00:00 America/New_York') on conflict (id) do nothing;
 
 -- Every intent names the identity its channel reaches: a portal profile for
 -- in-portal and Owner email (the Owner's email is resolved at send time), or a
@@ -177,6 +188,22 @@ create table if not exists public.portal_license_renewal_reminder (
     or (recipient_kind = 'internal_compliance' and channel = 'in_portal' and recipient_profile_id is not null and recipient_email is null))
 );
 
+-- A due license whose account has neither an active Account Owner nor a valid
+-- designated main contact. One row per license expiration; no account recipient
+-- is guessed, and the row carries the action Internal staff must take.
+create table if not exists public.portal_license_reminder_exception (
+  id bigint generated always as identity primary key,
+  dedupe_key text not null unique,
+  license_number text not null,
+  retailer_account_id uuid references public.portal_retailer_account(id),
+  license_expires_on date not null,
+  due_on date not null,
+  exception_kind text not null check (exception_kind = 'missing_account_recipient'),
+  required_action text not null check (length(btrim(required_action)) between 1 and 2000),
+  detected_at timestamptz not null default now()
+);
+create index if not exists portal_license_reminder_exception_account_idx on public.portal_license_reminder_exception(retailer_account_id, detected_at desc);
+
 create table if not exists public.portal_license_document_access_event (
   id bigint generated always as identity primary key,
   document_id uuid not null,
@@ -199,6 +226,12 @@ create trigger portal_store_control_event_append_only before update or delete on
   for each row execute function public.portal_reject_audit_change();
 drop trigger if exists portal_store_control_event_no_truncate on public.portal_store_control_event;
 create trigger portal_store_control_event_no_truncate before truncate on public.portal_store_control_event
+  for each statement execute function public.portal_reject_audit_change();
+drop trigger if exists portal_license_reminder_exception_append_only on public.portal_license_reminder_exception;
+create trigger portal_license_reminder_exception_append_only before update or delete on public.portal_license_reminder_exception
+  for each row execute function public.portal_reject_audit_change();
+drop trigger if exists portal_license_reminder_exception_no_truncate on public.portal_license_reminder_exception;
+create trigger portal_license_reminder_exception_no_truncate before truncate on public.portal_license_reminder_exception
   for each statement execute function public.portal_reject_audit_change();
 drop trigger if exists portal_license_document_access_append_only on public.portal_license_document_access_event;
 create trigger portal_license_document_access_append_only before update or delete on public.portal_license_document_access_event
@@ -487,8 +520,10 @@ drop trigger if exists portal_onboarding_request_requires_approval on public.por
 create trigger portal_onboarding_request_requires_approval before update of stage on public.portal_onboarding_request
   for each row execute function public.portal_require_onboarding_approval();
 
--- Main contact is the retailer account's recorded account_owner_email. It is a
--- reminder fallback only while the account has no active Account Owner.
+-- Designated main contact. Its current source is the legacy column
+-- portal_retailer_account.account_owner_email: a contact address only, never
+-- proof that an Account Owner exists. It is a reminder fallback only while the
+-- account has no active Account Owner.
 create or replace function public.portal_license_reminder_main_contact(p_account_id uuid)
 returns text language sql stable security definer set search_path = public, pg_temp as $$
   select lower(btrim(a.account_owner_email)) from portal_retailer_account a
@@ -554,6 +589,19 @@ begin
   from recipients r
   on conflict (dedupe_key) do nothing;
   get diagnostics inserted = row_count;
+  -- Neither an active Owner nor a valid designated main contact: record one
+  -- actionable exception instead of guessing a Buyer, Billing user or Budtender.
+  insert into portal_license_reminder_exception(dedupe_key, license_number, retailer_account_id, license_expires_on, due_on,
+    exception_kind, required_action)
+  select concat_ws(':', 'license-renewal-exception', s.license_number, s.license_expires_on, 'missing_account_recipient'),
+    s.license_number, s.retailer_account_id, s.license_expires_on, s.license_expires_on - cfg.lead_days, 'missing_account_recipient',
+    'Add an active Store Owner, or record a valid designated main contact for this account. No account reminder was planned and no recipient was guessed.'
+  from portal_store s
+  where s.active and s.closed_at is null and s.license_expires_on is not null
+    and p_today between s.license_expires_on - cfg.lead_days and s.license_expires_on
+    and (s.retailer_account_id is null or (not portal_license_reminder_owner_active(s.retailer_account_id)
+      and portal_license_reminder_main_contact(s.retailer_account_id) is null))
+  on conflict (dedupe_key) do nothing;
   return inserted;
 end $$;
 
@@ -588,8 +636,9 @@ begin
 end $$;
 
 -- The daily preparation job keeps calling this name. It now plans approved
--- intents (Owner or main-contact fallback, and Internal Compliance) and queues
--- nothing for delivery; the previous Owner-and-Buyer outbox rows are no longer created.
+-- intents (Owner or designated main-contact fallback, and Internal Compliance)
+-- plus missing-recipient exceptions, and queues nothing for delivery; the
+-- previous Owner-and-Buyer outbox rows are no longer created.
 create or replace function public.portal_queue_license_notifications()
 returns integer language plpgsql security definer set search_path = public, auth, pg_temp as $$
 begin
@@ -615,10 +664,10 @@ begin
     raise exception 'A replacement must name a different recipient' using errcode = '22023';
   end if;
   update portal_license_reminder_config set compliance_email = lower(btrim(p_email)), compliance_email_review = p_review,
-    reviewed_by = p_actor_id, reviewed_at = now(), updated_at = now() where id;
+    review_note = btrim(p_evidence), reviewed_by = p_actor_id, reviewed_at = now(), updated_at = now() where id;
   insert into portal_store_control_event(control, actor_id, internal_role, prior_value, new_value, reason, evidence)
   values ('reminder_recipient', p_actor_id, role_name, jsonb_build_object('email', prior.compliance_email, 'review', prior.compliance_email_review),
-    jsonb_build_object('email', lower(btrim(p_email)), 'review', p_review), 'Prelaunch Compliance recipient review', btrim(p_evidence));
+    jsonb_build_object('email', lower(btrim(p_email)), 'review', p_review), 'Compliance recipient review', btrim(p_evidence));
   return jsonb_build_object('email', lower(btrim(p_email)), 'review', p_review, 'deliveryEnabled', false);
 end $$;
 
@@ -688,6 +737,121 @@ begin
   return jsonb_build_object('revision',result_revision);
 end $$;
 
+-- Scoped membership administration (20261014223749), unchanged except that an
+-- Internal Administrator may also grant store_billing. Billing resolves every
+-- active location of its own account (as above) and is refused any location
+-- assignment, so it gains no ordering, document or administration authority;
+-- Store Owners still revoke only Buyers and Budtenders. No Auth change or mail.
+create or replace function public.portal_manage_store_membership(
+  p_actor_id uuid,p_actor_membership_id uuid,p_organization_id uuid,p_profile_id uuid,
+  p_membership_id uuid,p_member_role text,p_licenses text[],p_status text,
+  p_expected_updated_at timestamptz,p_reason text,p_request_id uuid,
+  p_verified_identities jsonb,p_verified_at timestamptz
+) returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare target portal_organization_membership; account_id uuid; before_value jsonb;
+  licenses text[]; fingerprint text; prior portal_store_membership_change; response jsonb; member_id uuid;
+begin
+  perform 1 from portal_store_access_control where id and enabled for share;
+  if not found then raise exception 'Live Store access remains held' using errcode='42501'; end if;
+  perform 1 from portal_organization_membership m join portal_profile p on p.id=m.profile_id
+    join portal_organization o on o.id=m.organization_id
+    where m.id=p_actor_membership_id and m.profile_id=p_actor_id and m.workspace='internal'
+      and m.member_role='administrator' and m.status='active' and p.active and o.kind='internal' and o.status='active'
+    for share of m,p,o;
+  if not found then raise exception 'Current Internal Administrator membership required' using errcode='42501'; end if;
+  perform 1 from portal_role_permission where staff_role='administrator' and permission='users.manage' for share;
+  if not found then raise exception 'User administration authority required' using errcode='42501'; end if;
+  if p_actor_id=p_profile_id or p_request_id is null or nullif(btrim(p_reason),'') is null or length(p_reason)>1000
+    or p_status is null or p_status not in ('active','disabled')
+    or p_member_role is null or p_member_role not in ('store_owner','store_buyer','store_staff','store_billing') then
+    raise exception 'An explicit role, status, reason and non-self target are required' using errcode='22023';
+  end if;
+  -- One person cannot gain concurrent membership of two retailer organizations.
+  perform pg_advisory_xact_lock(hashtextextended('store-person:'||p_profile_id,0));
+  perform pg_advisory_xact_lock(hashtextextended('store-membership:'||p_organization_id,0));
+  select legacy_retailer_account_id into account_id from portal_organization
+    where id=p_organization_id and kind='retailer' and status='active' for share;
+  if account_id is null then raise exception 'Verified active retailer required' using errcode='42501'; end if;
+  perform 1 from portal_profile where id=p_profile_id and active for share;
+  if not found then raise exception 'An active existing portal identity is required' using errcode='42501'; end if;
+  select coalesce(array_agg(distinct v order by v),'{}'::text[]) into licenses from unnest(coalesce(p_licenses,'{}')) v;
+  if cardinality(licenses)<>cardinality(coalesce(p_licenses,'{}')) then
+    raise exception 'Duplicate location assignments are not allowed' using errcode='22023'; end if;
+  fingerprint:=md5(jsonb_build_object('actor',p_actor_id,'org',p_organization_id,'profile',p_profile_id,
+    'membership',p_membership_id,'role',p_member_role,'licenses',licenses,'status',p_status,
+    'expected',p_expected_updated_at,'reason',btrim(p_reason))::text);
+  select * into prior from portal_store_membership_change where id=p_request_id;
+  if found then
+    if prior.actor_id<>p_actor_id or prior.organization_id<>p_organization_id or prior.fingerprint<>fingerprint then
+      raise exception 'Request identifier reused with different access changes' using errcode='40001'; end if;
+    return prior.result||jsonb_build_object('idempotent',true);
+  end if;
+  if p_verified_at is null or p_verified_at>clock_timestamp()+interval '2 seconds'
+    or p_verified_at<clock_timestamp()-interval '30 seconds' or jsonb_typeof(p_verified_identities) is distinct from 'array' then
+    raise exception 'Fresh server identity verification required' using errcode='40001'; end if;
+  if p_status='active' and not exists(select 1 from jsonb_to_recordset(p_verified_identities) v(id uuid,eligible boolean,"expiresOn" date)
+    where v.id=p_profile_id and v.eligible and (v."expiresOn" is null or v."expiresOn">=(clock_timestamp() at time zone 'America/New_York')::date)) then
+    raise exception 'Target identity is expired or unavailable' using errcode='42501'; end if;
+  if not exists(select 1 from jsonb_to_recordset(p_verified_identities) v(id uuid,eligible boolean,"expiresOn" date)
+    where v.id=p_actor_id and v.eligible and (v."expiresOn" is null or v."expiresOn">=(clock_timestamp() at time zone 'America/New_York')::date)) then
+    raise exception 'Administrator identity is expired or unavailable' using errcode='42501'; end if;
+  select * into target from portal_organization_membership where profile_id=p_profile_id and organization_id=p_organization_id and workspace='store' for update;
+  if found then
+    if p_membership_id is distinct from target.id or p_expected_updated_at is distinct from target.updated_at then
+      raise exception 'Membership changed; reload before saving' using errcode='40001'; end if;
+  elsif p_membership_id is not null or p_expected_updated_at is not null or p_status<>'active' then
+    raise exception 'Membership target requires review' using errcode='40001';
+  end if;
+  if p_status='active' and exists(select 1 from portal_organization_membership where profile_id=p_profile_id
+    and workspace='store' and status in ('active','invited') and organization_id<>p_organization_id) then
+    raise exception 'This person already belongs to another retailer' using errcode='23514'; end if;
+  -- Billing is account-wide like the Owner: it never holds a location assignment.
+  if p_status='active' and ((p_member_role in ('store_owner','store_billing') and cardinality(licenses)<>0)
+    or (p_member_role='store_buyer' and cardinality(licenses) not between 1 and 25)
+    or (p_member_role='store_staff' and cardinality(licenses)<>1)) then
+    raise exception 'Owner and Billing use all stores; Buyer needs assignments; Budtender needs exactly one' using errcode='23514'; end if;
+  perform 1 from portal_store where license_number=any(licenses) for share;
+  if exists(select 1 from unnest(licenses) v where not exists(select 1 from portal_store s
+    where s.license_number=v and s.retailer_account_id=account_id and s.active and s.closed_at is null)) then
+    raise exception 'Location is outside the active retailer scope' using errcode='42501'; end if;
+  -- Serialize Owner changes and consider current Auth eligibility, not merely
+  -- a still-active profile belonging to an expired contractor.
+  perform 1 from portal_organization_membership m join portal_profile p on p.id=m.profile_id
+    where m.organization_id=p_organization_id and m.workspace='store' and m.member_role='store_owner' and m.status='active'
+    for share of m,p;
+  if target.member_role='store_owner' and target.status='active' and (p_member_role<>'store_owner' or p_status<>'active')
+    and not exists(select 1 from portal_organization_membership m join portal_profile p on p.id=m.profile_id
+      join jsonb_to_recordset(p_verified_identities) v(id uuid,eligible boolean,"expiresOn" date) on v.id=m.profile_id
+      where m.organization_id=p_organization_id and m.workspace='store' and m.member_role='store_owner' and m.status='active'
+        and p.active and m.id<>target.id and v.eligible
+        and (v."expiresOn" is null or v."expiresOn">=(clock_timestamp() at time zone 'America/New_York')::date)) then
+    raise exception 'Add an eligible replacement Owner before removing or demoting this Owner' using errcode='23514'; end if;
+  before_value:=case when target.id is null then null else to_jsonb(target)||jsonb_build_object('licenses',
+    (select coalesce(jsonb_agg(license_number order by license_number),'[]') from portal_membership_store where membership_id=target.id)) end;
+  member_id:=coalesce(target.id,gen_random_uuid());
+  -- Remove old assignments before a role change; none are inferred from names.
+  delete from portal_membership_store where membership_id=member_id;
+  if target.id is null then
+    insert into portal_organization_membership(id,profile_id,organization_id,workspace,member_role,status,is_default)
+      values(member_id,p_profile_id,p_organization_id,'store',p_member_role,p_status,false);
+  else
+    update portal_organization_membership set member_role=p_member_role,status=p_status,
+      is_default=case when p_status='disabled' then false else is_default end,updated_at=clock_timestamp() where id=member_id;
+  end if;
+  if p_status='active' then
+    insert into portal_membership_store(membership_id,license_number) select member_id,v from unnest(licenses) v;
+  end if;
+  response:=jsonb_build_object('membershipId',member_id,'organizationId',p_organization_id,'profileId',p_profile_id,
+    'memberRole',p_member_role,'status',p_status,'licenses',case when p_status='active' then to_jsonb(licenses) else '[]'::jsonb end,
+    'globalAccountChanged',false,'emailSent',false);
+  insert into portal_admin_audit(actor_id,action,target_id,detail) values(p_actor_id,'manage-store-membership',p_profile_id,
+    jsonb_build_object('actorMembershipId',p_actor_membership_id,'organizationId',p_organization_id,'membershipId',member_id,
+      'before',before_value,'after',response,'reason',btrim(p_reason),'requestId',p_request_id));
+  insert into portal_store_membership_change(id,actor_id,organization_id,fingerprint,result)
+    values(p_request_id,p_actor_id,p_organization_id,fingerprint,response);
+  return response;
+end $$;
+
 alter table public.portal_payment_terms_default enable row level security;
 alter table public.portal_retailer_payment_terms enable row level security;
 alter table public.portal_retailer_financial_hold enable row level security;
@@ -695,13 +859,14 @@ alter table public.portal_store_control_event enable row level security;
 alter table public.portal_license_reminder_config enable row level security;
 alter table public.portal_license_renewal_reminder enable row level security;
 alter table public.portal_license_document_access_event enable row level security;
+alter table public.portal_license_reminder_exception enable row level security;
 revoke all on public.portal_payment_terms_default, public.portal_retailer_payment_terms, public.portal_retailer_financial_hold,
   public.portal_store_control_event, public.portal_license_reminder_config, public.portal_license_renewal_reminder,
-  public.portal_license_document_access_event from public, anon, authenticated, service_role;
+  public.portal_license_document_access_event, public.portal_license_reminder_exception from public, anon, authenticated, service_role;
 -- Read-only to server functions. Every write goes through an audited function.
 grant select on public.portal_payment_terms_default, public.portal_retailer_payment_terms, public.portal_retailer_financial_hold,
   public.portal_store_control_event, public.portal_license_reminder_config, public.portal_license_renewal_reminder,
-  public.portal_license_document_access_event to service_role;
+  public.portal_license_document_access_event, public.portal_license_reminder_exception to service_role;
 
 revoke all on function public.portal_internal_control_role(uuid, text) from public, anon, authenticated;
 revoke all on function public.portal_resolve_store_context(uuid, uuid) from public, anon, authenticated;
@@ -727,6 +892,7 @@ revoke all on function public.portal_require_verified_license_activation() from 
 revoke all on function public.portal_require_onboarding_approval() from public, anon, authenticated;
 revoke all on function public.portal_queue_license_notifications() from public, anon, authenticated;
 revoke all on function public.portal_commit_store_demo(uuid, integer, jsonb, text) from public, anon, authenticated;
+revoke all on function public.portal_manage_store_membership(uuid,uuid,uuid,uuid,uuid,text,text[],text,timestamptz,text,uuid,jsonb,timestamptz) from public, anon, authenticated;
 grant execute on function public.portal_internal_control_role(uuid, text) to service_role;
 grant execute on function public.portal_resolve_store_context(uuid, uuid) to service_role;
 grant execute on function public.portal_retailer_effective_payment_terms(uuid) to service_role;
@@ -743,3 +909,4 @@ grant execute on function public.portal_set_license_reminder_recipient(uuid, tex
 grant execute on function public.portal_authorize_license_document(uuid, uuid, uuid, text) to service_role;
 grant execute on function public.portal_queue_license_notifications() to service_role;
 grant execute on function public.portal_commit_store_demo(uuid, integer, jsonb, text) to service_role;
+grant execute on function public.portal_manage_store_membership(uuid,uuid,uuid,uuid,uuid,text,text[],text,timestamptz,text,uuid,jsonb,timestamptz) to service_role;

@@ -241,7 +241,8 @@ async function portalUsers(actor: Row): Promise<Row[]> {
       ]);
       if(pe||ae||!profile||!auth.user) throw new AdminError(503,'Store member directory could not be verified.');
       return {id:profile.id,membershipId:membership.id,email:auth.user.email,fullName:profile.full_name,org:actor.org,
-        role:({store_owner:'owner',store_buyer:'buyer',store_billing:'billing'} as Record<string,string>)[membership.member_role]||'budtender',
+        // Explicit mapping: an unrecognized membership role is never shown as Owner, Buyer or Billing.
+        role:({store_owner:'owner',store_buyer:'buyer',store_billing:'billing',store_staff:'budtender'} as Record<string,string>)[membership.member_role]||'unrecognized',
         active:profile.active===true&&membership.status==='active',staffRole:null,locations:'Membership-scoped',testDemo:false};
     }));
   }
@@ -391,7 +392,8 @@ async function manageStoreAccess(actor: Row, body: Row): Promise<Row> {
   if (!uuid(body.organizationId)||!uuid(body.profileId)||!uuid(body.requestId)
     || (body.membershipId!=null&&!uuid(body.membershipId)) || !Array.isArray(body.licenses)
     || body.licenses.length>25 || body.licenses.some(value=>typeof value!=='string'||value.length>200)
-    || !['store_owner','store_buyer','store_staff'].includes(String(body.memberRole))
+    // store_billing is account-wide like the Owner: the database refuses any location for it.
+    || !['store_owner','store_buyer','store_staff','store_billing'].includes(String(body.memberRole))
     || !['active','disabled'].includes(String(body.status)) || typeof body.reason!=='string'
     || !body.reason.trim() || body.reason.length>1000) throw new AdminError(400,'Choose a retailer, existing user, role, locations and reason.');
   const {data:owners,error} = await service.from('portal_organization_membership').select('profile_id')

@@ -4,7 +4,8 @@
 // onboarding-advance functions: tenant/role allow+deny, append-only audit,
 // explicit manual holds, document-bound license verification, the license
 // ordering boundary on every insert path, atomic onboarding completion, the
-// billing role, T-30 reminder identities and license-document access.
+// billing role and its scoped membership administration, T-30 reminder
+// identities with missing-recipient exceptions, and license-document access.
 import {spawn,execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
@@ -28,7 +29,8 @@ const id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const sha=n=>String(n).padStart(2,'0').repeat(32);
 const admin=id(1),internalOrg=id(2),finance=id(101),compliance=id(102),sales=id(103),forgedAdmin=id(104),orphanFinance=id(105);
 const ownerA=id(110),buyerA=id(111),staffA=id(112),ownerB=id(113),billingA=id(114),ownerC=id(115),legacyOwnerA=id(116);
-const accountA=id(21),accountB=id(22),accountC=id(23),orgA=id(31),orgB=id(32),orgC=id(33);
+const billingNew=id(117),buyerD=id(118),billingD=id(119),adminM=id(3);
+const accountA=id(21),accountB=id(22),accountC=id(23),accountD=id(24),orgA=id(31),orgB=id(32),orgC=id(33),orgD=id(34);
 const ownerAM=id(41),buyerAM=id(42),staffAM=id(43),ownerBM=id(44),billingAM=id(45),ownerCM=id(46);
 const reqA=id(70),reqB=id(71),reqEarly=id(72),reqMissing=id(73),reqRenewal=id(75),reqC=id(76);
 const hold=(actor,active,account=accountA,reason='Synthetic',evidence='EVIDENCE-1')=>svc(`select portal_set_financial_hold('${actor}','${account}',${active},'${reason}','${evidence}');`);
@@ -76,24 +78,29 @@ try {
     +slice(lots,'create or replace function public.portal_commit_order_line_inventory()')
     +read('supabase/migrations/20261014215429_store_membership_access_foundation.sql')
     +read('supabase/migrations/20261014220938_store_endpoint_access_commands.sql')
+    // The reviewed scoped administration this migration extends with store_billing.
+    +read('supabase/migrations/20261014223749_store_membership_administration.sql')
     // The real onboarding advance function, unchanged, so completion is exercised end to end.
     +slice(read('supabase/migrations/20260905130000_retailer_store_accounting_controls.sql'),'create or replace function public.portal_advance_onboarding_request(')
     +`grant all on all tables in schema public to service_role;grant all on all sequences in schema public to service_role;
       insert into portal_retailer_account values('${accountA}','Retailer A','A','ready_to_order','QB-A','main-a@example.invalid'),
-        ('${accountB}','Retailer B','B','ready_to_order','QB-B',null),('${accountC}','Retailer C','C','ready_to_order','QB-C','Main-C@Example.invalid');
+        ('${accountB}','Retailer B','B','ready_to_order','QB-B',null),('${accountC}','Retailer C','C','ready_to_order','QB-C','Main-C@Example.invalid'),
+        -- No Account Owner and no valid designated main contact: reminders must raise an exception, never guess.
+        ('${accountD}','Retailer D','D','ready_to_order','QB-D','not-an-email');
       -- A location activated before this migration, with no audited verification.
       insert into portal_store(license_number,organization,display_name,retailer_account_id,active,license_status,license_expires_on,ordering_status)
         values('LIC-LEGACY','Retailer A','Legacy','${accountA}',true,'active',current_date+365,'ready');`);
   // Rerun-safe: applying the migration twice must succeed and keep one config row.
   await sql(migration);await sql(migration);
   assert.equal(await sql('select terms from portal_payment_terms_default;'),'Net 30');
-  assert.equal(await sql("select compliance_email||':'||compliance_email_review||':'||delivery_enabled from portal_license_reminder_config;"),'tom@urbanxtracts.com:prelaunch_replace_or_reaffirm_required:false');
+  assert.equal(await sql("select compliance_email||':'||compliance_email_review||':'||delivery_enabled||':'||(reviewed_at is not null)||':'||(review_note like 'Confirmed and reaffirmed 2026-10-15%') from portal_license_reminder_config;"),'tom@urbanxtracts.com:reaffirmed:false:true:true');
+  await assert.rejects(sql("update portal_license_reminder_config set compliance_email_review='prelaunch_replace_or_reaffirm_required';"),/23514/);
   assert.equal(await sql("select count(*) from pg_proc where proname in ('portal_store_command','portal_store_command_core');"),'2');
   assert.equal(await sql("select count(*) from pg_proc where proname in ('portal_approve_store_onboarding') or (proname='portal_verify_store_license' and pg_get_function_identity_arguments(oid) like '%p_document_ref%');"),'0');
-  console.log('PASS: migration is rerun-safe; Net 30 default, temporary Compliance recipient flagged; retired signatures removed');
+  console.log('PASS: migration is rerun-safe; Net 30 default, Compliance recipient confirmed and reaffirmed (not pending review); retired signatures removed');
 
   const people=[[admin,'administrator'],[finance,'operations'],[compliance,'quality'],[sales,'sales'],[forgedAdmin,'administrator'],[orphanFinance,'operations'],
-    [ownerA,null],[buyerA,null],[staffA,null],[ownerB,null],[billingA,null],[ownerC,null]];
+    [ownerA,null],[buyerA,null],[staffA,null],[ownerB,null],[billingA,null],[ownerC,null],[billingNew,null],[buyerD,null],[billingD,null]];
   await sql(people.filter(([p])=>p!==admin).map(([p])=>`insert into auth.users(id,email) values('${p}','${p}@example.invalid');`).join('')
     +people.map(([p,staff])=>`insert into portal_profile(id,full_name,org,role,active,staff_role) values('${p}','Fixture','Fixture','${staff?'internal':'brand'}',true,${staff?`'${staff}'`:'null'})
       on conflict(id) do update set role=excluded.role,staff_role=excluded.staff_role;`).join('')
@@ -102,15 +109,20 @@ try {
       ('${id(53)}','${sales}','${internalOrg}','internal','sales','active'),('${id(54)}','${forgedAdmin}','${internalOrg}','internal','viewer','active');
     insert into portal_profile_department(profile_id,department_key) values('${finance}','finance'),('${compliance}','quality'),('${sales}','sales'),('${orphanFinance}','finance');
     insert into portal_organization(id,kind,legal_name,display_name,status,legacy_retailer_account_id) values('${orgA}','retailer','Retailer A','A','active','${accountA}'),
-      ('${orgB}','retailer','Retailer B','B','active','${accountB}'),('${orgC}','retailer','Retailer C','C','active','${accountC}');
+      ('${orgB}','retailer','Retailer B','B','active','${accountB}'),('${orgC}','retailer','Retailer C','C','active','${accountC}'),('${orgD}','retailer','Retailer D','D','active','${accountD}');
     insert into portal_store(license_number,organization,display_name,retailer_account_id,active,ordering_status) values
       ('LIC-A1','Retailer A','A1','${accountA}',true,'ready'),('LIC-A2','Retailer A','A2','${accountA}',true,'ready'),('LIC-B1','Retailer B','B1','${accountB}',true,'ready'),
       ('LIC-A3','Retailer A','A3','${accountA}',true,'ready'),('LIC-A4','Retailer A','A4','${accountA}',true,'ready'),('LIC-A5','Retailer A','A5','${accountA}',true,'ready'),
       ('LIC-C1','Retailer C','C1','${accountC}',true,'ready');
+    -- Due at T-30 with a recorded expiration; never orderable (no verification), only a reminder subject.
+    insert into portal_store(license_number,organization,display_name,retailer_account_id,active,ordering_status,license_expires_on) values
+      ('LIC-D1','Retailer D','D1','${accountD}',true,'paused',current_date+30);
     insert into portal_organization_membership(id,profile_id,organization_id,workspace,member_role,status) values
       ('${ownerAM}','${ownerA}','${orgA}','store','store_owner','active'),('${buyerAM}','${buyerA}','${orgA}','store','store_buyer','active'),
       ('${staffAM}','${staffA}','${orgA}','store','store_staff','active'),('${ownerBM}','${ownerB}','${orgB}','store','store_owner','active'),
-      ('${billingAM}','${billingA}','${orgA}','store','store_billing','active');
+      ('${billingAM}','${billingA}','${orgA}','store','store_billing','active'),
+      -- Retailer D has a Buyer and a Billing user but no Owner: neither may be guessed as the reminder recipient.
+      ('${id(49)}','${buyerD}','${orgD}','store','store_buyer','active'),('${id(50)}','${billingD}','${orgD}','store','store_billing','active');
     insert into portal_membership_store values('${buyerAM}','LIC-A1',now()),('${buyerAM}','LIC-LEGACY',now()),('${staffAM}','LIC-A1',now());
     insert into portal_onboarding_request(id,retailer_account_id,stage,owner_email) values('${reqA}','${accountA}','access','owner@example.invalid'),
       ('${reqB}','${accountB}','access',null),('${reqEarly}','${accountA}','terms',null),('${reqMissing}','${accountA}','access',null),
@@ -146,8 +158,36 @@ try {
   await assert.rejects(svc(`select portal_resolve_store_context('${billingA}','${ownerBM}');`),/42501/);
   await assert.rejects(svc(`select portal_lock_store_context('${billingA}','${billingAM}','${orgA}','LIC-A1');`),/42501/);
   await assert.rejects(svc(`select portal_store_command('${billingA}','${billingAM}','${orgA}','price.propose','{"location_license":"LIC-A1","product_id":"canix:item:1","proposed_price_cents":1}');`),/42501/);
+  // Scoped Internal Administrator administration may grant Billing: account-wide, never with a location.
+  const proof=ids=>JSON.stringify(ids.map(v=>({id:v,eligible:true,expiresOn:null})));
+  const manage=({actor=admin,actorM=adminM,org=orgA,person=billingNew,member=null,role='store_billing',licenses=[],status='active',expected=null,request})=>
+    svc(`select portal_manage_store_membership('${actor}','${actorM}','${org}','${person}',${member?`'${member}'`:'null'},'${role}',
+      array[${licenses.map(v=>`'${v}'`).join(',')}]::text[],'${status}',${expected?`'${expected}'`:'null'},'Synthetic billing administration','${request}','${proof([actor,person])}',clock_timestamp());`);
+  await assert.rejects(manage({licenses:['LIC-A1'],request:id(600)}),/23514/,'billing with a location assignment');
+  for(const role of ['billing','store_manager','administrator','']) await assert.rejects(manage({role,request:id(601)}),/22023/,'unlisted role '+role);
+  for(const [actor,actorM] of [[ownerA,ownerAM],[billingA,billingAM],[finance,id(51)],[sales,id(53)]]) await assert.rejects(manage({actor,actorM,request:id(602)}),/42501/,'non-administrator '+actor);
+  const granted=JSON.parse(await manage({request:id(603)}));
+  assert.deepEqual([granted.memberRole,granted.licenses,granted.emailSent,granted.globalAccountChanged],['store_billing',[],false,false]);
+  assert.equal(await count(`portal_membership_store where membership_id='${granted.membershipId}'`),0);
+  assert.equal(JSON.parse(await manage({request:id(603)})).idempotent,true);
+  assert.deepEqual(JSON.parse(await svc(`select portal_resolve_store_context('${billingNew}','${granted.membershipId}');`)).licenses,['LIC-A1','LIC-A2','LIC-A3','LIC-A4','LIC-A5','LIC-LEGACY']);
+  // Tenant isolation: the same person cannot also hold Billing at another retailer, and a foreign location is refused.
+  await assert.rejects(manage({org:orgB,request:id(604)}),/23514/,'second retailer');
+  await assert.rejects(manage({org:orgB,person:ownerC,role:'store_buyer',licenses:['LIC-A1'],request:id(605)}),/42501/,'foreign location');
+  await assert.rejects(svc(`select portal_resolve_store_context('${billingNew}','${billingAM}');`),/42501/,'another member\'s membership');
+  // Store Owners still administer only Buyers and Budtenders; Billing administers no one.
+  await assert.rejects(svc(`select portal_revoke_store_membership('${ownerA}','${ownerAM}','${granted.membershipId}','Synthetic');`),/42501/);
+  await assert.rejects(svc(`select portal_revoke_store_membership('${billingNew}','${granted.membershipId}','${buyerAM}','Synthetic');`),/42501/);
+  await assert.rejects(svc(`select portal_lock_store_context('${billingNew}','${granted.membershipId}','${orgA}','LIC-A1');`),/42501/);
+  // Demotion back to Buyer requires an explicit assignment; nothing is inferred.
+  const version=await sql(`select updated_at from portal_organization_membership where id='${granted.membershipId}';`);
+  await assert.rejects(manage({member:granted.membershipId,expected:version,role:'store_buyer',request:id(606)}),/23514/);
+  await manage({member:granted.membershipId,expected:version,status:'disabled',request:id(607)});
+  assert.equal(await sql(`select status from portal_organization_membership where id='${granted.membershipId}';`),'disabled');
+  assert.equal(await count(`portal_admin_audit where action='manage-store-membership' and detail->'after'->>'memberRole'='store_billing'`),2);
   await sql('update portal_store_access_control set enabled=false;');
   console.log('PASS: billing user resolves only its own account, cannot hold an assignment, run a Store command or exist outside the Store workspace');
+  console.log('PASS: only an Internal Administrator grants Billing (account-wide, zero locations, audited, idempotent); Store, Billing, Finance and Sales actors, unlisted roles, second retailers and foreign locations are denied');
 
   await terms(finance,accountA,'Net 15');
   assert.equal(await effective(accountA),'Net 15');assert.equal(await effective(accountB),'Net 30');
@@ -269,7 +309,7 @@ try {
   await assert.rejects(sql('delete from portal_store_control_event;'),/42501/);
   await assert.rejects(sql('truncate portal_store_control_event;'),/42501/);
   await assert.rejects(svc(`insert into portal_store_control_event(control,actor_id,internal_role,prior_value,new_value,reason,evidence) values('payment_terms_default','${admin}','administrator','{}','{}','x','x');`),/42501/);
-  const tables=['portal_payment_terms_default','portal_retailer_payment_terms','portal_retailer_financial_hold','portal_store_control_event','portal_license_reminder_config','portal_license_renewal_reminder','portal_license_document_access_event'];
+  const tables=['portal_payment_terms_default','portal_retailer_payment_terms','portal_retailer_financial_hold','portal_store_control_event','portal_license_reminder_config','portal_license_renewal_reminder','portal_license_document_access_event','portal_license_reminder_exception'];
   assert.equal(await sql(`select bool_and(relrowsecurity) from pg_class where relname in (${tables.map(t=>`'${t}'`).join(',')});`),'t');
   assert.equal(await sql(`select count(*) from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname in (${tables.map(t=>`'${t}'`).join(',')});`),'0');
   assert.equal(await sql(`select bool_or(has_table_privilege('service_role',t,'insert') or has_table_privilege('service_role',t,'update') or has_table_privilege('service_role',t,'delete'))
@@ -287,13 +327,13 @@ try {
     'portal_require_onboarding_approval','portal_queue_license_notifications'];
   const quoted=names=>names.map(n=>`'${n}'`).join(',');
   assert.equal(await sql(`select count(*) from pg_proc where pronamespace='public'::regnamespace and proname in (${quoted(definers)}) and prosecdef;`),String(definers.length));
-  assert.equal(await sql(`select count(*) from pg_proc where pronamespace='public'::regnamespace and proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_reject_audit_change'])})
+  assert.equal(await sql(`select count(*) from pg_proc where pronamespace='public'::regnamespace and proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_reject_audit_change','portal_manage_store_membership'])})
      and not exists(select 1 from unnest(proconfig) c where c like 'search_path=%');`),'0');
   assert.equal(await sql(`select count(*) from pg_proc p cross join unnest(array['anon','authenticated']) r
-    where p.pronamespace='public'::regnamespace and p.proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_commit_store_demo'])})
+    where p.pronamespace='public'::regnamespace and p.proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_commit_store_demo','portal_manage_store_membership'])})
       and has_function_privilege(r,p.oid,'execute');`),'0');
   assert.equal(await sql(`select count(*) from pg_proc p, aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
-    where p.pronamespace='public'::regnamespace and p.proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_commit_store_demo'])})
+    where p.pronamespace='public'::regnamespace and p.proname in (${quoted([...definers,'portal_store_command','portal_store_command_core','portal_resolve_store_context','portal_commit_store_demo','portal_manage_store_membership'])})
       and a.grantee=0 and a.privilege_type='EXECUTE';`),'0');
   console.log('PASS: append-only audit, RLS with no policies, service role read-only, no PUBLIC/anon/authenticated execution, pinned search_path on every definer');
 
@@ -324,24 +364,37 @@ try {
   await assert.rejects(complete(compliance,reqC,'qualification'),/40001/);
   console.log('PASS: completion requires the exact pre-ready stage and verified licenses; early, stale, unverified, Sales and failed transitions leave no approval; accepted completion is one bound event');
 
-  // T-30 reminder intents. LIC-A1 and LIC-C1 expire in exactly 30 days: due today.
-  assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'5');
+  // T-30 reminder intents. LIC-A1, LIC-C1 and LIC-D1 expire in exactly 30 days: due today.
+  assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'6');
   assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'0');
   assert.equal(await sql('select portal_queue_license_notifications();'),'0');
+  // Retailer D: no Owner and no valid main contact. Compliance still gets its intent; one exception, no guessed recipient.
+  assert.equal(await sql(`select string_agg(recipient_kind||':'||channel||':'||coalesce(recipient_profile_id::text,recipient_email),',') from portal_license_renewal_reminder where license_number='LIC-D1';`),'internal_compliance:email:tom@urbanxtracts.com');
+  assert.equal(await sql(`select count(*)||':'||max(exception_kind)||':'||max(retailer_account_id::text)||':'||max(due_on-current_date)||':'||max(dedupe_key) from portal_license_reminder_exception;`),
+    `1:missing_account_recipient:${accountD}:0:license-renewal-exception:LIC-D1:${await sql('select (current_date+30)::text;')}:missing_account_recipient`);
+  assert.match(await sql('select required_action from portal_license_reminder_exception;'),/Add an active Store Owner, or record a valid designated main contact.*no recipient was guessed/);
+  assert.equal(await count(`portal_license_renewal_reminder where recipient_profile_id in ('${buyerD}','${billingD}') or license_number='LIC-D1' and recipient_kind<>'internal_compliance'`),0);
+  await assert.rejects(sql('update portal_license_reminder_exception set required_action=\'x\';'),/42501/);
+  await assert.rejects(sql('delete from portal_license_reminder_exception;'),/42501/);
+  await assert.rejects(svc(`insert into portal_license_reminder_exception(dedupe_key,license_number,license_expires_on,due_on,exception_kind,required_action) values('x','x',current_date,current_date,'missing_account_recipient','x');`),/42501/);
+  // No planning or decision path can write a notification, outbox, email or SMS record.
+  assert.equal(await sql(`select count(*) from pg_proc where pronamespace='public'::regnamespace and (proname like 'portal_%license%' or proname like 'portal_%reminder%')
+    and prosrc ~* '(notification_outbox|insert\\s+into\\s+(public\\.)?[a-z_]*(outbox|notification|email|sms)[a-z_]*|resend|twilio|net\\.http)';`),'0');
   const reminders=license=>sql(`select string_agg(recipient_kind||':'||channel||':'||coalesce(recipient_profile_id::text,recipient_email),',' order by recipient_kind,channel,id) from portal_license_renewal_reminder where license_number='${license}';`);
   assert.equal(await reminders('LIC-A1'),`account_owner:email:${ownerA},account_owner:in_portal:${ownerA},internal_compliance:email:tom@urbanxtracts.com`);
   assert.equal(await reminders('LIC-C1'),'internal_compliance:email:tom@urbanxtracts.com,main_contact:email:main-c@example.invalid');
-  assert.equal(await count(`portal_license_renewal_reminder where license_number not in ('LIC-A1','LIC-C1')`),0);
-  assert.equal(await count(`portal_license_renewal_reminder where recipient_profile_id in ('${buyerA}','${staffA}','${ownerB}','${billingA}')`),0);
+  assert.equal(await count(`portal_license_renewal_reminder where license_number not in ('LIC-A1','LIC-C1','LIC-D1')`),0);
+  assert.equal(await count(`portal_license_renewal_reminder where recipient_profile_id in ('${buyerA}','${staffA}','${ownerB}','${billingA}','${billingNew}')`),0);
   // Replacing the Compliance recipient with a portal identity adds its email and in-portal intents.
   await assert.rejects(svc(`select portal_set_license_reminder_recipient('${compliance}','${compliance}@example.invalid','replaced','Reviewed');`),/42501/);
-  await svc(`select portal_set_license_reminder_recipient('${admin}','${compliance}@example.invalid','replaced','Prelaunch review record');`);
-  assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'4');
+  await svc(`select portal_set_license_reminder_recipient('${admin}','${compliance}@example.invalid','replaced','Replacement review record');`);
+  assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'6');
   assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date);'),'0');
   // A late catch-up run the next day adds only the newly due LIC-A2 (T-31 today), never duplicates.
   assert.equal(await svc('select portal_plan_license_renewal_reminders(current_date+1);'),'4');
   assert.equal(await reminders('LIC-A2'),`account_owner:email:${ownerA},account_owner:in_portal:${ownerA},internal_compliance:email:${compliance}@example.invalid,internal_compliance:in_portal:${compliance}`);
-  assert.equal(await count(`portal_license_renewal_reminder where recipient_kind='internal_compliance' and channel='in_portal' and recipient_profile_id='${compliance}'`),3);
+  assert.equal(await count(`portal_license_renewal_reminder where recipient_kind='internal_compliance' and channel='in_portal' and recipient_profile_id='${compliance}'`),4);
+  assert.equal(await count('portal_license_reminder_exception'),1,'catch-up runs never duplicate the exception');
   const decision=async(where)=>JSON.parse(await svc(`select portal_license_reminder_send_decision((select id from portal_license_renewal_reminder where ${where}));`));
   const ownerEmail=await decision(`license_number='LIC-A1' and recipient_kind='account_owner' and channel='email'`);
   assert.deepEqual([ownerEmail.send,ownerEmail.reason,ownerEmail.recipientAuthorized,ownerEmail.destination],[false,'delivery_disabled_pending_release',true,`${ownerA}@example.invalid`]);
@@ -363,9 +416,10 @@ try {
   await assert.rejects(sql('update portal_license_reminder_config set delivery_enabled=true;'),/23514/);
   await assert.rejects(svc(`update portal_license_reminder_config set compliance_email='other@example.invalid';`),/42501/);
   await assert.rejects(svc(`select portal_set_license_reminder_recipient('${admin}','other@example.invalid','reaffirmed','Reviewed');`),/22023/);
-  await svc(`select portal_set_license_reminder_recipient('${admin}','${compliance}@example.invalid','reaffirmed','Prelaunch review record');`);
+  await svc(`select portal_set_license_reminder_recipient('${admin}','${compliance}@example.invalid','reaffirmed','Reaffirmation review record');`);
   assert.equal(await sql("select compliance_email_review||':'||delivery_enabled from portal_license_reminder_config;"),'reaffirmed:false');
-  console.log('PASS: T-30 intents reach Owners, the main contact only without an Owner, and Internal Compliance by email and its portal identity; deduplicated; send-time authority re-checked; delivery off');
+  console.log('PASS: T-30 intents reach Owners, the designated main contact only without an Owner, and Internal Compliance by email and its portal identity; deduplicated; send-time authority re-checked; delivery off');
+  console.log('PASS: an account with neither an Owner nor a valid main contact gets one append-only, deduplicated exception and no guessed recipient; Compliance is still planned; no outbox, email or SMS path exists');
 
   await assert.rejects(doc(ownerA,ownerAM,id(80)),/42501/); // Store access remains held.
   await sql('update portal_store_access_control set enabled=true;');

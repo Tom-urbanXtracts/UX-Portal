@@ -5,15 +5,22 @@
 export const DEFAULT_PAYMENT_TERMS = "Net 30";
 export const QUICKBOOKS_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 export const LICENSE_REMINDER_LEAD_DAYS = 30;
-// Temporary recipient. Prelaunch review must replace or explicitly reaffirm it;
-// delivery stays off until notification release approval.
+// Internal Compliance recipient, confirmed and reaffirmed by urbanXtracts on
+// 2026-10-15 as the temporary Compliance address. A later change uses the
+// audited Administrator replacement; delivery stays off until notification
+// release approval regardless of the recipient.
 export const COMPLIANCE_REMINDER_CONFIG = Object.freeze({
   email: "tom@urbanxtracts.com",
-  prelaunchReview: "replace_or_reaffirm_required" as const,
+  recipientReview: "reaffirmed" as const,
+  reviewedOn: "2026-10-15",
   deliveryEnabled: false as const,
   leadDays: LICENSE_REMINDER_LEAD_DAYS,
   channels: Object.freeze(["email", "in_portal"] as const),
 });
+// The account recipient is the active Account Owner. Without one, the designated
+// main contact is used. Its current source is this legacy column; a value there
+// is a contact address only and never proves that an Account Owner exists.
+export const DESIGNATED_MAIN_CONTACT_SOURCE = "portal_retailer_account.account_owner_email";
 
 // internalAdministrator must come from an active Internal administrator
 // membership, not from the staff_role column alone.
@@ -92,8 +99,8 @@ export function orderGates(input: { onboardingApproved: boolean; licenseVerified
 
 // Each recipient carries the destination identity it can actually be reached
 // at: a portal profile for in-portal and Owner email (email resolved at send
-// time), or a governed email address. The main contact is a fallback only when
-// the account has no active Owner, and has no in-portal identity.
+// time), or a governed email address. The designated main contact is a fallback
+// only when the account has no active Owner, and has no in-portal identity.
 export type ReminderRecipient = { kind: "account_owner" | "main_contact" | "internal_compliance"; id: string; channels: readonly ("email" | "in_portal")[] };
 export type ReminderIntent = { dedupeKey: string; licenseNumber: string; expiresOn: string; dueOn: string; recipientKind: ReminderRecipient["kind"];
   recipientId: string; channel: "email" | "in_portal"; deliveryState: "disabled_pending_release" };
@@ -133,6 +140,34 @@ export function planLicenseRenewalReminders(input: { licenseNumber: string; expi
     }
   }
   return intents;
+}
+// Neither an active Owner nor a valid designated main contact: no account
+// recipient is guessed (never a Buyer, Billing user or Budtender). One
+// actionable internal exception per license expiration is planned instead;
+// Internal Compliance still receives its own disabled intents.
+export type ReminderRecipientException = { dedupeKey: string; licenseNumber: string; retailerAccountId: string | null; expiresOn: string;
+  dueOn: string; kind: "missing_account_recipient"; requiredAction: string; deliveryState: "disabled_pending_release" };
+export const MISSING_ACCOUNT_RECIPIENT_ACTION = "Add an active Store Owner, or record a valid designated main contact for this account. No account reminder was planned and no recipient was guessed.";
+export function planReminderRecipientException(input: { licenseNumber: string; retailerAccountId?: string | null; expiresOn: string; today: string;
+  activeOwnerProfileIds: readonly string[]; mainContactEmail: string | null; existingKeys: readonly string[] }): ReminderRecipientException | null {
+  const expires = isoDate(input.expiresOn), today = isoDate(input.today);
+  if (!expires || !today || !input.licenseNumber) return null;
+  const dueOn = addDays(expires, -LICENSE_REMINDER_LEAD_DAYS);
+  if (today < dueOn || today > expires) return null;
+  if ((input.activeOwnerProfileIds || []).some(id => typeof id === "string" && id) || emailOf(input.mainContactEmail)) return null;
+  const dedupeKey = ["license-renewal-exception", input.licenseNumber, expires, "missing_account_recipient"].join(":");
+  if (new Set(input.existingKeys).has(dedupeKey)) return null;
+  return { dedupeKey, licenseNumber: input.licenseNumber, retailerAccountId: input.retailerAccountId ?? null, expiresOn: expires, dueOn,
+    kind: "missing_account_recipient", requiredAction: MISSING_ACCOUNT_RECIPIENT_ACTION, deliveryState: "disabled_pending_release" };
+}
+// One planning pass for a license: Owner (or designated main contact) and
+// Internal Compliance intents, or the missing-recipient exception. Nothing is sent.
+export function planLicenseRenewalCycle(input: { licenseNumber: string; retailerAccountId?: string | null; expiresOn: string; today: string;
+  activeOwnerProfileIds: readonly string[]; mainContactEmail: string | null; compliance: { email: string | null; profileId: string | null };
+  existingKeys: readonly string[] }) {
+  const recipients = licenseReminderRecipients(input);
+  return { intents: planLicenseRenewalReminders({ ...input, recipients }), exception: planReminderRecipientException(input),
+    deliveryEnabled: COMPLIANCE_REMINDER_CONFIG.deliveryEnabled };
 }
 // Send-time re-check against current authority. Nothing is sent before
 // notification release; removed, replaced or superseded recipients never receive.

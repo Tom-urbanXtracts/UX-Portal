@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-sites.mjs",
-    "verify": "node scripts/verify-release-contracts.mjs && node --test services/qbo-egress-proxy/server.test.mjs services/document-scanner/server.test.mjs supabase/tests/store_financial_scope_test.mjs supabase/tests/workspace_request_scope_test.mjs supabase/tests/store_endpoint_access_test.mjs && deno test supabase/tests/security_contract_test.ts supabase/tests/store_inventory_freshness_test.ts supabase/tests/store_demo_test.ts supabase/tests/store_context_test.ts supabase/tests/store_catalog_test.ts supabase/tests/store_account_policy_test.ts",
+    "verify": "node scripts/verify-release-contracts.mjs && node --test services/qbo-egress-proxy/server.test.mjs services/document-scanner/server.test.mjs supabase/tests/store_financial_scope_test.mjs supabase/tests/workspace_request_scope_test.mjs supabase/tests/store_endpoint_access_test.mjs supabase/tests/legacy_store_users_test.mjs supabase/tests/store_demo_ui_test.mjs && deno test supabase/tests/security_contract_test.ts supabase/tests/store_inventory_freshness_test.ts supabase/tests/store_demo_test.ts supabase/tests/store_context_test.ts supabase/tests/store_catalog_test.ts supabase/tests/store_account_policy_test.ts",
     "verify:migration-baseline": "node scripts/verify-migration-baseline.mjs",
     "verify:staging:scanner": "node scripts/verify-staging-scanner.mjs",
     "verify:store-concurrency": "node supabase/tests/store_access_concurrency_test.mjs",
