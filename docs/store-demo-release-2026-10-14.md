@@ -71,6 +71,21 @@ The previous Site saved version remains the UI rollback target. The prior Edge s
 
 IT owns controlled-demo acceptance and monitoring. Review demo API errors, conflict/denial events and the restricted audit trail after deployment and before expanding access. Existing integration-health/outbox monitoring continues unchanged. No new email alert policy or supply-order sending is enabled.
 
+## Catalog source update — repository only, not deployed
+
+The four fabricated `demo-` products are replaced by the 120-listing browser-verified **Shop UrbanXtracts** snapshot captured 10/14/2026 (`data/canix-marketplace-listings-2026-10-14.json`). The record above describes the deployed fixture catalog and is unchanged. This update is not deployed, and `scripts/verify-store-demo-ui.mjs` now uses source product names.
+
+- `scripts/generate-store-demo-catalog.mjs` produces `supabase/functions/_shared/store-demo-catalog.ts` from the snapshot. `npm run verify` fails if that file drifts from the snapshot. Edit the snapshot, never the generated file.
+- Identity is the Marketplace Product ID only. Product names are display text.
+- Brand display: the source lists the same brand as both `Cannaprint` (4 listings) and `Cannaprints` (2). The demo displays `Cannaprint` for all 6, so filters show 13 brands. The generated fixture keeps the raw value as `sourceBrandName` (14 raw brands), and source validation compares against it. Product IDs are unchanged.
+- Price, displayed availability, sale unit (`each`) and minimum order quantity come from the snapshot. Quantities must be whole numbers, at or above the exact minimum and no more than displayed availability. The minimum is not treated as an order multiple. Aggregate demo allocation still applies.
+- The source has no SKU, pack/case size or release status, so the demo shows none. New demo lines carry no pre-order flag. Pre-order lines saved under the retired fixtures are still held from shipping.
+- 22 listings have no image in the source and show a "No image in source" placeholder. Images load from the Canix asset host shown in the snapshot.
+- Every projection includes source provenance and a notice: snapshot, capture date, not live inventory. Budtender gets name, brand, category and image only, and now sees all 120 listings because the source has no release status to filter on.
+- Live Store gates, the five-minute freshness/identity/availability/price revalidation, the no-credit-cap policy and the Finance hold/past-due gates are unchanged.
+
+The rebuilt candidate was exercised in Chrome through a localhost-only preview using isolated staging authentication and in-memory demo state; no Edge Function, database, permission or production state changed. The walkthrough verified 120 rendered listings, all 14 raw source brand spellings (subsequently displayed as 13 canonical brands by the Cannaprint alias) and 10 categories, search/filter behavior, 98 source images and 22 honest placeholders, source minimums in product and cart inputs, draft preservation behind onboarding/Finance gates, six-section Owner submission and Internal approval, Finance clearance, Owner ordering, Buyer approval routing above $500, Owner approval, Internal delivery transitions, and the Budtender education-only projection. A 390 × 844 viewport had no horizontal overflow. Browser execution also exposed and fixed a pre-existing component-logic parse error and an image-handler incompatibility; release verification now parses the component logic and pins the supported image binding.
+
 ## Still outside this accepted release
 
 The live Store package still requires the shared membership/location resolver across all endpoints, bounded Owner user administration and last-Owner recovery, scoped active-session revocation across every legacy service, structured real Finance terms/credit decisions and freshness policy, Store document/financial/export allowlists, real item case/minimum/increment data, and a named live retailer cohort with full SW-AC-01–21 acceptance. These are tracked in the dependency review, not silently passed by synthetic tests.

@@ -98,7 +98,7 @@ const dateLabel = capturedAt.slice(0, 10);
 const jsonPath = resolve(dataDirectory, `canix-marketplace-listings-${dateLabel}.json`);
 const csvPath = resolve(dataDirectory, `canix-marketplace-listings-${dateLabel}.csv`);
 const migrationPath = resolve(
-  "supabase/migrations/20261014154039_refresh_canix_marketplace_browser_snapshot.sql",
+  "supabase/migrations/20261014194814_refresh_canix_marketplace_browser_snapshot.sql",
 );
 
 await writeFile(jsonPath, `${JSON.stringify(snapshot, null, 2)}\n`);

@@ -1,16 +1,27 @@
-// Synthetic fixtures only. This module deliberately has no connector or mail I/O.
+// Synthetic workflow only. This module deliberately has no connector or mail I/O.
+// Products come from the checked-in browser-verified listing snapshot, not live inventory.
+import { DEMO_CATALOG_PRODUCTS, DEMO_CATALOG_SOURCE } from "./store-demo-catalog.ts";
 export type DemoRole = "owner" | "buyer" | "budtender" | "internal";
 type Row = Record<string, unknown>;
 export const DEMO_STORES = [
   { id: "DEMO-UX-STORE-001", name: "Demo Store #1" },
   { id: "DEMO-UX-STORE-002", name: "Demo Store #2" },
 ];
-export const DEMO_PRODUCTS = [
-  { id: "demo-flower", name: "urbanXtracts Flower — Demo", brand: "urbanXtracts", category: "Flower", priceCents: 1800, caseUnits: 12, available: 240, released: true },
-  { id: "demo-vape", name: "urbanXtracts Cartridge — Demo", brand: "urbanXtracts", category: "Vape", priceCents: 2200, caseUnits: 24, available: 360, released: true },
-  { id: "demo-gummy", name: "Wana Mango Classic Gummies — Demo", brand: "Wana", category: "Edible", priceCents: 1400, caseUnits: 12, available: 180, released: true },
-  { id: "demo-preroll", name: "urbanXtracts Pre-Roll — Demo", brand: "urbanXtracts", category: "Pre-Roll", priceCents: 800, caseUnits: 20, available: 100, released: false },
-];
+// The Marketplace Product ID is the only identity; names are display text and never a join key.
+// The source has no SKU, pack/case size or release status, so none is carried here.
+// brand is the canonical display brand; sourceBrand keeps the raw snapshot value.
+export const DEMO_PRODUCTS = DEMO_CATALOG_PRODUCTS.map(p => ({
+  id: p.marketplaceProductId, productGid: p.productGid, name: p.productName, brand: p.brandName, sourceBrand: p.sourceBrandName, category: p.itemCategoryName,
+  priceCents: p.priceCents, availableQuantity: p.availableQuantity, saleUnit: p.saleUnit, minimumOrderQuantity: p.minimumOrderQuantity,
+  hasImage: p.hasImage, imageUrl: p.imageUrl, productUrl: p.productUrl,
+}));
+const PRODUCT_BY_ID = new Map(DEMO_PRODUCTS.map(p => [p.id, p]));
+export const DEMO_CATALOG = {
+  ...DEMO_CATALOG_SOURCE,
+  unavailableFields: ["sku", "packSize", "caseSize", "releaseStatus"],
+  notice: "Browser-verified Shop UrbanXtracts listing snapshot captured " + DEMO_CATALOG_SOURCE.capturedAt.slice(0, 10)
+    + ". Not live inventory; synthetic demo orders never reach Canix. SKU, pack/case size and release status are not in the source.",
+};
 export const DEMO_SECTIONS = [
   { id: "company", name: "Company Profile", fields: ["legalName", "dba"] },
   { id: "contacts", name: "Contacts & Authorized Users", fields: ["ownerName", "ownerEmail", "buyerEmail"] },
@@ -58,14 +69,23 @@ function linesFor(raw: unknown, final: boolean): Row[] {
   const seen = new Set();
   return raw.map(line => {
     requireValue(line && typeof line === "object", "Invalid product line.");
-    const product = DEMO_PRODUCTS.find(p => p.id === line.productId);
+    const product = typeof line.productId === "string" ? PRODUCT_BY_ID.get(line.productId) : undefined;
     requireValue(product && !seen.has(product.id), "Choose each current demo product only once.");
     seen.add(product.id);
     const quantity = Number(line.quantity);
-    requireValue(Number.isInteger(quantity) && quantity > 0 && quantity <= product.available, "Quantity exceeds demo availability or is not a whole number.");
-    return { productId: product.id, name: product.name, quantity, priceCents: product.priceCents,
-      totalCents: quantity * product.priceCents, preorder: !product.released };
+    requireValue(Number.isInteger(quantity) && quantity > 0, "Quantity must be a whole number.");
+    // The source states a minimum, not a multiple: any whole quantity at or above it is accepted.
+    requireValue(quantity >= product.minimumOrderQuantity, "Minimum order for " + product.name + " is " + product.minimumOrderQuantity + " " + product.saleUnit + ".");
+    requireValue(quantity <= product.availableQuantity, "Quantity exceeds the snapshot's displayed availability.");
+    return { productId: product.id, name: product.name, quantity, priceCents: product.priceCents, totalCents: quantity * product.priceCents };
   });
+}
+function allocatedByProduct(state: DemoState): Map<string, number> {
+  const allocated = new Map<string, number>();
+  for (const line of state.orders.filter(o => o.status !== "declined").flatMap(o => o.lines as Row[])) {
+    allocated.set(String(line.productId), (allocated.get(String(line.productId)) || 0) + Number(line.quantity));
+  }
+  return allocated;
 }
 export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: string, now: string): DemoState {
   const next = structuredClone(state);
@@ -126,10 +146,10 @@ export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: s
       }
       requireValue(DEMO_SECTIONS.every(s => next.sections[s.id].status === "approved"), "Onboarding must be approved. Your draft is preserved.", 409);
       requireValue(next.finance.status === "approved", "Finance has not cleared ordering. Your draft is preserved.", 409);
+      const allocated = allocatedByProduct(next);
       for (const line of lines) {
-        const product = DEMO_PRODUCTS.find(p => p.id === line.productId)!;
-        const allocated = next.orders.filter(o => o.status !== "declined").flatMap(o => o.lines as Row[]).filter(l => l.productId === product.id).reduce((n, l) => n + Number(l.quantity), 0);
-        requireValue(allocated + Number(line.quantity) <= product.available, "Demo inventory changed; reduce quantity. Your draft is preserved.", 409);
+        const product = PRODUCT_BY_ID.get(String(line.productId))!;
+        requireValue((allocated.get(product.id) || 0) + Number(line.quantity) <= product.availableQuantity, "Demo inventory changed; reduce quantity. Your draft is preserved.", 409);
       }
       next.orders.unshift({ id: "DEMO-PO-" + String(next.orders.length + 1).padStart(4, "0"), requestId, role, storeId: body.storeId, lines, totalCents,
         status: role === "buyer" && totalCents > 50000 ? "awaiting_owner" : "ordered", createdAt: now, createdBy: actor });
@@ -146,7 +166,9 @@ export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: s
       requireValue(role === "internal", "Internal processing is required.", 403);
       requireValue(({ ordered: "approved", approved: "shipped", shipped: "delivered" } as Record<string, string>)[String(order.status)] === transition, "That order transition is not allowed.", 409);
       requireValue(next.finance.status === "approved", "Finance has placed this account on hold.", 409);
-      if (transition === "shipped") requireValue(!(order.lines as Row[]).some(l => l.preorder), "Pre-order fulfillment is held until product release.", 409);
+      // New lines carry no release semantics (the source has none). Only sessions saved under the retired
+      // fabricated fixtures can hold a pre-order line; keep those held rather than silently shipping them.
+      if (transition === "shipped") requireValue(!(order.lines as Row[]).some(l => l.preorder === true), "Pre-order fulfillment is held until product release.", 409);
     }
     order.status = transition; order.reviewedBy = actor; order.updatedAt = now;
   } else throw new DemoError(400, "Unsupported demo action.");
@@ -158,12 +180,18 @@ export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: s
 export function projectDemo(state: DemoState, role: DemoRole, revision: number): Row {
   const commercial = role !== "budtender";
   const allowedOrders = commercial ? state.orders.filter(o => demoStoreAllowed(role, o.storeId)) : [];
-  const products = DEMO_PRODUCTS.filter(p => role !== "budtender" || p.released).map(p => {
-    const base = { id: p.id, name: p.name, brand: p.brand, category: p.category, released: p.released };
-    const allocated = state.orders.filter(o => o.status !== "declined").flatMap(o => o.lines as Row[]).filter(l => l.productId === p.id).reduce((n, l) => n + Number(l.quantity), 0);
-    return commercial ? { ...base, priceCents: p.priceCents, caseUnits: p.caseUnits, available: Math.max(0, p.available - allocated) } : base;
+  const allocated = allocatedByProduct(state);
+  // Budtender receives product-education fields only: no price, availability, minimum or source identifiers.
+  const products = DEMO_PRODUCTS.map(p => {
+    const education = { name: p.name, brand: p.brand, category: p.category, hasImage: p.hasImage, imageUrl: p.imageUrl };
+    return commercial ? { id: p.id, ...education, productGid: p.productGid, productUrl: p.productUrl, priceCents: p.priceCents, saleUnit: p.saleUnit,
+      minimumOrderQuantity: p.minimumOrderQuantity, snapshotAvailableQuantity: p.availableQuantity,
+      available: Math.max(0, p.availableQuantity - (allocated.get(p.id) || 0)) } : education;
   });
-  return { synthetic: true, organization: "urbanXtracts Store", revision, role, products,
+  const catalog = commercial ? DEMO_CATALOG
+    : { shopName: DEMO_CATALOG.shopName, sourceMode: DEMO_CATALOG.sourceMode, capturedAt: DEMO_CATALOG.capturedAt, productCount: DEMO_CATALOG.productCount,
+      notice: "Browser-verified Shop UrbanXtracts listing snapshot captured " + DEMO_CATALOG.capturedAt.slice(0, 10) + ". Product education only." };
+  return { synthetic: true, organization: "urbanXtracts Store", revision, role, catalog, products,
     stores: DEMO_STORES.filter(s => demoStoreAllowed(role, s.id)),
     ...(commercial ? { orderingReady: DEMO_SECTIONS.every(s => state.sections[s.id].status === "approved") && state.finance.status === "approved",
       orders: allowedOrders, drafts: Object.fromEntries(Object.entries(state.drafts).filter(([key]) => key.startsWith(role + ":"))),

@@ -1,10 +1,15 @@
+import { execFileSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
+import { Script } from "node:vm";
 
 const root = resolve(import.meta.dirname, "..");
 const source = await readFile(resolve(root, "ux-portal-prototype.dc.html"), "utf8");
+const portalLogic = source.match(/<script type="text\/x-dc"[^>]*>([\s\S]*?)<\/script>/)?.[1] || "";
 const storeDemoHandler = await readFile(resolve(root, "supabase/functions/portal-store-demo/index.ts"), "utf8");
 const storeDemoContract = await readFile(resolve(root, "supabase/functions/_shared/store-demo.ts"), "utf8");
+const storeDemoCatalogModule = await readFile(resolve(root, "supabase/functions/_shared/store-demo-catalog.ts"), "utf8");
+const storeDemoSnapshot = JSON.parse(await readFile(resolve(root, "data/canix-marketplace-listings-2026-10-14.json"), "utf8"));
 const storeDemoMigration = await readFile(resolve(root, "supabase/migrations/20261014202834_store_activation_admin_demo.sql"), "utf8");
 const siteBuild = await readFile(resolve(root, "scripts/build-sites.mjs"), "utf8");
 const supabaseConfig = await readFile(resolve(root, "supabase/config.toml"), "utf8");
@@ -155,6 +160,9 @@ function assertContract(condition, name) {
   checks.push({ name, ok: Boolean(condition) });
 }
 
+new Script(portalLogic, { filename: "ux-portal-prototype.logic.js" });
+assertContract(Boolean(portalLogic), "the portal component logic is present and parses as JavaScript");
+
 assertContract(inventory.includes('const QUANTITY_TYPES = new Set(["WeightBased", "CountBased"])'), "volume is excluded from the Canix cache");
 assertContract(inventory.includes("cost_object_id: null") && !inventory.includes("cost_object_id: allocation.order_item_id") && inventory.includes("allPortalLotRegisters") && inventory.includes("allLotCostObjectDecisions") && inventory.includes('portalLot?.approval_status === "approved"'), "Cost Object is never inferred from a sales-order line and resolves only through a valid Portal-backed lot decision");
 assertContract(portalDataControlMigration.includes("portal_canix_owner_mapping") && portalDataControlMigration.includes("portal_package_lot_overlay") && portalDataControlMigration.includes("portal_item_identity_mapping") && portalDataControlMigration.includes("portal_lot_register") && portalDataControlMigration.includes("never mutate Canix"), "Portal-native Owner, Lot ID, item identity, and lot controls remain Supabase overlays and never write to Canix");
@@ -268,7 +276,51 @@ assertContract(storeDemoHandler.includes('profile.staff_role !== "administrator"
 assertContract(storeDemoMigration.includes("revoke all on public.portal_store_demo_control, public.portal_store_demo_session") && storeDemoMigration.includes("security invoker") && storeDemoMigration.includes("revision") && storeDemoMigration.includes("Store demonstration is paused"), "synthetic Store storage is private, auditable, revision-checked and server-pausable");
 assertContract(!/from\(["'](?:portal_order|portal_inventory_commitment|portal_notification_outbox|quickbooks_|canix_)/.test(storeDemoHandler) && !/monday|resend|quickbooks-oauth|marketplace-ordering/.test(storeDemoHandler + storeDemoContract), "synthetic Store workflows have no live order, inventory, accounting, Monday or email write dependency");
 assertContract(source.includes("storeDemoCall") && source.includes("Synthetic demo · Internal Administrators only") && source.includes("Store Demo") && source.includes("this._workspaceEpoch") && source.includes("discarded the previous response"), "Store demonstration has a labelled Administrator entry and workspace-bound response handling");
-assertContract(source.includes("quantity: (s.storeDemoQuantities || {})[p.id] ?? 1") && !source.includes("quantity: (s.storeDemoQuantities || {})[p.id] || 1"), "quantity drafts preserve an empty edit value instead of resetting to one while typing");
+assertContract(source.includes("quantity: (s.storeDemoQuantities || {})[p.id] ?? p.minimumOrderQuantity") && !source.includes("quantity: (s.storeDemoQuantities || {})[p.id] ||"), "quantity drafts preserve an empty edit value and default to the source minimum instead of resetting while typing");
+execFileSync(process.execPath, [resolve(root, "scripts/generate-store-demo-catalog.mjs"), "--check"], { stdio: "pipe" });
+{
+  const products = storeDemoSnapshot.products;
+  const count = (key) => new Set(products.map((p) => p[key])).size;
+  assertContract(storeDemoSnapshot.source.sourceMode === "browser_verified_snapshot" && storeDemoSnapshot.source.snapshotScope === "full_shop" && products.length === 120
+    && count("marketplaceProductId") === 120 && count("brandName") === 14 && count("itemCategoryName") === 10
+    && products.filter((p) => p.brandName === "urbanXtracts").length === 35 && products.filter((p) => p.hasImage && p.imageUrl).length === 98 && products.filter((p) => !p.hasImage && !p.imageUrl).length === 22
+    && products.every((p) => Number.isInteger(p.priceCents) && Number.isInteger(p.availableQuantity) && Number.isInteger(p.minimumOrderQuantity) && p.minimumOrderQuantity >= 1 && p.saleUnit === "each" && !("sku" in p)),
+  "the Store demo source is the 120-listing browser-verified full-shop snapshot with 14 brands, 10 categories, 98 images and no SKU");
+}
+{
+  // Display-only alias: raw "Cannaprints" shows as "Cannaprint" while the generated fixture keeps the raw source brand.
+  const rows = [...storeDemoCatalogModule.matchAll(/^  (\{.*\}),$/gm)].map((m) => JSON.parse(m[1]));
+  const raw = new Map(storeDemoSnapshot.products.map((p) => [p.marketplaceProductId, p.brandName]));
+  const cannaprint = rows.filter((r) => r.brandName === "Cannaprint");
+  assertContract(rows.length === 120 && rows.every((r) => r.sourceBrandName === raw.get(r.marketplaceProductId) && r.brandName === (r.sourceBrandName === "Cannaprints" ? "Cannaprint" : r.sourceBrandName))
+    && new Set(rows.map((r) => r.brandName)).size === 13 && new Set(rows.map((r) => r.sourceBrandName)).size === 14 && !rows.some((r) => r.brandName === "Cannaprints")
+    && cannaprint.length === 6 && cannaprint.filter((r) => r.sourceBrandName === "Cannaprint").length === 4 && cannaprint.filter((r) => r.sourceBrandName === "Cannaprints").length === 2
+    && rows.filter((r) => r.hasImage && r.imageUrl).length === 98 && rows.filter((r) => !r.hasImage && r.imageUrl === null).length === 22,
+  "the Store demo fixture displays 13 canonical brands (Cannaprints shown as Cannaprint, 6 rows) while retaining all 14 raw source brands and the 98/22 image split");
+}
+assertContract(storeDemoContract.includes('from "./store-demo-catalog.ts"') && (storeDemoContract.match(/^import /gm) || []).length === 1 && !/^import /m.test(storeDemoCatalogModule)
+  && storeDemoCatalogModule.startsWith("// GENERATED by scripts/generate-store-demo-catalog.mjs") && !/sku|caseUnits|packSize|released/i.test(storeDemoCatalogModule.replace(/^\/\/.*$/gm, "")),
+  "the Store demo catalog is generated from the checked-in snapshot, imports nothing else and carries no SKU, pack/case size or release fields");
+assertContract(!/caseUnits|released:|p\.released|preorder: !/.test(storeDemoContract) && storeDemoContract.includes("PRODUCT_BY_ID.get(line.productId)") && storeDemoContract.includes("quantity >= product.minimumOrderQuantity")
+  && storeDemoContract.includes("quantity <= product.availableQuantity") && storeDemoContract.includes("allocatedByProduct(next)") && storeDemoContract.includes("catalog, products"),
+  "demo orders resolve by Marketplace Product ID, enforce the exact source minimum and displayed availability, keep aggregate allocation and return provenance");
+assertContract(source.includes("storeDemoOptions('brand')") && source.includes("storeDemoOptions('category')") && !source.includes('<option value="Wana">Wana</option>') && source.includes("storeDemoCatalogNotice") && source.includes("NO IMAGE IN SOURCE")
+  && source.includes('<img src="{{ product.imageUrl }}" alt="" loading="lazy"') && !source.includes('data-src="{{ product.imageUrl }}"') && !source.includes("Units/Case"),
+  "Store demo filters derive every brand and category from the served snapshot, show the source notice and an honest image placeholder, and present no case size");
+assertContract(source.includes('aria-label="{{ line.quantityLabel }}" type="number" value="{{ line.quantity }}" onChange="{{ line.onQuantity }}" min="{{ line.minimum }}" step="1"')
+  && source.includes("minimum: Number.isInteger(p.minimumOrderQuantity) && p.minimumOrderQuantity >= 1 ? p.minimumOrderQuantity : 1,")
+  && source.includes("quantityLabel: 'Cart quantity for ' + (p.name || l.productId)") && !/line\.onQuantity }}" min="1"/.test(source),
+  "draft-cart quantity inputs take their minimum from the matched source product and fall back safely for drafts whose product left the snapshot");
+{
+  // The preparation script rewrites the browser-snapshot migration in place; it must target the one canonical file
+  // so a re-run can never emit a second, divergent migration.
+  const prepareScript = await readFile(resolve(root, "scripts/prepare-canix-marketplace-browser-snapshot.mjs"), "utf8");
+  const canonical = "20261014194814_refresh_canix_marketplace_browser_snapshot.sql";
+  const targets = prepareScript.match(/supabase\/migrations\/[^"'`]+\.sql/g) || [];
+  const onDisk = (await readdir(resolve(root, "supabase/migrations"))).filter((name) => name.endsWith("_refresh_canix_marketplace_browser_snapshot.sql"));
+  assertContract(targets.length === 1 && targets[0] === "supabase/migrations/" + canonical && onDisk.length === 1 && onDisk[0] === canonical,
+    "the Canix browser-snapshot preparation script writes only the single checked-in canonical refresh migration");
+}
 assertContract(intake.includes('if (!store.license_expires_on)') && intake.includes('if (!store.quickbooks_customer_id)'), "stores fail closed on missing license dates or accounting identity at order intake");
 assertContract(intake.includes("const threshold = store.approval_threshold_cents") && intake.includes('"awaiting_owner_approval"') && intake.includes("owner-approval threshold verified server-side"), "store approval thresholds are rechecked by the server when an order is submitted");
 assertContract(source.includes("onbLocationOptions") && source.includes("All qualified stores") && source.includes("Choose exactly one store"), "onboarding binds buyer and Budtender scope to submitted stores instead of free text");
