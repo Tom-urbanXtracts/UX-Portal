@@ -44,3 +44,14 @@ The staging database was intentionally created from a schema-only production bas
 3. External Store acceptance remains held until pilot users are named. The current demonstration stays Internal Administrator-only.
 
 No production deployment may begin until every applicable blocker is closed and IT records release acceptance.
+
+## Resume handoff
+
+- Pull request [#2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2) is at verified head `d14683e`.
+- All release checks already recorded in this document are complete and green: local verification, isolated staging, authenticated browser journeys, malware-scanner acceptance, migration reconciliation, concurrency coverage and rollback rehearsal. The current GitHub checks are also green. No test or validation run is in flight.
+- Production is unchanged. Store access remains disabled, Store ordering remains held and notifications remain off.
+- The remaining approvals are unchanged: coordinated review and approval of PR #2; Finance, Operations, catalog-rule, recipient/export and real-pilot inputs from the decision register; and named pilot users before external Store acceptance. IT must record release acceptance before any production deployment.
+
+### Bounded future Claude Team review
+
+If an additional review is later authorized, use only the authenticated Claude Team subscription and do not use API credits. The review must remain read-only. Do not transmit source, data or evidence without explicit permission beyond the previously approved scope: `portal-kiosk`, `portal-sku-intake`, `portal-work-queue`, `_shared/request-workspace`, the Store endpoint/scanner/rollback verification scripts and tests named in PR #2, workforce migration `20261015003000_provision_workforce_workspace_membership.sql`, and `docs/store-access-technical-preparation-2026-10-14.md` plus this staging specification. No Claude task is currently running; the prior review is complete.
