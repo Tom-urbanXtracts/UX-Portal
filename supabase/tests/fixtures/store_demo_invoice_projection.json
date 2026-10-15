@@ -1,0 +1,139 @@
+{
+  "_comment": "Invoice-relevant subset of projectDemo per role and synthetic accounting scenario. store_demo_test.ts proves it matches the real projection; store_demo_ui_test.mjs renders it through the prototype renderVals and template.",
+  "owner": {
+    "current": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 0,
+          "status": "Paid",
+          "synthetic": true
+        }
+      ]
+    },
+    "overdue": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 120000,
+          "status": "Overdue",
+          "synthetic": true
+        }
+      ]
+    },
+    "unknown": {
+      "finance": {
+        "accounting": {
+          "state": "unknown"
+        }
+      },
+      "invoices": []
+    }
+  },
+  "billing": {
+    "current": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 0,
+          "status": "Paid",
+          "synthetic": true
+        }
+      ]
+    },
+    "overdue": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 120000,
+          "status": "Overdue",
+          "synthetic": true
+        }
+      ]
+    },
+    "unknown": {
+      "finance": {
+        "accounting": {
+          "state": "unknown"
+        }
+      },
+      "invoices": []
+    }
+  },
+  "internal": {
+    "current": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 0,
+          "status": "Paid",
+          "synthetic": true
+        }
+      ]
+    },
+    "overdue": {
+      "finance": {
+        "accounting": {
+          "state": "current"
+        }
+      },
+      "invoices": [
+        {
+          "id": "DEMO-INV-001",
+          "amountCents": 120000,
+          "balanceCents": 120000,
+          "status": "Overdue",
+          "synthetic": true
+        }
+      ]
+    },
+    "unknown": {
+      "finance": {
+        "accounting": {
+          "state": "unknown"
+        }
+      },
+      "invoices": []
+    }
+  },
+  "buyer": {
+    "current": {},
+    "overdue": {},
+    "unknown": {}
+  },
+  "budtender": {
+    "current": {},
+    "overdue": {},
+    "unknown": {}
+  }
+}

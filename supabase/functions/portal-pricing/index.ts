@@ -1,6 +1,16 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { loadMarketplaceIdentity } from '../_shared/marketplace-ordering.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { canonicalCanixProductId } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import {
+  canonicalCanixProductId,
+  labFailed,
+} from "../_shared/security-contract.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
+import {
+  marketplacePriceCents,
+  marketplaceSnapshotError,
+  ORDER_FACILITY_ID,
+} from "../_shared/marketplace-ordering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -36,7 +46,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -117,12 +127,13 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile")
+  const { data: rawProfile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active,locations")
     .eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'pricing.read');
   let canManagePricing = false;
   if (profile.role === "internal") {
     const { data: grant } = await service.from("portal_role_permission")
@@ -144,31 +155,7 @@ async function accessibleStores(caller: Caller): Promise<Row[]> {
     if (error) throw error;
     return (data ?? []) as unknown as Row[];
   }
-  if (!new Set(["owner", "buyer"]).has(String(caller.profile.role))) return [];
-  if (caller.profile.role === "owner") {
-    const { data, error } = await service.from("portal_store")
-      .select("license_number,organization,display_name,active")
-      .eq("organization", caller.profile.org).eq("active", true).order(
-        "display_name",
-      );
-    if (error) throw error;
-    return (data ?? []) as unknown as Row[];
-  }
-  const { data: assignments, error: assignmentError } = await service.from(
-    "portal_profile_store",
-  )
-    .select("license_number").eq("profile_id", caller.profile.id);
-  if (assignmentError) throw assignmentError;
-  const licenses = (assignments ?? []).map((row) => String(row.license_number));
-  if (!licenses.length) return [];
-  const { data, error } = await service.from("portal_store")
-    .select("license_number,organization,display_name,active")
-    .eq("organization", caller.profile.org).eq("active", true).in(
-      "license_number",
-      licenses,
-    ).order("display_name");
-  if (error) throw error;
-  return (data ?? []) as unknown as Row[];
+  return await storeRows(service, caller.profile, 'license_number,organization,display_name,active');
 }
 
 function serializeProposal(row: Row): Row {
@@ -218,6 +205,115 @@ function serializeDefaultPrice(row: Row): Row {
     casePriceCents: row.case_price_cents,
     sourcePriceId: row.source_price_id,
     publishedAt: row.published_at,
+    priceSource: row.price_source ?? "published_wholesale_list",
+    marketplaceProductId: row.marketplace_product_id ?? null,
+  };
+}
+
+async function marketplaceDefaultPrices(): Promise<Row> {
+  const { data: marketplaceState, error: marketplaceStateError } = await service
+    .from("canix_marketplace_sync_state").select(
+      "status,source_mode,snapshot_scope,last_successful_run_id,last_successful_at,snapshot_product_count",
+    ).eq("id", 1).maybeSingle();
+  if (marketplaceStateError) throw marketplaceStateError;
+  const snapshotError = marketplaceSnapshotError(
+    marketplaceState as Row | null,
+  );
+  if (snapshotError) throw new PricingError(503, snapshotError);
+
+  const { data: syncState, error: syncStateError } = await service.from(
+    "canix_sync_state",
+  ).select("last_successful_run_id").eq("id", 1).maybeSingle();
+  if (syncStateError) throw syncStateError;
+  if (!syncState?.last_successful_run_id) {
+    throw new PricingError(
+      503,
+      "Canix catalog data is temporarily unavailable.",
+    );
+  }
+
+  const [listingResult, packageResult] = await Promise.all([
+    service.from("canix_marketplace_product_snapshot").select(
+      "marketplace_product_id,product_name,brand_name,price_cents,sale_unit,synced_at",
+    ).eq("sync_run_id", marketplaceState!.last_successful_run_id).order(
+      "product_name",
+    ),
+    service.from("canix_package_current").select(
+      "item_id,product_id,item_name,product_name,brand_name,sku,case_quantity,status_category,quantity_type,weight,orderable_units,lab_test_status,test_result_status",
+    ).eq("sync_run_id", syncState.last_successful_run_id).eq(
+      "facility_id",
+      ORDER_FACILITY_ID,
+    ).eq("status_category", "available").eq("quantity_type", "CountBased"),
+  ]);
+  if (listingResult.error) throw listingResult.error;
+  if (packageResult.error) throw packageResult.error;
+
+  const packagesByMarketplaceProduct = new Map<string, Row[]>();
+  const identityIndex = await loadMarketplaceIdentity(service,String(syncState.last_successful_run_id));
+  for (const row of (packageResult.data ?? []) as Row[]) {
+    const orderable = row.orderable_units === null ||
+        row.orderable_units === undefined
+      ? Number(row.weight)
+      : Number(row.orderable_units);
+    if (!Number.isFinite(orderable) || orderable <= 0 || labFailed(row)) {
+      continue;
+    }
+    const productId = String(row.product_id ?? "");
+    if (!productId) continue;
+    packagesByMarketplaceProduct.set(productId, [
+      ...(packagesByMarketplaceProduct.get(productId) ?? []),
+      row,
+    ]);
+  }
+
+  const defaults = ((listingResult.data ?? []) as Row[]).flatMap((listing) => {
+    const priceCents = marketplacePriceCents(listing.price_cents);
+    const matches = packagesByMarketplaceProduct.get(
+      String(listing.marketplace_product_id),
+    ) ?? [];
+    const itemIds = Array.from(
+      new Set(
+        matches.map((row) => Number(row.item_id))
+          .filter((itemId) => Number.isSafeInteger(itemId) && itemId > 0),
+      ),
+    );
+    if (priceCents === null || itemIds.length !== 1) return [];
+    const itemId = itemIds[0];
+    if(identityIndex.get(String(itemId))!==String(listing.marketplace_product_id))return [];
+    const itemRows = matches.filter((row) => Number(row.item_id) === itemId);
+    const first = itemRows[0];
+    const caseSizes = Array.from(
+      new Set(
+        itemRows.map((row) => Number(row.case_quantity)).filter((value) =>
+          Number.isSafeInteger(value) && value > 0
+        ),
+      ),
+    );
+    const caseSize = caseSizes.length === 1 ? caseSizes[0] : null;
+    return [{
+      canixItemId: itemId,
+      productId: `canix:item:${itemId}`,
+      productName: listing.product_name || first.product_name ||
+        first.item_name,
+      brand: listing.brand_name || first.brand_name || null,
+      sku: first.sku || null,
+      unitPriceCents: priceCents,
+      caseSize,
+      casePriceCents: caseSize ? caseSize * priceCents : null,
+      sourcePriceId: null,
+      publishedAt: listing.synced_at,
+      priceSource: "canix_marketplace",
+      marketplaceProductId: listing.marketplace_product_id,
+    }];
+  });
+  return {
+    defaults,
+    marketplace: {
+      sourceMode: marketplaceState!.source_mode,
+      refreshedAt: marketplaceState!.last_successful_at,
+      snapshotProductCount: marketplaceState!.snapshot_product_count,
+      facilityId: ORDER_FACILITY_ID,
+    },
   };
 }
 
@@ -232,6 +328,9 @@ async function currentCanixPriceItems(): Promise<CanixPriceItem[]> {
     const { data, error } = await service.from("canix_package_current").select(
       "item_id,item_name,product_name,sku,brand_name,item_category_name,quantity_type",
     ).eq("sync_run_id", state.last_successful_run_id).eq(
+      "facility_id",
+      ORDER_FACILITY_ID,
+    ).eq(
       "quantity_type",
       "CountBased",
     ).order("package_id", { ascending: true }).range(start, start + 999);
@@ -284,17 +383,19 @@ function groupBy<T>(
 async function wholesalePriceSnapshot(
   includeReviewQueue: boolean,
 ): Promise<Row> {
-  const [defaultResult, sourceResult, canixItems] = await Promise.all([
-    service.from("portal_default_price").select("*").eq("active", true).order(
-      "product_name",
-    ),
-    includeReviewQueue
-      ? service.from("portal_wholesale_price_source").select("*").order(
-        "source_row",
-      )
-      : Promise.resolve({ data: [], error: null }),
-    includeReviewQueue ? currentCanixPriceItems() : Promise.resolve([]),
-  ]);
+  const [defaultResult, sourceResult, canixItems, marketplaceSnapshot] =
+    await Promise.all([
+      service.from("portal_default_price").select("*").eq("active", true).order(
+        "product_name",
+      ),
+      includeReviewQueue
+        ? service.from("portal_wholesale_price_source").select("*").order(
+          "source_row",
+        )
+        : Promise.resolve({ data: [], error: null }),
+      includeReviewQueue ? currentCanixPriceItems() : Promise.resolve([]),
+      marketplaceDefaultPrices(),
+    ]);
   if (defaultResult.error) throw defaultResult.error;
   if (sourceResult.error) throw sourceResult.error;
   const sourceRows = (sourceResult.data ?? []) as Row[];
@@ -445,10 +546,18 @@ async function wholesalePriceSnapshot(
     counts[row.reviewState] = Number(counts[row.reviewState] || 0) + 1;
     return counts;
   }, {} as Row);
+  const defaultsByProduct = new Map(
+    (defaultResult.data ?? []).map((row) => {
+      const serialized = serializeDefaultPrice(row as unknown as Row);
+      return [String(serialized.productId), serialized];
+    }),
+  );
+  for (const row of marketplaceSnapshot.defaults as Row[]) {
+    defaultsByProduct.set(String(row.productId), row);
+  }
   return {
-    defaults: (defaultResult.data ?? []).map((row) =>
-      serializeDefaultPrice(row as unknown as Row)
-    ),
+    defaults: Array.from(defaultsByProduct.values()),
+    marketplace: marketplaceSnapshot.marketplace,
     wholesaleSources: includeReviewQueue ? reviewRows : [],
     wholesaleSummary: includeReviewQueue ? summary : {},
   };
@@ -662,6 +771,9 @@ async function canonicalProduct(
   const { data, error } = await service.from("canix_package_current")
     .select("item_id,item_name,product_name,sku,source_updated_at")
     .eq("sync_run_id", state.last_successful_run_id).eq(
+      "facility_id",
+      ORDER_FACILITY_ID,
+    ).eq(
       "item_id",
       canonicalId.slice("canix:item:".length),
     )
@@ -799,8 +911,7 @@ Deno.serve(async (request) => {
         locationLicense,
         product.productId,
       );
-      const { data, error } = await service.from("portal_price_proposal")
-        .insert({
+      const { data, error } = await storeCommand(service, caller.profile, 'price.propose', {
           organization: caller.profile.org,
           location_license: locationLicense,
           product_id: product.productId,
@@ -812,7 +923,7 @@ Deno.serve(async (request) => {
           proposed_by: caller.profile.id,
           proposed_by_email: caller.user.email ?? null,
           proposed_by_role: caller.profile.role,
-        }).select("*").single();
+        });
       if (error) {
         if (error.code === "23505") {
           return json(request, {
@@ -822,14 +933,6 @@ Deno.serve(async (request) => {
         }
         throw error;
       }
-      await audit(caller, "price-proposed", data as unknown as Row, {
-        locationLicense,
-        locationName: store.display_name,
-        productId: product.productId,
-        productName: product.productName,
-        currentPriceCents,
-        proposedPriceCents,
-      });
       return json(request, {
         ok: true,
         proposal: serializeProposal({
@@ -918,6 +1021,7 @@ Deno.serve(async (request) => {
 
     return json(request, { error: "Unsupported pricing action" }, 400);
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     const status = error instanceof PricingError ? error.status : 500;
     return json(request, {
       error: error instanceof PricingError

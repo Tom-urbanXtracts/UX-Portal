@@ -1,6 +1,8 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { configuredQuickBooksEnvironment } from "../_shared/quickbooks-oauth.ts";
+import { DEFAULT_PAYMENT_TERMS, effectivePaymentTerms, quickBooksFreshness, storeFinancialAccess } from "../_shared/store-account-policy.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -43,7 +45,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -85,11 +87,12 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,org,role,staff_role,active").eq("id", user.id).maybeSingle();
-  if (error || !profile || profile.active === false) return null;
+  if (error || !rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'financials.read');
   if (profile.role === "internal") {
     const { data: grant } = await service.from("portal_role_permission").select(
       "permission",
@@ -104,10 +107,12 @@ async function callerFor(request: Request): Promise<Caller | null> {
     }
     return { user, profile: profile as Row, internal: true };
   }
-  if (!["owner", "buyer"].includes(String(profile.role))) {
+  // Approved matrix: Account Owner and authorized billing user (store_billing)
+  // only, own account. Buyers receive ordering information; Budtenders none.
+  if (!storeFinancialAccess(profile.role).invoices) {
     throw new PortalError(
       403,
-      "Financial history is available only to Store Owners and Buyers.",
+      "Financial information is available only to the Account Owner and authorized billing users.",
     );
   }
   return { user, profile: profile as Row, internal: false };
@@ -119,7 +124,7 @@ async function customerScope(
   let accountQuery = service.from("portal_retailer_account")
     .select("id,organization_name,display_name,quickbooks_customer_id");
   if (!caller.internal) {
-    accountQuery = accountQuery.eq("organization_name", caller.profile.org);
+    accountQuery = accountQuery.eq("id", storeContext(caller.profile)!.retailerAccountId);
   }
   const { data: accounts, error: accountError } = await accountQuery;
   if (accountError) throw accountError;
@@ -150,7 +155,7 @@ async function customerScope(
     ]),
   );
   const { data: collisionStores, error: collisionError } = !caller.internal &&
-      caller.profile.role === "buyer" && candidateCustomerIds.length
+      candidateCustomerIds.length
     ? await service.from("portal_store")
       .select(
         "retailer_account_id,organization,display_name,license_number,quickbooks_customer_id,active,closed_at",
@@ -159,7 +164,7 @@ async function customerScope(
     : { data: allStores, error: null };
   if (collisionError) throw collisionError;
   const { data: collisionAccounts, error: collisionAccountError } =
-    !caller.internal && caller.profile.role === "buyer" &&
+    !caller.internal &&
       candidateCustomerIds.length
       ? await service.from("portal_retailer_account")
         .select("id,organization_name,quickbooks_customer_id")
@@ -172,14 +177,7 @@ async function customerScope(
 
   let allowedLicenses: string[] | null = null;
   if (!caller.internal && caller.profile.role === "buyer") {
-    const { data: assignments, error: assignmentError } = await service.from(
-      "portal_profile_store",
-    )
-      .select("license_number").eq("profile_id", caller.profile.id);
-    if (assignmentError) throw assignmentError;
-    allowedLicenses = (assignments ?? []).map((assignment) =>
-      String(assignment.license_number)
-    );
+    allowedLicenses = [...storeContext(caller.profile)!.licenses];
   }
 
   const accountById = new Map(
@@ -231,11 +229,10 @@ async function customerScope(
         !allowedLicenses?.includes(String(candidate.license_number))
       );
     if (
-      caller.profile.role === "buyer" &&
-      (parentCustomerOutsideOrganization || parentCustomerOutsideAssignment ||
-        allMappedStores.some((mapped) =>
-          !allowedLicenses?.includes(String(mapped.license_number))
-        ))
+      !caller.internal && (parentCustomerOutsideOrganization ||
+        allMappedStores.some(mapped => String(mapped.retailer_account_id) !== String(store.retailer_account_id)) ||
+        (caller.profile.role === "buyer" && (parentCustomerOutsideAssignment ||
+          allMappedStores.some(mapped => !allowedLicenses?.includes(String(mapped.license_number))))))
     ) {
       if (!deniedSharedCustomers.has(customerId)) {
         missing.push({
@@ -261,13 +258,19 @@ async function customerScope(
     });
   }
 
-  // An Owner may see organization-level accounting records in addition to all
-  // stores. A Buyer never inherits this parent ID because it could include
-  // invoices for stores outside that Buyer's assignment.
-  if (caller.internal || caller.profile.role === "owner") {
+  // An Owner or authorized billing user may see organization-level accounting
+  // records for its own account in addition to all stores. A Buyer never
+  // inherits this parent ID because it could include invoices for stores outside
+  // that Buyer's assignment.
+  if (caller.internal || ["owner", "billing"].includes(String(caller.profile.role))) {
     for (const account of accounts ?? []) {
       const customerId = clean(account.quickbooks_customer_id);
-      if (!customerId || rows.has(customerId)) continue;
+      if (!customerId || rows.has(customerId) || deniedSharedCustomers.has(customerId)) continue;
+      if (!caller.internal && ((collisionAccounts ?? []).some(other => clean(other.quickbooks_customer_id) === customerId && String(other.id) !== String(account.id)) ||
+        (collisionStores ?? []).some(other => clean(other.quickbooks_customer_id) === customerId && String(other.retailer_account_id) !== String(account.id)))) {
+        missing.push({ organization: account.organization_name, reason: "shared_quickbooks_customer_outside_organization" });
+        continue;
+      }
       rows.set(customerId, {
         customerId,
         organization: String(account.organization_name),
@@ -289,6 +292,17 @@ function invoiceState(
     return { state: "past_due", daysPastDue: dayDistance(due, today) };
   }
   return { state: "open", daysPastDue: 0 };
+}
+
+// Own-account terms only. An unreadable policy is reported as unavailable,
+// never silently replaced with the default.
+async function accountPaymentTerms(accountId: string): Promise<Row> {
+  const [{ data: policy, error: policyError }, { data: override, error: overrideError }] = await Promise.all([
+    service.from("portal_payment_terms_default").select("terms").eq("id", true).maybeSingle(),
+    service.from("portal_retailer_payment_terms").select("terms").eq("retailer_account_id", accountId).maybeSingle(),
+  ]);
+  if (policyError || overrideError || !policy?.terms) return { terms: null, source: "unavailable" };
+  return effectivePaymentTerms(override?.terms as string | null, String(policy.terms || DEFAULT_PAYMENT_TERMS));
 }
 
 function sortRows(rows: Row[], key: string, direction: string): Row[] {
@@ -339,18 +353,24 @@ Deno.serve(async (request) => {
       )
       .eq("id", 1).maybeSingle();
     if (stateError) throw stateError;
-    if (
-      state?.connection_environment !== QBO_ENVIRONMENT ||
-      !state?.last_financial_run_id
-    ) {
+    // Stale exactly 24 hours after the last successful sync; warning only.
+    const loaded = state?.connection_environment === QBO_ENVIRONMENT && Boolean(state?.last_financial_run_id);
+    const freshness = quickBooksFreshness(loaded ? state?.financial_last_successful_at : null, new Date());
+    const freshnessSource = { stale: freshness.stale, freshness: freshness.state, lastSuccessfulSyncAt: freshness.lastSuccessfulSyncAt,
+      ageMinutes: freshness.ageMinutes, staleAfterHours: freshness.staleAfterHours };
+    const policy = { paymentCollectionEnabled: false, orderingGateInferredFromBalance: false, financialOrderBlock: "manual_hold_only" };
+    const paymentTerms = caller.internal ? undefined : await accountPaymentTerms(storeContext(caller.profile)!.retailerAccountId);
+    if (!loaded) {
       return json(request, {
         source: {
           system: "QuickBooks",
           environment: QBO_ENVIRONMENT,
           connectionMode: "not_loaded",
-          stale: true,
+          ...freshnessSource,
         },
         summary: null,
+        paymentTerms,
+        policy,
         byStore: [],
         invoices: [],
         payments: [],
@@ -367,17 +387,12 @@ Deno.serve(async (request) => {
           system: "QuickBooks",
           environment: QBO_ENVIRONMENT,
           connectionMode: "mapped_no_data",
-          stale: state.status === "error",
-          lastSuccessfulSyncAt: state.financial_last_successful_at,
+          ...freshnessSource,
         },
-        summary: {
-          outstandingCents: 0,
-          pastDueCents: 0,
-          paidCents: 0,
-          openInvoiceCount: 0,
-          invoiceCount: 0,
-          paymentCount: 0,
-        },
+        // No attributable customer: totals are withheld, not shown as zero.
+        summary: null,
+        paymentTerms,
+        policy,
         byStore: [],
         invoices: [],
         payments: [],
@@ -518,25 +533,19 @@ Deno.serve(async (request) => {
             Math.max(oldest, Number(invoice.daysPastDue || 0)),
           0,
         ),
-        creditLimitCents: null,
       };
     });
     const open = invoicesAll.filter((invoice) => invoice.state !== "paid");
     const pastDue = invoicesAll.filter((invoice) =>
       invoice.state === "past_due"
     );
-    const sourceTime = String(state.financial_last_successful_at || "");
-    const ageMinutes = sourceTime
-      ? Math.max(0, Math.floor((Date.now() - Date.parse(sourceTime)) / 60_000))
-      : null;
     return json(request, {
       source: {
         system: "QuickBooks",
         environment: QBO_ENVIRONMENT,
         connectionMode: "server_snapshot",
-        stale: state.status === "error",
-        lastSuccessfulSyncAt: state.financial_last_successful_at,
-        ageMinutes,
+        ...freshnessSource,
+        lastRunStatus: state.status,
       },
       summary: {
         outstandingCents: open.reduce(
@@ -558,18 +567,16 @@ Deno.serve(async (request) => {
         openInvoiceCount: open.length,
         invoiceCount: invoicesAll.length,
         paymentCount: paymentsAll.length,
-        creditLimitCents: null,
       },
       byStore,
       invoices,
       payments,
       mappingIncomplete: scope.missing,
-      policy: {
-        paymentCollectionEnabled: false,
-        orderingGateInferredFromBalance: false,
-      },
+      paymentTerms,
+      policy,
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     console.error("quickbooks-financials", error);
     if (error instanceof PortalError) {
       return json(request, { error: error.message }, error.status);

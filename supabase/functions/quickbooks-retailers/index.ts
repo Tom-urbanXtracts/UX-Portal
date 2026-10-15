@@ -5,7 +5,7 @@ import {
   quickBooksAccountingBase,
   requireQuickBooksEnvironment,
 } from "../_shared/quickbooks-oauth.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -115,7 +115,7 @@ async function authenticate(request: Request): Promise<boolean> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return false;
-  if (!verifiedTokenHasAal2(authorization)) return false;
+  if (!verifiedTokenIsAuthenticated(authorization)) return false;
   const user = await response.json();
   const { data: profile } = await service.from("portal_profile").select(
     "role,staff_role,active",
@@ -238,6 +238,17 @@ async function upsertChunks(
   }
 }
 
+function boundedText(value: unknown, maxLength = 320): string | null {
+  const normalized = String(value ?? "").trim();
+  return normalized ? normalized.slice(0, maxLength) : null;
+}
+
+function finiteNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+}
+
 function refValue(value: unknown): string | null {
   return value && typeof value === "object" && "value" in value
     ? String((value as Row).value || "") || null
@@ -267,7 +278,14 @@ function paymentAllocations(payment: Row): Row[] {
 }
 
 async function syncQuickBooks(): Promise<
-  { customerCount: number; invoiceCount: number; paymentCount: number }
+  {
+    customerCount: number;
+    vendorCount: number;
+    invoiceCount: number;
+    paymentCount: number;
+    creditMemoCount: number;
+    itemCount: number;
+  }
 > {
   await service.from("quickbooks_sync_state").update({
     status: "running",
@@ -297,11 +315,15 @@ async function syncQuickBooks(): Promise<
       }).eq("id", 1);
     if (tokenError) throw tokenError;
 
-    const [customers, invoices, payments] = await Promise.all([
-      qboQuery(auth, "Customer", "where Active in (true, false)"),
-      qboQuery(auth, "Invoice"),
-      qboQuery(auth, "Payment"),
-    ]);
+    const [customers, vendors, invoices, payments, creditMemos, items] =
+      await Promise.all([
+        qboQuery(auth, "Customer", "where Active in (true, false)"),
+        qboQuery(auth, "Vendor", "where Active in (true, false)"),
+        qboQuery(auth, "Invoice"),
+        qboQuery(auth, "Payment"),
+        qboQuery(auth, "CreditMemo"),
+        qboQuery(auth, "Item", "where Active in (true, false)"),
+      ]);
     const now = new Date().toISOString();
     const runId = crypto.randomUUID();
     pendingRunId = runId;
@@ -327,6 +349,32 @@ async function syncQuickBooks(): Promise<
       // other QuickBooks fields into a second system.
       raw: {},
     }));
+    const vendorRows = vendors.flatMap((vendor: Row) => {
+      const id = boundedText(vendor.Id, 160);
+      if (!id) return [];
+      const displayName = boundedText(
+        vendor.DisplayName || vendor.CompanyName || id,
+        500,
+      );
+      if (!displayName) return [];
+      const email = vendor.PrimaryEmailAddr as Row | undefined;
+      const billing = vendor.BillAddr as Row | undefined;
+      const metadata = vendor.MetaData as Row | undefined;
+      return [{
+        quickbooks_vendor_id: id,
+        display_name: displayName,
+        company_name: boundedText(vendor.CompanyName, 500),
+        active: vendor.Active !== false,
+        balance: finiteNumber(vendor.Balance),
+        vendor_1099: vendor.Vendor1099 === true,
+        email: boundedText(email?.Address, 320),
+        billing_city: boundedText(billing?.City, 200),
+        billing_region: boundedText(billing?.CountrySubDivisionCode, 100),
+        billing_postal_code: boundedText(billing?.PostalCode, 40),
+        source_updated_at: boundedText(metadata?.LastUpdatedTime, 80),
+        synced_at: now,
+      }];
+    });
     const invoiceRows = invoices.flatMap((invoice: Row) => {
       const customerId = refValue(invoice.CustomerRef);
       if (!customerId || !invoice.Id) return [];
@@ -365,11 +413,58 @@ async function syncQuickBooks(): Promise<
         synced_at: now,
       }];
     });
+    const creditMemoRows = creditMemos.flatMap((creditMemo: Row) => {
+      const customerId = refValue(creditMemo.CustomerRef);
+      if (!customerId || !creditMemo.Id) return [];
+      return [{
+        quickbooks_credit_memo_id: String(creditMemo.Id),
+        sync_run_id: runId,
+        quickbooks_customer_id: customerId,
+        doc_number: creditMemo.DocNumber || null,
+        txn_date: creditMemo.TxnDate || null,
+        total_amount: Number(creditMemo.TotalAmt || 0),
+        remaining_credit: Number(creditMemo.RemainingCredit || 0),
+        currency: refValue(creditMemo.CurrencyRef),
+        source_updated_at:
+          (creditMemo.MetaData as Row | undefined)?.LastUpdatedTime || null,
+        synced_at: now,
+      }];
+    });
+    const itemRows = items.flatMap((item: Row) => {
+      const id = boundedText(item.Id, 160);
+      const name = boundedText(item.Name, 500);
+      if (!id || !name) return [];
+      const metadata = item.MetaData as Row | undefined;
+      return [{
+        quickbooks_item_id: id,
+        name,
+        fully_qualified_name: boundedText(item.FullyQualifiedName, 800),
+        sku: boundedText(item.Sku, 240),
+        item_type: boundedText(item.Type, 80),
+        active: item.Active !== false,
+        description: boundedText(item.Description, 2000),
+        parent_item_id: refValue(item.ParentRef),
+        income_account_id: refValue(item.IncomeAccountRef),
+        expense_account_id: refValue(item.ExpenseAccountRef),
+        asset_account_id: refValue(item.AssetAccountRef),
+        purchase_cost: finiteNumber(item.PurchaseCost),
+        unit_price: finiteNumber(item.UnitPrice),
+        track_quantity: item.TrackQtyOnHand === true,
+        quantity_on_hand: finiteNumber(item.QtyOnHand),
+        source_updated_at: boundedText(metadata?.LastUpdatedTime, 80),
+        synced_at: now,
+      }];
+    });
 
     await upsertChunks(
       "quickbooks_customer_cache",
       rows,
       "quickbooks_customer_id",
+    );
+    await upsertChunks(
+      "quickbooks_vendor_cache",
+      vendorRows,
+      "quickbooks_vendor_id",
     );
     await upsertChunks(
       "quickbooks_invoice_cache",
@@ -381,6 +476,52 @@ async function syncQuickBooks(): Promise<
       paymentRows,
       "quickbooks_payment_id,sync_run_id",
     );
+    await upsertChunks(
+      "quickbooks_credit_memo_cache",
+      creditMemoRows,
+      "quickbooks_credit_memo_id,sync_run_id",
+    );
+    await upsertChunks(
+      "quickbooks_item_cache",
+      itemRows,
+      "quickbooks_item_id",
+    );
+    const { error: staleItemError } = await service.from(
+      "quickbooks_item_cache",
+    ).delete().neq("synced_at", now);
+    if (staleItemError) throw staleItemError;
+    const { error: absentMappingError } = await service.from(
+      "portal_item_source_mapping",
+    ).update({ source_present: false, updated_at: now }).eq(
+      "source_system",
+      "quickbooks",
+    );
+    if (absentMappingError) throw absentMappingError;
+    await upsertChunks(
+      "portal_item_source_mapping",
+      itemRows.map((item) => ({
+        source_system: "quickbooks",
+        source_item_id: item.quickbooks_item_id,
+        source_name: item.name,
+        source_brand_name: null,
+        source_sku: item.sku,
+        source_item_type: item.item_type,
+        source_active: item.active,
+        source_present: true,
+        source_updated_at: item.source_updated_at,
+        last_seen_at: now,
+        updated_at: now,
+      })),
+      "source_system,source_item_id",
+    );
+    const { error: matchingError } = await service.rpc(
+      "portal_refresh_item_match_suggestions",
+    );
+    if (matchingError) throw matchingError;
+    const { error: classificationError } = await service.rpc(
+      "portal_refresh_source_item_classifications",
+    );
+    if (classificationError) throw classificationError;
     const { error: stateError } = await service.from("quickbooks_sync_state")
       .update({
         realm_id: auth.realm,
@@ -392,8 +533,11 @@ async function syncQuickBooks(): Promise<
         last_financial_run_id: runId,
         last_error: null,
         customer_count: rows.length,
+        vendor_count: vendorRows.length,
         invoice_count: invoiceRows.length,
         payment_count: paymentRows.length,
+        credit_memo_count: creditMemoRows.length,
+        item_count: itemRows.length,
         updated_at: now,
         last_intuit_tid: null,
       }).eq("id", 1);
@@ -411,12 +555,19 @@ async function syncQuickBooks(): Promise<
         "sync_run_id",
         runId,
       ),
+      service.from("quickbooks_credit_memo_cache").delete().neq(
+        "sync_run_id",
+        runId,
+      ),
     ]);
     pendingRunId = null;
     return {
       customerCount: rows.length,
+      vendorCount: vendorRows.length,
       invoiceCount: invoiceRows.length,
       paymentCount: paymentRows.length,
+      creditMemoCount: creditMemoRows.length,
+      itemCount: itemRows.length,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -428,6 +579,10 @@ async function syncQuickBooks(): Promise<
           pendingRunId,
         ),
         service.from("quickbooks_payment_cache").delete().eq(
+          "sync_run_id",
+          pendingRunId,
+        ),
+        service.from("quickbooks_credit_memo_cache").delete().eq(
           "sync_run_id",
           pendingRunId,
         ),
@@ -446,6 +601,30 @@ async function syncQuickBooks(): Promise<
     });
     throw error;
   }
+}
+
+async function cachedVendors(): Promise<Row[]> {
+  const { data, error } = await service.from("quickbooks_vendor_cache")
+    .select(
+      "quickbooks_vendor_id,display_name,company_name,active,balance,vendor_1099,email,billing_city,billing_region,billing_postal_code,source_updated_at,synced_at",
+    ).order("display_name");
+  if (error) throw error;
+  return (data ?? []).map((row: Row) => ({
+    id: `qbo:vendor:${row.quickbooks_vendor_id}`,
+    quickbooksVendorId: row.quickbooks_vendor_id,
+    name: row.display_name,
+    company: row.company_name,
+    active: row.active,
+    balance: row.balance,
+    vendor1099: row.vendor_1099,
+    email: row.email,
+    billingCity: row.billing_city,
+    billingRegion: row.billing_region,
+    billingPostalCode: row.billing_postal_code,
+    sourceUpdatedAt: row.source_updated_at,
+    syncedAt: row.synced_at,
+    source: "QuickBooks vendor",
+  }));
 }
 
 async function cachedAccounts(): Promise<Row[]> {
@@ -526,8 +705,11 @@ async function quickBooksConnected(): Promise<boolean> {
     "connection_status,connection_environment,realm_id,encrypted_refresh_token",
   ).eq("id", 1).maybeSingle();
   if (error) throw error;
-  return data?.connection_status === "connected" &&
-    data?.connection_environment === QBO_ENVIRONMENT &&
+  // A transient sync failure records `connection_status = error`. The cron
+  // worker must still retry when the environment-bound credentials remain
+  // present; otherwise one timeout permanently deadlocks the five-minute job.
+  // An absent realm/token or an environment mismatch still fails closed.
+  return data?.connection_environment === QBO_ENVIRONMENT &&
     Boolean(data.realm_id) &&
     Boolean(data.encrypted_refresh_token);
 }
@@ -559,11 +741,13 @@ Deno.serve(async (request) => {
         environment: QBO_ENVIRONMENT,
         ...counts,
         accounts: await cachedAccounts(),
+        ...(cron ? {} : { vendors: await cachedVendors() }),
       });
     }
     if (!(await quickBooksConnected())) {
       return json(request, {
         accounts: [],
+        vendors: [],
         environment: QBO_ENVIRONMENT,
         connectionStatus: "disconnected",
       });
@@ -575,13 +759,14 @@ Deno.serve(async (request) => {
     }
     return json(request, {
       accounts,
+      vendors: await cachedVendors(),
       environment: QBO_ENVIRONMENT,
       connectionStatus: "connected",
     });
   } catch (error) {
     console.error("quickbooks-retailers", error);
     return json(request, {
-      error: "QuickBooks customers are temporarily unavailable.",
+      error: "QuickBooks accounting data is temporarily unavailable.",
     }, 502);
   }
 });

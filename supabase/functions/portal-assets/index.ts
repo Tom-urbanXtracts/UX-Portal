@@ -1,5 +1,6 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
   ContentScanError,
   contentScannerConfigured,
@@ -10,8 +11,10 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BUCKET = "portal-assets";
-const ASSET_UPLOADS_ENABLED = Deno.env.get("PORTAL_ASSET_UPLOADS_ENABLED") ===
-  "true";
+// Product-image uploads are available only when the required malware scanner is
+// configured. This keeps the release fail-closed without relying on a legacy
+// feature flag that could silently leave the production form disabled.
+const ASSET_UPLOADS_ENABLED = contentScannerConfigured();
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -43,7 +46,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -92,14 +95,15 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false || profile.role !== "internal") {
+  if (!rawProfile || rawProfile.active !== true) {
     return null;
   }
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'users.read', { internalOnly: true });
   const { data: grants, error } = await service.from("portal_role_permission")
     .select("permission").eq("staff_role", profile.staff_role);
   if (error) throw error;
@@ -395,6 +399,7 @@ Deno.serve(async (request) => {
     }
     return json(request, { error: "Unsupported asset action" }, 400);
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     const status = error instanceof AssetError ? error.status : 502;
     if (!(error instanceof AssetError)) console.error("portal-assets", error);
     return json(request, {

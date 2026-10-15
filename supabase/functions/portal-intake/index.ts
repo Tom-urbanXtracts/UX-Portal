@@ -1,8 +1,20 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { loadMarketplaceIdentity } from '../_shared/marketplace-ordering.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
 import { labFailed, labPassed } from "../_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
-import { ContentScanError, scanContent, sha256Hex } from "../_shared/content-scanner.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
+import { storeInventorySnapshotError } from "../_shared/store-inventory-freshness.ts";
+import {
+  ContentScanError,
+  scanContent,
+  sha256Hex,
+} from "../_shared/content-scanner.ts";
+import {
+  marketplacePriceCents,
+  marketplaceSnapshotError,
+  ORDER_FACILITY_ID,
+} from "../_shared/marketplace-ordering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -106,22 +118,34 @@ function mondayFileBytes(file: Row): Uint8Array {
   }
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
   const declared = Number(file.sizeBytes || 0);
-  if (!declared || bytes.byteLength !== declared || bytes.byteLength > 10 * 1024 * 1024) {
+  if (
+    !declared || bytes.byteLength !== declared ||
+    bytes.byteLength > 10 * 1024 * 1024
+  ) {
     throw new Error("The onboarding document size did not pass validation.");
   }
   const contentType = mondayText(file.contentType, 120).toLowerCase();
-  const pdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
-  const png = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+  const pdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 &&
+    bytes[3] === 0x46;
+  const png = bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e &&
+    bytes[3] === 0x47;
   const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   if (
     !((contentType === "application/pdf" && pdf) ||
       (contentType === "image/png" && png) ||
       (contentType === "image/jpeg" && jpeg))
-  ) throw new Error("The onboarding document contents do not match its declared file type.");
+  ) {
+    throw new Error(
+      "The onboarding document contents do not match its declared file type.",
+    );
+  }
   return bytes;
 }
 
-async function mondayBoardColumns(accessToken: string, boardId: string): Promise<Row[]> {
+async function mondayBoardColumns(
+  accessToken: string,
+  boardId: string,
+): Promise<Row[]> {
   const data = await mondayGraphql(
     accessToken,
     `query PortalBoardColumns($boardIds: [ID!]!) {
@@ -130,7 +154,9 @@ async function mondayBoardColumns(accessToken: string, boardId: string): Promise
     { boardIds: [boardId] },
   );
   const boards = Array.isArray(data.boards) ? data.boards as Row[] : [];
-  return boards[0] && Array.isArray(boards[0].columns) ? boards[0].columns as Row[] : [];
+  return boards[0] && Array.isArray(boards[0].columns)
+    ? boards[0].columns as Row[]
+    : [];
 }
 
 async function ensureMondayColumn(
@@ -152,7 +178,9 @@ async function ensureMondayColumn(
     { boardId, title },
   );
   const created = data.create_column as Row | undefined;
-  if (!created?.id) throw new Error(`Monday did not create the ${title} column.`);
+  if (!created?.id) {
+    throw new Error(`Monday did not create the ${title} column.`);
+  }
   return mondayColumnId(String(created.id));
 }
 
@@ -185,7 +213,9 @@ async function uploadMondayFile(
   });
   const body = await response.json().catch(() => ({})) as Row;
   if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
-    throw new Error("Monday created the onboarding item but did not accept its document.");
+    throw new Error(
+      "Monday created the onboarding item but did not accept its document.",
+    );
   }
 }
 
@@ -201,38 +231,57 @@ async function archiveOnboardingDocument(
     scan = await scanContent(bytes, digest);
   } catch (error) {
     if (error instanceof ContentScanError && error.verdict === "infected") {
-      throw new IntakeError(422, "The onboarding document was blocked by malware scanning and was not sent to Monday.");
+      throw new IntakeError(
+        422,
+        "The onboarding document was blocked by malware scanning and was not sent to Monday.",
+      );
     }
-    throw new IntakeError(503, "The onboarding document could not be verified as clean. Nothing was sent to Monday; try again later.");
+    throw new IntakeError(
+      503,
+      "The onboarding document could not be verified as clean. Nothing was sent to Monday; try again later.",
+    );
   }
   const contentType = mondayText(file.contentType, 120).toLowerCase();
-  const extension = contentType === "application/pdf" ? "pdf" : contentType === "image/png" ? "png" : "jpg";
+  const extension = contentType === "application/pdf"
+    ? "pdf"
+    : contentType === "image/png"
+    ? "png"
+    : "jpg";
   const objectPath = `${requestId}/${digest}.${extension}`;
-  const { data: existing, error: existingError } = await service.from("portal_onboarding_document")
-    .select("*").eq("onboarding_request_id", requestId).eq("sha256", digest).maybeSingle();
+  const { data: existing, error: existingError } = await service.from(
+    "portal_onboarding_document",
+  )
+    .select("*").eq("onboarding_request_id", requestId).eq("sha256", digest)
+    .maybeSingle();
   if (existingError) throw existingError;
   if (existing) return existing as Row;
-  const { error: uploadError } = await service.storage.from("portal-onboarding-documents").upload(
+  const { error: uploadError } = await service.storage.from(
+    "portal-onboarding-documents",
+  ).upload(
     objectPath,
     bytes,
     { contentType, cacheControl: "0", upsert: false },
   );
-  if (uploadError && !String(uploadError.message || "").toLowerCase().includes("already exists")) {
+  if (
+    uploadError &&
+    !String(uploadError.message || "").toLowerCase().includes("already exists")
+  ) {
     throw uploadError;
   }
-  const { data, error } = await service.from("portal_onboarding_document").insert({
-    onboarding_request_id: requestId,
-    object_path: objectPath,
-    original_name: mondayText(file.name, 240),
-    content_type: contentType,
-    size_bytes: bytes.byteLength,
-    sha256: digest,
-    scan_state: "clean",
-    scanner_provider: scan.engine,
-    scanned_at: new Date().toISOString(),
-    transfer_state: "pending",
-    uploaded_by: caller?.profile.id ?? null,
-  }).select("*").single();
+  const { data, error } = await service.from("portal_onboarding_document")
+    .insert({
+      onboarding_request_id: requestId,
+      object_path: objectPath,
+      original_name: mondayText(file.name, 240),
+      content_type: contentType,
+      size_bytes: bytes.byteLength,
+      sha256: digest,
+      scan_state: "clean",
+      scanner_provider: scan.engine,
+      scanned_at: new Date().toISOString(),
+      transfer_state: "pending",
+      uploaded_by: caller?.profile.id ?? null,
+    }).select("*").single();
   if (error) throw error;
   return data as Row;
 }
@@ -242,18 +291,26 @@ async function directMondayOnboarding(payload: Row): Promise<Row | null> {
   if (!accessToken || !/^\d+$/.test(MONDAY_ONBOARDING_BOARD_ID)) return null;
   const requestId = mondayText(payload.clientRequestId, 80);
   const legalEntity = mondayText(payload.legalEntity, 300);
-  if (!requestId || !legalEntity) throw new Error("The direct Monday onboarding identifiers are incomplete.");
+  if (!requestId || !legalEntity) {
+    throw new Error("The direct Monday onboarding identifiers are incomplete.");
+  }
   const requestColumnId = await ensureMondayColumn(
     accessToken,
     MONDAY_ONBOARDING_BOARD_ID,
     "Portal Request ID",
     "text",
   );
-  const file = payload.file && typeof payload.file === "object" && !Array.isArray(payload.file)
+  const file = payload.file && typeof payload.file === "object" &&
+      !Array.isArray(payload.file)
     ? payload.file as Row
     : null;
   const fileColumnId = file
-    ? await ensureMondayColumn(accessToken, MONDAY_ONBOARDING_BOARD_ID, "Onboarding Documents", "file")
+    ? await ensureMondayColumn(
+      accessToken,
+      MONDAY_ONBOARDING_BOARD_ID,
+      "Onboarding Documents",
+      "file",
+    )
     : null;
   const existingData = await mondayGraphql(
     accessToken,
@@ -268,7 +325,12 @@ async function directMondayOnboarding(payload: Row): Promise<Row | null> {
   const existing = firstMondayItem(existingData);
   if (existing?.id) {
     if (file && fileColumnId) {
-      await uploadMondayFile(accessToken, String(existing.id), fileColumnId, file);
+      await uploadMondayFile(
+        accessToken,
+        String(existing.id),
+        fileColumnId,
+        file,
+      );
     }
     return {
       mondayItemId: String(existing.id),
@@ -279,22 +341,88 @@ async function directMondayOnboarding(payload: Row): Promise<Row | null> {
       documentDelivered: Boolean(file),
     };
   }
-  const owner = payload.owner && typeof payload.owner === "object" ? payload.owner as Row : {};
-  const buyer = payload.buyer && typeof payload.buyer === "object" ? payload.buyer as Row : {};
-  const locations = Array.isArray(payload.locations) ? payload.locations as Row[] : [];
-  const locationsText = locations.map((location) => [
-    mondayText(location.name, 200),
-    mondayText(location.license, 120),
-    mondayText(location.address, 500),
-    mondayText(location.licenseExpiresOn, 40),
-  ].filter(Boolean).join(" · ")).join("\n");
+  const owner = payload.owner && typeof payload.owner === "object"
+    ? payload.owner as Row
+    : {};
+  const buyer = payload.buyer && typeof payload.buyer === "object"
+    ? payload.buyer as Row
+    : {};
+  const partner =
+    payload.partnerDetails && typeof payload.partnerDetails === "object" &&
+      !Array.isArray(payload.partnerDetails)
+      ? payload.partnerDetails as Row
+      : {};
+  const billing = partner.billing && typeof partner.billing === "object" &&
+      !Array.isArray(partner.billing)
+    ? partner.billing as Row
+    : {};
+  const locations = Array.isArray(payload.locations)
+    ? payload.locations as Row[]
+    : [];
+  const locationsText = locations.map((location) =>
+    [
+      mondayText(location.name, 200),
+      mondayText(location.license, 120),
+      mondayText(location.licenseType, 160),
+      mondayText(location.licenseExpiresOn, 40),
+      mondayText(location.address, 500),
+    ].filter(Boolean).join(" · ")
+  ).join("\n");
+  const brands = Array.isArray(partner.brands)
+    ? partner.brands.map((value) => mondayText(value, 160)).filter(Boolean)
+      .join(", ")
+    : "";
+  const deliveryDays = Array.isArray(partner.deliveryDays)
+    ? partner.deliveryDays.map((value) => mondayText(value, 40)).filter(Boolean)
+      .join(", ")
+    : "";
+  const partnerSummary = [
+    locationsText,
+    mondayText(payload.dba, 300) ? `DBA: ${mondayText(payload.dba, 300)}` : "",
+    deliveryDays || mondayText(partner.deliveryWindow, 100)
+      ? `Delivery: ${
+        [deliveryDays, mondayText(partner.deliveryWindow, 100)].filter(Boolean)
+          .join(" · ")
+      }`
+      : "",
+    brands ? `Brand interests: ${brands}` : "",
+    mondayText(partner.website, 500)
+      ? `Website: ${mondayText(partner.website, 500)}`
+      : "",
+    mondayText(partner.mediaEmail, 320)
+      ? `Website media email: ${mondayText(partner.mediaEmail, 320)}`
+      : "",
+    mondayText(billing.name, 200) || mondayText(billing.email, 320)
+      ? `Billing: ${
+        [
+          mondayText(billing.name, 200),
+          mondayText(billing.email, 320),
+          mondayText(billing.phone, 80),
+        ].filter(Boolean).join(" · ")
+      }`
+      : "",
+    mondayText(partner.additionalContacts, 2000)
+      ? `Additional contacts: ${mondayText(partner.additionalContacts, 2000)}`
+      : "",
+    partner.termsReviewed === true ? "Wholesale Terms of Sale: reviewed" : "",
+  ].filter(Boolean).join("\n");
   const submissionType = mondayText(payload.submissionType, 120) || "New store";
   const columnValues: Row = {
     color_mm6jkc5s: { label: submissionType },
     color_mm6ja098: { label: "01 Intake" },
-    long_text_mm6js18: locationsText,
-    text_mm6jywpe: [mondayText(owner.name, 200), mondayText(owner.email, 320)].filter(Boolean).join(" · "),
-    text_mm6jtxq3: [mondayText(buyer.name, 200), mondayText(buyer.email, 320)].filter(Boolean).join(" · "),
+    long_text_mm6js18: mondayText(partnerSummary, 10000),
+    text_mm6jywpe: [
+      mondayText(owner.name, 200),
+      mondayText(owner.email, 320),
+      mondayText(owner.phone, 80),
+    ].filter(Boolean).join(" · "),
+    text_mm6jtxq3: partner.buyerSameAsPrimary === true
+      ? "Primary contact is the buyer"
+      : [
+        mondayText(buyer.name, 200),
+        mondayText(buyer.email, 320),
+        mondayText(buyer.phone, 80),
+      ].filter(Boolean).join(" · "),
     numeric_mm6j7wyc: String(Number(payload.budtenderCount) || 0),
     text_mm6jrv8k: mondayText(payload.submittedBy, 300),
     [requestColumnId]: requestId,
@@ -311,7 +439,9 @@ async function directMondayOnboarding(payload: Row): Promise<Row | null> {
     },
   );
   const created = createdData.create_item as Row | undefined;
-  if (!created?.id) throw new Error("Monday did not return the created onboarding item.");
+  if (!created?.id) {
+    throw new Error("Monday did not return the created onboarding item.");
+  }
   if (file && fileColumnId) {
     await uploadMondayFile(accessToken, String(created.id), fileColumnId, file);
   }
@@ -478,7 +608,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -506,14 +636,14 @@ async function identity(
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active,locations",
   ).eq("id", user.id).maybeSingle();
-  return profile && profile.active !== false
-    ? { user, profile: profile as Row }
-    : null;
+  if (!rawProfile || rawProfile.active !== true) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'orders.submit');
+  return { user, profile: profile as Row };
 }
 
 async function hasPermission(
@@ -699,19 +829,10 @@ async function verifyOrder(
       );
     }
   }
-  if (
-    caller.profile.role !== "internal" &&
-    store.organization !== caller.profile.org
-  ) {
-    throw new IntakeError(403, "That store is outside your organization.");
-  }
-  if (caller.profile.role === "buyer") {
-    const { data: assignment } = await service.from("portal_profile_store")
-      .select("license_number")
-      .eq("profile_id", caller.profile.id).eq("license_number", license)
-      .maybeSingle();
-    if (!assignment) {
-      throw new IntakeError(403, "That store is outside your assigned access.");
+  if (caller.profile.role !== "internal") {
+    const context = storeContext(caller.profile)!;
+    if (store.retailer_account_id !== context.retailerAccountId || !context.licenses.includes(license)) {
+      throw new IntakeError(403, "That store is outside your current membership.");
     }
   }
 
@@ -748,6 +869,7 @@ async function verifyOrder(
   ]);
   if (storePriceResult.error) throw storePriceResult.error;
   if (defaultPriceResult.error) throw defaultPriceResult.error;
+  const storePriceRows = storePriceResult.data ?? [];
   const priceByProduct = new Map<string, Row>(
     (defaultPriceResult.data ?? []).map((row) => [String(row.product_id), {
       ...row,
@@ -755,22 +877,6 @@ async function verifyOrder(
       price_source: "default_wholesale",
     }]),
   );
-  for (const row of storePriceResult.data ?? []) {
-    priceByProduct.set(String(row.product_id), {
-      ...row,
-      price_source: "approved_store_override",
-    });
-  }
-  const missingPrice = productIds.find((productId) =>
-    !priceByProduct.has(productId)
-  );
-  if (missingPrice) {
-    throw new IntakeError(
-      409,
-      "A product in this draft no longer has an approved price for this store. Refresh the catalog and review the draft.",
-    );
-  }
-
   const requestedByProduct = new Map(productIds.map((productId) => [
     productId,
     rawLines.filter((line) => String(line.productId || "").trim() === productId)
@@ -782,30 +888,62 @@ async function verifyOrder(
   const numericItemIds = canixProductIds.map((id) =>
     id.slice("canix:item:".length)
   ).filter((id) => /^\d+$/.test(id));
+  if (numericItemIds.length !== canixProductIds.length) {
+    throw new IntakeError(
+      409,
+      "A product in this draft no longer has a valid Canix catalog identity. Refresh the catalog and review the draft.",
+    );
+  }
   const releasedUnitsByProduct = new Map<string, number>();
   if (canixProductIds.length) {
-    const { data: sync } = await service.from("canix_sync_state").select(
-      "last_successful_run_id",
-    ).eq("id", 1).maybeSingle();
-    if (!sync?.last_successful_run_id) {
-      throw new IntakeError(
-        503,
-        "Canix release data is temporarily unavailable. The draft was preserved.",
-      );
+    const [syncResult, marketplaceStateResult] = await Promise.all([
+      service.from("canix_sync_state").select("last_successful_run_id,last_successful_at").eq(
+        "id",
+        1,
+      ).maybeSingle(),
+      service.from("canix_marketplace_sync_state").select(
+        "status,snapshot_scope,last_successful_run_id,last_successful_at",
+      ).eq("id", 1).maybeSingle(),
+    ]);
+    if (syncResult.error) throw syncResult.error;
+    if (marketplaceStateResult.error) throw marketplaceStateResult.error;
+    const sync = syncResult.data;
+    const inventoryError = storeInventorySnapshotError(sync);
+    if (!sync || inventoryError) {
+      throw new IntakeError(503, inventoryError ?? "Canix inventory verification is unavailable. Your draft is preserved.");
     }
+    const snapshotError = marketplaceSnapshotError(
+      marketplaceStateResult.data as Row | null,
+    );
+    if (snapshotError) throw new IntakeError(503, snapshotError);
     if (numericItemIds.length) {
-      const { data: packages, error: packageError } = await service.from(
-        "canix_package_current",
-      )
-        .select(
-          "item_id,status_category,quantity_type,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lab_test_status,test_result_status,has_coa",
-        )
-        .eq("sync_run_id", sync.last_successful_run_id).eq(
-          "status_category",
-          "available",
-        )
-        .eq("quantity_type", "CountBased").in("item_id", numericItemIds);
+      const identityIndex = await loadMarketplaceIdentity(service,String(sync.last_successful_run_id));
+      const [packageResult, marketplaceResult] = await Promise.all([
+        service.from("canix_package_current")
+          .select(
+            "item_id,product_id,item_name,product_name,sku,status_category,quantity_type,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lab_test_status,test_result_status,has_coa",
+          )
+          .eq("sync_run_id", sync.last_successful_run_id).eq(
+            "facility_id",
+            ORDER_FACILITY_ID,
+          ).eq("status_category", "available")
+          .eq("quantity_type", "CountBased").in("item_id", numericItemIds),
+        service.from("canix_marketplace_product_snapshot").select(
+          "marketplace_product_id,product_name,price_cents,synced_at",
+        ).eq(
+          "sync_run_id",
+          marketplaceStateResult.data!.last_successful_run_id,
+        ),
+      ]);
+      const { data: packages, error: packageError } = packageResult;
       if (packageError) throw packageError;
+      if (marketplaceResult.error) throw marketplaceResult.error;
+      const marketplaceByProductId = new Map(
+        ((marketplaceResult.data ?? []) as Row[]).map((row) => [
+          String(row.marketplace_product_id),
+          row,
+        ]),
+      );
       for (const itemId of numericItemIds) {
         const matching = (packages ?? []).filter((row) => {
           const explicitOrderable =
@@ -822,6 +960,42 @@ async function verifyOrder(
             "A Canix product in this draft is no longer available. Refresh the catalog and review the draft.",
           );
         }
+        const marketplaceProductIds = Array.from(
+          new Set(
+            matching.map((row) => String(row.product_id ?? "")).filter((id) =>
+              marketplaceByProductId.has(id)
+            ),
+          ),
+        );
+        if (marketplaceProductIds.length !== 1) {
+          throw new IntakeError(
+            409,
+            "A Canix product in this draft is not uniquely listed in the current Marketplace catalog. Refresh the catalog and review the draft.",
+          );
+        }
+        const marketplace = marketplaceByProductId.get(
+          marketplaceProductIds[0],
+        )!;
+        if(identityIndex.get(itemId)!==marketplaceProductIds[0]) {
+          throw new IntakeError(409,'A Marketplace product has an ambiguous Canix item mapping. It is held for review; your draft is preserved.');
+        }
+        const marketplacePrice = marketplacePriceCents(marketplace.price_cents);
+        if (marketplacePrice === null) {
+          throw new IntakeError(
+            409,
+            "A Canix product in this draft no longer has a valid Marketplace price. Refresh the catalog and review the draft.",
+          );
+        }
+        const first = matching[0];
+        priceByProduct.set(`canix:item:${itemId}`, {
+          product_id: `canix:item:${itemId}`,
+          product_name: marketplace.product_name || first.product_name ||
+            first.item_name,
+          sku: first.sku || null,
+          price_cents: marketplacePrice,
+          published_at: marketplace.synced_at,
+          price_source: "canix_marketplace",
+        });
         const releasedUnits = matching.filter((row) =>
           labPassed(row as unknown as Row)
         )
@@ -876,6 +1050,22 @@ async function verifyOrder(
         releasedUnitsByProduct.set(productId, 0);
       }
     }
+  }
+
+  for (const row of storePriceRows) {
+    priceByProduct.set(String(row.product_id), {
+      ...row,
+      price_source: "approved_store_override",
+    });
+  }
+  const missingPrice = productIds.find((productId) =>
+    !priceByProduct.has(productId)
+  );
+  if (missingPrice) {
+    throw new IntakeError(
+      409,
+      "A product in this draft no longer has an approved price for this store. Refresh the catalog and review the draft.",
+    );
   }
 
   let orderValueCents = 0;
@@ -990,7 +1180,7 @@ async function createDurableOrder(
   if (!portalReference) {
     throw new IntakeError(400, "The order is missing its portal reference.");
   }
-  const { data, error } = await service.rpc("portal_create_order", {
+  const commandPayload = {
     p_client_request_id: clientRequestId,
     p_portal_reference: portalReference,
     p_organization: payload.account,
@@ -1020,9 +1210,26 @@ async function createDurableOrder(
       minimumOrderCents: payload.minimumOrderCents ?? null,
       leadTimeDays: payload.leadTimeDays ?? null,
     },
-  });
+  };
+  const { data, error } = caller.profile.role === 'internal'
+    ? await service.rpc('portal_create_order', commandPayload)
+    : await storeCommand(service, caller.profile, 'order.create', commandPayload);
   if (error) {
     const message = String(error.message || "");
+    // Raised only by an explicit audited manual hold, including staff-entered orders.
+    if ((error as { code?: string }).code === "UXH01") {
+      throw new IntakeError(
+        409,
+        "Ordering is on hold for this account. The draft was preserved.",
+      );
+    }
+    // Raised for missing, unverified, expired, inactive or closed license scope.
+    if ((error as { code?: string }).code === "UXL01") {
+      throw new IntakeError(
+        409,
+        "Ordering is paused for this location until a current store license is verified. The draft was preserved.",
+      );
+    }
     if (
       message.includes(
         "exceeds Canix availability after active portal commitments",
@@ -1078,6 +1285,31 @@ async function existingDurableOrder(orderId: string): Promise<Row | null> {
   return data as unknown as Row | null;
 }
 
+// Retry accepted Store requests before reading mutable stock or prices. The
+// private command still rechecks current membership and the original payload
+// fingerprint. A changed payload or a revoked membership never gets a receipt.
+async function retryAcceptedStoreOrder(payload: Row, caller: {user: Row; profile: Row}): Promise<Row | null> {
+  const context = storeContext(caller.profile);
+  if (!context || !/^[0-9a-f-]{36}$/i.test(String(payload.clientRequestId || ""))) return null;
+  const {data: existing, error} = await service.from("portal_order")
+    .select("id,workflow_state").eq("client_request_id", payload.clientRequestId)
+    .eq("retailer_account_id", context.retailerAccountId).eq("submitted_by", caller.user.id).maybeSingle();
+  if (error) throw error;
+  if (!existing) return null;
+  const verified = await createDurableOrder(payload, caller);
+  if (verified.created !== false || verified.id !== existing.id) throw new IntakeError(409, "This request needs reconciliation.");
+  const order = await existingDurableOrder(String(existing.id));
+  if (order?.workflow_state !== "accepted") throw new IntakeError(409, "This saved order needs reconciliation. It was not submitted again.");
+  return {
+    ok: true, idempotent: true, portalOrderId: order.id,
+    orderNumber: order.order_number, state: order.state,
+    ownerApprovalRequired: order.owner_approval_required,
+    approvalThresholdCents: order.approval_threshold_cents,
+    containsPreorder: order.contains_preorder, releaseHold: order.release_hold,
+    verifiedOrderValueCents: order.order_value_cents,
+  };
+}
+
 function onboardingSubmissionType(value: unknown): string {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "new store" || normalized === "new_store") {
@@ -1120,8 +1352,10 @@ async function createDurableOnboarding(
     license: String(store.license || "").trim().toUpperCase().slice(0, 120),
     address: String(store.address || "").trim().slice(0, 500),
     licenseType: String(store.licenseType || "").trim().slice(0, 160) || null,
-    licenseIssuedOn: String(store.licenseIssuedOn || "").trim().slice(0, 10) || null,
-    licenseExpiresOn: String(store.licenseExpiresOn || "").trim().slice(0, 10) || null,
+    licenseIssuedOn: String(store.licenseIssuedOn || "").trim().slice(0, 10) ||
+      null,
+    licenseExpiresOn:
+      String(store.licenseExpiresOn || "").trim().slice(0, 10) || null,
   }));
   const internalStorePanel = payload.internalStorePanel === true &&
     caller?.profile.role === "internal" &&
@@ -1145,7 +1379,10 @@ async function createDurableOnboarding(
       quickbooksCustomerId,
     ).maybeSingle();
     if (qboError) throw qboError;
-    if (!qboCustomer || qboCustomer.active === false || qboCustomer.parent_customer_id) {
+    if (
+      !qboCustomer || qboCustomer.active === false ||
+      qboCustomer.parent_customer_id
+    ) {
       throw new IntakeError(
         409,
         "The selected QuickBooks retailer must be an active top-level customer.",
@@ -1172,16 +1409,45 @@ async function createDurableOnboarding(
     const fileType = String(file.contentType || "").trim().toLowerCase();
     const fileSize = Number(file.sizeBytes || 0);
     const fileBody = String(file.base64 || "");
+    const hasFile = Boolean(fileName || fileType || fileSize || fileBody);
     if (
-      !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
-      !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
-      !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > 10 * 1024 * 1024 ||
-      fileBody.length < 4 || fileBody.length > 14_000_000 ||
-      !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+      hasFile && (
+        !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
+        !new Set(["application/pdf", "image/png", "image/jpeg"]).has(
+          fileType,
+        ) ||
+        !Number.isSafeInteger(fileSize) || fileSize < 1 ||
+        fileSize > 10 * 1024 * 1024 ||
+        fileBody.length < 4 || fileBody.length > 14_000_000 ||
+        !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+      )
     ) {
       throw new IntakeError(
         400,
         "Attach a PDF, PNG, or JPEG license document no larger than 10 MB.",
+      );
+    }
+  }
+  if (
+    !internalStorePanel && payload.file && typeof payload.file === "object" &&
+    !Array.isArray(payload.file)
+  ) {
+    const file = payload.file as Row;
+    const fileName = String(file.name || "").trim().slice(0, 240);
+    const fileType = String(file.contentType || "").trim().toLowerCase();
+    const fileSize = Number(file.sizeBytes || 0);
+    const fileBody = String(file.base64 || "");
+    if (
+      !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName) ||
+      !new Set(["application/pdf", "image/png", "image/jpeg"]).has(fileType) ||
+      !Number.isSafeInteger(fileSize) || fileSize < 1 ||
+      fileSize > 2 * 1024 * 1024 ||
+      fileBody.length < 4 || fileBody.length > 3_000_000 ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(fileBody)
+    ) {
+      throw new IntakeError(
+        400,
+        "Attach a PDF, PNG, or JPEG primary licence document no larger than 2 MB.",
       );
     }
   }
@@ -1236,6 +1502,123 @@ async function createDurableOnboarding(
       storeLicense: storeLicense(budtender.location),
     });
   }
+  const rawPartnerDetails =
+    payload.partnerDetails && typeof payload.partnerDetails === "object" &&
+      !Array.isArray(payload.partnerDetails)
+      ? payload.partnerDetails as Row
+      : {};
+  const rawBilling = rawPartnerDetails.billing &&
+      typeof rawPartnerDetails.billing === "object" &&
+      !Array.isArray(rawPartnerDetails.billing)
+    ? rawPartnerDetails.billing as Row
+    : {};
+  const partnerDetails = {
+    buyerSameAsPrimary: rawPartnerDetails.buyerSameAsPrimary === true,
+    billing: {
+      name: String(rawBilling.name || "").trim().slice(0, 200),
+      email: String(rawBilling.email || "").trim().toLowerCase().slice(0, 320),
+      phone: String(rawBilling.phone || "").trim().slice(0, 80),
+    },
+    deliveryDays:
+      (Array.isArray(rawPartnerDetails.deliveryDays)
+        ? rawPartnerDetails.deliveryDays
+        : [])
+        .map((value) => String(value || "").trim().slice(0, 40)).filter(Boolean)
+        .slice(0, 7),
+    deliveryWindow: String(rawPartnerDetails.deliveryWindow || "").trim().slice(
+      0,
+      100,
+    ),
+    brands:
+      (Array.isArray(rawPartnerDetails.brands) ? rawPartnerDetails.brands : [])
+        .map((value) => String(value || "").trim().slice(0, 160)).filter(
+          Boolean,
+        ).slice(0, 40),
+    website: String(rawPartnerDetails.website || "").trim().slice(0, 500),
+    mediaEmail: String(rawPartnerDetails.mediaEmail || "").trim().toLowerCase()
+      .slice(0, 320),
+    additionalContacts: String(rawPartnerDetails.additionalContacts || "")
+      .trim().slice(0, 2000),
+    termsReviewed: rawPartnerDetails.termsReviewed === true,
+  };
+  if (!internalStorePanel) {
+    const emailLooksValid = (value: unknown) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    const isoDateLooksValid = (value: unknown) => {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+      if (!match) return false;
+      const date = new Date(
+        Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])),
+      );
+      return date.getUTCFullYear() === Number(match[1]) &&
+        date.getUTCMonth() === Number(match[2]) - 1 &&
+        date.getUTCDate() === Number(match[3]);
+    };
+    const allowedLicenseTypes = new Set(["Dispensary", "Micro Business"]);
+    const allowedDeliveryDays = new Set([
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+    ]);
+    const allowedDeliveryWindows = new Set([
+      "",
+      "Morning",
+      "Afternoon",
+      "Flexible",
+    ]);
+    if (
+      !String(owner.name || "").trim() || !emailLooksValid(owner.email) ||
+      !String(owner.phone || "").trim()
+    ) {
+      throw new IntakeError(
+        400,
+        "Add the primary contact's name, email, and phone.",
+      );
+    }
+    if (
+      normalizedStores.some((store) =>
+        !allowedLicenseTypes.has(String(store.licenseType || "")) ||
+        !isoDateLooksValid(store.licenseExpiresOn)
+      )
+    ) {
+      throw new IntakeError(
+        400,
+        "Every store needs a supported licence type and expiration date.",
+      );
+    }
+    if (
+      !partnerDetails.brands.length || partnerDetails.termsReviewed !== true
+    ) {
+      throw new IntakeError(
+        400,
+        "Choose at least one brand and confirm the Wholesale Terms of Sale were reviewed.",
+      );
+    }
+    if (
+      partnerDetails.deliveryDays.some((day) =>
+        !allowedDeliveryDays.has(day)
+      ) ||
+      !allowedDeliveryWindows.has(partnerDetails.deliveryWindow)
+    ) {
+      throw new IntakeError(400, "Choose supported delivery preferences.");
+    }
+    if (
+      partnerDetails.billing.email &&
+      !emailLooksValid(partnerDetails.billing.email)
+    ) {
+      throw new IntakeError(400, "Enter a valid billing contact email.");
+    }
+    if (
+      partnerDetails.mediaEmail && !emailLooksValid(partnerDetails.mediaEmail)
+    ) {
+      throw new IntakeError(
+        400,
+        "Enter a valid website and media contact email.",
+      );
+    }
+  }
   const { data, error } = await service.rpc(
     "portal_create_onboarding_request",
     {
@@ -1263,12 +1646,15 @@ async function createDurableOnboarding(
           licenseIssuedOn: store.licenseIssuedOn,
           licenseExpiresOn: store.licenseExpiresOn,
         })),
-        reviewNote: String(payload.reviewNote || "").trim().slice(0, 2000) || null,
-        document: internalStorePanel && payload.file && typeof payload.file === "object"
+        partnerIntake: partnerDetails,
+        reviewNote: String(payload.reviewNote || "").trim().slice(0, 2000) ||
+          null,
+        document: payload.file && typeof payload.file === "object"
           ? {
             name: String((payload.file as Row).name || "").trim().slice(0, 240),
             sizeBytes: Number((payload.file as Row).sizeBytes || 0),
-            contentType: String((payload.file as Row).contentType || "").trim().slice(0, 120),
+            contentType: String((payload.file as Row).contentType || "").trim()
+              .slice(0, 120),
           }
           : null,
       },
@@ -1278,7 +1664,7 @@ async function createDurableOnboarding(
     const message = String(error.message || "");
     const safe = [
       "supported onboarding submission type",
-      "between one and ten stores",
+      "between one and 25 stores",
       "Legal entity is required",
       "Owner contact is required",
       "Every store requires",
@@ -1292,11 +1678,17 @@ async function createDurableOnboarding(
   const durable = data as unknown as Row;
   if (internalStorePanel && durable.created !== false && durable.id) {
     for (const store of normalizedStores) {
-      const expires = store.licenseExpiresOn && /^\d{4}-\d{2}-\d{2}$/.test(store.licenseExpiresOn)
+      const expires = store.licenseExpiresOn &&
+          /^\d{4}-\d{2}-\d{2}$/.test(store.licenseExpiresOn)
         ? store.licenseExpiresOn
         : null;
-      const { error: storeError } = await service.from("portal_onboarding_store")
-        .update({ license_expires_on: expires }).eq("onboarding_request_id", durable.id)
+      const { error: storeError } = await service.from(
+        "portal_onboarding_store",
+      )
+        .update({ license_expires_on: expires }).eq(
+          "onboarding_request_id",
+          durable.id,
+        )
         .eq("license_number", store.license);
       if (storeError) throw storeError;
     }
@@ -1328,6 +1720,23 @@ async function existingDurableOnboarding(
     .eq("id", requestId).maybeSingle();
   if (error) throw error;
   return data as unknown as Row | null;
+}
+
+async function workflowMode(
+  workflowKey: string,
+  fallback: "hold" | "monday" | "parallel" | "portal",
+): Promise<"hold" | "monday" | "parallel" | "portal"> {
+  const { data, error } = await service.from("portal_workflow_control")
+    .select("mode").eq("workflow_key", workflowKey).maybeSingle();
+  if (error) {
+    // A missing or unreadable control cannot authorize a new external write.
+    // The Store intake caller supplies hold as its fail-closed fallback.
+    return fallback;
+  }
+  const mode = String(data?.mode ?? fallback);
+  return new Set(["hold", "monday", "parallel", "portal"]).has(mode)
+    ? mode as "hold" | "monday" | "parallel" | "portal"
+    : fallback;
 }
 
 Deno.serve(async (request) => {
@@ -1369,18 +1778,33 @@ Deno.serve(async (request) => {
         403,
       );
     }
-    let directMondayConfigured = false;
-    try {
-      directMondayConfigured = !!(await mondayWriteToken());
-    } catch {
-      directMondayConfigured = false;
+    const sourceMode = await workflowMode(
+      kind === "order" ? "store_orders" : "store_onboarding",
+      "hold",
+    );
+    if (["order", "onboarding"].includes(kind) && sourceMode === "hold") {
+      return json(request, { error: "This Store workflow is paused. Your draft is preserved." }, 409);
     }
-    if (!directMondayConfigured) {
-      return json(
-        request,
-        { error: "Direct Monday intake is temporarily unavailable." },
-        503,
-      );
+    if (kind === "order" && caller && storeContext(caller.profile)) {
+      if (sourceMode !== "portal") return json(request, { error: "Store orders require the portal-native workflow." }, 409);
+      const acceptedRetry = await retryAcceptedStoreOrder(payload, caller);
+      if (acceptedRetry) return json(request, acceptedRetry);
+    }
+    const requiresMonday = ["monday", "parallel"].includes(sourceMode);
+    if (requiresMonday) {
+      let directMondayConfigured = false;
+      try {
+        directMondayConfigured = !!(await mondayWriteToken());
+      } catch {
+        directMondayConfigured = false;
+      }
+      if (!directMondayConfigured) {
+        return json(
+          request,
+          { error: "Direct Monday intake is temporarily unavailable." },
+          503,
+        );
+      }
     }
 
     const verifiedPayload = kind === "order" && caller
@@ -1473,13 +1897,24 @@ Deno.serve(async (request) => {
     }
     let result: Row = {};
     if (kind === "order" && durableOrderId) {
-      result = (await directMondayOrder(verifiedPayload)) ?? {};
+      result = sourceMode === "portal"
+        ? {
+          orderNumber: String(
+            verifiedPayload.orderNumber || verifiedPayload.portalReference ||
+              verifiedPayload.portalOrderId,
+          ),
+          status: "accepted",
+          transport: "portal-native",
+        }
+        : (await directMondayOrder(verifiedPayload)) ?? {};
     }
     if (kind === "onboarding" && durableOnboardingId) {
       // Direct onboarding is idempotent on Portal Request ID and can deliver
       // the document to the same item. A partial failure is reconciled there;
       // it is never fanned out to a second workflow that could duplicate it.
-      result = (await directMondayOnboarding(verifiedPayload)) ?? {};
+      result = sourceMode === "portal"
+        ? { id: durableOnboardingId, status: "accepted", transport: "portal-native" }
+        : (await directMondayOnboarding(verifiedPayload)) ?? {};
     }
     if (kind === "order" && !result.orderNumber && !result.id) {
       const message =
@@ -1498,17 +1933,36 @@ Deno.serve(async (request) => {
     if (kind === "order" && durableOrderId) {
       await markDurableOrder(durableOrderId, "accepted", {
         orderNumber: result.orderNumber || result.id,
-        mondayItemId: result.mondayItemId || result.itemId || result.id,
-        mondayBoardId: result.mondayBoardId || result.boardId || null,
-        metadata: {
-          mondayAcceptedAt: new Date().toISOString(),
-          mondayStatus: result.status || "accepted",
-        },
+        mondayItemId: sourceMode === "portal"
+          ? null
+          : result.mondayItemId || result.itemId || result.id,
+        mondayBoardId: sourceMode === "portal"
+          ? null
+          : result.mondayBoardId || result.boardId || null,
+        metadata: sourceMode === "portal"
+          ? {
+            portalAcceptedAt: new Date().toISOString(),
+            workflowSource: "portal",
+          }
+          : {
+            mondayAcceptedAt: new Date().toISOString(),
+            mondayStatus: result.status || "accepted",
+            workflowSource: sourceMode,
+          },
       });
+      const { error: sourceError } = await service.from("portal_order").update({
+        workflow_source: sourceMode === "portal"
+          ? "portal"
+          : sourceMode === "parallel"
+          ? "parallel"
+          : "monday",
+        updated_at: new Date().toISOString(),
+      }).eq("id", durableOrderId);
+      if (sourceError) throw sourceError;
     }
     if (kind === "onboarding" && durableOnboardingId) {
-      const mondayItemId = result.mondayItemId || result.itemId || result.id;
-      if (!mondayItemId) {
+      const mondayItemId = sourceMode === "portal" ? null : result.mondayItemId || result.itemId || result.id;
+      if (requiresMonday && !mondayItemId) {
         const message =
           "The onboarding workflow accepted the request but did not return a Monday item identifier.";
         await markDurableOnboarding(
@@ -1524,9 +1978,9 @@ Deno.serve(async (request) => {
       }
       await markDurableOnboarding(durableOnboardingId, "accepted", {
         mondayItemId,
-        mondayBoardId: result.mondayBoardId || result.boardId || null,
+        mondayBoardId: sourceMode === "portal" ? null : result.mondayBoardId || result.boardId || null,
       });
-      if (durableOnboardingDocumentId) {
+      if (requiresMonday && durableOnboardingDocumentId) {
         await service.from("portal_onboarding_document").update({
           transfer_state: "delivered",
           monday_item_id: String(mondayItemId),
@@ -1558,6 +2012,7 @@ Deno.serve(async (request) => {
         : undefined,
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     const expected = error instanceof IntakeError;
     const timedOut = error instanceof Error && error.name === "AbortError";
     if (!expected && !timedOut) console.error("portal-intake", error);

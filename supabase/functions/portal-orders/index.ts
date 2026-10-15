@@ -1,3 +1,5 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { projectStoreOrder } from '../_shared/store-order-projection.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import {
   labFailed,
@@ -6,7 +8,7 @@ import {
   orderTransitionAllowed,
 } from "../_shared/security-contract.ts";
 import { mondayAccessToken } from "../_shared/monday-connection.ts";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -53,7 +55,7 @@ function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
     "access-control-allow-headers":
-      "authorization, apikey, content-type, x-ux-monday-secret, x-ux-cron-secret",
+      "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type, x-ux-monday-secret, x-ux-cron-secret",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -162,14 +164,15 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile")
+  const { data: rawProfile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active,locations").eq(
       "id",
       user.id,
     ).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'orders.read');
   let canManageOrders = false;
   if (profile.role === "internal") {
     const { data: grant } = await service.from("portal_role_permission").select(
@@ -194,31 +197,7 @@ async function accessibleStores(caller: Caller): Promise<Row[]> {
     if (error) throw error;
     return (data ?? []) as unknown as Row[];
   }
-  if (caller.profile.role === "owner") {
-    const { data, error } = await service.from("portal_store")
-      .select("license_number,organization,display_name,active")
-      .eq("organization", caller.profile.org).eq("active", true).order(
-        "display_name",
-      );
-    if (error) throw error;
-    return (data ?? []) as unknown as Row[];
-  }
-  if (caller.profile.role !== "buyer") return [];
-  const { data: assignments, error: assignmentError } = await service.from(
-    "portal_profile_store",
-  )
-    .select("license_number").eq("profile_id", caller.profile.id);
-  if (assignmentError) throw assignmentError;
-  const licenses = (assignments ?? []).map((row) => String(row.license_number));
-  if (!licenses.length) return [];
-  const { data, error } = await service.from("portal_store")
-    .select("license_number,organization,display_name,active")
-    .eq("organization", caller.profile.org).eq("active", true).in(
-      "license_number",
-      licenses,
-    ).order("display_name");
-  if (error) throw error;
-  return (data ?? []) as unknown as Row[];
+  return await storeRows(service, caller.profile, 'license_number,organization,display_name,active');
 }
 
 function serializeLine(row: Row): Row {
@@ -312,6 +291,7 @@ async function hydrateOrders(orders: Row[]): Promise<Row[]> {
       state: row.state,
       publicState: publicState(String(row.state)),
       workflowState: row.workflow_state,
+      workflowSource: row.workflow_source ?? "monday",
       workflowError: row.workflow_error,
       ownerApprovalRequired: row.owner_approval_required,
       approvalThresholdCents: row.approval_threshold_cents,
@@ -321,6 +301,10 @@ async function hydrateOrders(orders: Row[]): Promise<Row[]> {
       deliveryWindow: row.delivery_window,
       receivingContact: row.receiving_contact,
       receivingInstructions: row.receiving_instructions,
+      fulfillmentPriority: row.fulfillment_priority ?? "P0",
+      assignedDepartment: row.assigned_department ?? "Administrator",
+      assignedUser: row.assigned_user ?? null,
+      dueAt: row.due_at ?? null,
       submittedAt: row.submitted_at,
       acceptedAt: row.accepted_at,
       updatedAt: row.updated_at,
@@ -342,6 +326,9 @@ async function orderById(orderId: string): Promise<Row | null> {
 }
 
 async function assertOrderAccess(caller: Caller, order: Row): Promise<void> {
+  if (caller.profile.role !== 'internal' && order.retailer_account_id !== storeContext(caller.profile)!.retailerAccountId) {
+    throw new PortalError(403, 'That order needs a reviewed retailer relationship.');
+  }
   const stores = await accessibleStores(caller);
   if (
     !stores.some((store) =>
@@ -579,12 +566,14 @@ async function applyTransition(
   note: string | null,
   rawStatus: string | null,
   enqueueMonday: boolean,
+  storeProfile: Row | null = null,
 ): Promise<Row> {
   let releaseHold: boolean | null = null;
   if (
     ["processed", "delivered"].includes(targetState) &&
     order.release_hold === true
   ) {
+    if (storeProfile) throw new PortalError(409, 'Internal release review is required before confirming delivery.');
     if (!(await releaseReady(String(order.id)))) {
       throw new PortalError(
         409,
@@ -593,7 +582,7 @@ async function applyTransition(
     }
     releaseHold = false;
   }
-  const { data, error } = await service.rpc("portal_apply_order_transition", {
+  const commandPayload = {
     p_order_id: order.id,
     p_expected_state: order.state,
     p_target_state: targetState,
@@ -605,7 +594,10 @@ async function applyTransition(
     p_metadata: {},
     p_release_hold: releaseHold,
     p_enqueue_monday: enqueueMonday,
-  });
+  };
+  const { data, error } = storeProfile
+    ? await storeCommand(service, storeProfile, 'order.transition', commandPayload)
+    : await service.rpc('portal_apply_order_transition', commandPayload);
   if (error) {
     if (/state changed/i.test(error.message || "")) {
       throw new PortalError(
@@ -824,13 +816,13 @@ Deno.serve(async (request) => {
       );
       query = caller.profile.role === "internal"
         ? query.in("workflow_state", ["accepted", "needs_reconciliation"])
-        : query.eq("workflow_state", "accepted");
+        : query.eq("workflow_state", "accepted").eq('retailer_account_id',storeContext(caller.profile)!.retailerAccountId);
       const { data, error } = await query.order("submitted_at", {
         ascending: false,
       }).limit(250);
       if (error) throw error;
       return json(request, {
-        orders: await hydrateOrders((data ?? []) as unknown as Row[]),
+        orders: (await hydrateOrders((data ?? []) as unknown as Row[])).map(row=>caller.profile.role==='internal'?row:projectStoreOrder(row)),
       });
     }
 
@@ -955,15 +947,17 @@ Deno.serve(async (request) => {
       clean(caller.user.email, 320) || null,
       clean(body.note, 1200) || null,
       null,
-      true,
+      String(order.workflow_source || "monday") !== "portal",
+      caller.profile.role === 'internal' ? null : caller.profile,
     );
     const updated = await orderById(orderId);
     return json(request, {
       ok: true,
       ...result,
-      order: updated ? (await hydrateOrders([updated]))[0] : null,
+      order: updated ? (caller.profile.role==='internal'?(await hydrateOrders([updated]))[0]:projectStoreOrder((await hydrateOrders([updated]))[0])) : null,
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     const status = error instanceof PortalError ? error.status : 500;
     if (!(error instanceof PortalError)) console.error("portal-orders", error);
     return json(request, {

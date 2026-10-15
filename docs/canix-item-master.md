@@ -2,20 +2,24 @@
 
 ## Purpose
 
-Package inventory is not an Item Master. An item can be active or inactive and can exist without any current package. UX OS therefore maintains an independent, read-only snapshot of every record returned by Canix `GET /items`.
+Package inventory is not an Item Master. An item can be active or inactive and can exist without any current package. UX OS therefore maintains an independent, read-only snapshot of the records returned by Canix `GET /items` for the approved distribution facility.
 
 The portal continues to treat Canix as the source of truth. It does not create, update, deactivate, or delete Canix items.
 
 ## Source and refresh
 
-- Source: Canix REST API `GET /api/v1/items`.
+- Source: Canix REST API `GET /api/v1/items`, filtered by the resolved numeric facility ID.
 - Grain: one row per authoritative Canix Item ID.
-- Scope: active and inactive items across every facility available to the server-side Canix API key.
+- Scope: active and inactive items for the exact Canix facility name `OCM-DIST-24-000069` only.
 - Pagination: 2,000 rows per request with stable Item ID ordering and a 100-page safety limit.
-- Refresh target: every five minutes through an independent Vault-backed scheduler.
+- Refresh target: every 15 minutes from 6:00 AM through 6:00 PM America/New_York, Monday through Friday, through an independent Vault-backed scheduler.
 - Failure behavior: the prior complete snapshot remains available. Partial fetches never replace it.
 
+At the start of each run, the sync resolves the exact facility name through `GET /facilities`, requires one and only one match, and passes that facility's numeric ID as the `facility_id` query parameter to `GET /items`. The run fails closed if Canix returns an item assigned to any other facility. This prevents an accidental all-facility snapshot if the upstream filter is ignored or changes behavior.
+
 The Item Master sync is fault-isolated from package inventory. Failure of `GET /items` does not prevent the package cache from continuing its own five-minute refresh.
+
+Each successful Item Master refresh reconciles the source evidence in the Portal Item Mapping Center. New Canix Item IDs enter **To Be Mapped**. Existing Portal decisions remain durable and are never replaced by a source refresh.
 
 ## Data control
 
@@ -38,9 +42,9 @@ Internal inventory users can:
 
 Staff with `inventory.sync` can request an immediate complete refresh. Scheduled and administrator-triggered calls remain server-authenticated and never expose the Canix API key.
 
-## Initial production verification
+## Production verification history
 
-The first complete production refresh on 2 September 2026 published 2,756 distinct Item IDs in two API pages across four facilities. It contains 1,263 active items and 1,493 inactive items. Six hundred ten Item IDs have at least one current package; 2,146 are retained despite having no current package. The sandbox facility contributes 42 item definitions. The independent scheduler is active and Vault-backed, and the completed run left no staged rows or error.
+The first complete production refresh on 2 September 2026 established the all-facility baseline. On 14 October 2026, the source contract was narrowed to `OCM-DIST-24-000069`. The first facility-scoped production run resolved facility ID `4467` and license `OCM-DIST-24-000069-DX2`, then atomically published 400 distinct Item IDs in one API page. All 400 rows carry that one facility ID and name, no staged rows remain, and the run completed without error. The independent scheduler remains Vault-backed, and a failed facility lookup or out-of-scope API response preserves the prior complete snapshot.
 
 ## Authoritative references
 

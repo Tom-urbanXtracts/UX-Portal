@@ -7,7 +7,21 @@ import {
   orderTransitionAllowed,
   verifyHs256Jwt,
 } from "../functions/_shared/security-contract.ts";
-import { verifiedTokenHasAal2 } from "../functions/_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../functions/_shared/auth.ts";
+import {
+  accessRequestDecisionAllowed,
+  accessRequestRiskTier,
+  purchaseApprovalRoute,
+} from "../functions/_shared/internal-work-contract.ts";
+import {
+  supplyOrderApprovalRoute,
+  supplyOrderValidation,
+} from "../functions/_shared/supply-order-contract.ts";
+import {
+  MARKETPLACE_PRICE_MAX_AGE_MS,
+  marketplacePriceCents,
+  marketplaceSnapshotError,
+} from "../functions/_shared/marketplace-ordering.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -39,6 +53,44 @@ Deno.test("Canix lab release accepts only exact TestPassed status", () => {
   );
 });
 
+Deno.test("Marketplace ordering fails closed on partial or stale snapshots", () => {
+  const now = Date.parse("2026-10-14T20:00:00Z");
+  const valid = {
+    status: "success",
+    snapshot_scope: "full_shop",
+    last_successful_run_id: "run-1",
+    last_successful_at: new Date(now - 60_000).toISOString(),
+  };
+  assert(
+    marketplaceSnapshotError(valid, now) === null,
+    "fresh full-shop snapshots should pass",
+  );
+  assert(
+    marketplaceSnapshotError(
+      { ...valid, snapshot_scope: "brand_filtered" },
+      now,
+    ) !== null,
+    "partial Marketplace snapshots must not power ordering",
+  );
+  assert(
+    marketplaceSnapshotError({
+      ...valid,
+      last_successful_at: new Date(now - MARKETPLACE_PRICE_MAX_AGE_MS - 1)
+        .toISOString(),
+    }, now) !== null,
+    "stale Marketplace prices must pause ordering",
+  );
+  assert(
+    marketplacePriceCents(800) === 800,
+    "positive integer cents should pass",
+  );
+  assert(marketplacePriceCents(0) === null, "zero price should fail closed");
+  assert(
+    marketplacePriceCents(8.5) === null,
+    "fractional cents should fail closed",
+  );
+});
+
 function unsignedTestJwt(payload: Record<string, unknown>): string {
   const encode = (value: Record<string, unknown>) =>
     btoa(JSON.stringify(value)).replaceAll("+", "-").replaceAll("/", "_")
@@ -46,16 +98,156 @@ function unsignedTestJwt(payload: Record<string, unknown>): string {
   return `${encode({ alg: "none", typ: "JWT" })}.${encode(payload)}.`;
 }
 
-Deno.test("portal API assurance gate accepts only aal2 claims", () => {
+Deno.test("portal API assurance gate accepts authenticated user claims", () => {
   assert(
-    verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal2" })}`),
-    "aal2 should pass after upstream JWT validation",
+    verifiedTokenIsAuthenticated(
+      `Bearer ${
+        unsignedTestJwt({ role: "authenticated", sub: "user-1", aal: "aal1" })
+      }`,
+    ),
+    "an aal1 authenticated user should pass after upstream JWT validation",
   );
   assert(
-    !verifiedTokenHasAal2(`Bearer ${unsignedTestJwt({ aal: "aal1" })}`),
-    "aal1 must fail",
+    verifiedTokenIsAuthenticated(
+      `Bearer ${
+        unsignedTestJwt({ role: "authenticated", sub: "user-1", aal: "aal2" })
+      }`,
+    ),
+    "an existing aal2 authenticated user should also pass",
   );
-  assert(!verifiedTokenHasAal2("Bearer malformed"), "malformed JWT must fail");
+  assert(
+    !verifiedTokenIsAuthenticated(
+      `Bearer ${unsignedTestJwt({ role: "anon", sub: "user-1" })}`,
+    ),
+    "anonymous claims must fail",
+  );
+  assert(
+    !verifiedTokenIsAuthenticated(
+      `Bearer ${unsignedTestJwt({ role: "authenticated" })}`,
+    ),
+    "authenticated claims without a subject must fail",
+  );
+  assert(
+    !verifiedTokenIsAuthenticated("Bearer malformed"),
+    "malformed JWT must fail",
+  );
+});
+
+Deno.test("access requests cannot bypass reviewable states", () => {
+  assert(
+    accessRequestDecisionAllowed("submitted", "approved"),
+    "submitted requests may be approved",
+  );
+  assert(
+    accessRequestDecisionAllowed("under_review", "returned"),
+    "review may request changes",
+  );
+  assert(
+    !accessRequestDecisionAllowed("approved", "approved"),
+    "approved requests are terminal",
+  );
+  assert(
+    !accessRequestDecisionAllowed("denied", "under_review"),
+    "denied requests cannot be reopened implicitly",
+  );
+  assert(
+    !accessRequestDecisionAllowed("submitted", "cancelled"),
+    "unsupported decisions must fail",
+  );
+});
+
+Deno.test("access risk is raised for Administrator and sensitive departments", () => {
+  assert(
+    accessRequestRiskTier("administrator", "marketing", false) === "privileged",
+    "Administrator is privileged",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "it_admin", true) === "privileged",
+    "IT access is privileged",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "finance", true) === "sensitive",
+    "Finance is sensitive",
+  );
+  assert(
+    accessRequestRiskTier("viewer", "marketing", false) === "ordinary",
+    "ordinary access stays ordinary",
+  );
+});
+
+Deno.test("purchase approvals follow the approved spending thresholds", () => {
+  assert(
+    purchaseApprovalRoute(500).tier === "eric_500",
+    "$500 routes to Eric",
+  );
+  assert(
+    purchaseApprovalRoute(500.01).tier === "leadership_2999",
+    "$500.01 routes to leadership",
+  );
+  assert(
+    purchaseApprovalRoute(2999.99).authority === "Omeed / Jonathan / Drew",
+    "$2,999.99 routes to leadership",
+  );
+  assert(
+    purchaseApprovalRoute(3000).tier === "eran_3000",
+    "$3,000 routes to Eran",
+  );
+  let rejected = false;
+  try {
+    purchaseApprovalRoute(0);
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "non-positive amounts must be rejected");
+});
+
+Deno.test("supply order validation blocks placeholder request data", () => {
+  const result = supplyOrderValidation({
+    requesterIds: [50753431],
+    department: "Marketing",
+    vendor: "MerchPrinters",
+    needBeforeDate: "2026-10-30",
+    priority: "High - ASAP",
+    lines: [{
+      name: "Printed hoodie",
+      linkUrl: "https://na.com",
+      unitCost: 16,
+      quantity: 200,
+      sku: "na",
+      department: "Marketing",
+      expenseCategory: "Creative Production",
+      expenseSubcategory: null,
+      chartOfAccounts: null,
+    }],
+  });
+  assert(!result.complete, "placeholder data should require correction");
+  assert(result.total === 3200, "valid cost and quantity still total");
+  assert(
+    !result.missing.includes("Item 1: purchase link"),
+    "invoice-based orders can proceed without a product link",
+  );
+  assert(result.missing.includes("Item 1: SKU"), "placeholder SKU is missing");
+  assert(
+    !result.missing.includes("Item 1: expense sub-category") &&
+      !result.missing.includes("Item 1: chart of accounts"),
+    "removed accounting fields do not block an order",
+  );
+});
+
+Deno.test("supply order routing returns monday users by threshold", () => {
+  assert(
+    supplyOrderApprovalRoute(500).mondayUserIds.join(",") === "98722698",
+    "Eric gets the under-$500 approval",
+  );
+  assert(
+    supplyOrderApprovalRoute(500.01).mondayUserIds.join(",") ===
+      "50261465,49938939,50344762",
+    "leadership users get the middle tier",
+  );
+  assert(
+    supplyOrderApprovalRoute(3000).mondayUserIds.join(",") === "50263474",
+    "Eran gets the $3,000-and-up tier",
+  );
 });
 
 Deno.test("order transitions are adjacent and terminal", () => {

@@ -1,5 +1,6 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -27,7 +28,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -53,14 +54,15 @@ async function callerFor(request: Request): Promise<Caller | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile")
+  const { data: rawProfile } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active,locations").eq(
       "id",
       user.id,
     ).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'policy.read');
   let canManage = false;
   if (profile.role === "internal") {
     const { data: grant } = await service.from("portal_role_permission").select(
@@ -84,35 +86,7 @@ async function storesFor(caller: Caller): Promise<Row[]> {
     if (error) throw error;
     return (data ?? []) as unknown as Row[];
   }
-  if (caller.profile.role === "owner") {
-    const { data, error } = await service.from("portal_store")
-      .select(
-        "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at",
-      )
-      .eq("organization", caller.profile.org).eq("active", true).order(
-        "display_name",
-      );
-    if (error) throw error;
-    return (data ?? []) as unknown as Row[];
-  }
-  if (caller.profile.role !== "buyer") return [];
-  const { data: assignments, error: assignmentError } = await service.from(
-    "portal_profile_store",
-  )
-    .select("license_number").eq("profile_id", caller.profile.id);
-  if (assignmentError) throw assignmentError;
-  const licenses = (assignments ?? []).map((row) => String(row.license_number));
-  if (!licenses.length) return [];
-  const { data, error } = await service.from("portal_store")
-    .select(
-      "license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at",
-    )
-    .eq("organization", caller.profile.org).eq("active", true).in(
-      "license_number",
-      licenses,
-    ).order("display_name");
-  if (error) throw error;
-  return (data ?? []) as unknown as Row[];
+  return await storeRows(service, caller.profile, 'license_number,organization,display_name,active,approval_threshold_cents,enforce_case_quantity,minimum_order_cents,lead_time_days,approval_policy_updated_at');
 }
 
 function serialize(store: Row): Row {
@@ -348,6 +322,7 @@ Deno.serve(async (request) => {
       policies,
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     return json(request, {
       error: error instanceof Error
         ? error.message

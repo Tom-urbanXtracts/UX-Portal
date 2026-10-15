@@ -1,5 +1,7 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { checkActor } from '../_shared/store-context.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { verifiedTokenHasAal2 } from "../_shared/mfa.ts";
+import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -8,6 +10,13 @@ const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const EXTERNAL_ROLES = new Set(["owner", "buyer", "budtender"]);
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const BRAND_ROLES = new Set([
+  "brand_owner",
+  "brand_manager",
+  "brand_contributor",
+  "brand_viewer",
+]);
 
 type Row = Record<string, unknown>;
 
@@ -35,7 +44,7 @@ function origin(request: Request): string {
 function headers(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -58,6 +67,10 @@ function text(value: unknown, max = 300): string {
   return String(value ?? "").trim().slice(0, max);
 }
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function actorFor(request: Request): Promise<Row | null> {
   const authorization = request.headers.get("authorization") ?? "";
   if (!authorization.startsWith("Bearer ")) return null;
@@ -65,13 +78,17 @@ async function actorFor(request: Request): Promise<Row | null> {
     headers: { apikey: SUPABASE_ANON_KEY, authorization },
   });
   if (!response.ok) return null;
-  if (!verifiedTokenHasAal2(authorization)) return null;
+  if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json();
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,role,staff_role,active,org,locations",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false) return null;
-  if (profile.role !== "internal" && profile.role !== "owner") return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'users.read', { allowBrand: true });
+  if (
+    profile.role !== "internal" && profile.role !== "owner" &&
+    profile.role !== "brand"
+  ) return null;
   return profile as Row;
 }
 
@@ -83,6 +100,58 @@ async function hasPermission(actor: Row, permission: string): Promise<boolean> {
     .eq("staff_role", actor.staff_role).eq("permission", permission)
     .maybeSingle();
   return !!data;
+}
+
+async function brandAccess(
+  actor: Row,
+  organizationId: string,
+  permission: "brand.users.read" | "brand.users.manage",
+): Promise<Row> {
+  if (actor.role === 'brand' && actor._workspaceOrganizationId !== organizationId) {
+    throw new AdminError(403,'Select this Brand workspace before managing its members.');
+  }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(organizationId)) {
+    throw new AdminError(400, "Choose a valid Brand organization.");
+  }
+  const { data: organization, error: organizationError } = await service
+    .from("portal_organization").select("id,display_name,legal_name,status,kind")
+    .eq("id", organizationId).eq("kind", "brand").eq("status", "active")
+    .maybeSingle();
+  if (organizationError) throw organizationError;
+  if (!organization) throw new AdminError(404, "Active Brand organization not found.");
+
+  if (
+    actor.role === "internal" && actor.staff_role === "administrator" &&
+    await hasPermission(actor, "users.manage")
+  ) {
+    return {
+      organization,
+      memberRole: "workforce_administrator",
+      membershipId: null,
+      internalAdministrator: true,
+    };
+  }
+
+  const { data: membership, error: membershipError } = await service
+    .from("portal_organization_membership")
+    .select("id,member_role,status,organization_id")
+    .eq("profile_id", actor.id).eq("organization_id", organizationId)
+    .eq("workspace", "brand").eq("status", "active").maybeSingle();
+  if (membershipError) throw membershipError;
+  if (!membership) throw new AdminError(403, "This Brand is outside your access scope.");
+
+  const { data: allowed, error: permissionError } = await service
+    .from("portal_workspace_role_permission").select("permission")
+    .eq("workspace", "brand").eq("member_role", membership.member_role)
+    .eq("permission", permission).maybeSingle();
+  if (permissionError) throw permissionError;
+  if (!allowed) throw new AdminError(403, "Your Brand role cannot manage this access.");
+  return {
+    organization,
+    memberRole: membership.member_role,
+    membershipId: membership.id,
+    internalAdministrator: false,
+  };
 }
 
 async function findAuthUser(email: string): Promise<Row | null> {
@@ -124,6 +193,12 @@ async function listAuthUsers(): Promise<Row[]> {
 function testDemoReason(user: Row, profile: Row): string | null {
   const email = text(user.email, 320).toLowerCase();
   const org = text(profile.org, 200).toLowerCase();
+  const appMetadata = user.app_metadata && typeof user.app_metadata === "object"
+    ? user.app_metadata as Row
+    : {};
+  if (appMetadata.portal_test_account === true) {
+    return "Portal role-acceptance test identity";
+  }
   if (
     new Set([
       "dana@downtownprovisions.com",
@@ -154,6 +229,26 @@ function testDemoReason(user: Row, profile: Row): string | null {
 }
 
 async function portalUsers(actor: Row): Promise<Row[]> {
+  if (actor.role === 'owner') {
+    const context=storeContext(actor)!;
+    const {data:members,error}=await service.from('portal_organization_membership').select('id,profile_id,member_role,status')
+      .eq('workspace','store').eq('organization_id',context.organizationId).limit(250);
+    if(error) throw error;
+    return await Promise.all((members||[]).map(async membership=>{
+      const [{data:profile,error:pe},{data:auth,error:ae}]=await Promise.all([
+        service.from('portal_profile').select('id,full_name,active').eq('id',membership.profile_id).maybeSingle(),
+        service.auth.admin.getUserById(String(membership.profile_id)),
+      ]);
+      if(pe||ae||!profile||!auth.user) throw new AdminError(503,'Store member directory could not be verified.');
+      return {id:profile.id,membershipId:membership.id,email:auth.user.email,fullName:profile.full_name,org:actor.org,
+        // Explicit mapping: an unrecognized membership role is never shown as Owner, Buyer or Billing.
+        role:({store_owner:'owner',store_buyer:'buyer',store_billing:'billing',store_staff:'budtender'} as Record<string,string>)[membership.member_role]||'unrecognized',
+        active:profile.active===true&&membership.status==='active',staffRole:null,locations:'Membership-scoped',testDemo:false};
+    }));
+  }
+  if (actor.role !== "internal" && actor.role !== "owner") {
+    throw new AdminError(403, "This user directory is outside your access scope.");
+  }
   if (
     actor.role === "internal" &&
     !(await hasPermission(actor, "users.manage"))
@@ -177,7 +272,13 @@ async function portalUsers(actor: Row): Promise<Row[]> {
     const user = authById.get(String(profile.id)) ?? {};
     const email = text(user.email, 320).toLowerCase();
     const reason = testDemoReason(user, profile);
-    const factors = Array.isArray(user.factors) ? user.factors as Row[] : [];
+    const appMetadata = user.app_metadata && typeof user.app_metadata === "object"
+      ? user.app_metadata as Row
+      : {};
+    const accessExpiresOn = text(appMetadata.portal_access_expires_on, 10);
+    const accountType = text(appMetadata.portal_account_type, 40) === "contractor"
+      ? "contractor"
+      : "standard";
     return {
       id: profile.id,
       email,
@@ -187,9 +288,10 @@ async function portalUsers(actor: Row): Promise<Row[]> {
       staffRole: profile.staff_role,
       locations: profile.locations,
       active: profile.active !== false && !user.deleted_at,
-      mfaEnrolled: factors.some((factor) =>
-        factor.factor_type === "totp" && factor.status === "verified"
-      ),
+      accountType,
+      accessExpiresOn,
+      accessExpired: accountType === "contractor" && ISO_DATE.test(accessExpiresOn) &&
+        accessExpiresOn < todayIso(),
       testDemo: !!reason,
       testDemoReason: reason,
     };
@@ -241,6 +343,85 @@ async function accessReviews(actor: Row): Promise<Row[]> {
   });
 }
 
+async function requireStoreAdministrator(actor: Row): Promise<void> {
+  if (actor.role !== 'internal' || actor.staff_role !== 'administrator' || !(await hasPermission(actor, 'users.manage'))) {
+    throw new AdminError(403, 'Only an Internal Administrator may manage Store memberships initially.');
+  }
+}
+
+async function storeAccessDirectory(actor: Row, organizationId?: string): Promise<Row> {
+  await requireStoreAdministrator(actor);
+  const {data: control, error: ce} = await service.from('portal_store_access_control').select('enabled').eq('id',true).maybeSingle();
+  if (ce) throw new AdminError(503,'Store access controls are not installed. No access was changed.');
+  const {data: organizations, error: oe} = await service.from('portal_organization')
+    .select('id,display_name,legal_name,legacy_retailer_account_id').eq('kind','retailer').eq('status','active').order('legal_name').limit(251);
+  if (oe || (organizations?.length || 0)>250) throw new AdminError(503,'The Store directory requires a paginated review.');
+  const base = {enabled:control?.enabled===true,organizations:organizations || [],members:[],stores:[]};
+  if (!organizationId) return base;
+  const organization = (organizations || []).find(row=>row.id===organizationId);
+  if (!organization?.legacy_retailer_account_id) throw new AdminError(403,'Choose a verified active retailer.');
+  const [{data:members,error:me},{data:stores,error:se}] = await Promise.all([
+    service.from('portal_organization_membership').select('id,profile_id,organization_id,member_role,status,updated_at')
+      .eq('organization_id',organizationId).eq('workspace','store').order('id').limit(251),
+    service.from('portal_store').select('license_number,display_name,active,closed_at')
+      .eq('retailer_account_id',organization.legacy_retailer_account_id).eq('active',true).is('closed_at',null).order('display_name').limit(26),
+  ]);
+  if (me || se || (members?.length || 0)>250 || (stores?.length || 0)>25) throw new AdminError(503,'Store directory could not be verified without truncation.');
+  const assignments = members?.length ? await service.from('portal_membership_store').select('membership_id,license_number')
+    .in('membership_id',members.map(row=>row.id)) : {data:[],error:null};
+  if (assignments.error) throw assignments.error;
+  const rows = await Promise.all((members || []).map(async member=>{
+    const [{data:profile,error:pe},{data:auth,error:ae}] = await Promise.all([
+      service.from('portal_profile').select('id,full_name,active').eq('id',member.profile_id).maybeSingle(),
+      service.auth.admin.getUserById(String(member.profile_id)),
+    ]);
+    if (pe || ae || !profile || !auth.user || auth.user.id!==member.profile_id) throw new AdminError(503,'Member identity requires review.');
+    let eligible=true;
+    try { checkActor({id:auth.user.id,app_metadata:auth.user.app_metadata || {}},new Date()); } catch { eligible=false; }
+    const bannedUntil=(auth.user as unknown as Row).banned_until;
+    if (bannedUntil && Date.parse(String(bannedUntil))>Date.now()) eligible=false;
+    return {...member,fullName:profile.full_name,email:auth.user.email,identityActive:profile.active===true,identityEligible:eligible,
+      licenses:(assignments.data || []).filter(row=>row.membership_id===member.id).map(row=>row.license_number)};
+  }));
+  return {...base,members:rows,stores};
+}
+
+async function manageStoreAccess(actor: Row, body: Row): Promise<Row> {
+  await requireStoreAdministrator(actor);
+  const uuid=(value:unknown)=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  if (!uuid(body.organizationId)||!uuid(body.profileId)||!uuid(body.requestId)
+    || (body.membershipId!=null&&!uuid(body.membershipId)) || !Array.isArray(body.licenses)
+    || body.licenses.length>25 || body.licenses.some(value=>typeof value!=='string'||value.length>200)
+    // store_billing is account-wide like the Owner: the database refuses any location for it.
+    || !['store_owner','store_buyer','store_staff','store_billing'].includes(String(body.memberRole))
+    || !['active','disabled'].includes(String(body.status)) || typeof body.reason!=='string'
+    || !body.reason.trim() || body.reason.length>1000) throw new AdminError(400,'Choose a retailer, existing user, role, locations and reason.');
+  const {data:owners,error} = await service.from('portal_organization_membership').select('profile_id')
+    .eq('organization_id',body.organizationId).eq('workspace','store').eq('member_role','store_owner').eq('status','active').limit(251);
+  if (error || (owners?.length || 0)>250) throw new AdminError(503,'Owner recovery requires a complete identity review.');
+  // Server-owned Auth proof only. No values from body.app_metadata/eligibility
+  // are forwarded. Expired/banned Owners cannot be counted as a replacement.
+  const verifiedAt=new Date().toISOString();
+  const identities = await Promise.all([...new Set([String(actor.id),String(body.profileId),...(owners || []).map(row=>String(row.profile_id))])].map(async id=>{
+    const {data,error:ae}=await service.auth.admin.getUserById(id);
+    if(ae||!data.user||data.user.id!==id) throw new AdminError(503,'Current account eligibility could not be verified.');
+    const user=data.user;let eligible=true;
+    try {checkActor({id:user.id,app_metadata:user.app_metadata||{}},new Date());} catch {eligible=false;}
+    const bannedUntil=(user as unknown as Row).banned_until;
+    if(bannedUntil&&Date.parse(String(bannedUntil))>Date.now())eligible=false;
+    return {id,eligible,expiresOn:eligible?(user.app_metadata?.portal_access_expires_on||null):null};
+  }));
+  const {data,error:changeError}=await service.rpc('portal_manage_store_membership',{
+    p_actor_id:actor.id,p_actor_membership_id:actor._workspaceMembershipId,p_organization_id:body.organizationId,
+    p_profile_id:body.profileId,p_membership_id:body.membershipId||null,p_member_role:body.memberRole,
+    p_licenses:body.licenses,p_status:body.status,p_expected_updated_at:body.expectedUpdatedAt||null,
+    p_reason:body.reason.trim(),p_request_id:body.requestId,p_verified_identities:identities,p_verified_at:verifiedAt,
+  });
+  if(changeError) throw new AdminError(changeError.code==='42501'?403:['23514','40001'].includes(changeError.code)?409:changeError.code==='22023'?400:503,
+    ['23514','40001','22023'].includes(changeError.code)?String(changeError.message):'Store membership could not be changed.');
+  return {ok:true,result:data};
+}
+
 async function resolveAccessReview(request: Request, actor: Row, body: Row): Promise<Response> {
   if (actor.role !== "internal" || !(await hasPermission(actor, "users.manage"))) {
     throw new AdminError(403, "Only an Administrator may resolve access reviews.");
@@ -274,48 +455,6 @@ async function resolveAccessReview(request: Request, actor: Row, body: Row): Pro
     storeLicense: review.store_license,
   });
   return json(request, { ok: true, reviews: await accessReviews(actor) });
-}
-
-async function resetUserMfa(
-  request: Request,
-  actor: Row,
-  email: string,
-): Promise<Response> {
-  if (
-    actor.role !== "internal" ||
-    !(await hasPermission(actor, "users.manage"))
-  ) {
-    return json(request, {
-      error: "Only an Administrator may reset multi-factor authentication.",
-    }, 403);
-  }
-  const target = await findAuthUser(email);
-  if (!target) return json(request, { error: "User not found" }, 404);
-  if (String(target.id) === String(actor.id)) {
-    return json(request, {
-      error:
-        "Another Administrator must reset your MFA. This prevents an active administrator from locking out their own account.",
-    }, 409);
-  }
-  const { data, error } = await service.auth.admin.mfa.listFactors({
-    userId: String(target.id),
-  });
-  if (error) throw error;
-  const factors = Array.isArray(data?.factors) ? data.factors : [];
-  for (const factor of factors) {
-    const { error: deleteError } = await service.auth.admin.mfa.deleteFactor({
-      userId: String(target.id),
-      id: factor.id,
-    });
-    if (deleteError) throw deleteError;
-  }
-  await audit(actor, "reset-user-mfa", target, {
-    org: target.user_metadata && typeof target.user_metadata === "object"
-      ? (target.user_metadata as Row).org ?? null
-      : null,
-    removedFactors: factors.length,
-  });
-  return json(request, { ok: true, removedFactors: factors.length });
 }
 
 async function removeTestDemoUser(
@@ -413,6 +552,374 @@ async function audit(
     detail,
   });
   if (error) throw error;
+}
+
+async function brandWorkspaces(actor: Row): Promise<Row[]> {
+  if (
+    actor.role !== "internal" || actor.staff_role !== "administrator" ||
+    !(await hasPermission(actor, "users.manage"))
+  ) {
+    throw new AdminError(403, "Only a workforce Administrator may view as a Brand.");
+  }
+  const { data: organizations, error } = await service.from("portal_organization")
+    .select("id,display_name,legal_name,status").eq("kind", "brand")
+    .eq("status", "active").order("display_name", { ascending: true }).limit(500);
+  if (error) throw error;
+  const ids = (organizations ?? []).map((organization) => organization.id);
+  const accountResult = ids.length
+    ? await service.from("portal_brand_account")
+      .select("organization_id,scope_status,canix_brand_id,canix_owner_id,monday_account_item_id")
+      .in("organization_id", ids)
+    : { data: [], error: null };
+  if (accountResult.error) throw accountResult.error;
+  const accountByOrganization = new Map(
+    ((accountResult.data ?? []) as Row[]).map((account) => [String(account.organization_id), account]),
+  );
+  return ((organizations ?? []) as Row[]).map((organization) => {
+    const account = accountByOrganization.get(String(organization.id)) ?? {};
+    return {
+      id: organization.id,
+      name: organization.display_name,
+      legalName: organization.legal_name,
+      scopeStatus: account.scope_status ?? "pending",
+      canixMapped: !!(account.canix_brand_id || account.canix_owner_id),
+      mondayMapped: !!account.monday_account_item_id,
+    };
+  });
+}
+
+async function brandView(
+  request: Request,
+  actor: Row,
+  body: Row,
+  action: "start-brand-view" | "end-brand-view",
+): Promise<Response> {
+  const brands = await brandWorkspaces(actor);
+  const organizationId = text(body.organizationId, 80);
+  const brand = brands.find((candidate) => String(candidate.id) === organizationId);
+  if (!brand) throw new AdminError(404, "Active Brand workspace not found.");
+  await audit(actor, action, { id: brand.id }, {
+    org: brand.name,
+    organizationId: brand.id,
+    mode: "read_only",
+    sourceScopeStatus: brand.scopeStatus,
+  });
+  return json(request, { ok: true, brand, readOnly: true });
+}
+
+function brandRoleLabel(role: unknown): string {
+  return ({
+    brand_owner: "Brand Owner",
+    brand_manager: "Brand Manager",
+    brand_contributor: "Brand Contributor",
+    brand_viewer: "Brand Viewer",
+  } as Record<string, string>)[String(role)] ?? "Brand member";
+}
+
+function brandRoleMayAssign(actorRole: unknown, targetRole: string): boolean {
+  if (actorRole === "workforce_administrator") return BRAND_ROLES.has(targetRole);
+  if (actorRole === "brand_owner") {
+    return new Set(["brand_manager", "brand_contributor", "brand_viewer"])
+      .has(targetRole);
+  }
+  if (actorRole === "brand_manager") {
+    return new Set(["brand_contributor", "brand_viewer"]).has(targetRole);
+  }
+  return false;
+}
+
+async function brandUsers(actor: Row, body: Row): Promise<Row> {
+  const organizationId = text(body.organizationId, 80);
+  const access = await brandAccess(actor, organizationId, "brand.users.read");
+  const { data: memberships, error: membershipError } = await service
+    .from("portal_organization_membership")
+    .select("id,profile_id,member_role,status,is_default,created_at,updated_at")
+    .eq("organization_id", organizationId).eq("workspace", "brand")
+    .order("created_at", { ascending: true }).limit(500);
+  if (membershipError) throw membershipError;
+  const profileIds = (memberships ?? []).map((row) => row.profile_id);
+  const [authUsers, profileResult] = await Promise.all([
+    listAuthUsers(),
+    profileIds.length
+      ? service.from("portal_profile")
+        .select("id,full_name,role,active,org,staff_role").in("id", profileIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (profileResult.error) throw profileResult.error;
+  const authById = new Map(authUsers.map((user) => [String(user.id), user]));
+  const profileById = new Map(
+    ((profileResult.data ?? []) as Row[]).map((profile) => [String(profile.id), profile]),
+  );
+  const users = ((memberships ?? []) as Row[]).map((membership) => {
+    const profile = profileById.get(String(membership.profile_id)) ?? {};
+    const user = authById.get(String(membership.profile_id)) ?? {};
+    const email = text(user.email, 320).toLowerCase();
+    const active = membership.status === "active" && profile.active !== false &&
+      !user.deleted_at;
+    return {
+      membershipId: membership.id,
+      profileId: membership.profile_id,
+      email,
+      fullName: text(profile.full_name, 160) || email || "Unnamed user",
+      profileRole: profile.role,
+      memberRole: membership.member_role,
+      roleLabel: brandRoleLabel(membership.member_role),
+      status: active
+        ? (user.last_sign_in_at ? "active" : "invited")
+        : "disabled",
+      active,
+      isSelf: String(actor.id) === String(membership.profile_id),
+      canEdit: String(actor.id) !== String(membership.profile_id) &&
+        brandRoleMayAssign(access.memberRole, String(membership.member_role)),
+    };
+  }).filter((user) => user.email);
+  return {
+    organization: access.organization,
+    actorRole: access.memberRole,
+    canManage: access.internalAdministrator === true ||
+      new Set(["brand_owner", "brand_manager"]).has(String(access.memberRole)),
+    assignableRoles: Array.from(BRAND_ROLES).filter((role) =>
+      brandRoleMayAssign(access.memberRole, role)
+    ),
+    users,
+  };
+}
+
+async function inviteBrandUser(
+  request: Request,
+  actor: Row,
+  body: Row,
+): Promise<Response> {
+  const organizationId = text(body.organizationId, 80);
+  const access = await brandAccess(actor, organizationId, "brand.users.manage");
+  const email = text(body.email, 320).toLowerCase();
+  const fullName = text(body.fullName, 160);
+  const memberRole = text(body.memberRole, 40);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !fullName) {
+    throw new AdminError(400, "A name and valid email address are required.");
+  }
+  if (!BRAND_ROLES.has(memberRole) || !brandRoleMayAssign(access.memberRole, memberRole)) {
+    throw new AdminError(403, "Your role cannot assign that level of Brand access.");
+  }
+
+  let target = await findAuthUser(email);
+  const invited = !target;
+  if (!target) {
+    const { data, error } = await service.auth.admin.inviteUserByEmail(
+      email,
+      { data: { full_name: fullName } },
+    );
+    if (error || !data.user) {
+      throw error ?? new Error("The Brand invitation did not create a user.");
+    }
+    target = data.user as unknown as Row;
+  }
+
+  const { data: currentProfile, error: profileReadError } = await service
+    .from("portal_profile").select("id,role,active,org,full_name,staff_role")
+    .eq("id", target.id).maybeSingle();
+  if (profileReadError) throw profileReadError;
+  if (
+    currentProfile && !new Set(["brand", "internal"]).has(String(currentProfile.role))
+  ) {
+    throw new AdminError(
+      409,
+      "That email already belongs to a Store account. Use a separate Brand identity or ask an Administrator to review it.",
+    );
+  }
+  const organization = access.organization as Row;
+  if (!currentProfile) {
+    const { error: profileError } = await service.from("portal_profile").insert({
+      id: target.id,
+      full_name: fullName,
+      org: organization.display_name,
+      role: "brand",
+      locations: null,
+      active: true,
+      staff_role: null,
+    });
+    if (profileError) throw profileError;
+  } else if (currentProfile.role === "brand") {
+    const { error: profileError } = await service.from("portal_profile").update({
+      full_name: fullName,
+      active: true,
+    }).eq("id", target.id);
+    if (profileError) throw profileError;
+  }
+
+  const { error: membershipError } = await service
+    .from("portal_organization_membership").upsert({
+      profile_id: target.id,
+      organization_id: organizationId,
+      workspace: "brand",
+      member_role: memberRole,
+      status: "active",
+      is_default: currentProfile?.role === "brand",
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "profile_id,organization_id,workspace" });
+  if (membershipError) throw membershipError;
+  await service.auth.admin.updateUserById(String(target.id), {
+    ban_duration: "none",
+  });
+  await audit(actor, "invite-brand-user", { ...target, email }, {
+    org: organization.display_name,
+    organizationId,
+    memberRole,
+    invited,
+  });
+  return json(request, {
+    ok: true,
+    invited,
+    user: { id: target.id, email, fullName, memberRole, active: true },
+  });
+}
+
+async function createTestBrandDemoUser(
+  request: Request,
+  actor: Row,
+  body: Row,
+): Promise<Response> {
+  if (
+    actor.role !== "internal" || actor.staff_role !== "administrator" ||
+    !(await hasPermission(actor, "users.manage"))
+  ) {
+    throw new AdminError(403, "Only a workforce Administrator may create the Test Brand account.");
+  }
+  const email = text(body.email, 320).toLowerCase();
+  const password = "UXDemo43!";
+  if (email !== "marketing@urbanxtract.com") {
+    throw new AdminError(400, "The isolated demo identity must be marketing@urbanxtract.com.");
+  }
+  const { data: organization, error: organizationError } = await service
+    .from("portal_organization").select("id,display_name")
+    .eq("kind", "brand").eq("legal_name", "Test Brand").maybeSingle();
+  if (organizationError) throw organizationError;
+  if (!organization) throw new AdminError(409, "The Test Brand workspace has not been provisioned.");
+
+  let target = await findAuthUser(email);
+  if (!target) {
+    const { data, error } = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: "Test Brand Marketing" },
+      app_metadata: { portal_demo: true },
+    });
+    if (error || !data.user) throw error ?? new Error("The demo user was not created.");
+    target = data.user as unknown as Row;
+  } else {
+    const { data, error } = await service.auth.admin.updateUserById(String(target.id), {
+      password,
+      email_confirm: true,
+      ban_duration: "none",
+      user_metadata: { full_name: "Test Brand Marketing" },
+      app_metadata: { ...(target.app_metadata as Row ?? {}), portal_demo: true },
+    });
+    if (error || !data.user) throw error ?? new Error("The demo user was not updated.");
+    target = data.user as unknown as Row;
+  }
+
+  const { error: profileError } = await service.from("portal_profile").upsert({
+    id: target.id,
+    full_name: "Test Brand Marketing",
+    org: organization.display_name,
+    role: "brand",
+    locations: null,
+    active: true,
+    staff_role: null,
+  }, { onConflict: "id" });
+  if (profileError) throw profileError;
+  const { error: membershipError } = await service
+    .from("portal_organization_membership").upsert({
+      profile_id: target.id,
+      organization_id: organization.id,
+      workspace: "brand",
+      member_role: "brand_owner",
+      status: "active",
+      is_default: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "profile_id,organization_id,workspace" });
+  if (membershipError) throw membershipError;
+  await audit(actor, "create-test-brand-demo-user", { ...target, email }, {
+    organizationId: organization.id,
+    memberRole: "brand_owner",
+    isolatedDemo: true,
+  });
+  return json(request, {
+    ok: true,
+    user: { id: target.id, email, fullName: "Test Brand Marketing", memberRole: "brand_owner" },
+  });
+}
+
+async function updateBrandUser(
+  request: Request,
+  actor: Row,
+  body: Row,
+): Promise<Response> {
+  const organizationId = text(body.organizationId, 80);
+  const membershipId = text(body.membershipId, 80);
+  const memberRole = text(body.memberRole, 40);
+  const active = body.active !== false;
+  const access = await brandAccess(actor, organizationId, "brand.users.manage");
+  if (!BRAND_ROLES.has(memberRole) || !brandRoleMayAssign(access.memberRole, memberRole)) {
+    throw new AdminError(403, "Your role cannot assign that level of Brand access.");
+  }
+  const { data: membership, error } = await service
+    .from("portal_organization_membership")
+    .select("id,profile_id,member_role,status")
+    .eq("id", membershipId).eq("organization_id", organizationId)
+    .eq("workspace", "brand").maybeSingle();
+  if (error) throw error;
+  if (!membership) throw new AdminError(404, "Brand membership not found.");
+  if (String(membership.profile_id) === String(actor.id)) {
+    throw new AdminError(409, "You cannot change or deactivate your own Brand access.");
+  }
+  if (!brandRoleMayAssign(access.memberRole, String(membership.member_role))) {
+    throw new AdminError(403, "Your role cannot modify that Brand member.");
+  }
+  const membershipUpdate: Row = {
+    member_role: memberRole,
+    status: active ? "active" : "disabled",
+    updated_at: new Date().toISOString(),
+  };
+  if (!active) membershipUpdate.is_default = false;
+  const { error: updateError } = await service
+    .from("portal_organization_membership").update(membershipUpdate)
+    .eq("id", membership.id).eq("organization_id", organizationId);
+  if (updateError) throw updateError;
+
+  const { data: profile, error: profileError } = await service
+    .from("portal_profile").select("id,role,org,active")
+    .eq("id", membership.profile_id).maybeSingle();
+  if (profileError) throw profileError;
+  if (profile?.role === "brand") {
+    const { count, error: countError } = await service
+      .from("portal_organization_membership").select("id", {
+        count: "exact",
+        head: true,
+      }).eq("profile_id", membership.profile_id).eq("status", "active");
+    if (countError) throw countError;
+    const hasActiveMembership = Number(count ?? 0) > 0;
+    const { error: profileUpdateError } = await service.from("portal_profile")
+      .update({ active: hasActiveMembership }).eq("id", membership.profile_id);
+    if (profileUpdateError) throw profileUpdateError;
+    const { error: authError } = await service.auth.admin.updateUserById(
+      String(membership.profile_id),
+      { ban_duration: hasActiveMembership ? "none" : "876000h" },
+    );
+    if (authError) throw authError;
+  }
+  await audit(actor, active ? "update-brand-user" : "deactivate-brand-user", {
+    id: membership.profile_id,
+  }, {
+    org: (access.organization as Row).display_name,
+    organizationId,
+    membershipId,
+    previousRole: membership.member_role,
+    memberRole,
+    active,
+  });
+  return json(request, { ok: true });
 }
 
 async function storesForAssignment(
@@ -661,19 +1168,54 @@ Deno.serve(async (request) => {
     if (!actor) return json(request, { error: "Forbidden" }, 403);
     const body = await request.json() as Row;
     const action = text(body.action, 40);
+    if (action==='workspace-permissions') {
+      if(actor.role!=='internal') throw new AdminError(403,'Select an Internal workspace.');
+      const {data,error}=await service.from('portal_role_permission').select('permission').eq('staff_role',actor.staff_role);
+      if(error) throw error;
+      return json(request,{memberRole:actor.staff_role,permissions:(data||[]).map(row=>row.permission)});
+    }
+    if (action==='list-store-access') return json(request,await storeAccessDirectory(actor,text(body.organizationId,36)||undefined));
+    if (action==='manage-store-access') return json(request,await manageStoreAccess(actor,body));
+    if (action === 'revoke-store-membership') {
+      throw new AdminError(409,'Reload Store access and use its reviewed membership change action.');
+    }
+    // Old global-profile operations must never deactivate independent Brand or
+    // Internal access as a side effect of a Store change. No new invitations
+    // are issued until the named live pilot and scoped invitation path pass.
+    if (['invite-user','update-user','invite-onboarding-person','resolve-access-review'].includes(action)) {
+      throw new AdminError(409,'Legacy Store account changes are held. Use a membership-scoped action; live invitations are not enabled.');
+    }
     if (action === "invite-onboarding-person") {
       return await inviteOnboardingPerson(request, actor, body);
     }
     if (action === "resolve-access-review") {
       return await resolveAccessReview(request, actor, body);
     }
+    if (action === "list-brand-users") {
+      return json(request, await brandUsers(actor, body));
+    }
+    if (action === "invite-brand-user") {
+      return await inviteBrandUser(request, actor, body);
+    }
+    if (action === "create-test-brand-demo-user") {
+      return await createTestBrandDemoUser(request, actor, body);
+    }
+    if (action === "update-brand-user") {
+      return await updateBrandUser(request, actor, body);
+    }
     const email = text(body.email, 320).toLowerCase();
     if (action === "list-users") {
-      const [users, reviews] = await Promise.all([
+      const [users, reviews, brands] = await Promise.all([
         portalUsers(actor),
         accessReviews(actor),
+        actor.role === "internal" && actor.staff_role === "administrator"
+          ? brandWorkspaces(actor)
+          : Promise.resolve([]),
       ]);
-      return json(request, { users, reviews });
+      return json(request, { users, reviews, brands });
+    }
+    if (action === "start-brand-view" || action === "end-brand-view") {
+      return await brandView(request, actor, body, action);
     }
     if (action === "remove-test-user") {
       if (!email || !email.includes("@")) {
@@ -681,11 +1223,75 @@ Deno.serve(async (request) => {
       }
       return await removeTestDemoUser(request, actor, email);
     }
-    if (action === "reset-mfa") {
-      if (!email || !email.includes("@")) {
-        return json(request, { error: "A valid user email is required." }, 400);
+    if (action === "invite-workforce-administrator") {
+      if (
+        actor.role !== "internal" || actor.staff_role !== "administrator" ||
+        !(await hasPermission(actor, "users.manage"))
+      ) {
+        return json(request, {
+          error: "Only a workforce Administrator may add another Administrator.",
+        }, 403);
       }
-      return await resetUserMfa(request, actor, email);
+      if (!/^[^@\s]+@urbanxtracts\.com$/.test(email)) {
+        return json(request, {
+          error: "Use the employee's urbanxtracts.com email address.",
+        }, 400);
+      }
+      if (body.confirmAdministrator !== true) {
+        return json(request, {
+          error: "Confirm the Administrator access grant before continuing.",
+        }, 400);
+      }
+      const fullName = text(body.fullName, 160);
+      if (!fullName) {
+        return json(request, { error: "A name is required." }, 400);
+      }
+      let target = await findAuthUser(email);
+      const invited = !target;
+      if (!target) {
+        const { data, error } = await service.auth.admin.inviteUserByEmail(
+          email,
+          { data: { full_name: fullName } },
+        );
+        if (error || !data.user) {
+          throw error ?? new Error("The invitation did not create a user.");
+        }
+        target = data.user as unknown as Row;
+      }
+      const { error: grantError } = await service.rpc(
+        "portal_grant_workforce_administrator",
+        {
+          p_actor_id: actor.id,
+          p_target_id: target.id,
+          p_full_name: fullName,
+        },
+      );
+      if (grantError) {
+        if (grantError.message.includes("already has Administrator access")) {
+          return json(request, { error: grantError.message }, 409);
+        }
+        if (grantError.message.includes("existing retailer or deactivated account")) {
+          return json(request, { error: grantError.message }, 409);
+        }
+        if (invited) {
+          console.error("portal-admin workforce grant after invitation", grantError);
+          return json(request, {
+            error: "The invitation may have been sent, but Administrator access was not granted. Check the user list before retrying.",
+          }, 503);
+        }
+        throw grantError;
+      }
+      return json(request, {
+        ok: true,
+        invited,
+        user: {
+          id: target.id,
+          email,
+          org: "urbanXtracts",
+          role: "internal",
+          staffRole: "administrator",
+        },
+      });
     }
     const org = text(body.org, 200);
     const roleLabel = text(body.role, 40);
@@ -695,10 +1301,26 @@ Deno.serve(async (request) => {
       "Budtender": "budtender",
     } as Record<string, string>)[roleLabel] ?? roleLabel.toLowerCase();
     const locations = text(body.locations, 1000);
+    const accountType = text(body.accountType, 40) === "contractor"
+      ? "contractor"
+      : "standard";
+    const accessExpiresOn = text(body.accessExpiresOn, 10);
     if (!email || !email.includes("@") || !org) {
       return json(request, {
         error: "A valid email and organisation are required.",
       }, 400);
+    }
+    if (accountType === "contractor") {
+      if (actor.role !== "internal" || !(await hasPermission(actor, "users.manage"))) {
+        return json(request, {
+          error: "Only IT/Admin may create contractor portal accounts.",
+        }, 403);
+      }
+      if (!ISO_DATE.test(accessExpiresOn) || accessExpiresOn <= todayIso()) {
+        return json(request, {
+          error: "Contractor accounts require a future expiration date.",
+        }, 400);
+      }
     }
     ensureScope(actor, org, role);
     let target = await findAuthUser(email);
@@ -754,17 +1376,35 @@ Deno.serve(async (request) => {
         .upsert(profile, { onConflict: "id" });
       if (profileError) throw profileError;
       await syncStoreAssignments(String(target.id), assignedStores);
+      const existingMetadata = target.app_metadata && typeof target.app_metadata === "object"
+        ? target.app_metadata as Row
+        : {};
       await service.auth.admin.updateUserById(String(target.id), {
         ban_duration: "none",
+        app_metadata: {
+          ...existingMetadata,
+          portal_account_type: accountType,
+          portal_access_expires_on: accountType === "contractor" ? accessExpiresOn : null,
+        },
       });
       await audit(actor, "invite-user", { ...target, email }, {
         org,
         role,
         locations,
+        accountType,
+        accessExpiresOn: accountType === "contractor" ? accessExpiresOn : null,
       });
       return json(request, {
         ok: true,
-        user: { id: target.id, email, org, role, locations },
+        user: {
+          id: target.id,
+          email,
+          org,
+          role,
+          locations,
+          accountType,
+          accessExpiresOn: accountType === "contractor" ? accessExpiresOn : null,
+        },
       });
     }
 
@@ -851,6 +1491,7 @@ Deno.serve(async (request) => {
 
     return json(request, { error: "Unsupported action" }, 400);
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     if (!(error instanceof AdminError)) console.error("portal-admin", error);
     return json(request, {
       error: error instanceof AdminError

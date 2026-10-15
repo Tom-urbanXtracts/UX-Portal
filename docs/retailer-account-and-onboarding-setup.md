@@ -68,7 +68,9 @@ Every account/status/store mutation is performed by the server and writes a reta
 
 ## Onboarding durability
 
-The request-access form sends a stable `clientRequestId`. `portal-intake` atomically stores the organization, one to ten stores, owner, optional buyer, and budtenders before forwarding to Monday. The request ID is included in the Monday payload as `portalOnboardingRequestId`.
+The request-access form sends a stable `clientRequestId`. Its Brand-style workspace has six sections: Company Profile, Store & Licence, Contacts & Access, Delivery & Commercial, Documents & Terms, and Review & Submit. Together they collect the legal and DBA identity; one to ten licensed locations with licence type, expiration, and address; primary, buyer, billing, and optional budtender contacts; delivery preferences; brand interests; website and media contact; optional notes; acknowledgement of the wholesale terms; and an optional primary-store licence file up to 2 MB. Explicit draft saves retain only the form fields for the current browser-tab session; the file must be reselected, and nothing is sent until final submission. `portal-intake` atomically stores the organization, stores, owner, optional buyer, and budtenders before forwarding the sanitized partner-intake metadata to Monday. The request ID is included in the Monday payload as `portalOnboardingRequestId`.
+
+The browser exposes a local-only `#onboarding-preview` route for design and regression review. Production hosts ignore this route and continue to start at the normal authentication or approved public-entry screen.
 
 The Monday scenario must return JSON containing `mondayItemId` (or `itemId`/`id`) and preferably `mondayBoardId`. If Monday times out, rejects the request, or omits an item identifier, the portal record becomes `needs_reconciliation`; the requester receives its portal reference and must not resubmit it. A repeated accepted client request returns the existing record without creating a second Monday item.
 
@@ -106,7 +108,7 @@ The Store onboarding screen separates the operator workload into five switchable
 
 Selecting a request opens Workflow first. Returning to Requests clears the selected record, and detail sections cannot be opened without a selected request. Summary counts expose open requests, requested locations, requested users, and Monday reconciliation exceptions without requiring operators to open each record.
 
-Cannabis Store (DEMO) includes a complete read-only three-store onboarding record with a synthetic QuickBooks parent, two current qualified locations, one expired location-specific hold, Owner/Buyer/Budtender scope, and six-stage event history. It can be used to demonstrate and inspect the end state without creating a retailer, sending an invitation, changing QuickBooks, or writing to Monday.
+The former Cannabis Store demo organization and its synthetic QuickBooks, invoice, payment, and onboarding history were retired from the beta release on 12 Oct 2026. Store workflow demonstrations now require explicitly scoped test records created through the portal workflow.
 
 Each live QuickBooks retailer detail includes a pilot-readiness checklist. It reports the accounting identity, portal account link, licensed-store count, per-store source evidence, store ordering readiness, and account ordering status as independent gates. It also gives the operator one next action and explains the missing requirement beside each store, reducing failed attempts without weakening any server check.
 
