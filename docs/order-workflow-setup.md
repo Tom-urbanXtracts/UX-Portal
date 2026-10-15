@@ -1,5 +1,7 @@
 # Portal order workflow setup
 
+Store inventory freshness decision, 10/14/2026: `portal-intake` v54 requires a successful Canix package snapshot no older than five minutes before accepting live item lines. Missing, invalid, future or older timestamps return a retryable error before order/commitment creation; the cart and last informational snapshot are retained. The five-minute inventory limit is independent of the seven-day full-shop Marketplace publication/price expiry. A running refresh does not make an old successful snapshot current.
+
 The portal owns the durable customer-facing order and its append-only event history. Monday remains the operations work board. QuickBooks is not written automatically in this release; accounting staff create the record after the store data has been reviewed.
 
 > Live status, 14 September 2026: the portal and Supabase order layer use the dedicated Monday app exclusively. Direct, board-pinned order and onboarding creation, direct status writes, the signed Monday-to-portal callback, and the five-minute retry schedule are deployed. The old paused Make scenario is retained only as an inactive audit artifact and no portal credential or runtime fallback points to it.
@@ -7,13 +9,19 @@ The portal owns the durable customer-facing order and its append-only event hist
 ## Data flow
 
 1. The browser assigns a UUID to the draft and keeps it through every retry.
-2. `portal-intake` authenticates the caller and verifies store scope, the published store price, current Canix availability after explicit reservations, optional whole-case policy, release state, and the store's Owner-approval threshold.
+2. `portal-intake` authenticates the caller and verifies store scope, the current full-shop Canix Marketplace price (or an approved store-specific override), current Canix availability after explicit reservations, optional whole-case policy, release state, and the store's Owner-approval threshold.
 3. One `portal_order`, its verified `portal_order_line` rows, and per-item `portal_inventory_commitment` rows are created in one transaction. Product-scoped database locks ensure two request IDs cannot consume the same available units. Reusing the UUID returns the existing order and never commits or sends it twice.
 4. The dedicated Monday app creates or finds the board item by the stable client request identifier and returns its identifiers. The portal marks the workflow accepted only after that response.
 5. Portal state changes append `portal_order_event` rows and queue an outbox message. A Monday outage cannot roll back or erase the portal change.
 6. Monday changes return through the secret-authenticated callback. Both the Edge Function and PostgreSQL enforce the one-step transition graph; Store Owner approval, release holds, and terminal states cannot be skipped.
 
 Active commitments remain through approval and processing. They are released only when the order is declined, canceled, delivered, enters the legacy terminal `exception` state, or is definitively rejected by the downstream intake workflow. Drafts never hold inventory. After operations creates the state-required Canix sales order, the Monday callback links its numeric ID one-to-one to the portal order; only allocations on that exact Canix sales order cover the matching portal commitment.
+
+## Store catalog source
+
+The Store Catalog publishes only Marketplace listings that resolve by exact Canix Product ID to one currently orderable count-based item at facility `OCM-DIST-24-000069` (Canix facility ID `4467`). Product names, brands, categories, images, and default unit prices come from the current full-shop Marketplace snapshot. Package availability, case quantity, lab release, preorder state, and COA facts continue to come from the facility-scoped Canix package snapshot. Exact inventory quantities remain withheld from Stores.
+
+Approved `portal_store_price` records override the Marketplace unit price for their specific licensed Store. The catalog, pricing service, and checkout all reject partial Marketplace snapshots and pause ordering when the last successful full-shop snapshot is more than seven days old. Checkout repeats the exact Product-ID join and price check server-side, so a stale browser draft cannot bypass either control.
 
 ## Required Edge Function secrets
 

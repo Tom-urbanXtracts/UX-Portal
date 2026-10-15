@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
@@ -49,7 +50,7 @@ function origin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -184,10 +185,12 @@ async function actorFor(request: Request): Promise<Actor> {
   });
   if (!response.ok) throw new BrandError(403, "Forbidden");
   const user = await response.json() as Row;
-  const { data, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,role,staff_role,active,org")
     .eq("id", user.id).maybeSingle();
   if (error) throw error;
+  if (!rawProfile) throw new BrandError(403, "Forbidden");
+  const data = await requestWorkspace(service, request, user, rawProfile as Row, 'catalog.read', {allowBrand:true,denyStore:true});
   if (
     !data || data.active === false ||
     !["internal", "brand"].includes(String(data.role))
@@ -204,6 +207,8 @@ async function brandAccess(
   actor: Actor,
   organizationId: string,
 ): Promise<Set<string>> {
+  if (actor.role==='brand' && (actor as Actor & {_workspaceOrganizationId?:string})._workspaceOrganizationId!==organizationId)
+    throw new BrandError(403,'This Brand is outside the selected workspace.');
   const { data: organization, error: organizationError } = await service
     .from("portal_organization").select("id,kind,status")
     .eq("id", organizationId).eq("kind", "brand").maybeSingle();
@@ -4776,13 +4781,13 @@ Deno.serve(async (request) => {
     }
     throw new BrandError(400, "Unsupported Brand operation.");
   } catch (error) {
-    if (!(error instanceof BrandError)) {
+    if (!((error instanceof BrandError || error instanceof StoreAccessError))) {
       console.error("portal-brand-operations", error);
     }
     return json(request, {
-      error: error instanceof BrandError
+      error: (error instanceof BrandError || error instanceof StoreAccessError)
         ? error.message
         : "Brand operations are temporarily unavailable.",
-    }, error instanceof BrandError ? error.status : 500);
+    }, (error instanceof BrandError || error instanceof StoreAccessError) ? error.status : 500);
   }
 });

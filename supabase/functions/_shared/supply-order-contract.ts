@@ -42,22 +42,10 @@ const APPROVER_USER_IDS = Object.freeze({
 });
 
 const PLACEHOLDER_TEXT = /^(?:n\/?a|none|null|unknown|tbd|test|-)$/i;
-const PLACEHOLDER_HOSTS = new Set(["na.com", "www.na.com", "example.com"]);
 
 function present(value: string | null): boolean {
   const trimmed = String(value ?? "").trim();
   return !!trimmed && !PLACEHOLDER_TEXT.test(trimmed);
-}
-
-function validPurchaseUrl(value: string | null): boolean {
-  const raw = String(value ?? "").trim();
-  if (!raw) return false;
-  try {
-    const url = new URL(raw);
-    return url.protocol === "https:" && !PLACEHOLDER_HOSTS.has(url.hostname);
-  } catch {
-    return false;
-  }
 }
 
 function money(value: number | null): number | null {
@@ -80,7 +68,6 @@ export function supplyOrderValidation(
   input.lines.forEach((line, index) => {
     const label = `Item ${index + 1}`;
     if (!present(line.name)) missing.add(`${label}: item name`);
-    if (!validPurchaseUrl(line.linkUrl)) missing.add(`${label}: purchase link`);
     const unitCost = money(line.unitCost);
     const quantity = money(line.quantity);
     if (unitCost === null) missing.add(`${label}: unit cost`);

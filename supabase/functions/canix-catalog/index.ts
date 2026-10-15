@@ -1,3 +1,5 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { projectStoreProducts } from '../_shared/store-catalog.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import {
   approvedHttpsUrl,
@@ -5,11 +7,18 @@ import {
   labPassed,
 } from "../_shared/security-contract.ts";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
+import {
+  marketplaceSnapshotError,
+  ORDER_FACILITY_ID,
+  ORDER_FACILITY_NAME,
+  loadMarketplaceIdentity,
+} from "../_shared/marketplace-ordering.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const ASSET_HOSTS = new Set([
+  "assets.canix.com",
   ...String(Deno.env.get("PORTAL_EXTERNAL_ASSET_HOSTS") ?? "").split(",").map((
     host,
   ) => host.trim().toLowerCase()).filter(Boolean),
@@ -43,7 +52,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -71,10 +80,12 @@ async function authenticate(request: Request): Promise<Row | null> {
   if (!response.ok) return null;
   if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json();
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,role,active,org,locations",
   ).eq("id", user.id).maybeSingle();
-  return profile && profile.active !== false ? profile as Row : null;
+  if (!rawProfile || rawProfile.active !== true) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'education.read');
+  return profile as Row;
 }
 
 function httpsUrl(value: unknown): string | null {
@@ -99,12 +110,15 @@ async function currentRows(
 ): Promise<Row[]> {
   const rows: Row[] = [];
   const fields =
-    "package_id,tag,item_id,item_name,sku,item_category_name,item_sub_category_name,product_id,product_name,brand_name,strain_name,strain_type,quantity_type,status_category,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lot_id,production_batch_number,lab_test_status,test_result_status,has_coa,packaged_date,facility_name,room_name,source_package_ids,source_updated_at";
+    "package_id,tag,item_id,item_name,sku,item_category_name,item_sub_category_name,product_id,product_name,brand_name,strain_name,strain_type,quantity_type,status_category,weight,c_reserved_weight,reservation_state,orderable_units,case_quantity,case_quantity_unit,lot_id,production_batch_number,lab_test_status,test_result_status,has_coa,packaged_date,facility_id,facility_name,room_name,source_package_ids,source_updated_at";
   for (let start = 0;; start += 1000) {
     let query = service.from("canix_package_current").select(fields).eq(
       "sync_run_id",
       runId,
-    ).eq("quantity_type", "CountBased");
+    ).eq("facility_id", ORDER_FACILITY_ID).eq(
+      "quantity_type",
+      "CountBased",
+    );
     query = includeAllocated
       ? query.in("status_category", ["available", "allocated"])
       : query.eq("status_category", "available");
@@ -226,12 +240,39 @@ Deno.serve(async (request) => {
     }
     const internal = profile.role === "internal";
     const runId = String(state.last_successful_run_id);
-    const [rawRows, lotStateResult] = await Promise.all([
-      currentRows(runId, internal),
-      service.from("portal_lot_integrity_state").select("enforcement_mode")
-        .eq("id", 1).maybeSingle(),
-    ]);
+    const identityIndex = await loadMarketplaceIdentity(service,runId);
+    const [rawRows, lotStateResult, marketplaceStateResult] = await Promise.all(
+      [
+        currentRows(runId, internal),
+        service.from("portal_lot_integrity_state").select("enforcement_mode")
+          .eq("id", 1).maybeSingle(),
+        service.from("canix_marketplace_sync_state").select(
+          "status,source_mode,snapshot_scope,last_successful_run_id,last_successful_at,snapshot_product_count",
+        ).eq("id", 1).maybeSingle(),
+      ],
+    );
     if (lotStateResult.error) throw lotStateResult.error;
+    if (marketplaceStateResult.error) throw marketplaceStateResult.error;
+    const marketplaceError = marketplaceSnapshotError(
+      marketplaceStateResult.data as Row | null,
+    );
+    if (marketplaceError) {
+      return json(request, { error: marketplaceError }, 503);
+    }
+    const marketplaceRunId = String(
+      marketplaceStateResult.data!.last_successful_run_id,
+    );
+    const { data: marketplaceData, error: marketplaceDataError } = await service
+      .from("canix_marketplace_product_snapshot").select(
+        "marketplace_product_id,product_gid,product_name,brand_name,item_category_name,price_cents,msrp_cents,sale_unit,has_image,image_url,synced_at",
+      ).eq("sync_run_id", marketplaceRunId).order("product_name");
+    if (marketplaceDataError) throw marketplaceDataError;
+    const marketplaceByProductId = new Map(
+      ((marketplaceData ?? []) as Row[]).map((row) => [
+        String(row.marketplace_product_id),
+        row,
+      ]),
+    );
     const lotEnforcementMode = String(
       lotStateResult.data?.enforcement_mode ?? "monitor",
     );
@@ -274,7 +315,17 @@ Deno.serve(async (request) => {
         String(row.portal_asset_id ?? "")
       ),
     ]);
-    const products = Array.from(groups.entries()).map(([key, packages]) => {
+    const products = Array.from(groups.entries()).flatMap(([key, packages]) => {
+      const marketplaceMatches = Array.from(
+        new Set(
+          packages.map((row) => String(row.product_id ?? "")).filter((id) =>
+            marketplaceByProductId.has(id)
+          ),
+        ),
+      );
+      if (marketplaceMatches.length !== 1) return [];
+      if (!internal && identityIndex.get(key)!==marketplaceMatches[0]) return [];
+      const marketplace = marketplaceByProductId.get(marketplaceMatches[0])!;
       const first = packages[0];
       const availablePackages = packages.filter((row) =>
         row.status_category === "available" && orderableUnits(row) > 0
@@ -359,7 +410,8 @@ Deno.serve(async (request) => {
         usageInformation: content.usage_information || null,
         productProfile: content.product_profile || null,
         imageUrl: assetUrls.get(String(content.image_asset_id ?? "")) ??
-          httpsUrl(content.image_url),
+          httpsUrl(content.image_url) ??
+          (marketplace.has_image ? httpsUrl(marketplace.image_url) : null),
         keywords: Array.isArray(content.keywords) ? content.keywords : [],
         source: Object.keys(content).length ? "Monday" : null,
         sourceUpdatedAt: content.source_updated_at || null,
@@ -372,6 +424,9 @@ Deno.serve(async (request) => {
         contentProjection.usageInformation,
         ...contentProjection.sellingPoints,
         ...contentProjection.keywords,
+        marketplace.product_name,
+        marketplace.brand_name,
+        marketplace.item_category_name,
         ...lots.flatMap((lot) => {
           const coa = objectOrEmpty(lot.coa);
           return [
@@ -381,12 +436,14 @@ Deno.serve(async (request) => {
             .flatMap((entry) => [entry.name, entry.value, entry.unit]);
         }),
       ].filter(Boolean).join(" ");
-      return {
+      return [{
         id: `canix-item-${key}`,
         sourceId: `canix:item:${key}`,
-        name: first.product_name || first.item_name || "Unnamed Canix item",
-        brand: first.brand_name || "Not recorded",
-        category: first.item_category_name || "Other",
+        name: marketplace.product_name || first.product_name ||
+          first.item_name || "Unnamed Canix item",
+        brand: marketplace.brand_name || first.brand_name || "Not recorded",
+        category: marketplace.item_category_name ||
+          first.item_category_name || "Other",
         subCategory: first.item_sub_category_name || null,
         format: first.item_sub_category_name || first.item_category_name ||
           "Available finished good",
@@ -412,23 +469,43 @@ Deno.serve(async (request) => {
           leadTimeDays: null,
         },
         content: contentProjection,
+        marketplace: {
+          marketplaceProductId: marketplace.marketplace_product_id,
+          productGid: marketplace.product_gid,
+          unitPriceCents: marketplace.price_cents,
+          msrpCents: marketplace.msrp_cents,
+          saleUnit: marketplace.sale_unit,
+          syncedAt: marketplace.synced_at,
+        },
         searchText,
         lots,
-      };
+      }];
     }).sort((left, right) =>
       String(left.name).localeCompare(String(right.name))
     );
     return json(request, {
       source: "Canix",
       refreshedAt: state.last_successful_at,
+      facility: {
+        id: ORDER_FACILITY_ID,
+        name: ORDER_FACILITY_NAME,
+      },
+      marketplace: {
+        sourceMode: marketplaceStateResult.data!.source_mode,
+        refreshedAt: marketplaceStateResult.data!.last_successful_at,
+        snapshotProductCount:
+          marketplaceStateResult.data!.snapshot_product_count,
+      },
       lotEnforcementMode,
       groupingPolicy: "canix_item_id_v1",
       availabilityPolicy:
         "active available count-based packages; explicit reservations subtracted; allocated packages are internal-only and unavailable",
       privacy: { exactQuantity: false, cost: false, allocatedLots: internal },
-      products,
+      locations: internal ? [] : (await storeRows(service,profile,'license_number,display_name')).map(s=>({license:s.license_number,name:s.display_name})),
+      products: internal ? products : projectStoreProducts(products,profile.role==='budtender'),
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     return json(request, {
       error: error instanceof Error
         ? error.message

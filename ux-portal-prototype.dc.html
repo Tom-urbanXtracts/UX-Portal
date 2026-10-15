@@ -59,6 +59,8 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 </style>
 </helmet>
 
+<style id="onboarding-responsive">@media(max-width:640px){section[aria-labelledby^="onb-"]{padding:16px!important}section[aria-labelledby^="onb-"] [style*="display: grid"],section[aria-labelledby^="onb-"] [style*="display:grid"]{grid-template-columns:1fr!important}nav[aria-label="Onboarding progress"]{grid-template-columns:repeat(6,minmax(126px,1fr))!important}nav[aria-label="Onboarding progress"] button{padding:10px!important}}</style>
+
 <template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#170e0b"></rect><g fill="none" stroke="#faf7f3" stroke-width="26" stroke-linecap="square"><path d="M120 120v-4a0 0 0 0 0 0 0"></path><path d="M132 118v18a68 68 0 0 0 136 0v-18"></path><path d="M132 282v-18a68 68 0 0 1 136 0v18"></path></g></svg></template>
 
 <a href="#main-content" style="position:absolute;left:-9999px;top:0;background:var(--ux-ink);color:var(--ux-ground);padding:10px 14px;font:700 12px Archivo,sans-serif;z-index:99" style-focus="left:0">Skip to the main content</a>
@@ -149,6 +151,21 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 </nav>
 
 <main style="{{ contentStyle }}" id="main-content">
+
+<sc-if value="{{ isStoreDemo }}" hint-placeholder-val="{{ false }}">
+<section aria-label="Internal Administrator Store Demo" style="max-width:1200px">
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h1>urbanXtracts Store</h1><p style="margin:5px 0;font-size:12px;color:var(--ux-muted)">Synthetic demo · Internal Administrators only · No emails or live system writes</p></div><button onClick="{{ onStoreDemoRefresh }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Refresh</button></div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;padding:12px;background:var(--ux-surface);margin-bottom:14px"><label>Demo view <select aria-label="Demo view" value="{{ storeDemoRole }}" onChange="{{ onStoreDemoRole }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><option value="owner">Store Owner</option><option value="buyer">Store Buyer</option><option value="budtender">Budtender</option><option value="internal">Internal Review</option></select></label><label>Location <select aria-label="Demo location" value="{{ storeDemoStore }}" onChange="{{ onStoreDemoStore }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><sc-for list="{{ storeDemoStores }}" as="store"><option value="{{ store.id }}">{{ store.name }}</option></sc-for></select></label><span style="align-self:center;font-size:12px">{{ storeDemoGate }}</span></div>
+<div role="status" style="font-size:12px;margin-bottom:10px">{{ storeDemoMessage }}</div>
+<nav aria-label="Store demo sections" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px"><sc-for list="{{ storeDemoTabs }}" as="tab"><button onClick="{{ tab.onPick }}" aria-pressed="{{ tab.selected }}" style="{{ tab.style }}">{{ tab.label }}</button></sc-for></nav>
+<sc-if value="{{ storeDemoCompany }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px"><sc-for list="{{ storeDemoSections }}" as="section"><section style="border:1px solid var(--ux-faint-2);padding:14px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><h2 style="font-size:16px;margin:0 0 12px">{{ section.name }}</h2><span style="font-size:10px">{{ section.status }}</span></div><sc-for list="{{ section.fields }}" as="field"><label style="display:block;font-size:11px;margin-bottom:8px">{{ field.label }}<input aria-label="{{ field.label }}" value="{{ field.value }}" onInput="{{ field.onInput }}" readOnly="{{ section.readOnly }}" style="{{ storeDemoInput }}"></label></sc-for><p style="font-size:11px;color:var(--ux-signal)">{{ section.note }}</p><sc-if value="{{ section.canEdit }}"><div style="display:flex;gap:8px"><button onClick="{{ section.onSave }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ section.onSubmit }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Section</button></div></sc-if><sc-if value="{{ section.canReview }}"><label style="font-size:11px">Review note<input value="{{ section.reviewNote }}" onInput="{{ section.onNote }}" style="{{ storeDemoInput }}"></label><div style="display:flex;gap:8px;margin-top:8px"><button onClick="{{ section.onApprove }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Approve Section</button><button onClick="{{ section.onReturn }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Return Section</button></div></sc-if></section></sc-for></div></sc-if>
+<sc-if value="{{ storeDemoCatalog }}"><div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><label>Brand <select aria-label="Demo Brand filter" value="{{ storeDemoBrand }}" onChange="{{ onStoreDemoBrand }}" style="{{ storeDemoInput }}"><option value="all">All Brands</option><option value="urbanXtracts">urbanXtracts</option><option value="Wana">Wana</option></select></label></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px"><sc-for list="{{ storeDemoProducts }}" as="product"><article style="border:1px solid var(--ux-faint-2);background:#fff;padding:16px"><div style="font-size:11px;color:var(--ux-muted)">{{ product.brand }} · {{ product.category }}</div><h2 style="font-size:17px;margin:8px 0">{{ product.name }}</h2><div style="font-size:12px;margin-bottom:10px">{{ product.availability }}</div><sc-if value="{{ storeDemoCommercial }}"><p style="font-size:12px">{{ product.price }} · {{ product.caseUnits }} Units/Case</p><sc-if value="{{ storeDemoCanOrder }}"><label style="font-size:11px">Quantity<input aria-label="{{ product.quantityLabel }}" type="number" min="1" max="{{ product.available }}" value="{{ product.quantity }}" onChange="{{ product.onQuantity }}" style="{{ storeDemoInput }}"></label><button onClick="{{ product.onAdd }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Add to Draft</button></sc-if></sc-if></article></sc-for></div>
+<sc-if value="{{ storeDemoCanOrder }}"><section style="background:var(--ux-surface);padding:16px;margin-top:18px"><h2 style="font-size:18px;margin:0 0 10px">Draft Order</h2><sc-for list="{{ storeDemoCart }}" as="line"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--ux-faint-2)"><span style="flex:1;min-width:180px">{{ line.name }}</span><label>Units <input aria-label="{{ line.quantityLabel }}" type="number" value="{{ line.quantity }}" onChange="{{ line.onQuantity }}" min="1" style="width:72px;padding:8px"></label><span>{{ line.total }}</span><button onClick="{{ line.onRemove }}" style="{{ storeDemoButton }}">Remove</button></div></sc-for><p>{{ storeDemoCartTotal }}</p><div style="display:flex;gap:8px"><button onClick="{{ onStoreDemoSaveDraft }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ onStoreDemoSubmitOrder }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Order</button></div></section></sc-if></sc-if>
+<sc-if value="{{ storeDemoOrders }}"><p style="font-size:12px">{{ storeDemoOrderCount }}</p><sc-for list="{{ storeDemoOrderRows }}" as="order"><article style="border:1px solid var(--ux-faint-2);padding:16px;margin-bottom:10px;background:#fff"><div style="display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap"><strong>{{ order.id }} · {{ order.location }}</strong><span>{{ order.status }} · {{ order.total }}</span></div><div style="font-size:12px;margin-top:8px">{{ order.linesLabel }}</div><div style="font-size:11px;color:var(--ux-muted);margin:8px 0">{{ order.reviewLabel }}</div><div style="display:flex;gap:8px"><sc-for list="{{ order.actions }}" as="action"><button onClick="{{ action.onClick }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">{{ action.label }}</button></sc-for></div></article></sc-for></sc-if>
+<sc-if value="{{ storeDemoFinance }}"><section style="border:1px solid var(--ux-faint-2);padding:16px;max-width:700px;background:#fff"><h2 style="font-size:18px;margin-top:0">Finance Review</h2><p>{{ storeDemoFinanceSummary }}</p><sc-if value="{{ storeDemoInternal }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"><label>Payment terms<input aria-label="Demo payment terms" value="{{ storeDemoTerms }}" onInput="{{ onStoreDemoTerms }}" style="{{ storeDemoInput }}"></label><label>Credit limit ($)<input aria-label="Demo credit limit" type="number" min="0" step="0.01" value="{{ storeDemoCredit }}" onInput="{{ onStoreDemoCredit }}" style="{{ storeDemoInput }}"></label></div><label>Decision note<input aria-label="Demo Finance note" value="{{ storeDemoFinanceNote }}" onInput="{{ onStoreDemoFinanceNote }}" style="{{ storeDemoInput }}"></label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button onClick="{{ onStoreDemoFinanceApprove }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Clear for Ordering</button><button onClick="{{ onStoreDemoFinanceHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Place Hold</button><button onClick="{{ onStoreDemoPastDue }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Simulate Past Due</button></div></sc-if><h3 style="font-size:15px">Synthetic Invoice</h3><p style="font-size:12px">{{ storeDemoInvoice }}</p></section></sc-if>
+<sc-if value="{{ storeDemoActivity }}"><h2 style="font-size:18px">Demo Activity</h2><sc-for list="{{ storeDemoEvents }}" as="event"><p style="font-size:12px;padding:9px;border-bottom:1px solid var(--ux-faint-2)">{{ event.label }}</p></sc-for><button onClick="{{ onStoreDemoReset }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Reset My Demo</button></sc-if>
+</section>
+</sc-if>
 
 <sc-if value="{{ isInternalAccessDenied }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:620px;border-left:3px solid var(--ux-signal);padding:14px 0 14px 18px">
@@ -307,7 +324,7 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 </div>
 </section>
 <section style="border-top:2px solid var(--ux-ink);background:#fff;margin-bottom:22px">
-<div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STORE WORKSPACE · HELD BASELINE</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">Future Store role model</h2></div>
+<div style="padding:14px 16px;border-bottom:1px solid rgba(23,14,11,.18)"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:4px">STORE WORKSPACE · ACTIVATION PLANNING APPROVED</div><h2 style="font:800 18px Archivo,sans-serif;margin:0">First-release Store role model</h2></div>
 <div style="overflow:auto">
 <table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:820px">
 <thead><tr style="text-align:left;background:var(--ux-surface)"><th style="padding:9px 10px;font:700 8px ui-monospace,monospace">ROLE</th><th style="padding:9px 10px;font:700 8px ui-monospace,monospace">SCOPE</th><th style="padding:9px 10px;font:700 8px ui-monospace,monospace">CAN</th><th style="padding:9px 10px;font:700 8px ui-monospace,monospace">CANNOT</th></tr></thead>
@@ -2357,6 +2374,30 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="border-top:2px solid rgba(23,14,11,.35)"><sc-for list="{{ accessReviewRows }}" as="ar" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:1.2fr 1.15fr 1.6fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:12px"><div><strong>{{ ar.profileName }}</strong><div style="font-size:10.5px;color:var(--ux-muted)">{{ ar.organization }}</div></div><div><strong>{{ ar.storeName }}</strong><div style="font:9.5px ui-monospace,monospace;color:var(--ux-muted)">{{ ar.storeLicense }}</div></div><div style="color:var(--ux-muted-strong)">{{ ar.reason }}</div><div style="display:flex;gap:6px"><button type="button" onClick="{{ ar.onAssign }}" aria-disabled="{{ ar.pending }}" style="background:var(--ux-accent);color:#fff;border:0;padding:8px 10px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Assign</button><button type="button" onClick="{{ ar.onDismiss }}" aria-disabled="{{ ar.pending }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:7px 9px;font:700 10.5px Archivo,sans-serif;cursor:pointer">Dismiss</button></div></div></sc-for></div>
 </section>
 </sc-if>
+<sc-if value="{{ showStoreAccessAdmin }}" hint-placeholder-val="{{ false }}">
+<details style="border:1px solid var(--ux-faint);padding:16px;margin-bottom:20px">
+<summary style="font:700 16px Archivo,sans-serif;cursor:pointer">Store access</summary>
+<section aria-label="Store membership administration" style="margin-top:14px">
+<button type="button" onClick="{{ onStoreAccessLoad }}" aria-disabled="{{ storeAccessPending }}">Load Store access</button>
+<sc-if value="{{ storeAccessLoaded }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ storeAccessHeld }}" hint-placeholder-val="{{ false }}"><p role="status">Live Store access is paused. Membership changes and invitations are not enabled.</p></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px">
+<label>Retailer organization<select aria-label="Store retailer organization" value="{{ storeAccessOrganizationId }}" onChange="{{ onStoreAccessOrganization }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Choose retailer</option><sc-for list="{{ storeAccessOrganizations }}" as="so"><option value="{{ so.id }}">{{ so.name }}</option></sc-for></select></label>
+<label>Membership<select aria-label="Store membership" value="{{ storeAccessMembershipId }}" onChange="{{ onStoreAccessMembership }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Add an existing portal user</option><sc-for list="{{ storeAccessMembers }}" as="sm"><option value="{{ sm.id }}">{{ sm.label }}</option></sc-for></select></label>
+<sc-if value="{{ storeAccessNew }}" hint-placeholder-val="{{ true }}"><label>Existing user<select aria-label="Existing Store user" value="{{ storeAccessProfileId }}" onChange="{{ onStoreAccessProfile }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="">Choose existing user</option><sc-for list="{{ storeAccessProfiles }}" as="sp"><option value="{{ sp.id }}">{{ sp.name }}</option></sc-for></select></label></sc-if>
+<label>Store role<select aria-label="Store membership role" value="{{ storeAccessRole }}" onChange="{{ onStoreAccessRole }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="store_owner">Store Owner</option><option value="store_buyer">Store Buyer</option><option value="store_staff">Budtender</option></select></label>
+<label>Status<select aria-label="Store membership status" value="{{ storeAccessStatus }}" onChange="{{ onStoreAccessStatus }}" style="display:block;width:100%;padding:9px;margin-top:5px"><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
+</div>
+<sc-if value="{{ storeAccessOwner }}" hint-placeholder-val="{{ false }}"><p>Owners have access to all active locations in this retailer organization.</p></sc-if>
+<sc-if value="{{ storeAccessAssigned }}" hint-placeholder-val="{{ true }}"><fieldset style="margin-top:12px"><legend>Assigned locations</legend><sc-for list="{{ storeAccessStores }}" as="ss"><button type="button" aria-pressed="{{ ss.pressed }}" onClick="{{ ss.onPick }}" style="margin:5px;padding:9px">{{ ss.name }} · {{ ss.license }}</button></sc-for></fieldset></sc-if>
+<label style="display:block;margin-top:12px">Reason<textarea aria-label="Store access change reason" value="{{ storeAccessReason }}" onInput="{{ onStoreAccessReason }}" style="display:block;width:100%;padding:9px;margin:5px 0 12px"></textarea></label>
+<button type="button" onClick="{{ onStoreAccessSave }}" aria-disabled="{{ storeAccessSaveDisabled }}">Save Store membership</button>
+<p style="font-size:12px;color:var(--ux-muted)">Existing accounts only. New-account invitations remain held; this does not send email or change other workspaces.</p>
+</sc-if>
+<sc-if value="{{ storeAccessError }}" hint-placeholder-val="{{ false }}"><p role="alert">{{ storeAccessError }}</p></sc-if>
+<sc-if value="{{ storeAccessMessage }}" hint-placeholder-val="{{ false }}"><p role="status">{{ storeAccessMessage }}</p></sc-if>
+</section></details>
+</sc-if>
 <sc-if value="{{ auClosed }}" hint-placeholder-val="{{ true }}">
 <div style="margin:0 0 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button type="button" onClick="{{ onAuToggle }}" style="background:var(--ux-accent);color:#fff;border:0;padding:11px 15px;font:700 12.5px Archivo,sans-serif;cursor:pointer">Add a user</button><button type="button" onClick="{{ onUsersRefresh }}" aria-disabled="{{ usersLoading }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 14px;font:600 12px Archivo,sans-serif;cursor:pointer">{{ usersRefreshLabel }}</button><span style="font:600 10px ui-monospace,monospace;color:var(--ux-muted)">{{ testUserSummary }}</span></div>
 </sc-if>
@@ -2634,7 +2675,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </div>
 <h2 style="font:800 19px/1.2 Archivo,sans-serif;margin:34px 0 12px">The clock</h2>
 <div style="border-top:2px solid rgba(23,14,11,.4)">
-<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">How long an approval may sit</div><div><strong>Reviewable baseline.</strong> Owning department first, then Executive Member for blocked or high-risk overdue work. Store expansion remains held, but the clock must be explicit before this becomes a live retailer workflow.</div></div>
+<div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">How long an approval may sit</div><div><strong>Reviewable baseline.</strong> Owning department first, then Executive Member for blocked or high-risk overdue work. Store activation planning is approved, but the clock must be explicit before a separately approved live retailer workflow.</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">What an order will show</div><div>Whoever holds authority and until when, named on the order itself and kept there permanently. An order approved under a delegation says so on its face for the rest of its life.</div></div>
 <div style="display:grid;grid-template-columns:190px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">When authority is withdrawn</div><div>It takes effect at once. An approval already in flight still names the person who held it &mdash; the record does not rewrite itself.</div></div>
 </div>
@@ -2766,6 +2807,41 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 </sc-if>
 
 <sc-if value="{{ isOnboard }}" hint-placeholder-val="{{ false }}">
+<div style="max-width:1240px">
+<button type="button" onClick="{{ backFromOnboard }}" style="background:transparent;border:0;padding:0 0 14px;font:700 10px ui-monospace,monospace;letter-spacing:.07em;color:var(--ux-accent-text);cursor:pointer">&larr; BACK</button>
+<div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px"><div><div style="font:700 9.5px ui-monospace,monospace;letter-spacing:.08em;color:var(--ux-accent-text);margin-bottom:7px">STORE WORKSPACE · PARTNER ONBOARDING</div><h1 style="font:800 34px/1.02 Archivo,sans-serif;letter-spacing:-.03em;margin:0 0 8px">Company &amp; Onboarding</h1><p style="font-size:13.5px;line-height:1.6;color:var(--ux-muted);margin:0;max-width:72ch">Complete the six sections below to prepare your Store workspace. A saved draft stays in this browser tab; only the final submission starts qualification and review.</p></div><div style="border:1px solid rgba(23,14,11,.2);background:#fff;padding:12px 14px;min-width:190px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">OVERALL READINESS</div><div style="font:800 20px Archivo,sans-serif">{{ onbOverallProgress }}%</div><div style="height:4px;background:rgba(23,14,11,.1);margin-top:7px"><div style="{{ onbOverallBarStyle }}"></div></div></div></div>
+<nav aria-label="Onboarding progress" style="display:grid;grid-template-columns:repeat(6,minmax(135px,1fr));gap:8px;margin-bottom:12px;overflow:auto"><sc-for list="{{ onbStepTabs }}" as="st" hint-placeholder-count="6"><button type="button" onClick="{{ st.onPick }}" aria-current="{{ st.current }}" style="{{ st.style }}"><span style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="font:700 8.5px ui-monospace,monospace;opacity:.68">{{ st.number }}</span><span style="font:700 8px ui-monospace,monospace">{{ st.status }}</span></span><span style="display:block;margin-top:14px">{{ st.label }}</span><span style="display:block;height:3px;background:rgba(23,14,11,.1);margin-top:10px"><span style="{{ st.barStyle }}"></span></span></button></sc-for></nav>
+<div style="display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;background:#e9f2df;border:1px solid #bfd2aa;padding:10px 13px;margin-bottom:16px"><div><strong style="font-size:11.5px">Drafts are retained in this browser tab.</strong><span style="font-size:11px;color:var(--ux-muted);margin-left:7px">Files must be reselected after reopening.</span></div><span style="font:700 9px ui-monospace,monospace;color:var(--ux-muted)">{{ onbDraftStatus }}</span></div>
+
+<div style="{{ onbWorkspaceStyle }}">
+<aside aria-label="Onboarding sections" style="border:1px solid rgba(23,14,11,.18);background:#fff;height:max-content"><div style="padding:11px 12px;border-bottom:1px solid rgba(23,14,11,.16);font:700 9px ui-monospace,monospace;color:var(--ux-muted)">ONBOARDING SECTIONS</div><sc-for list="{{ onbSectionCards }}" as="section" hint-placeholder-count="6"><button type="button" onClick="{{ section.onPick }}" aria-current="{{ section.current }}" style="{{ section.style }}"><span style="font:700 9px ui-monospace,monospace;color:var(--ux-muted)">{{ section.number }}</span><span><strong style="display:block;font:700 11.5px Archivo,sans-serif">{{ section.title }}</strong><span style="font:9px ui-monospace,monospace;color:var(--ux-muted)">{{ section.status }} · {{ section.progress }}%</span></span></button></sc-for></aside>
+
+<main style="min-width:0">
+<section aria-labelledby="onb-section-heading" style="border:1px solid rgba(23,14,11,.22);border-top:5px solid var(--ux-accent);background:#fff;padding:22px"><div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px"><div><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-accent-text);margin-bottom:5px">{{ onbActiveStatus }}</div><h2 id="onb-section-heading" style="font:800 21px Archivo,sans-serif;margin:0 0 5px">{{ onbActiveTitle }}</h2><p style="font-size:12px;line-height:1.55;color:var(--ux-muted);margin:0;max-width:62ch">{{ onbActiveDescription }}</p></div><div style="font:700 10px ui-monospace,monospace;background:var(--ux-surface);padding:6px 9px">{{ onbActiveProgress }}% COMPLETE</div></div>
+
+<sc-if value="{{ onbStepCompany }}" hint-placeholder-val="{{ true }}"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:7px">REQUEST TYPE</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"><sc-for list="{{ onbTypes }}" as="ot" hint-placeholder-count="3"><button type="button" onClick="{{ ot.onPick }}" aria-pressed="{{ ot.pressed }}" style="{{ ot.style }}">{{ ot.label }}</button></sc-for></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label><span style="display:block;font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">LEGAL BUSINESS NAME *</span><input type="text" value="{{ onbEntity }}" onInput="{{ onOnbEntity }}" autocomplete="organization" style="width:100%;padding:11px;border:1px solid rgba(23,14,11,.3);font:13px Archivo,sans-serif"></label><label><span style="display:block;font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">DBA / TRADING NAME</span><input type="text" value="{{ onbDba }}" onInput="{{ onOnbDba }}" autocomplete="organization" placeholder="If different from the legal name" style="width:100%;padding:11px;border:1px solid rgba(23,14,11,.3);font:13px Archivo,sans-serif"></label></div></sc-if>
+
+<sc-if value="{{ onbStepStores }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;gap:12px;margin-bottom:10px"><strong style="font-size:13px">Licensed locations</strong><span style="font:700 9px ui-monospace,monospace;color:var(--ux-muted)">{{ onbStoreCount }} · 10 MAXIMUM</span></div><sc-for list="{{ onbStores }}" as="store" hint-placeholder-count="2"><div style="border:1px solid rgba(23,14,11,.2);padding:14px;margin-bottom:11px;background:var(--ux-ground)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font:700 9px ui-monospace,monospace;color:var(--ux-muted)">LOCATION {{ store.n }}</span><sc-if value="{{ store.canRemove }}" hint-placeholder-val="false"><button type="button" onClick="{{ store.onRemove }}" style="background:transparent;border:0;color:var(--ux-signal-text);font:700 10px Archivo,sans-serif">Remove</button></sc-if></div><div style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:9px;margin-bottom:9px"><input aria-label="Store name" placeholder="Store name *" type="text" value="{{ store.name }}" onInput="{{ store.onName }}" style="padding:10px;border:1px solid rgba(23,14,11,.28)"><input aria-label="OCM licence number" placeholder="OCM licence number *" type="text" value="{{ store.license }}" onInput="{{ store.onLicense }}" style="padding:10px;border:1px solid rgba(23,14,11,.28);font:11px ui-monospace,monospace"><select aria-label="Licence type" value="{{ store.licenseType }}" onChange="{{ store.onLicenseType }}" style="padding:10px;border:1px solid rgba(23,14,11,.28);background:#fff"><option value="Dispensary">Dispensary</option><option value="Micro Business">Micro Business</option></select><input aria-label="Licence expiration" placeholder="MM/DD/YYYY *" maxLength="10" type="text" value="{{ store.expires }}" onInput="{{ store.onExpires }}" style="padding:10px;border:1px solid rgba(23,14,11,.28)"></div><input aria-label="Legal or shipping address" placeholder="Legal / shipping address *" type="text" value="{{ store.address }}" onInput="{{ store.onAddress }}" style="width:100%;padding:10px;border:1px solid rgba(23,14,11,.28)"></div></sc-for><sc-if value="{{ onbCanAddStore }}" hint-placeholder-val="true"><button type="button" onClick="{{ onAddStore }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:9px 12px;font:700 11px Archivo,sans-serif">Add another location</button></sc-if></sc-if>
+
+<sc-if value="{{ onbStepContacts }}" hint-placeholder-val="{{ false }}"><div style="font:800 13px Archivo,sans-serif;margin-bottom:9px">Primary contact</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px"><input aria-label="Primary contact name" placeholder="Full name *" type="text" value="{{ onbOwnerName }}" onInput="{{ onOnbOwnerName }}" style="padding:10px;border:1px solid rgba(23,14,11,.28)"><input aria-label="Primary contact email" placeholder="Email *" type="email" value="{{ onbOwnerEmail }}" onInput="{{ onOnbOwnerEmail }}" style="padding:10px;border:1px solid rgba(23,14,11,.28)"><input aria-label="Primary contact phone" placeholder="Phone *" type="tel" value="{{ onbOwnerPhone }}" onInput="{{ onOnbOwnerPhone }}" style="padding:10px;border:1px solid rgba(23,14,11,.28)"></div><label style="display:flex;gap:8px;padding:10px;background:var(--ux-surface);margin-bottom:10px"><input type="checkbox" checked="{{ onbBuyerSame }}" onChange="{{ onOnbBuyerSame }}"><span style="font-size:12px">Primary contact is also the main buyer</span></label><sc-if value="{{ onbBuyerSeparate }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:10px"><input aria-label="Buyer name" placeholder="Buyer name *" value="{{ onbBuyerName }}" onInput="{{ onOnbBuyerName }}"><input aria-label="Buyer email" placeholder="Buyer email *" type="email" value="{{ onbBuyerEmail }}" onInput="{{ onOnbBuyerEmail }}"><input aria-label="Buyer phone" placeholder="Buyer phone *" value="{{ onbBuyerPhone }}" onInput="{{ onOnbBuyerPhone }}"></div><select value="{{ onbBuyerLoc }}" onChange="{{ onOnbBuyerLoc }}" style="width:100%;padding:10px;margin-bottom:12px"><option value="">All qualified stores</option><sc-for list="{{ onbLocationOptions }}" as="ol" hint-placeholder-count="3"><option value="{{ ol.value }}">{{ ol.label }}</option></sc-for></select></sc-if><label style="display:flex;gap:8px;padding:10px;background:var(--ux-surface);margin-bottom:10px"><input type="checkbox" checked="{{ onbBillingSame }}" onChange="{{ onOnbBillingSame }}"><span style="font-size:12px">Use the primary contact for billing</span></label><sc-if value="{{ onbBillingSeparate }}" hint-placeholder-val="false"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:12px"><input aria-label="Billing name" placeholder="Billing name *" value="{{ onbBillingName }}" onInput="{{ onOnbBillingName }}"><input aria-label="Billing email" placeholder="Billing email *" type="email" value="{{ onbBillingEmail }}" onInput="{{ onOnbBillingEmail }}"><input aria-label="Billing phone" placeholder="Billing phone *" value="{{ onbBillingPhone }}" onInput="{{ onOnbBillingPhone }}"></div></sc-if><details style="border-top:1px solid rgba(23,14,11,.18);padding-top:13px"><summary style="font:800 13px Archivo,sans-serif;cursor:pointer">Optional budtender access</summary><p style="font-size:11px;color:var(--ux-muted)">Each budtender must be assigned to one submitted location.</p><sc-for list="{{ onbBuds }}" as="bd" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:1fr 1fr 1.1fr auto;gap:8px;margin-bottom:8px"><input aria-label="Budtender name" placeholder="Name" value="{{ bd.name }}" onInput="{{ bd.onName }}"><input aria-label="Budtender email" placeholder="Email" type="email" value="{{ bd.email }}" onInput="{{ bd.onEmail }}"><select aria-label="Budtender store" value="{{ bd.loc }}" onChange="{{ bd.onLoc }}"><option value="">Choose one store</option><sc-for list="{{ onbLocationOptions }}" as="ol" hint-placeholder-count="3"><option value="{{ ol.value }}">{{ ol.label }}</option></sc-for></select><sc-if value="{{ bd.canRemove }}" hint-placeholder-val="false"><button type="button" onClick="{{ bd.onRemove }}">Remove</button></sc-if></div></sc-for><sc-if value="{{ onbUnderCap }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ onAddBud }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:8px 10px">Add another budtender</button></sc-if></details></sc-if>
+
+<sc-if value="{{ onbStepCommercial }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px"><div><strong style="font-size:13px">Preferred delivery days</strong><div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px"><sc-for list="{{ onbDeliveryDayOptions }}" as="day" hint-placeholder-count="5"><label style="{{ day.style }}"><input type="checkbox" checked="{{ day.checked }}" onChange="{{ day.onPick }}"><span>{{ day.label }}</span></label></sc-for></div></div><label><strong style="display:block;font-size:13px;margin-bottom:8px">Preferred delivery window</strong><select value="{{ onbDeliveryWindow }}" onChange="{{ onOnbDeliveryWindow }}" style="width:100%;padding:10px"><option value="">No preference</option><option value="Morning">Morning · 9am–12pm</option><option value="Afternoon">Afternoon · 12pm–4pm</option><option value="Flexible">Flexible</option></select></label></div><strong style="display:block;font-size:13px;margin-bottom:4px">Brands of interest *</strong><p style="font-size:11.5px;color:var(--ux-muted);margin:0 0 9px">Choose one or more. Selected brands may follow up with product information.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;max-height:230px;overflow:auto;border:1px solid rgba(23,14,11,.18);padding:10px;margin-bottom:18px"><sc-for list="{{ onbBrandOptions }}" as="brand" hint-placeholder-count="8"><label style="{{ brand.style }}"><input type="checkbox" checked="{{ brand.checked }}" onChange="{{ brand.onPick }}"><span>{{ brand.label }}</span></label></sc-for></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><input aria-label="Dispensary website" type="url" value="{{ onbWebsite }}" onInput="{{ onOnbWebsite }}" placeholder="Dispensary website · https://"><div><label style="display:flex;gap:8px;font-size:11.5px"><input type="checkbox" checked="{{ onbMediaSame }}" onChange="{{ onOnbMediaSame }}"><span>Send media updates to the primary contact</span></label><sc-if value="{{ onbMediaSeparate }}" hint-placeholder-val="false"><input aria-label="Media contact email" type="email" value="{{ onbMediaEmail }}" onInput="{{ onOnbMediaEmail }}" placeholder="Media contact email *" style="width:100%;margin-top:7px"></sc-if></div></div><textarea value="{{ onbAdditionalContacts }}" onInput="{{ onOnbAdditionalContacts }}" placeholder="Additional contacts or notes" style="width:100%;min-height:76px;padding:10px"></textarea></sc-if>
+
+<sc-if value="{{ onbStepDocuments }}" hint-placeholder-val="{{ false }}"><div style="border-left:4px solid var(--ux-accent);background:var(--ux-surface);padding:14px 16px;margin-bottom:18px"><strong style="display:block;font-size:13px;margin-bottom:4px">Document handling</strong><span style="font-size:11.5px;line-height:1.55;color:var(--ux-muted)">Attach the primary store licence in the supporting-documents panel. It is optional at intake and is sent only with the final request.</span></div><label style="display:flex;gap:10px;align-items:flex-start;border:1px solid rgba(23,14,11,.22);padding:13px"><input type="checkbox" checked="{{ onbTermsReviewed }}" onChange="{{ onOnbTermsReviewed }}" style="margin-top:2px"><span style="font-size:12px;line-height:1.5"><strong style="display:block">Wholesale Terms of Sale reviewed *</strong>Confirm the current terms supplied by urbanXtracts were reviewed. Commercial terms are still verified before ordering is enabled.</span></label></sc-if>
+
+<sc-if value="{{ onbStepReview }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px"><div style="border:1px solid rgba(23,14,11,.18);padding:13px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted)">BUSINESS</div><strong style="display:block;margin-top:6px">{{ onbReviewBusiness }}</strong><span style="font-size:11px;color:var(--ux-muted)">{{ onbReviewRequest }}</span></div><div style="border:1px solid rgba(23,14,11,.18);padding:13px"><div style="font:700 8.5px ui-monospace,monospace;color:var(--ux-muted)">PRIMARY CONTACT</div><strong style="display:block;margin-top:6px">{{ onbReviewContact }}</strong><span style="font-size:11px;color:var(--ux-muted)">{{ onbReviewContactMeta }}</span></div></div><div style="border-top:2px solid rgba(23,14,11,.35);margin-bottom:12px"><sc-for list="{{ onbReviewStores }}" as="reviewStore" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:12px;padding:11px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:11.5px"><span><strong style="display:block">{{ reviewStore.name }}</strong>{{ reviewStore.address }}</span><span style="font:11px ui-monospace,monospace">{{ reviewStore.license }}</span><span>{{ reviewStore.licenseMeta }}</span></div></sc-for></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px"><div style="background:var(--ux-surface);padding:11px"><small>BUYER</small><div style="font-size:11px;margin-top:5px">{{ onbReviewBuyer }}</div></div><div style="background:var(--ux-surface);padding:11px"><small>DELIVERY</small><div style="font-size:11px;margin-top:5px">{{ onbReviewDelivery }}</div></div><div style="background:var(--ux-surface);padding:11px"><small>BRANDS</small><div style="font-size:11px;margin-top:5px">{{ onbReviewBrands }}</div></div></div><sc-if value="{{ onbTurnstileVisible }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid rgba(23,14,11,.2);padding-top:14px;margin-bottom:16px"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:8px">REQUEST VERIFICATION</div><div id="ux-turnstile" style="min-height:65px"></div><div role="status" style="font-size:11px;color:var(--ux-muted)">{{ onbTurnstileStatus }}</div></div></sc-if><sc-if value="{{ onbTurnstileMissing }}" hint-placeholder-val="false"><div role="alert" style="border-left:3px solid var(--ux-signal);padding:11px 14px;margin-bottom:16px">Request verification is temporarily unavailable. Sign in or contact urbanXtracts before submitting.</div></sc-if><button type="button" onClick="{{ onOnbSubmit }}" disabled="{{ onbSubmitDisabled }}" aria-disabled="{{ onbSubmitDisabled }}" style="{{ onbSubmitStyle }}">{{ onbSubmitLabel }}</button><sc-if value="{{ onbSent }}" hint-placeholder-val="false"><div style="margin-top:18px;border-left:4px solid var(--ux-accent);background:var(--ux-surface);padding:13px 15px"><strong style="font:700 9px ui-monospace,monospace;color:var(--ux-accent-text)">SUBMITTED · STAGE 01 INTAKE</strong><div style="font-size:12px;line-height:1.55;margin-top:5px">Your request is recorded. urbanXtracts will verify each licence and confirm commercial terms before ordering is enabled.</div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted);margin-top:7px">Portal request {{ onbReceipt }}</div></div></sc-if></sc-if>
+
+<sc-if value="{{ onbHasErr }}" hint-placeholder-val="false"><div role="alert" style="border-left:3px solid var(--ux-signal);background:rgba(163,49,22,.05);padding:11px 13px;margin-top:16px"><strong style="font:700 9px ui-monospace,monospace;color:var(--ux-signal-text)">CHECK THIS SECTION</strong><div style="font-size:12px;line-height:1.5;margin-top:4px">{{ onbErr }}</div></div></sc-if>
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid rgba(23,14,11,.16);margin-top:20px;padding-top:14px"><button type="button" onClick="{{ onOnbSaveDraft }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 13px;font:700 11px Archivo,sans-serif">Save draft</button><div style="display:flex;gap:8px"><sc-if value="{{ onbCanBackStep }}" hint-placeholder-val="false"><button type="button" onClick="{{ onOnbBackStep }}" style="background:transparent;border:1px solid rgba(23,14,11,.3);padding:10px 13px;font:700 11px Archivo,sans-serif">Back</button></sc-if><sc-if value="{{ onbCanNextStep }}" hint-placeholder-val="true"><button type="button" onClick="{{ onOnbNextStep }}" style="background:var(--ux-ink);color:#fff;border:0;padding:11px 15px;font:700 11px Archivo,sans-serif">{{ onbNextStepLabel }} &rarr;</button></sc-if></div></div>
+</section>
+</main>
+
+<aside aria-label="Supporting documents" style="border:1px solid rgba(23,14,11,.18);background:#fff;height:max-content"><div style="padding:12px 13px;border-bottom:1px solid rgba(23,14,11,.16)"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:5px">SUPPORTING DOCUMENTS</div><strong style="font-size:13px">Primary store licence</strong></div><div style="padding:13px"><label style="display:block;border:1px dashed rgba(23,14,11,.35);background:var(--ux-surface);padding:11px"><input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" onChange="{{ onOnbFile }}" style="width:100%;font-size:10.5px"><span style="display:block;font-size:10px;line-height:1.45;color:var(--ux-muted);margin-top:6px">{{ onbFileLabel }}</span></label><div style="border-top:1px solid rgba(23,14,11,.15);margin-top:14px;padding-top:13px"><div style="font:700 9px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:8px">REQUEST READINESS</div><sc-for list="{{ onbReadiness }}" as="ready" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:9px;padding:6px 0;font-size:10.5px"><span>{{ ready.label }}</span><strong style="{{ ready.style }}">{{ ready.value }}</strong></div></sc-for></div><p style="font-size:10.5px;line-height:1.5;color:var(--ux-muted);margin:14px 0 0">Saving a draft does not send information to urbanXtracts. Final submission creates one protected intake request.</p></div></aside>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isLegacyOnboard }}" hint-placeholder-val="{{ false }}">
 <div style="max-width:660px">
 <button type="button" onClick="{{ backFromOnboard }}" style="background:transparent;border:0;padding:0 0 14px;font:600 11px ui-monospace,monospace;letter-spacing:.06em;color:var(--ux-accent-text);cursor:pointer">&larr; BACK</button>
 <h1 style="font:800 30px/1.1 Archivo,sans-serif;letter-spacing:-.02em;margin:0 0 6px">Request access</h1>
@@ -3732,10 +3808,10 @@ const VALIDATION = [
     { severity: 'DECIDED', screen: 'Sign-in', question: 'Which sign-in methods are supported?', detail: 'Google Workspace SSO is available for workforce users and email/password is available for portal accounts. MFA is not required. Authenticated sessions remain restricted by active account status, role, organisation, workspace membership, server permissions, and row-level security.', blocks: 'Nothing — closed', owner: 'Administration', evidence: 'Password and Google sign-in tests plus role, organisation, workspace, and RLS scope tests' },
     { severity: 'Review queue', screen: 'Order builder · Approvals', question: 'May an urbanXtracts rep hold a store’s ordering approval, and on whose written authority?', detail: 'Rep-held approval is disabled. Store Owner approval remains the only supported retailer approval path, so this decision cannot weaken the production order flow while Legal and Sales leadership consider it.', blocks: 'Only the deferred rep-delegation feature', owner: 'Sales leadership, with the CCO and Legal', evidence: 'A written authority, or a decision not to offer it' },
     { severity: 'Review queue', screen: 'Draft order', question: 'Does a draft hold inventory, for how long, and who wins when two accounts draft the last of a lot?', detail: 'Today a draft holds nothing, which is why the inventory-changed gate exists. The gate stays whichever way the policy lands; the policy has never been written.', blocks: 'Nothing today; the gate handles the symptom', owner: 'Operations with sales operations', evidence: 'A stated hold policy, or a stated refusal to hold' },
-    { severity: 'DECIDED', screen: 'Approvals', question: 'How do overdue approvals escalate?', detail: 'Planning baseline: owning department first, then Executive Member for blocked or high-risk overdue work. Store expansion remains held, but live approval workflows must show authority holder, due clock, and escalation owner.', blocks: 'Nothing for the Brand demo; final Store approval SLA remains a later Store policy detail.', owner: 'Executive and department owners', evidence: 'Workflow approval baseline and release readiness task clock' },
-    { severity: 'DECIDED', screen: 'Order · Received', question: 'Who can confirm receiving and what does Operations review?', detail: 'Stores and Sales Managers may confirm receiving with evidence, quantity, date, receiver, and shipment reference. Operations reviews the start-to-finish delivery lifecycle; receiving-claim evidence retains for seven years after closure.', blocks: 'Nothing for internal and Brand planning; Store UI remains held until Store expansion resumes.', owner: 'Operations', evidence: 'Receiving confirmation control, evidence record, and delivery lifecycle review' },
+    { severity: 'DECIDED', screen: 'Approvals', question: 'How do overdue approvals escalate?', detail: 'Planning baseline: owning department first, then Executive Member for blocked or high-risk overdue work. Store activation planning is approved, but live approval workflows must show authority holder, due clock, and escalation owner.', blocks: 'Nothing for the Brand demo; final Store approval SLA remains a Store release gate.', owner: 'Executive and department owners', evidence: 'Workflow approval baseline and release readiness task clock' },
+    { severity: 'DECIDED', screen: 'Order · Received', question: 'Who can confirm receiving and what does Operations review?', detail: 'Stores and Sales Managers may confirm receiving with evidence, quantity, date, receiver, and shipment reference. Operations reviews the start-to-finish delivery lifecycle; receiving-claim evidence retains for seven years after closure.', blocks: 'Nothing for Internal and Brand planning; expanded Store release still requires acceptance, pilot, rollback, and separate approval.', owner: 'Operations', evidence: 'Receiving confirmation control, evidence record, and delivery lifecycle review' },
     { severity: 'DECIDED', screen: 'Notifications', question: 'Which channels carry controlled notifications?', detail: 'Resend email is the controlled notification path for first release, with free-account limits and audited templates. Recall, legal, deactivation, and amended COA notices cannot be muted by ordinary users; expanded channels remain held.', blocks: 'Only future channel expansion', owner: 'IT/Admin with Sales leadership and CCO wording review', evidence: 'Notification template, outbox entry, delivery status, and audit event' },
-    { severity: 'Review queue', screen: 'Account · Documents', question: 'Which store document uploads are allowed?', detail: 'Store document exchange remains held with Store expansion. The approved shared document service already requires private storage, class, review date, malware scan, archive-not-delete, export logging, and retention owner before a new document class goes live.', blocks: 'Only deferred Store document exchange', owner: 'Operations, Quality/Compliance, and IT/Admin', evidence: 'Document class, retention rule, review owner, scanner result, and release control' },
+    { severity: 'Review queue', screen: 'Account · Documents', question: 'Which store document uploads are allowed?', detail: 'Store activation planning is approved, but document-class release remains gated. The shared document service requires private storage, class, review date, malware scan, archive-not-delete, export logging, retention owner, pilot acceptance, and rollback control before a new class goes live.', blocks: 'Only unapproved Store document classes', owner: 'Operations, Quality/Compliance, and IT/Admin', evidence: 'Document class, retention rule, review owner, scanner result, pilot evidence, and release control' },
     { severity: 'DECIDED', screen: 'Onboarding', question: 'Who qualifies a license against the state record?', detail: 'Quality/Compliance owns license qualification evidence. The portal records what the source record says and never asserts validity without retained review evidence; recheck cadence is policy-configurable and must show source and as-of timing.', blocks: 'Nothing for Brand demo; final Store cadence remains reviewable before Store launch.', owner: 'Quality and Compliance', evidence: 'License source snapshot, reviewer, reviewed-at timestamp, and qualification state' }
   ] },
   { cls: 'CCO SIGN-OFF REQUIRED', closedBy: 'Closed by the Chief Compliance Officer', items: [
@@ -3806,14 +3882,14 @@ const TURNSTILE_SITE_KEY = String(PORTAL_CONFIG.turnstileSiteKey || '').trim();
 const STAFF_PERMISSIONS = [
   'inventory.read', 'inventory.sync', 'orders.manage', 'accounts.manage',
   'pricing.manage', 'catalog.manage', 'financials.read', 'economics.manage', 'quality.manage', 'lineage.read', 'users.manage', 'audit.read', 'readiness.read'
-  , 'readiness.manage', 'notifications.manage', 'claims.manage', 'sku_intake.read', 'sku_intake.manage'
+  , 'readiness.manage', 'notifications.manage', 'claims.manage', 'sku_intake.read', 'sku_intake.manage', 'store.demo'
 ];
 const STAFF_ROLE_LABELS = {
   administrator: 'Administrator', operations: 'Operations', sales: 'Sales',
   quality: 'Quality', viewer: 'Viewer'
 };
 const INTERNAL_ROUTE_PERMISSION = {
-  inventory: 'inventory.read', 'data-controls': ['inventory.read', 'financials.read'], orders: 'orders.manage', accounts: 'accounts.manage', brands: 'accounts.manage',
+  'store-demo': 'store.demo', inventory: 'inventory.read', 'data-controls': ['inventory.read', 'financials.read'], orders: 'orders.manage', accounts: 'accounts.manage', brands: 'accounts.manage',
   pricing: 'pricing.manage', receivables: 'financials.read',
   field: 'accounts.manage', onboarding: 'accounts.manage', recall: 'quality.manage',
   qa: 'quality.manage', lineage: 'lineage.read', admin: 'users.manage', access: 'users.manage',
@@ -3828,8 +3904,8 @@ const PORTAL_BUILD_PHASES = [
   { label: 'PHASE 2', title: 'Internal foundation', status: 'NEXT',
     detail: 'Shared My Work, request intake, approvals, evidence, comments, audit history, access requests, and controlled department views.',
     owner: 'IT/Admin with department workstreams' },
-  { label: 'PHASE 3', title: 'Store workspace', status: 'HELD UNTIL AFTER BRAND',
-    detail: 'Store roles and kiosk boundaries are preserved for later. Store expansion should reuse the same ordering, account, and education services.',
+  { label: 'PHASE 3', title: 'Store workspace', status: 'ACTIVATION PLANNING APPROVED',
+    detail: 'Plan the first release from the reconciled Store Workspace, Store Roles, and OS Portal Arch inputs. Release Readiness, pilot, rollback, and separate production activation remain required.',
     owner: 'Sales, Operations, Finance, Quality' }
 ];
 
@@ -3879,8 +3955,10 @@ const WORKFLOW_APPROVAL_BASELINE = [
 const STORE_ROLE_BASELINE = [
   { role: 'Owner', scope: 'All assigned organization stores', can: 'View, request, order, approve, export, manage users, manage account settings, and see full account statements with invoice references.',
     cannot: 'Cannot bypass server permissions, compliance holds, explicit account holds, or source freshness gates.' },
-  { role: 'Buyer / Manager', scope: 'Assigned stores', can: 'View, request, order, approve where delegated or policy allows, export scoped reports, and see full account statements with invoice references.',
-    cannot: 'Cannot manage users, account settings, legal identity, or organization-wide access.' },
+  { role: 'Buyer', scope: 'Assigned stores', can: 'View, request, order, receive, export where explicitly permitted, and see Finance-approved statements for verified accounting scope.',
+    cannot: 'Cannot manage users or settings, change legal identity, or approve orders without separately approved delegation.' },
+  { role: 'Store Manager', scope: 'Assigned stores', can: 'Manage location operations, licenses, receiving, requests, support, and announcements.',
+    cannot: 'No wholesale pricing, cart or order creation, purchase approvals, financial statements, user management, or exports by implication.' },
   { role: 'Budtender', scope: 'Assigned store or shared product-education device', can: 'Use product education, training, COA lookup, and approved resources.',
     cannot: 'No prices, cart, orders, invoices, account statements, exports, exact inventory, or admin controls.' },
   { role: 'Public kiosk visitor', scope: 'Store-specific public education link', can: 'View approved product education only.',
@@ -3918,8 +3996,8 @@ const PORTAL_BUILD_WORKSTREAMS = [
     guardrail: 'Product image uploads stay held until Quality and IT approve scan/quarantine/release controls.' },
   { name: 'Executive Leadership', stage: 'Summary layer', first: 'Portfolio summary, exceptions, approvals, legal holds, export oversight, and source-labelled executive reporting.',
     guardrail: 'Executive views summarize sensitive work without broad unrestricted drilldown by default.' },
-  { name: 'Store Workspace', stage: 'Held', first: 'Owner, Buyer/Manager, Budtender, and kiosk model captured for later reuse.',
-    guardrail: 'Do not prioritize ahead of Brand demo unless release sequencing changes.' }
+  { name: 'Store Workspace', stage: 'Activation planning', first: 'Dashboard, source-labelled catalog and availability, orders, retailer organizations and licensed locations, documents/licenses, approved read-only financials, and shared interactions.',
+    guardrail: 'Not live or release approved. Enforce strict tenant/location isolation, separate Store Manager from Buyer, preserve Canix/QuickBooks authority and Monday history, and require readiness, pilot, rollout, and rollback gates.' }
 ];
 
 const PORTAL_BUILD_SHARED_SERVICES = [
@@ -3932,10 +4010,10 @@ const PORTAL_BUILD_SHARED_SERVICES = [
 ];
 
 const PORTAL_BUILD_DECISIONS = [
-  'Release path is staged combination: Brand demo first, then Internal foundation, then Store workspace.',
+  'Release path is staged combination: Brand demo first, then Internal foundation, then Store activation planning; production activation requires a separate decision.',
   'Brand demo uses urbanXtracts first; Moondust follows by year-end planning.',
   'Brands can submit POs in the first demo; QuickBooks financials are read-only with scheduled and on-page refresh.',
-  'Store role baseline: Owner all, Buyer all except manage, Budtender product information only.',
+  'Store role baseline: Owner within bounded tenant authority; Buyer purchases within assigned scope; Store Manager is operational without pricing/purchasing/financial access; Budtender and kiosk receive approved education only.',
   'Employee login supports Google, personal email/password, and IT-created credentials.',
   'Contractor access needs IT and Executive approval plus expiration date.',
   'Legal holds are Executive-only; records are archived instead of automatically deleted.',
@@ -3943,7 +4021,7 @@ const PORTAL_BUILD_DECISIONS = [
 ];
 
 const PORTAL_BUILD_HELD_ITEMS = [
-  'Store/Dispensary full launch beyond role modeling and reusable services.',
+  'Store production activation before reconciled Store Workspace, Store Roles, and OS Portal Arch inputs, Release Readiness, pilot acceptance, rollback evidence, and separate approval.',
   'Cross-system automatic deactivation for Google Workspace, Monday, Canix, PistilData, and QuickBooks.',
   'QuickBooks write-back or mutation from workflow approvals.',
   'Portal MFA, automated access reviews, MDM, endpoint enforcement, and automatic retention deletion.',
@@ -3971,8 +4049,8 @@ const PORTAL_BUILD_REVIEW_QUEUE = [
     guardrail: 'Rep-held approval is disabled; Store Owner approval remains the supported retailer approval path.' },
   { item: 'Draft inventory hold policy', owner: 'Operations + Sales Operations', waits: 'The business has not approved whether drafts reserve inventory.',
     guardrail: 'Drafts hold nothing; final submission rechecks inventory and raises the inventory-changed gate.' },
-  { item: 'Store document upload classes', owner: 'Operations + Quality + IT/Admin', waits: 'Store expansion and document-class release controls remain held.',
-    guardrail: 'No new Store document class goes live without storage, scan, review owner, retention, export logging, and archive controls.' }
+  { item: 'Store document upload classes', owner: 'Operations + Quality + IT/Admin', waits: 'Activation planning is approved, but each document class still needs reconciled release controls and evidence.',
+    guardrail: 'No new Store document class goes live without storage, scan, review owner, retention, export logging, archive controls, pilot acceptance, and rollback controls.' }
 ];
 
 const PORTAL_BUILD_ACCEPTANCE = [
@@ -4328,10 +4406,11 @@ function normalizeWorkspaceRows(rows, profile) {
     workspace: String(row.workspace || '').toLowerCase(),
     memberRole: String(row.member_role || row.memberRole || ''),
     isDefault: row.is_default === true || row.isDefault === true,
-    resolution: row.resolution || 'membership'
+    resolution: row.resolution || 'membership',
+    permissions: Array.isArray(row.permissions) ? row.permissions.filter(value=>typeof value==='string') : []
   })).filter(row => row.id && row.organization && allowed.has(row.workspace));
   const unique = normalized.filter((row, index) => normalized.findIndex(candidate => candidate.id === row.id) === index);
-  return unique.length ? unique : legacyWorkspaceRows(profile);
+  return unique;
 }
 
 const INTEGRITY = [
@@ -4700,6 +4779,10 @@ function readPurchaseApprovalRoute() {
   return out;
 }
 const PURCHASE_APPROVAL_ROUTE = readPurchaseApprovalRoute();
+const LOCAL_ONBOARD_PREVIEW = typeof location !== 'undefined'
+  && ['127.0.0.1', 'localhost'].includes(location.hostname)
+  && new URLSearchParams(location.hash.slice(1)).has('onboarding-preview');
+const STORE_ONBOARDING_DRAFT_KEY = 'uxos.store-onboarding-draft.v1';
 
 // SKU Intake follows the same section-by-section pattern as Company &
 // Onboarding. A contributor link exposes one section and one record only.
@@ -4871,6 +4954,9 @@ function pwnedCount(password) {
 class Component extends DCLogic {
   state = {
     deactivated: [], userOverrides: {}, accessPending: null, apiRotated: {}, extraUsers: [], liveUsers: [], accessReviews: [], usersLoading: false, usersLoaded: false, usersError: null,
+    storeAccessData: null, storeAccessContextId: null, storeAccessOrganizationId: '', storeAccessMembershipId: '', storeAccessProfileId: '',
+    storeAccessRole: 'store_buyer', storeAccessStatus: 'active', storeAccessLicenses: [], storeAccessReason: '', storeAccessPending: false,
+    storeAccessError: '', storeAccessMessage: '', storeAccessRequestId: null,
     brandViewOptions: [], brandViewDraft: '', brandViewPending: false, brandViewError: null,
     brandUsers: [], brandUsersMeta: null, brandUsersLoading: false, brandUsersLoaded: false, brandUsersError: null,
     brandUserName: '', brandUserEmail: '', brandUserRole: 'brand_viewer', brandUserPending: null, brandUserDraftRoles: {},
@@ -4965,15 +5051,19 @@ class Component extends DCLogic {
     token: null, refreshToken: null, auLocs: [], auLocOpen: false, pwNotice: null,
     licType: 'Licence renewal', licLoc: 'l3', licExpiry: '', licNote: '',
     licFileName: '', licFileSize: 0, licFileData: null, licErr: null, licSent: false,
-    onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
-    onbStores: [{ name: '', license: '', address: '' }],
-    onbOwnerName: '', onbOwnerEmail: '', onbOwnerPhone: '',
-    onbBuyerName: '', onbBuyerEmail: '', onbBuyerLoc: '',
+    onbStep: 0, onbType: 'New store', onbEntity: '', onbDba: '', onbLocs: '',
+    onbStores: [{ name: '', license: '', licenseType: 'Dispensary', expires: '', address: '' }],
+    onbOwnerName: '', onbOwnerEmail: '', onbOwnerPhone: '', onbBuyerSame: true,
+    onbBuyerName: '', onbBuyerEmail: '', onbBuyerPhone: '', onbBuyerLoc: '',
+    onbBillingSame: true, onbBillingName: '', onbBillingEmail: '', onbBillingPhone: '',
+    onbDeliveryDays: [], onbDeliveryWindow: '', onbBrands: [], onbWebsite: '',
+    onbMediaSame: true, onbMediaEmail: '', onbAdditionalContacts: '', onbTermsReviewed: false,
+    onbFileName: '', onbFileSize: 0, onbFileType: '', onbFileData: null,
     onbBud: [{ name: '', email: '', loc: '' }], onbErr: null, onbSent: false,
-    onbSubmitting: false, onbClientRequestId: null, onbReceipt: null,
+    onbSubmitting: false, onbClientRequestId: null, onbReceipt: null, onbDraftSavedAt: '',
     turnstileToken: '', turnstileError: null,
     outbox: [], loginUser: '', loginPass: '', loginErr: null, loginInvalidField: null, loginBusy: !!SSO_RETURN.token || !!RESTORED_SESSION,
-    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', workspaces: [], activeWorkspaceId: null, activeWorkspace: null, workspaceResolution: null, screen: PURCHASE_APPROVAL_ROUTE.token ? 'purchase-approval' : BRAND_APPLICATION_ROUTE ? 'brand-application' : SKU_SECTION_TOKEN ? 'sku-section' : PUBLIC_KIOSK_TOKEN ? 'public-kiosk' : RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
+    sessionRestoring: !!RESTORED_SESSION, ssoBusy: !!SSO_RETURN.token, ssoErr: SSO_RETURN.err, catQty: {}, authUser: null, role: 'buyer', workspaces: [], activeWorkspaceId: null, activeWorkspace: null, workspaceResolution: null, screen: LOCAL_ONBOARD_PREVIEW ? 'onboard' : PURCHASE_APPROVAL_ROUTE.token ? 'purchase-approval' : BRAND_APPLICATION_ROUTE ? 'brand-application' : SKU_SECTION_TOKEN ? 'sku-section' : PUBLIC_KIOSK_TOKEN ? 'public-kiosk' : RECOVERY.active ? 'reset' : 'signin', loc: 'l1', cat: 'All', query: '',
     rstToken: RECOVERY.token, rstErr: RECOVERY.err, rstPass: '', rstPass2: '', rstBusy: false, rstDone: false,
     rstStage: null, rstNote: null,
     fpBusy: false, fpMsg: null,
@@ -5080,6 +5170,63 @@ class Component extends DCLogic {
   };
 
   set(patch) { this.setState(patch); }
+
+  storeDemoCall(action, payload, roleOverride) {
+    if (this.state.storeDemoBusy || !this.state.authUser || this.state.authUser.staffRole !== 'administrator') return Promise.resolve();
+    const role = roleOverride || this.state.storeDemoRole || 'owner';
+    const sequence = this._storeDemoSequence = (this._storeDemoSequence || 0) + 1;
+    this.set({ storeDemoBusy: true, storeDemoMessage: action === 'read' ? 'Loading demo…' : 'Saving…' });
+    return this.portalFetch(SUPABASE_URL + '/functions/v1/portal-store-demo', { method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, role, revision: (this.state.storeDemoData || {}).revision || 0, ...(payload || {}) }) })
+      .then(r => r.json().then(body => { if (!r.ok) { const error = new Error(body.error || 'The demo could not load.'); error.status = r.status; throw error; } return body; }))
+      .then(body => {
+        if (sequence !== this._storeDemoSequence) return;
+        const stores = body.stores || [];
+        const store = stores.some(s => s.id === this.state.storeDemoStore) ? this.state.storeDemoStore : (stores[0] || {}).id;
+        const draft = (body.drafts || {})[role + ':' + store] || {};
+        const restoresDraft = ['read','reset','save-draft','submit-order'].includes(action);
+        this.set({ storeDemoData: body, storeDemoRole: role, storeDemoStore: store,
+          ...(restoresDraft ? { storeDemoCart: draft.lines || [], storeDemoRequestId: draft.requestId || crypto.randomUUID() } : {}),
+          ...(action === 'reset' ? { storeDemoSectionDrafts: {} } : {}), storeDemoBusy: false,
+          storeDemoTab: role === 'budtender' ? 'catalog' : this.state.storeDemoTab || 'catalog',
+          storeDemoMessage: action === 'read' ? '' : 'Saved in the isolated demo. No external systems or emails changed.' });
+      }).catch(error => {
+        if (sequence === this._storeDemoSequence) this.set({ storeDemoBusy: false, storeDemoMessage: error.message,
+          ...([401,403].includes(error.status) ? { storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoReviewNotes: {}, storeDemoFinanceNote: '' } : {}) });
+      });
+  }
+  storeDemoChangeRole(role) {
+    if (this.state.storeDemoBusy) return;
+    this.set({ storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoTab: 'catalog' });
+    this.storeDemoCall('read', {}, role);
+  }
+  storeDemoChangeStore(store) {
+    const role = this.state.storeDemoRole || 'owner';
+    const draft = ((this.state.storeDemoData || {}).drafts || {})[role + ':' + store] || {};
+    this.set({ storeDemoStore: store, storeDemoCart: draft.lines || [], storeDemoRequestId: draft.requestId || crypto.randomUUID() });
+  }
+  storeDemoAdd(product) {
+    if (!['owner','buyer'].includes(this.state.storeDemoRole || 'owner')) return;
+    const quantity = Number((this.state.storeDemoQuantities || {})[product.id] ?? 1);
+    this.setState(st => ({ storeDemoCart: (st.storeDemoCart || []).filter(l => l.productId !== product.id).concat([{ productId: product.id, quantity }]) }));
+  }
+  storeDemoSaveOrder(submit) {
+    return this.storeDemoCall(submit ? 'submit-order' : 'save-draft', {
+      storeId: this.state.storeDemoStore, requestId: this.state.storeDemoRequestId || crypto.randomUUID(),
+      lines: (this.state.storeDemoCart || []).map(l => ({ productId: l.productId, quantity: Number(l.quantity) })) });
+  }
+  storeDemoSaveSection(section, submit) {
+    const values = { ...section.values, ...((this.state.storeDemoSectionDrafts || {})[section.id] || {}) };
+    if (values.expiration) values.expiration = usDateToIso(values.expiration);
+    return this.storeDemoCall(submit ? 'submit-section' : 'save-section', { sectionId: section.id, values });
+  }
+  storeDemoFinanceReview(decision) {
+    const finance = (this.state.storeDemoData || {}).finance || {};
+    return this.storeDemoCall('finance-review', { decision, terms: this.state.storeDemoTerms === undefined ? finance.terms : this.state.storeDemoTerms,
+      creditLimitCents: Math.round(Number(this.state.storeDemoCredit === undefined ? finance.creditLimitCents / 100 : this.state.storeDemoCredit) * 100),
+      note: this.state.storeDemoFinanceNote || '' });
+  }
 
   showDemoTourStep(index) {
     if (!DEMO_TOUR_STEPS.length) return;
@@ -5318,6 +5465,27 @@ class Component extends DCLogic {
       ...(json ? { 'Content-Type': 'application/json' } : {}) };
   }
 
+  handleSessionSignal(message) {
+    if (!message || message.type !== 'signed-out' || typeof message.subject !== 'string'
+      || !Number.isFinite(message.at) || message.at > Date.now() + 5000 || message.at < Date.now() - 300000) return;
+    const subject = this.state.token && portalJwtClaims(this.state.token).sub;
+    if (subject && message.subject === subject) this.signOut(true);
+  }
+
+  startSessionChannel() {
+    if (typeof BroadcastChannel === 'undefined') return;
+    this.stopSessionChannel();
+    try {
+      this._sessionChannel = new BroadcastChannel('ux-portal-session-events-v1');
+      this._sessionChannel.onmessage = event => this.handleSessionSignal(event.data);
+    } catch (_) { this._sessionChannel = null; }
+  }
+
+  stopSessionChannel() {
+    if (this._sessionChannel) this._sessionChannel.close();
+    this._sessionChannel = null;
+  }
+
   clearSessionRefresh() {
     if (this._sessionRefreshTimer) clearTimeout(this._sessionRefreshTimer);
     this._sessionRefreshTimer = null;
@@ -5329,7 +5497,11 @@ class Component extends DCLogic {
     const expiresAt = Number(portalJwtClaims(token).exp || 0) * 1000;
     const delay = Math.max(30000, expiresAt - Date.now() - 5 * 60 * 1000);
     this._sessionRefreshTimer = setTimeout(() => {
-      this.refreshSession(true).catch(() => this.expireSession());
+      const identity = this.state.authUser;
+      const epoch = this._sessionEpoch || 0;
+      this.refreshSession(true).catch(() => {
+        if (identity === this.state.authUser && epoch === (this._sessionEpoch || 0)) this.expireSession();
+      });
     }, delay);
   }
 
@@ -5341,43 +5513,82 @@ class Component extends DCLogic {
   refreshSession(force) {
     const token = this.state.token;
     const refreshToken = this.state.refreshToken;
+    const identity = this.state.authUser;
+    const epoch = this._sessionEpoch || 0;
+    const sameSession = state => identity === state.authUser && epoch === (this._sessionEpoch || 0);
     const expiresAt = Number(portalJwtClaims(token).exp || 0) * 1000;
     if (!force && token && expiresAt > Date.now() + 5 * 60 * 1000) return Promise.resolve(token);
     if (!refreshToken) return Promise.reject(new Error('session refresh unavailable'));
     if (this._sessionRefreshPromise) return this._sessionRefreshPromise;
-    this._sessionRefreshPromise = fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+    const flight = fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
       body: JSON.stringify({ refresh_token: refreshToken })
     })
       .then(r => r.json().catch(() => ({})).then(body => ({ ok: r.ok, body: body || {} })))
       .then(({ ok, body }) => {
+        if (!sameSession(this.state)) throw new Error('Session changed; discarded the previous refresh.');
         const upgraded = body.access_token || (body.session && body.session.access_token);
         const rotated = body.refresh_token || (body.session && body.session.refresh_token) || refreshToken;
         const claims = portalJwtClaims(upgraded);
         if (!ok || !upgraded || claims.role !== 'authenticated' || !claims.sub) {
           throw new Error('session refresh rejected');
         }
-        return new Promise(resolve => this.setState({ token: upgraded, refreshToken: rotated }, () => {
+        return new Promise((resolve, reject) => this.setState(state => sameSession(state)
+          ? { token: upgraded, refreshToken: rotated } : null, () => {
+          if (!sameSession(this.state)) {
+            reject(new Error('Session changed; discarded the previous refresh.'));
+            return;
+          }
           storePortalSession(upgraded, rotated, this.state.authUser && this.state.authUser.email,
             this.state.role === 'internal');
           this.scheduleSessionRefresh(upgraded, rotated);
           resolve(upgraded);
         }));
       })
-      .finally(() => { this._sessionRefreshPromise = null; });
-    return this._sessionRefreshPromise;
+      .finally(() => { if (this._sessionRefreshPromise === flight) this._sessionRefreshPromise = null; });
+    this._sessionRefreshPromise = flight;
+    return flight;
   }
 
   portalFetch(url, options) {
+    const context = this.state.activeWorkspaceId;
+    const identity = this.state.authUser && this.state.authUser.email;
+    const epoch = this._workspaceEpoch || 0;
+    const sessionEpoch = this._sessionEpoch || 0;
+    const checkContext = () => {
+      if (epoch !== (this._workspaceEpoch || 0) || context !== this.state.activeWorkspaceId
+        || sessionEpoch !== (this._sessionEpoch || 0)
+        || identity !== (this.state.authUser && this.state.authUser.email)) {
+        throw new Error('Workspace changed; discarded the previous response.');
+      }
+    };
     const request = token => {
       const baseHeaders = (options && options.headers) || {};
       const headers = { ...baseHeaders };
+      const workspace = (this.state.workspaces || []).find(row => row.id === context);
+      const scopedEndpoints = ['portal-admin','canix-catalog','portal-pricing','portal-intake','portal-orders','portal-order-policy',
+        'quickbooks-financials','portal-claims','portal-notifications','portal-assets','portal-retailers',
+        'portal-brand-documents','portal-brand-support','portal-brand-supply-chain','portal-brand-onboarding',
+        'portal-brand-profile','portal-brand-operations','portal-internal-work'];
+      if (workspace && scopedEndpoints.some(name => url.split('?')[0].endsWith('/' + name))) {
+        headers['x-ux-membership-id'] = workspace.id;
+        headers['x-ux-organization-id'] = workspace.organizationId;
+      }
       if (token) headers.Authorization = 'Bearer ' + token;
-      return fetch(url, { ...(options || {}), headers });
+      checkContext();
+      return fetch(url, { ...(options || {}), headers }).then(response => {
+        checkContext();
+        const readJson = response.json.bind(response);
+        response.json = () => readJson().then(body => { checkContext(); return body; });
+        const readText = response.text && response.text.bind(response);
+        if (readText) response.text = () => readText().then(body => { checkContext(); return body; });
+        return response;
+      });
     };
     return request(this.state.token).then(response => {
-      if (![401, 403].includes(response.status) || !this.state.refreshToken) return response;
+      if (response.status !== 401 || !this.state.refreshToken) return response;
       return this.refreshSession(true).then(request).catch(error => {
+        checkContext();
         this.expireSession();
         throw error;
       });
@@ -5427,7 +5638,7 @@ class Component extends DCLogic {
     const claims = portalJwtClaims(token);
     if (claims.role !== 'authenticated' || !claims.sub) return Promise.reject(new Error('rejected'));
     return this.portalIdentity(token, emailHint, weak).then(identity => {
-      if (sso && (!identity.email.endsWith('@' + SSO_DOMAIN) || identity.me.role !== 'internal')) {
+      if (sso && (!identity.email.endsWith('@' + SSO_DOMAIN) || !identity.workspaces.some(row=>row.workspace==='internal'))) {
         throw new Error('domain');
       }
       this.finishLoginIdentity({ ...identity, refreshToken: refreshToken || null, sso: !!sso });
@@ -5466,31 +5677,34 @@ class Component extends DCLogic {
             const loadWorkspaces = permissions => fetch(SUPABASE_URL + '/rest/v1/rpc/portal_my_workspaces', {
               method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: '{}'
             }).then(r => r.json().then(workspaces => ({ ok: r.ok, workspaces })))
-              .then(({ ok, workspaces }) => ({ me, token, email, weak, permissions,
-                workspaces: ok ? normalizeWorkspaceRows(workspaces, me) : legacyWorkspaceRows(me),
-                workspaceResolution: ok ? 'membership' : 'legacy' }))
-              .catch(() => ({ me, token, email, weak, permissions,
-                workspaces: legacyWorkspaceRows(me), workspaceResolution: 'legacy' }));
-            if (me.role !== 'internal') return loadWorkspaces([]);
-            if (!me.staff_role || !STAFF_ROLE_LABELS[me.staff_role]) throw new Error('access not assigned');
-            return fetch(SUPABASE_URL + '/rest/v1/rpc/portal_my_permissions', {
-              method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: '{}'
-            })
-              .then(r => r.json().then(permissions => ({ ok: r.ok, permissions })))
-              .then(({ ok, permissions }) => {
-                if (!ok || !Array.isArray(permissions)) throw new Error('access unavailable');
-                return loadWorkspaces(permissions.filter(permission => STAFF_PERMISSIONS.includes(permission)));
+              .then(async ({ ok, workspaces }) => {
+                const resolved = ok ? normalizeWorkspaceRows(workspaces, me) : [];
+                if (!resolved.length) throw new Error('No active workspace could be verified. Contact IT.');
+                const checked=await Promise.all(resolved.map(async workspace=>{
+                  if(workspace.workspace!=='internal') return {...workspace,permissions:[]};
+                  const response=await fetch(PORTAL_ADMIN_API,{method:'POST',headers:{...headers,'Content-Type':'application/json',
+                    'x-ux-membership-id':workspace.id,'x-ux-organization-id':workspace.organizationId},body:JSON.stringify({action:'workspace-permissions'})});
+                  const result=await response.json();
+                  if(!response.ok||result.memberRole!==workspace.memberRole||!Array.isArray(result.permissions))throw new Error('access unavailable');
+                  return {...workspace,permissions:result.permissions.filter(value=>STAFF_PERMISSIONS.includes(value))};
+                }));
+                return { me, token, email, weak, permissions, workspaces: checked, workspaceResolution: 'membership' };
               });
+            return loadWorkspaces([]);
           });
       });
   }
 
   finishLoginIdentity({ me, token, email, weak, permissions, workspaces, workspaceResolution, refreshToken, sso }) {
-    const roleLabel = { owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender', internal: 'Account management', brand: 'Brand member' }[me.role];
+    this._sessionEpoch = (this._sessionEpoch || 0) + 1;
+    this._sessionRefreshPromise = null;
+    const preferred=workspaces.find(row=>row.isDefault)||workspaces[0];
+    const roleLabel=preferred.workspace==='internal'?'Account management':preferred.workspace==='brand'?'Brand member'
+      :({store_owner:'Store owner',store_buyer:'Buyer',store_staff:'Budtender'}[preferred.memberRole]);
     this.set({ loginBusy: false, sessionRestoring: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
       loginUser: '', loginPass: '', token: token, refreshToken: refreshToken || null, pwNotice: weak || null });
     this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
-      staffRole: me.staff_role || null, permissions: Array.isArray(permissions) ? permissions : [],
+      staffRole: preferred.workspace==='internal'?preferred.memberRole:null, permissions: preferred.permissions || [],
       workspaces: normalizeWorkspaceRows(workspaces, me), workspaceResolution: workspaceResolution || 'legacy' });
     storePortalSession(token, refreshToken || null, email, !!sso || me.role === 'internal');
     this.scheduleSessionRefresh(token, refreshToken || null);
@@ -5568,9 +5782,6 @@ class Component extends DCLogic {
     const map = { 'Store owner': 'owner', 'Buyer': 'buyer', 'Budtender': 'budtender', 'Account management': 'internal', 'Brand member': 'brand' };
     const role = map[u.role];
     if (!role) { this.set({ toast: 'That account has no portal role, so there is nothing to sign in to.', toastKind: 'NO ROLE' }); return; }
-    if (role === 'internal' && !Array.isArray(u.permissions) && /@urbanxtracts\.com$/i.test(String(u.email || ''))) {
-      u = { ...u, staffRole: 'administrator', permissions: STAFF_PERMISSIONS.slice() };
-    }
     this.logAudit('Signed in', u.name, u.role + ' at ' + u.org + '. Role comes from the account, not from a choice in the interface.', u.name);
     const demoAccount = isDemoOrganization(u.org);
     const workspaces = Array.isArray(u.workspaces) && u.workspaces.length
@@ -5579,8 +5790,12 @@ class Component extends DCLogic {
       || workspaces.find(workspace => workspace.workspace === (role === 'internal' ? 'internal' : role === 'brand' ? 'brand' : 'store'))
       || workspaces[0];
     const landing = preferredWorkspace.workspace === 'brand' ? 'brand-home'
-      : role === 'budtender' && preferredWorkspace.workspace === 'store' ? 'kiosk' : 'dash';
-    this.set({ authUser: { ...u, workspaces }, role, workspaces, activeWorkspaceId: preferredWorkspace.id,
+      : preferredWorkspace.memberRole === 'store_staff' && preferredWorkspace.workspace === 'store' ? 'kiosk' : 'dash';
+    const workspaceRole = preferredWorkspace.workspace === 'internal' ? 'internal' : preferredWorkspace.workspace === 'brand' ? 'brand'
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_staff: 'budtender' }[preferredWorkspace.memberRole] || 'budtender');
+    this.set({ authUser: { ...u, workspaces,staffRole:preferredWorkspace.workspace==='internal'?preferredWorkspace.memberRole:null,
+      permissions:preferredWorkspace.permissions || [] }, role: workspaceRole, workspaces, activeWorkspaceId: preferredWorkspace.id,
+      verifiedStoreLocations: [], pricingLoaded: false,
       activeWorkspace: preferredWorkspace.workspace, workspaceResolution: u.workspaceResolution || preferredWorkspace.resolution || 'legacy',
       screen: landing, order: null,
       loc: demoAccount ? 'l-demo' : 'l1', demoTourActive: false, demoTourStep: 0, demoTourCompleted: true,
@@ -5622,8 +5837,12 @@ class Component extends DCLogic {
   switchWorkspace(workspaceId) {
     const workspace = (this.state.workspaces || []).find(item => item.id === workspaceId);
     if (!workspace || !['internal', 'brand', 'store'].includes(workspace.workspace)) return;
+    this._workspaceEpoch = (this._workspaceEpoch || 0) + 1;
+    this._storeDemoSequence = (this._storeDemoSequence || 0) + 1;
     const landing = workspace.workspace === 'brand' ? 'brand-home'
-      : this.state.role === 'budtender' && workspace.workspace === 'store' ? 'kiosk' : 'dash';
+      : workspace.memberRole === 'store_staff' && workspace.workspace === 'store' ? 'kiosk' : 'dash';
+    const role = workspace.workspace === 'internal' ? 'internal' : workspace.workspace === 'brand' ? 'brand'
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_staff: 'budtender' }[workspace.memberRole] || 'budtender');
     this.logAudit('Workspace changed', workspace.organization, workspace.workspace + ' workspace selected.');
     // A workspace change is a security-boundary change. Discard every loaded
     // connected projection so data from the previous scope cannot remain in
@@ -5631,7 +5850,11 @@ class Component extends DCLogic {
     for (let index = PRODUCTS.length - 1; index >= 0; index -= 1) {
       if (PRODUCTS[index].source === 'Canix' || PRODUCTS[index].source === 'Portal order') PRODUCTS.splice(index, 1);
     }
-    this.set({ activeWorkspaceId: workspace.id, activeWorkspace: workspace.workspace, screen: landing,
+    this.set({ activeWorkspaceId: workspace.id, activeWorkspace: workspace.workspace, role, screen: landing,
+      authUser:{...this.state.authUser,staffRole:workspace.workspace==='internal'?workspace.memberRole:null,permissions:workspace.permissions || []},
+      storeAccessData:null,storeAccessContextId:null,storeAccessError:'',storeAccessMessage:'',storeAccessPending:false,
+      verifiedStoreLocations: [], pricingLoaded: false, pricingError: null,
+      storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoBusy: false, storeDemoMessage: '',
       order: null, confirmed: null, toast: workspace.organization + ' workspace opened.', toastKind: 'WORKSPACE CHANGED',
       orders: DEMO_SEED_ORDERS.map(order => ({ ...order })), ordersLoaded: false, ordersError: null,
       financialData: null, financialLoaded: false, financialError: null,
@@ -5671,13 +5894,24 @@ class Component extends DCLogic {
       communicationsLoaded: false, communicationsError: null, claimsLoaded: false, claimsError: null });
   }
 
-  signOut() {
+  signOut(fromAnotherTab) {
+    const currentToken = this.state.token;
+    const subject = currentToken && portalJwtClaims(currentToken).sub;
+    if (fromAnotherTab !== true && subject && this._sessionChannel) {
+      // Same-origin invalidation signal only: no access/refresh token, email,
+      // membership, cached record or workspace grants cross this channel.
+      try { this._sessionChannel.postMessage({ type: 'signed-out', subject, at: Date.now() }); } catch (_) {}
+    }
+    this._sessionEpoch = (this._sessionEpoch || 0) + 1;
+    this._sessionRefreshPromise = null;
+    this._workspaceEpoch = (this._workspaceEpoch || 0) + 1;
+    this._storeDemoSequence = (this._storeDemoSequence || 0) + 1;
     this.clearSessionRefresh();
     clearStoredPortalSession();
     const u = this.state.authUser;
     if (u) this.logAudit('Signed out', u.name, 'Session ended.', u.name);
     const token = this.state.token;
-    if (token) fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST',
+    if (token && fromAnotherTab !== true) fetch(SUPABASE_URL + '/auth/v1/logout', { method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token } }).catch(() => {});
     // Shared store devices must not hand one user's loaded server cache to the
     // next person who signs in. Keep only the explicitly isolated demo rows;
@@ -5686,6 +5920,9 @@ class Component extends DCLogic {
       if (PRODUCTS[index].source === 'Canix' || PRODUCTS[index].source === 'Portal order') PRODUCTS.splice(index, 1);
     }
     this.set({
+      storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoRole: 'owner', storeDemoTab: 'catalog',
+      storeDemoMessage: '', storeDemoBusy: false, storeDemoQuantities: {}, storeDemoReviewNotes: {},
+      storeDemoTerms: undefined, storeDemoCredit: undefined, storeDemoFinanceNote: '', storeDemoRequestId: null,
       authUser: null, token: null, refreshToken: null, sessionRestoring: false, workspaces: [], activeWorkspaceId: null,
       activeWorkspace: null, workspaceResolution: null, screen: 'signin', order: null, confirmed: null, toast: null,
       loginErr: null, loginInvalidField: null, impersonating: null,
@@ -6616,13 +6853,18 @@ class Component extends DCLogic {
           releaseVerified: item.releaseVerified === true, preorder: item.orderMode === 'preorder', demoRelease: false,
           orderConstraints: item.orderConstraints || { caseQuantity: null, caseQuantityUnit: null,
             caseEnforcementAvailable: false, minimumOrder: null, leadTimeDays: null },
+          marketplace: item.marketplace || null,
+          availableQty: Number.isFinite(item.availableUnits) ? item.availableUnits : null,
           content: item.content || { shortDescription: null, longDescription: null, sellingPoints: [], ingredients: null,
             usageInformation: null, productProfile: null, imageUrl: null, keywords: [], source: null },
           searchText: item.searchText || '',
           lots: Array.isArray(item.lots) && item.lots.length ? item.lots : [{ tag: 'Not recorded', packaged: 'Not recorded', lab: 'No structured result', hasCoa: false,
             coa: { documentUrl: null, version: null, cannabinoids: [], terpenes: [], profile: {} } }]
         }));
-        this.set({ catalogLoading: false, catalogLoaded: true, catalogError: null });
+        this.set({ catalogLoading: false, catalogLoaded: true, catalogError: null,
+          ...(this.state.activeWorkspace==='store'&&Array.isArray(body.locations)?{
+            verifiedStoreLocations:body.locations.map(row=>({id:'store-'+row.license,name:row.name,license:row.license,demo:false})),
+          }:{}) });
         if (this.state.role === 'internal' && this.hasPermission('catalog.manage')) this.loadCatalogWorkflow();
       })
       .catch(error => this.set({ catalogLoading: false, catalogLoaded: false,
@@ -7313,6 +7555,48 @@ class Component extends DCLogic {
         usersLoaded: true, usersError: null }))
       .catch(error => this.set({ liveUsers: [], accessReviews: [], brandViewOptions: [], usersLoading: false, usersLoaded: true,
         usersError: (error && error.message) || 'The protected user directory could not be loaded.' }));
+  }
+
+  loadStoreAccess(organizationId) {
+    if (this.state.storeAccessPending || this.state.impersonating || this.state.role !== 'internal'
+      || this.state.authUser.staffRole !== 'administrator' || !this.hasPermission('users.manage')) return Promise.resolve();
+    const id=organizationId || '';
+    this.set({storeAccessPending:true,storeAccessError:'',storeAccessData:null,storeAccessContextId:this.state.activeWorkspaceId,
+      storeAccessOrganizationId:id,storeAccessMembershipId:'',storeAccessProfileId:'',storeAccessLicenses:[],storeAccessReason:'',storeAccessRequestId:null});
+    return this.portalAdmin('list-store-access',{organizationId:id})
+      .then(body=>this.set({storeAccessData:body,storeAccessPending:false}))
+      .catch(error=>this.set({storeAccessPending:false,storeAccessError:error.message}));
+  }
+
+  editStoreAccess(membershipId) {
+    const member=((this.state.storeAccessData || {}).members || []).find(row=>row.id===membershipId);
+    this.set({storeAccessMembershipId:member?member.id:'',storeAccessProfileId:member?member.profile_id:'',
+      storeAccessRole:member?member.member_role:'store_buyer',storeAccessStatus:member?member.status:'active',
+      storeAccessLicenses:member?member.licenses || []:[],storeAccessReason:'',storeAccessRequestId:null,storeAccessError:'',storeAccessMessage:''});
+  }
+
+  changeStoreAccess(patch) {
+    if(this.state.storeAccessPending)return;
+    this.set({...patch,storeAccessRequestId:null,storeAccessError:'',storeAccessMessage:''});
+  }
+
+  saveStoreAccess() {
+    const s=this.state,data=s.storeAccessData || {};
+    if(s.storeAccessPending||s.impersonating||!data.enabled||s.storeAccessContextId!==s.activeWorkspaceId
+      ||s.role!=='internal'||s.authUser.staffRole!=='administrator'||!this.hasPermission('users.manage'))return;
+    if(!s.storeAccessOrganizationId||!s.storeAccessProfileId||s.storeAccessReason.trim().length<8) {
+      this.set({storeAccessError:'Choose an existing user and enter a reason of at least eight characters.'});return;
+    }
+    const member=(data.members || []).find(row=>row.id===s.storeAccessMembershipId);
+    const requestId=s.storeAccessRequestId||crypto.randomUUID();
+    this.set({storeAccessPending:true,storeAccessError:'',storeAccessMessage:'',storeAccessRequestId:requestId});
+    this.portalAdmin('manage-store-access',{organizationId:s.storeAccessOrganizationId,profileId:s.storeAccessProfileId,
+      membershipId:member?member.id:null,expectedUpdatedAt:member?member.updated_at:null,memberRole:s.storeAccessRole,
+      status:s.storeAccessStatus,licenses:s.storeAccessRole==='store_owner'||s.storeAccessStatus==='disabled'?[]:s.storeAccessLicenses,
+      reason:s.storeAccessReason.trim(),requestId})
+      .then(()=>{this.set({storeAccessPending:false,storeAccessMessage:'Store membership saved. Other workspaces and the global account were not changed. No email was sent.'});
+        this.loadStoreAccess(s.storeAccessOrganizationId);})
+      .catch(error=>this.set({storeAccessPending:false,storeAccessError:error.message}));
   }
 
   activeBrandOrganizationId() {
@@ -10462,13 +10746,15 @@ class Component extends DCLogic {
     const s = this.state;
     if (!s.authUser || s.pricingLoading || (!force && s.pricingLoaded)) return;
     if (!['internal', 'owner', 'buyer'].includes(s.role)) return;
-    if (this.loc().demo) {
+    if (s.activeWorkspace !== 'store' && this.loc().demo) {
       this.set({ pricingLoaded: true, pricingLoading: false, pricingError: null });
       return;
     }
     this.set({ pricingLoading: true, pricingError: null });
     this.pricingCall('GET')
       .then(body => this.set({
+        verifiedStoreLocations: s.activeWorkspace === 'store' && Array.isArray(body.stores)
+          ? body.stores.map(row => ({ id: 'store-' + row.license, name: row.name, license: row.license, demo: false })) : [],
         pricingProposals: this.withDemoPricing(body.proposals, DEMO_PRICE_PROPOSALS),
         pricingPrices: this.withDemoPricing(body.prices, DEMO_STORE_PRICES),
         pricingDefaults: Array.isArray(body.defaults) ? body.defaults : [],
@@ -10581,6 +10867,10 @@ class Component extends DCLogic {
     const entry = this.priceEntry(p, location);
     if (entry) return 'Approved ' + (entry.locationName || (location || this.loc()).name) + ' store rate';
     const defaultEntry = this.defaultPriceEntry(p);
+    if (defaultEntry && defaultEntry.priceSource === 'canix_marketplace') {
+      return 'Canix Marketplace wholesale price' + (defaultEntry.publishedAt
+        ? ' · refreshed ' + (formatDateUs(defaultEntry.publishedAt) || 'recently') : '');
+    }
     if (defaultEntry) return 'Published urbanXtracts wholesale list';
     if (p && p.priceFrom) return p.priceFrom;
     return 'No published store price';
@@ -10970,11 +11260,13 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    this.startSessionChannel();
     this.bump({ sessionStart: Date.now() });
-    this._onResize = () => this.setState({ vw: window.innerWidth });
+    this._onResize = () => this.setState({ vw: Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth) });
     window.addEventListener('resize', this._onResize);
     this._onResize();
     this.mountTurnstile();
+    if (this.state.screen === 'onboard') this.onbRestoreDraft();
     if (PURCHASE_APPROVAL_ROUTE.token) {
       this.loadPurchaseApproval(PURCHASE_APPROVAL_ROUTE.token);
     } else if (BRAND_APPLICATION_TOKEN) {
@@ -11002,6 +11294,7 @@ class Component extends DCLogic {
 
   componentDidUpdate(prevProps, prevState) {
     const prior = prevState || {};
+    if (this.state.screen === 'store-demo' && !this.state.storeDemoData && !this.state.storeDemoBusy && !this.state.storeDemoMessage) this.storeDemoCall('read');
     this.mountTurnstile();
     if (this.state.role === 'internal' && this.state.screen === 'brand-applications'
       && prior.screen !== this.state.screen && !this.state.brandApplicationsLoaded && !this.state.brandApplicationsLoading) {
@@ -11181,6 +11474,7 @@ class Component extends DCLogic {
   }
 
   componentWillUnmount() {
+    this.stopSessionChannel();
     window.removeEventListener('resize', this._onResize);
     this.clearSessionRefresh();
     this.removeTurnstile();
@@ -11220,8 +11514,8 @@ class Component extends DCLogic {
   auToggle() {
     if (this.state.impersonating) { this.set({ toast: 'This is a read-only view-as session. User access cannot be changed.', toastKind: 'BLOCKED — READ ONLY' }); return; }
     if (this.state.role === 'internal' && !this.requirePermission('users.manage', 'manage users')) return;
-    this.setState(st => ({ auOpen: !st.auOpen, auErr: null, auLocOpen: false,
-      auRole: st.role === 'internal' ? st.auRole : (['Store owner', 'Administrator'].includes(st.auRole) ? 'Buyer' : st.auRole) }));
+    if (this.state.role !== 'internal') {this.set({toast:'New Store invitations remain held. Contact an Internal Administrator.'});return;}
+    this.setState(st => ({ auOpen: !st.auOpen, auErr: null, auLocOpen: false, auRole: 'Administrator' }));
   }
   auLocOpenToggle() { this.setState(st => ({ auLocOpen: !st.auLocOpen })); }
   auLocPick(id) {
@@ -11328,6 +11622,66 @@ class Component extends DCLogic {
         toast: u.name + ' was not invited: ' + error.message, toastKind: 'NOT SAVED' }));
   }
 
+  onbDraftData() {
+    const s = this.state;
+    const keys = ['onbType','onbEntity','onbDba','onbOwnerName','onbOwnerEmail','onbOwnerPhone',
+      'onbBuyerName','onbBuyerEmail','onbBuyerPhone','onbBuyerLoc','onbBillingName','onbBillingEmail',
+      'onbBillingPhone','onbDeliveryWindow','onbWebsite','onbMediaEmail','onbAdditionalContacts'];
+    const data = {};
+    keys.forEach(key => { data[key] = String(s[key] || '').slice(0, 4000); });
+    ['onbBuyerSame','onbBillingSame','onbMediaSame','onbTermsReviewed'].forEach(key => { data[key] = !!s[key]; });
+    data.onbStep = Math.max(0, Math.min(5, Number(s.onbStep) || 0));
+    data.onbDeliveryDays = (s.onbDeliveryDays || []).map(String).slice(0, 5);
+    data.onbBrands = (s.onbBrands || []).map(String).slice(0, 30);
+    data.onbStores = (s.onbStores || []).slice(0, 10).map(store => ({
+      name: String(store.name || '').slice(0, 160), license: String(store.license || '').slice(0, 80),
+      licenseType: String(store.licenseType || 'Dispensary').slice(0, 80), expires: String(store.expires || '').slice(0, 10),
+      address: String(store.address || '').slice(0, 500)
+    }));
+    data.onbBud = (s.onbBud || []).slice(0, 5).map(person => ({
+      name: String(person.name || '').slice(0, 160), email: String(person.email || '').slice(0, 254),
+      loc: String(person.loc || '').slice(0, 80)
+    }));
+    return data;
+  }
+
+  onbSaveDraft(silent) {
+    try {
+      const savedAt = new Date().toISOString();
+      sessionStorage.setItem(STORE_ONBOARDING_DRAFT_KEY, JSON.stringify({ version: 1, savedAt, data: this.onbDraftData() }));
+      this.set({ onbDraftSavedAt: savedAt, toast: silent ? this.state.toast : 'Store onboarding draft saved in this browser tab.',
+        toastKind: silent ? this.state.toastKind : 'DRAFT SAVED' });
+    } catch (error) {
+      this.set({ onbErr: 'This browser could not save the draft. You can continue and submit without saving.' });
+    }
+  }
+
+  onbRestoreDraft() {
+    try {
+      const record = JSON.parse(sessionStorage.getItem(STORE_ONBOARDING_DRAFT_KEY) || 'null');
+      if (!record || record.version !== 1 || !record.data || typeof record.data !== 'object') return;
+      const draft = record.data;
+      const allowed = this.onbDraftData();
+      const patch = {};
+      Object.keys(allowed).forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(draft, key) && typeof draft[key] === typeof allowed[key]) patch[key] = draft[key];
+      });
+      patch.onbStores = Array.isArray(draft.onbStores) && draft.onbStores.length ? draft.onbStores.slice(0, 25).map(store => ({
+        name: String(store.name || '').slice(0, 160), license: String(store.license || '').slice(0, 80),
+        licenseType: ['Dispensary','Micro Business'].includes(store.licenseType) ? store.licenseType : 'Dispensary',
+        expires: String(store.expires || '').slice(0, 10), address: String(store.address || '').slice(0, 500)
+      })) : allowed.onbStores;
+      patch.onbBud = Array.isArray(draft.onbBud) && draft.onbBud.length ? draft.onbBud.slice(0, 5).map(person => ({
+        name: String(person.name || '').slice(0, 160), email: String(person.email || '').slice(0, 254), loc: String(person.loc || '').slice(0, 80)
+      })) : allowed.onbBud;
+      patch.onbDeliveryDays = Array.isArray(draft.onbDeliveryDays) ? draft.onbDeliveryDays.map(String).slice(0, 5) : [];
+      patch.onbBrands = Array.isArray(draft.onbBrands) ? draft.onbBrands.map(String).slice(0, 30) : [];
+      patch.onbStep = Math.max(0, Math.min(5, Number(draft.onbStep) || 0));
+      patch.onbDraftSavedAt = String(record.savedAt || '');
+      this.set(patch);
+    } catch (error) {}
+  }
+
   onbSetStore(i, field, value) {
     this.setState(st => {
       const prior = st.onbStores[i] || {};
@@ -11340,9 +11694,9 @@ class Component extends DCLogic {
     });
   }
   onbAddStore() {
-    this.setState(st => st.onbStores.length >= 10
-      ? { toast: 'Ten stores is the cap on one onboarding request. Submit this group, then add the next.', toastKind: 'AT THE CAP' }
-      : { onbStores: st.onbStores.concat([{ name: '', license: '', address: '' }]) });
+    this.setState(st => st.onbStores.length >= 25
+      ? { toast: 'A retailer organization can contain up to 25 stores.', toastKind: 'AT THE CAP' }
+      : { onbStores: st.onbStores.concat([{ name: '', license: '', licenseType: 'Dispensary', expires: '', address: '' }]) });
   }
   onbRemoveStore(i) {
     this.setState(st => {
@@ -11354,6 +11708,85 @@ class Component extends DCLogic {
         onbBud: st.onbBud.map(person => person.loc === removed.license ? { ...person, loc: '' } : person)
       };
     });
+  }
+
+  onbToggleList(field, value) {
+    this.setState(st => {
+      const current = Array.isArray(st[field]) ? st[field] : [];
+      return { [field]: current.includes(value) ? current.filter(item => item !== value) : current.concat([value]), onbErr: null };
+    });
+  }
+
+  onbPickFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const allowed = new Set(['application/pdf', 'image/png', 'image/jpeg']);
+    const extensionAllowed = /\.(pdf|png|jpe?g)$/i.test(file.name || '');
+    if (!allowed.has(String(file.type || '').toLowerCase()) || !extensionAllowed) {
+      this.set({ onbFileName: '', onbFileSize: 0, onbFileType: '', onbFileData: null,
+        onbErr: 'Attach the primary store licence as a PDF, PNG, or JPEG.' });
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      this.set({ onbFileName: '', onbFileSize: 0, onbFileType: '', onbFileData: null,
+        onbErr: 'The primary licence document must be 2 MB or smaller.' });
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.set({ onbFileName: file.name, onbFileSize: file.size,
+      onbFileType: file.type, onbFileData: String(reader.result || '').split(',').pop(), onbErr: null });
+    reader.onerror = () => this.set({ onbFileName: '', onbFileSize: 0, onbFileType: '', onbFileData: null,
+      onbErr: 'The primary licence document could not be read.' });
+    reader.readAsDataURL(file);
+  }
+
+  onbValidation(step) {
+    const s = this.state;
+    const stores = s.onbStores.filter(store => store.name.trim() || store.license.trim() || store.address.trim());
+    if (step === 0) {
+      if (!s.onbEntity.trim()) return 'Enter the legal business name shown on the licence.';
+    }
+    if (step === 1) {
+      if (!stores.length) return 'Add at least one licensed store.';
+      if (stores.some(store => !store.name.trim() || !store.license.trim() || !store.licenseType || !store.expires || !store.address.trim())) {
+        return 'Complete the store name, licence number, licence type, expiration date, and address for every location.';
+      }
+      if (stores.some(store => !usDateToIso(store.expires))) return 'Enter every licence expiration date as MM/DD/YYYY.';
+    }
+    if (step === 2) {
+      if (!s.onbOwnerName.trim() || !s.onbOwnerEmail.trim() || !s.onbOwnerPhone.trim()) return 'Complete the primary contact name, email, and phone.';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.onbOwnerEmail.trim())) return 'Enter a valid primary contact email address.';
+      if (!s.onbBuyerSame && (!s.onbBuyerName.trim() || !s.onbBuyerEmail.trim() || !s.onbBuyerPhone.trim())) return 'Complete the buyer contact, or mark the primary contact as the buyer.';
+      if (!s.onbBuyerSame && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.onbBuyerEmail.trim())) return 'Enter a valid buyer email address.';
+      if (!s.onbBillingSame && (!s.onbBillingName.trim() || !s.onbBillingEmail.trim() || !s.onbBillingPhone.trim())) return 'Complete the billing contact, or mark it as the same as the primary contact.';
+      if (!s.onbBillingSame && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.onbBillingEmail.trim())) return 'Enter a valid billing contact email address.';
+      const submittedLicenses = new Set(stores.map(store => store.license.trim().toUpperCase()).filter(Boolean));
+      if (!s.onbBuyerSame && s.onbBuyerLoc && !submittedLicenses.has(s.onbBuyerLoc.trim().toUpperCase())) return 'Choose a submitted store for the buyer, or use all qualified stores.';
+      const buds = s.onbBud.filter(person => person.name.trim() || person.email.trim());
+      if (buds.some(person => !person.name.trim() || !person.email.trim() || !person.loc.trim() || !submittedLicenses.has(person.loc.trim().toUpperCase()))) return 'Every budtender needs a name, email, and exactly one submitted store.';
+    }
+    if (step === 3) {
+      if (!s.onbBrands.length) return 'Choose at least one brand the store is interested in.';
+      if (s.onbWebsite.trim() && !/^https?:\/\/[^\s.]+(?:\.[^\s.]+)+/i.test(s.onbWebsite.trim())) return 'Enter the dispensary website as a complete http:// or https:// address.';
+      if (!s.onbMediaSame && (!s.onbMediaEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.onbMediaEmail.trim()))) return 'Enter a valid email for website and media updates.';
+    }
+    if (step === 4) {
+      if (!s.onbTermsReviewed) return 'Confirm that the Wholesale Terms of Sale were reviewed.';
+    }
+    return '';
+  }
+
+  onbGoStep(step) {
+    const target = Math.max(0, Math.min(5, Number(step) || 0));
+    if (target > this.state.onbStep) {
+      for (let current = this.state.onbStep; current < target; current += 1) {
+        const error = this.onbValidation(current);
+        if (error) { this.set({ onbErr: error, onbStep: current }); return; }
+      }
+    }
+    this.set({ onbStep: target, onbErr: null });
   }
 
   onbSetBud(i, field, v) {
@@ -11381,19 +11814,21 @@ class Component extends DCLogic {
       this.mountTurnstile();
       return;
     }
-    const miss = [];
-    if (!s.onbEntity.trim()) miss.push('the legal entity name');
+    for (let step = 0; step < 5; step += 1) {
+      const error = this.onbValidation(step);
+      if (error) { this.set({ onbErr: error, onbStep: step }); return; }
+    }
     const stores = s.onbStores.filter(store => store.name.trim() || store.license.trim() || store.address.trim());
-    if (!stores.length) miss.push('at least one store');
-    if (stores.some(store => !store.name.trim() || !store.license.trim())) miss.push('a name and licence number for every store');
-    if (!s.onbOwnerName.trim() || !s.onbOwnerEmail.trim()) miss.push('the owner\u2019s name and email');
-    if ((s.onbBuyerName.trim() && !s.onbBuyerEmail.trim()) || (!s.onbBuyerName.trim() && s.onbBuyerEmail.trim())) miss.push('both the buyer name and email, or neither');
     const submittedLicenses = new Set(stores.map(store => store.license.trim().toUpperCase()).filter(Boolean));
-    if (s.onbBuyerLoc && !submittedLicenses.has(s.onbBuyerLoc.trim().toUpperCase())) miss.push('a valid store for the buyer, or All qualified stores');
-    if (miss.length) { this.set({ onbErr: 'Still needed: ' + miss.join(', ') + '. Each store is qualified separately, so one missing licence never hides inside an organisation-wide record.' }); return; }
     const buds = s.onbBud.filter(b => b.name.trim() || b.email.trim());
     if (buds.some(b => !b.name.trim() || !b.email.trim() || !b.loc.trim() || !submittedLicenses.has(b.loc.trim().toUpperCase()))) { this.set({ onbErr: 'Every budtender row needs a name, email, and exactly one store from this request.' }); return; }
-    const locations = stores.map(store => ({ name: store.name.trim(), license: store.license.trim(), address: store.address.trim() }));
+    const locations = stores.map(store => ({ name: store.name.trim(), license: store.license.trim(),
+      licenseType: store.licenseType, licenseExpiresOn: usDateToIso(store.expires), address: store.address.trim() }));
+    const buyer = s.onbBuyerSame ? {} : { name: s.onbBuyerName.trim(), email: s.onbBuyerEmail.trim(),
+      phone: s.onbBuyerPhone.trim(), location: s.onbBuyerLoc.trim() };
+    const billing = s.onbBillingSame
+      ? { name: s.onbOwnerName.trim(), email: s.onbOwnerEmail.trim(), phone: s.onbOwnerPhone.trim() }
+      : { name: s.onbBillingName.trim(), email: s.onbBillingEmail.trim(), phone: s.onbBillingPhone.trim() };
     const clientRequestId = s.onbClientRequestId || this.newClientRequestId();
     this.set({ onbSubmitting: true, onbClientRequestId: clientRequestId, onbSent: false, onbErr: null });
     this.post('onboarding', {
@@ -11403,17 +11838,31 @@ class Component extends DCLogic {
       submissionType: s.onbType,
       legalEntity: s.onbEntity.trim(), dba: s.onbDba.trim(),
       locations,
-      locationsText: locations.map(store => [store.name, store.license, store.address].filter(Boolean).join(' · ')).join('\n'),
+      locationsText: locations.map(store => [store.name, store.license, store.licenseType, store.licenseExpiresOn, store.address].filter(Boolean).join(' · ')).join('\n'),
       owner: { name: s.onbOwnerName.trim(), email: s.onbOwnerEmail.trim(), phone: s.onbOwnerPhone.trim() },
-      buyer: { name: s.onbBuyerName.trim(), email: s.onbBuyerEmail.trim(), location: s.onbBuyerLoc.trim() },
+      buyer,
       budtenders: buds.map(b => ({ name: b.name.trim(), email: b.email.trim(), location: b.loc.trim() })),
       budtenderCount: buds.length,
+      partnerDetails: {
+        buyerSameAsPrimary: s.onbBuyerSame,
+        billing,
+        deliveryDays: s.onbDeliveryDays,
+        deliveryWindow: s.onbDeliveryWindow,
+        brands: s.onbBrands,
+        website: s.onbWebsite.trim(),
+        mediaEmail: (s.onbMediaSame ? s.onbOwnerEmail : s.onbMediaEmail).trim().toLowerCase(),
+        additionalContacts: s.onbAdditionalContacts.trim(),
+        termsReviewed: s.onbTermsReviewed
+      },
+      file: s.onbFileData ? { name: s.onbFileName, sizeBytes: s.onbFileSize,
+        contentType: s.onbFileType, base64: s.onbFileData } : null,
       stage: '01 Intake',
       submittedBy: s.authUser ? s.authUser.name : (s.onbOwnerEmail.trim() || 'Prospective store'),
       antiAbuseToken: s.authUser ? undefined : s.turnstileToken
     }, reply => {
       if (!s.authUser && TURNSTILE_SITE_KEY) this.resetTurnstile();
-      this.set({ onbSubmitting: false, onbSent: true, onbErr: null,
+      try { sessionStorage.removeItem(STORE_ONBOARDING_DRAFT_KEY); } catch (error) {}
+      this.set({ onbSubmitting: false, onbSent: true, onbErr: null, onbStep: 5, onbDraftSavedAt: '',
         onbReceipt: reply && reply.portalOnboardingRequestId ? reply.portalOnboardingRequestId : clientRequestId,
         onbClientRequestId: null,
         toast: 'Submitted and recorded. Nothing is approved by sending it \u2014 a licence is qualified against the state record by us, and terms are set before an account can order.', toastKind: 'SUBMITTED' });
@@ -11450,7 +11899,9 @@ class Component extends DCLogic {
       }));
       if (onFail) onFail(why, detail || {});
     };
-    fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) })
+    const call = s.authUser ? this.portalFetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) })
+      : fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body) });
+    call
       .then(r => r.text().then(t => ({ ok: r.ok, status: r.status, t: t })))
       .then(({ ok, status, t }) => {
         if (!ok) {
@@ -11562,10 +12013,12 @@ class Component extends DCLogic {
   }
   priced(p) { return this.priceFor(p) !== null; }
   actingOrg() {
-    const org = (this.state.impersonating && this.state.impersonating.org) || (this.state.authUser && this.state.authUser.org) || ACTING_ORG;
+    const workspace = (this.state.workspaces || []).find(row => row.id === this.state.activeWorkspaceId);
+    const org = (this.state.impersonating && this.state.impersonating.org) || (workspace && workspace.organization) || (this.state.authUser && this.state.authUser.org) || ACTING_ORG;
     return isDemoOrganization(org) ? DEMO_ORG : org;
   }
   availableLocations() {
+    if (this.state.activeWorkspace === 'store') return this.state.verifiedStoreLocations || [];
     if (this.state.role === 'internal' && !this.state.impersonating) return LOCATIONS.slice();
     const org = this.actingOrg();
     const pool = org === DEMO_ORG ? LOCATIONS.filter(location => location.demo) : LOCATIONS.filter(location => !location.demo);
@@ -11588,7 +12041,7 @@ class Component extends DCLogic {
   addLine(p, qty, lotIdx) {
     const lot = Math.min(lotIdx || 0, p.lots.length - 1);
     const requested = this.cleanQty(qty, 1);
-    const available = Number.isFinite(Number(p.availableQty)) ? Number(p.availableQty) : null;
+    const available = p.availableQty !== null && p.availableQty !== undefined && Number.isFinite(Number(p.availableQty)) ? Number(p.availableQty) : null;
     const safeQty = available === null ? requested : Math.max(1, Math.min(requested, Math.floor(available)));
     this.setState(st => {
       let target = st.drafts.find(d => d.id === st.activeDraft && d.loc === st.loc)
@@ -11630,7 +12083,7 @@ class Component extends DCLogic {
     if (!lines.length) return;
     const insufficient = lines.find(line => {
       const product = P(line.id);
-      if (!product || !Number.isFinite(Number(product.availableQty))) return false;
+      if (!product || product.availableQty === null || product.availableQty === undefined || !Number.isFinite(Number(product.availableQty))) return false;
       const requested = lines.filter(other => other.id === line.id).reduce((sum, other) => sum + other.qty, 0);
       return requested > Number(product.availableQty);
     });
@@ -11890,6 +12343,7 @@ class Component extends DCLogic {
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
       return [['dash', 'Dashboard', 'dash'], ['my-work', 'My Work', 'orders'], ['supply-orders', 'Supply Orders', 'cart'], ['locations', 'Store Performance', 'accounts'], ['inventory', 'Inventory', 'catalog'], ['data-controls', 'Data Control Center', 'lineage'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Pricing and Discounts', 'economics'], ['sku-intake', 'SKU Intake', 'catalog'], ['brand-applications', 'Brand Applications', 'accounts'], ['brand-purchase-order-admin', 'Brand Purchase Orders', 'orders'], ['work-queue', 'Work Queues', 'orders'], ['receivables', 'Financials', 'economics'], ['brands', 'Brand Administration', 'accounts'], ['field', 'Kiosk Modes', 'kiosk'], ['admin', 'Users and Access', 'admin'], ['auditlog', 'Audit History', 'audit']]
+        .flatMap((item,index) => index === 1 && this.state.authUser && this.state.authUser.staffRole === 'administrator' ? [item,['store-demo', 'Store Demo', 'accounts']] : [item])
         .filter(([id]) => {
           const requirement = INTERNAL_ROUTE_PERMISSION[id];
           return !requirement || (Array.isArray(requirement)
@@ -12158,6 +12612,38 @@ class Component extends DCLogic {
       || s.drafts.find(d => d.loc === s.loc) || null;
     const cart = activeDraftObj ? activeDraftObj.lines : [];
     const narrow = s.vw < 820;
+    const onboardingStores = (s.onbStores || []).filter(store => String(store.name || '').trim() || String(store.license || '').trim() || String(store.address || '').trim());
+    const requiredLocationValues = onboardingStores.reduce((count, store) => count
+      + [store.name, store.license, store.licenseType, store.expires, store.address].filter(value => String(value || '').trim()).length, 0);
+    const locationRequirementCount = Math.max(5, onboardingStores.length * 5);
+    const contactValues = [s.onbOwnerName, s.onbOwnerEmail, s.onbOwnerPhone,
+      ...(s.onbBuyerSame ? [] : [s.onbBuyerName, s.onbBuyerEmail, s.onbBuyerPhone]),
+      ...(s.onbBillingSame ? [] : [s.onbBillingName, s.onbBillingEmail, s.onbBillingPhone])];
+    const onbProgress = [
+      s.onbEntity.trim() ? 100 : 0,
+      Math.round(100 * requiredLocationValues / locationRequirementCount),
+      Math.round(100 * contactValues.filter(value => String(value || '').trim()).length / Math.max(1, contactValues.length)),
+      s.onbBrands.length ? 100 : 0,
+      s.onbTermsReviewed ? 100 : 0
+    ];
+    onbProgress.forEach((progress, index) => {
+      if (progress >= 100 && this.onbValidation(index)) onbProgress[index] = 90;
+    });
+    onbProgress.push(Math.round(onbProgress.reduce((sum, value) => sum + value, 0) / onbProgress.length));
+    const onbSectionDefinitions = [
+      ['Company Profile', 'Tell us which legal business is requesting the Store workspace.'],
+      ['Store & Licence', 'Add every licensed location that should be qualified for this account.'],
+      ['Contacts & Access', 'Define the owner, buyer, billing contact, and optional budtender access.'],
+      ['Delivery & Commercial', 'Share delivery preferences, brand interest, and commercial contact details.'],
+      ['Documents & Terms', 'Attach the optional primary licence and confirm the current wholesale terms were reviewed.'],
+      ['Review & Submit', 'Check the complete request, verify it, and send one protected intake record.']
+    ];
+    const onbStatusFor = progress => progress >= 100 ? 'READY' : progress > 0 ? 'IN PROGRESS' : 'NOT STARTED';
+    const onbOverallProgress = onbProgress[5];
+    const onbDraftDate = s.onbDraftSavedAt ? new Date(s.onbDraftSavedAt) : null;
+    const onbDraftStatus = onbDraftDate && !isNaN(onbDraftDate.getTime())
+      ? 'SAVED ' + onbDraftDate.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).toUpperCase()
+      : 'NOT SAVED YET';
     const brandApplicationSnapshot = s.brandApplicationData || {};
     const brandApplicationRecord = brandApplicationSnapshot.application || {};
     const brandApplicationSections = Array.isArray(brandApplicationSnapshot.sections) ? brandApplicationSnapshot.sections : [];
@@ -12216,6 +12702,47 @@ class Component extends DCLogic {
     const isKioskRole = role === 'budtender' && isStoreWorkspace;
     const staffPermissions = s.authUser && Array.isArray(s.authUser.permissions) ? s.authUser.permissions : [];
     const canStaff = permission => isInternal && staffPermissions.includes(permission);
+    const storeDemo = s.storeDemoData || {};
+    const storeDemoRole = s.storeDemoRole || 'owner';
+    const storeDemoTab = s.storeDemoTab || 'catalog';
+    const storeDemoButton = 'padding:9px 12px;border:1px solid var(--ux-faint);background:#fff;color:var(--ux-ink);font:600 12px Archivo,sans-serif;cursor:pointer';
+    const storeDemoPrimary = storeDemoButton + ';background:var(--ux-accent);border-color:var(--ux-accent);color:#fff';
+    const storeDemoInput = 'display:block;width:100%;padding:9px;margin:5px 0;border:1px solid var(--ux-faint);background:#fff;font:12px Archivo,sans-serif';
+    const storeDemoProducts = (storeDemo.products || []).filter(p => !s.storeDemoBrand || s.storeDemoBrand === 'all' || p.brand === s.storeDemoBrand).map(p => ({ ...p,
+      price: MONEY(p.priceCents), quantity: (s.storeDemoQuantities || {})[p.id] ?? 1, quantityLabel: 'Quantity for ' + p.name,
+      availability: p.released ? (storeDemoRole === 'budtender' ? 'Product Education' : p.available + ' Units Available') : 'Pre-Order · Fulfillment Held',
+      onQuantity: e => this.setState(st => ({ storeDemoQuantities: { ...(st.storeDemoQuantities || {}), [p.id]: e.target.value } })),
+      onAdd: () => this.storeDemoAdd(p) }));
+    const storeDemoCart = (s.storeDemoCart || []).map(l => {
+      const p = (storeDemo.products || []).find(p => p.id === l.productId) || {};
+      return { ...l, name: p.name || l.productId, total: MONEY(Number(l.quantity) * Number(p.priceCents || 0)), quantityLabel: 'Cart quantity for ' + p.name,
+        onQuantity: e => this.setState(st => ({ storeDemoCart: (st.storeDemoCart || []).map(row => row.productId === l.productId ? { ...row, quantity: e.target.value } : row) })),
+        onRemove: () => this.setState(st => ({ storeDemoCart: (st.storeDemoCart || []).filter(row => row.productId !== l.productId) })) };
+    });
+    const demoFieldLabels = { legalName: 'Legal Business Name *', dba: 'DBA', ownerName: 'Owner Name *', ownerEmail: 'Owner Email *', buyerEmail: 'Buyer Email', billingEmail: 'Billing Email *', billingAddress: 'Billing Address *', businessType: 'Business Type *', locationName: 'Location Names *', licenseReference: 'Synthetic License Reference *', expiration: 'Demo Expiration (MM/DD/YYYY) *', attestation: 'Attestation *' };
+    const storeDemoSections = (storeDemo.sections || []).map(section => {
+      const editable = storeDemoRole === 'owner' && ['draft','returned'].includes(section.status);
+      const draft = (s.storeDemoSectionDrafts || {})[section.id] || {};
+      return { ...section, readOnly: !editable, canEdit: editable, canReview: storeDemoRole === 'internal' && section.status === 'submitted',
+        status: String(section.status).replace(/_/g, ' ').toUpperCase(), reviewNote: (s.storeDemoReviewNotes || {})[section.id] || '',
+        fields: section.fields.map(key => ({ label: demoFieldLabels[key] || key,
+          value: draft[key] !== undefined ? draft[key] : key === 'expiration' ? isoDateToUs(section.values[key]) : section.values[key] || '',
+          onInput: e => this.setState(st => ({ storeDemoSectionDrafts: { ...(st.storeDemoSectionDrafts || {}), [section.id]: { ...((st.storeDemoSectionDrafts || {})[section.id] || {}), [key]: e.target.value } } })) })),
+        onSave: () => this.storeDemoSaveSection(section, false), onSubmit: () => this.storeDemoSaveSection(section, true),
+        onNote: e => this.setState(st => ({ storeDemoReviewNotes: { ...(st.storeDemoReviewNotes || {}), [section.id]: e.target.value } })),
+        onApprove: () => this.storeDemoCall('review-section', { sectionId: section.id, decision: 'approved', note: (s.storeDemoReviewNotes || {})[section.id] || '' }),
+        onReturn: () => this.storeDemoCall('review-section', { sectionId: section.id, decision: 'returned', note: (s.storeDemoReviewNotes || {})[section.id] || '' }) };
+    });
+    const storeDemoOrderRows = (storeDemo.orders || []).filter(o => o.storeId === s.storeDemoStore).map(o => {
+      const decisions = storeDemoRole === 'owner' && o.status === 'awaiting_owner' ? [['ordered','Approve Buyer Order'],['declined','Decline']]
+        : storeDemoRole === 'internal' ? ({ ordered: [['approved','Approve Order']], approved: [['shipped','Mark Shipped']], shipped: [['delivered','Mark Delivered']] }[o.status] || []) : [];
+      return { ...o, location: ((storeDemo.stores || []).find(t => t.id === o.storeId) || {}).name || '',
+        status: ({ awaiting_owner: 'Awaiting Owner Approval', ordered: 'Ordered', approved: 'Approved', shipped: 'Shipped', delivered: 'Delivered', declined: 'Declined' })[o.status] || o.status,
+        total: MONEY(o.totalCents), linesLabel: (o.lines || []).map(l => l.name + ' × ' + l.quantity + (l.preorder ? ' (Pre-Order)' : '')).join(' · '),
+        reviewLabel: (o.reviewedBy ? 'Reviewed by ' + o.reviewedBy + ' · ' : '') + formatDateUs(o.updatedAt || o.createdAt),
+        actions: decisions.map(([decision,label]) => ({ label, onClick: () => this.storeDemoCall('transition-order', { orderId: o.id, decision }) })) };
+    });
+    const storeDemoFinance = storeDemo.finance || {};
     const dataControlData = s.dataControlData || {};
     const dataControlSummaryData = dataControlData.summary || {};
     const dataControlTab = ['owners', 'package_lots', 'sku_master', 'items', 'lots', 'cost_objects', 'catalog', 'history'].includes(s.dataControlTab)
@@ -12326,7 +12853,7 @@ class Component extends DCLogic {
       ';border:0;border-left:' + (active ? '3px solid var(--ux-accent)' : '3px solid transparent') +
       ';padding:11px 20px;font:' + (active ? '700' : '500') + ' 13.5px Archivo,sans-serif;color:var(--ux-ink);cursor:pointer';
 
-    const badges = { cart: cart.length, orders: pendingApproval.length, notifications: s.notifRead ? 0 : 3 };
+    const badges = { cart: cart.length, orders: pendingApproval.length, notifications: 0 };
     const nav = this.navFor(role, staffPermissions, activeWorkspaceType, workspaceRole).map(([id, label, icon]) => {
       const n = badges[id] || 0;
       return {
@@ -12338,7 +12865,7 @@ class Component extends DCLogic {
       };
     });
     const internalNavGroupDefinitions = [
-      { label: 'Overview', ids: ['dash', 'my-work', 'locations'] },
+      { label: 'Overview', ids: ['dash', 'my-work', 'locations', 'store-demo'] },
       { label: 'Inventory and Products', ids: ['inventory', 'data-controls', 'catalog', 'field', 'lineage', 'qa', 'sku-intake'] },
       { label: 'Orders and Accounts', ids: ['supply-orders', 'pricing', 'brand-applications', 'brand-purchase-order-admin', 'work-queue', 'receivables', 'accounts', 'brands', 'onboarding'] },
       { label: 'Administration', ids: ['admin', 'auditlog'] }
@@ -12587,7 +13114,7 @@ class Component extends DCLogic {
       name: p.name, brand: p.brand, cat: p.cat, format: p.format, sku: p.sku, band: p.band, catDot: catDot(p.cat, 9),
       summary: (p.content && p.content.shortDescription) || 'Product identity and release state are available; product education has not yet been published from the Portal.',
       imageUrl: p.content && p.content.imageUrl || '', hasImage: !!(p.content && p.content.imageUrl), noImage: !(p.content && p.content.imageUrl),
-      releaseLabel: p.oos && p.source === 'Canix' ? 'ALLOCATED · INTERNAL ONLY' : p.preorder ? 'PRE-ORDER · AWAITING RELEASE' : p.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
+      releaseLabel: p.oos && p.source === 'Canix' ? 'ALLOCATED · INTERNAL ONLY' : p.preorder ? 'PRE-ORDER · AWAITING RELEASE' : p.source === 'Canix' && p.marketplace ? 'CANIX MARKETPLACE · RELEASED' : p.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
       isFav: s.favs.indexOf(p.id) !== -1,
       favStyle: 'background:transparent;border:1px solid rgba(23,14,11,.25);padding:8px 10px;font:700 12px Archivo,sans-serif;cursor:pointer;color:' + (s.favs.indexOf(p.id) !== -1 ? 'var(--ux-accent-text)' : 'var(--ux-muted)'),
       favLabel: s.favs.indexOf(p.id) !== -1 ? 'Saved' : 'Save',
@@ -12643,7 +13170,7 @@ class Component extends DCLogic {
       amount: MONEY(Number(row.priceCents) || 0), when: 'Published ' + pricingDate(row.publishedAt)
     })).concat(pricingDefaultRows.map(row => ({
       product: row.productName || 'Unnamed product', sku: row.sku || row.productId || 'SKU not recorded',
-      store: 'Default wholesale list', amount: MONEY(Number(row.unitPriceCents) || 0),
+      store: row.priceSource === 'canix_marketplace' ? 'Canix Marketplace' : 'Default wholesale list', amount: MONEY(Number(row.unitPriceCents) || 0),
       when: 'Published ' + pricingDate(row.publishedAt)
     })));
     const wholesaleStatusLabels = {
@@ -12834,12 +13361,8 @@ class Component extends DCLogic {
 
     const dashRows = isInternal
       ? [{ a: 'Retailer account queue', b: 'Review connected QuickBooks accounts and store readiness', c: 'Account controls', tag: 'REVIEW', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'accounts' }) },
-           { a: 'Orders needing movement', b: pendingApproval.length + ' awaiting store approval', c: 'Order queue', tag: 'ORDERS', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
-           { a: 'Packages with no lot identifier', b: 'Tag used as lot identity', c: '1,161 packages', tag: 'INTEGRITY', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'qa' }) },
-           { a: 'Cost coverage below threshold', b: 'Labor cost effectively unpopulated', c: '75% of packages', tag: 'BLOCKED', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ screen: 'economics' }) }]
-      : [{ a: 'Apple Motorbreath 1g Cart', b: 'Last ordered 34 days ago', c: 'HLNV-000001', tag: 'REORDER', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ product: 'p1', lot: 0, screen: 'product' }) },
-         { a: 'New York Sunrise Gummies 10ct', b: 'Last ordered 41 days ago', c: 'WRAE-000007', tag: 'REORDER', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ product: 'p4', lot: 0, screen: 'product' }) },
-         { a: pendingApproval.length ? pendingApproval[0].id : 'No orders awaiting approval', b: pendingApproval.length ? 'Buyer-submitted, needs the owner' : 'Nothing pending', c: 'Approvals', tag: pendingApproval.length ? 'ACTION' : 'CLEAR', tagStyle: pendingApproval.length ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
+           { a: 'Orders needing movement', b: pendingApproval.length + ' awaiting store approval', c: 'Order queue', tag: 'ORDERS', tagStyle: 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) }]
+      : [{ a: pendingApproval.length ? pendingApproval[0].id : 'No orders awaiting approval', b: pendingApproval.length ? 'Buyer-submitted, needs the owner' : 'Nothing pending', c: 'Approvals', tag: pendingApproval.length ? 'ACTION' : 'CLEAR', tagStyle: pendingApproval.length ? 'background:var(--ux-signal);color:#fff' : 'background:var(--ux-surface);color:var(--ux-muted-strong)', onOpen: () => this.set({ screen: 'orders' }) },
          { a: 'License review', b: 'Ordering pauses only at a location whose license is no longer current', c: 'Store-specific gate', tag: 'ACTION', tagStyle: 'background:var(--ux-signal);color:#fff', onOpen: () => this.set({ screen: 'documents' }) }];
 
     const od = s.order ? s.orders.find(o => o.id === s.order) : null;
@@ -13036,9 +13559,9 @@ class Component extends DCLogic {
       return {
         ...effective,
         canImpersonate: canStaff('users.manage') && !s.impersonating && retailerIdentity && !isDeactivated,
-        canChangeRole: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity,
-        canDeactivate: (isInternal ? canStaff('users.manage') : role === 'owner') && ownOrg && !s.impersonating && retailerIdentity && !isDeactivated,
-        canReactivate: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && retailerIdentity && isDeactivated,
+        canChangeRole: false,
+        canDeactivate: false,
+        canReactivate: false,
         canRemoveTest: isInternal && canStaff('users.manage') && ownOrg && !s.impersonating && !!effective.testDemo,
         role: isDeactivated ? effective.role + testLabel + accountTypeLabel + expiryLabel + expiredLabel + ' \u00b7 deactivated' : effective.role + testLabel + accountTypeLabel + expiryLabel + expiredLabel,
         roleStyle: 'display:inline-block;white-space:nowrap;font:600 10px ui-monospace,monospace;letter-spacing:.05em;padding:3px 7px;background:' + (effective.testDemo ? 'var(--ux-signal)' : effective.role === 'Kiosk device' ? 'var(--ux-surface)' : 'var(--ux-ink)') + ';color:' + (effective.testDemo || effective.role !== 'Kiosk device' ? 'var(--ux-ground)' : 'var(--ux-muted-strong)'),
@@ -13251,23 +13774,8 @@ class Component extends DCLogic {
       onDismiss: () => this.resolveAccessReview(review, 'dismiss')
     }));
 
-    const notificationTag = s.recallTag || (loc.demo ? DEMO_RECALL_TAG : RECALL_TAG);
-    const notifications = [
-      ...(s.coaAmended ? [{ kind: 'AMENDED COA \u00b7 CANNOT BE MUTED', title: 'A COA has been amended on a lot you received',
-        body: 'Version 2 is now current for tag \u2026' + notificationTag.slice(-8) + '. Version 1 stays resolvable. The notice carries the wording urbanXtracts compliance has approved; the portal does not interpret a result.',
-        when: TODAY, onOpen: () => this.set({ product: loc.demo ? 'p4' : 'p1', lot: loc.demo ? 0 : 1, screen: 'product' }) }] : []),
-      ...(s.recallIssued ? [{ kind: 'RECALL NOTICE \u00b7 CANNOT BE MUTED', title: 'A lot you received has been withdrawn',
-        body: 'Tag \u2026' + notificationTag.slice(-8) + '. The approved wording appears on the affected order, where you can acknowledge on behalf of your organisation.',
-        when: TODAY, onOpen: () => this.set({ screen: 'records' }) }] : []),
-      ...(loc.demo
-        ? [{ kind: 'ORDER STATE', title: 'DEMO-SO-1009 is on a release hold', body: 'Approved pre-order at Demo Northgate; processing waits for Canix release.', when: '31 Aug 2026', onOpen: () => this.set({ loc: 'l-demo-3', order: 'DEMO-SO-1009', screen: 'order' }) },
-           { kind: 'LICENSE', title: 'Demo Northgate license is expired', body: 'Ordering pauses at that store only. The other demo stores remain reachable.', when: '31 Aug 2026', onOpen: () => this.set({ loc: 'l-demo-3', screen: 'cart' }) },
-           { kind: 'RECEIVABLES', title: 'Demo Riverside balance is past due', body: 'The synthetic QuickBooks balance is visible to allowed roles. A separate explicit demo account hold blocks submission.', when: '31 Aug 2026', onOpen: () => this.set({ loc: 'l-demo-2', screen: 'receivables' }) }]
-        : [{ kind: 'ORDER STATE', title: 'No fallback order notice', body: 'Connected order events appear here after they are returned for the signed-in organization.', when: 'Live source', onOpen: () => this.set({ screen: 'orders' }) },
-           { kind: 'LICENSE', title: 'License notices are store-specific', body: 'Ordering pauses only at the affected store when its current license evidence lapses.', when: 'Policy', onOpen: () => this.set({ screen: 'documents' }) },
-           { kind: 'RECEIVABLES', title: 'QuickBooks balances are read-only', body: 'A displayed balance does not create or clear the separate portal ordering gate.', when: 'Policy', onOpen: () => this.set({ screen: 'receivables' }) }])
-    ];
-
+    // Store inbox delivery is held; policy examples are not real events.
+    const notifications = [];
     const compareRows = [
       { label: 'Category', a: PRODUCTS[0].cat, b: PRODUCTS[3].cat },
       { label: 'Format', a: PRODUCTS[0].format, b: PRODUCTS[3].format },
@@ -13460,7 +13968,7 @@ class Component extends DCLogic {
       accountPilotCheck(selectedRetailerLinked, false, 'Portal retailer account',
         selectedRetailerLinked ? 'Qualification record linked to the QuickBooks parent.' : 'Start qualification from this parent customer.'),
       accountPilotCheck(selectedRetailerStores.length > 0, false, 'Licensed stores',
-        selectedRetailerStores.length ? selectedRetailerStores.length + ' of 10 store records created.' : 'Add the first licensed store after qualification starts.'),
+        selectedRetailerStores.length ? selectedRetailerStores.length + ' of 25 store records created.' : 'Add the first licensed store after qualification starts.'),
       accountPilotCheck(selectedRetailerStores.length > 0 && selectedEvidenceReadyStores === selectedRetailerStores.length, false, 'Source evidence',
         selectedRetailerStores.length ? selectedEvidenceReadyStores + ' of ' + selectedRetailerStores.length + ' stores have a compatible QuickBooks identity and current expiration.' : 'Waiting for a store record.'),
       accountPilotCheck(selectedOrderReadyStores > 0, false, 'Store ordering',
@@ -16372,9 +16880,9 @@ class Component extends DCLogic {
       brandApplicationSubmitAllStyle: 'background:var(--ux-ink);color:#fff;border:0;padding:11px 14px;font:700 11px Archivo,sans-serif;cursor:'
         + ((!brandApplicationAllSubmitted || s.brandApplicationPending || ['submitted', 'qualification_review', 'approved', 'rejected'].includes(String(brandApplicationRecord.status || ''))) ? 'not-allowed;opacity:.45' : 'pointer;opacity:1'),
       onBrandApplicationSubmitAll: () => this.submitBrandApplication(),
-      isOnboard: s.screen === 'onboard',
+      isOnboard: s.screen === 'onboard', isLegacyOnboard: false,
       goLicense: () => this.set({ screen: 'license', licSent: false, licErr: null }),
-      goOnboard: () => this.set({ screen: 'onboard', onbSent: false, onbErr: null, onbReceipt: null,
+      goOnboard: () => this.set({ screen: 'onboard', onbStep: 0, onbSent: false, onbErr: null, onbReceipt: null,
         turnstileToken: '', turnstileError: null }),
       goBrandApplication: () => this.openBrandApplication(),
       backFromOnboard: () => this.set({ screen: s.authUser ? 'dash' : 'signin', turnstileToken: '', turnstileError: null }),
@@ -16393,30 +16901,76 @@ class Component extends DCLogic {
       licFileLabel: s.licFileName ? s.licFileName + ' \u00b7 ' + Math.max(1, Math.round(s.licFileSize / 1024)) + ' KB ready' : 'No document chosen',
       licHasErr: !!s.licErr, licErr: s.licErr || '',
       licSent: s.licSent, onLicSubmit: () => this.licSubmit(),
+      onbOverallProgress,
+      onbOverallBarStyle: 'display:block;width:' + onbOverallProgress + '%;height:100%;background:var(--ux-accent)',
+      onbDraftStatus,
+      onbWorkspaceStyle: 'display:grid;grid-template-columns:' + (narrow ? '1fr' : '220px minmax(0,1fr) 230px') + ';gap:14px;align-items:start',
+      onbStepTabs: onbSectionDefinitions.map(([label], index) => ({
+        label, number: String(index + 1).padStart(2, '0'), current: s.onbStep === index ? 'step' : 'false',
+        status: onbStatusFor(onbProgress[index]),
+        barStyle: 'display:block;width:' + onbProgress[index] + '%;height:100%;background:' + (onbProgress[index] >= 100 ? 'var(--ux-accent)' : 'var(--ux-ink)'),
+        style: 'min-width:135px;text-align:left;border:1px solid ' + (s.onbStep === index ? 'var(--ux-ink)' : 'rgba(23,14,11,.18)')
+          + ';padding:10px 11px;font:700 10px Archivo,sans-serif;cursor:pointer;background:' + (s.onbStep === index ? 'var(--ux-ink)' : '#fff')
+          + ';color:' + (s.onbStep === index ? '#fff' : 'var(--ux-ink)'),
+        onPick: () => this.onbGoStep(index)
+      })),
+      onbSectionCards: onbSectionDefinitions.map(([title], index) => ({
+        title, number: String(index + 1).padStart(2, '0'), progress: onbProgress[index], status: onbStatusFor(onbProgress[index]),
+        current: s.onbStep === index ? 'step' : 'false',
+        style: 'width:100%;display:grid;grid-template-columns:26px 1fr;text-align:left;gap:5px;border:0;border-bottom:1px solid rgba(23,14,11,.12);padding:11px 10px;cursor:pointer;background:'
+          + (s.onbStep === index ? 'var(--ux-surface)' : '#fff') + ';border-left:' + (s.onbStep === index ? '4px solid var(--ux-accent)' : '4px solid transparent'),
+        onPick: () => this.onbGoStep(index)
+      })),
+      onbActiveTitle: onbSectionDefinitions[s.onbStep][0], onbActiveDescription: onbSectionDefinitions[s.onbStep][1],
+      onbActiveProgress: onbProgress[s.onbStep], onbActiveStatus: 'SECTION ' + String(s.onbStep + 1).padStart(2, '0') + ' · ' + onbStatusFor(onbProgress[s.onbStep]),
+      onbReadiness: [
+        ['Business', s.onbEntity.trim() ? 'READY' : 'NEEDED'],
+        ['Locations', onboardingStores.length ? String(onboardingStores.length) : 'NEEDED'],
+        ['Primary contact', s.onbOwnerEmail.trim() ? 'READY' : 'NEEDED'],
+        ['Brands', s.onbBrands.length ? String(s.onbBrands.length) : 'NEEDED'],
+        ['Terms', s.onbTermsReviewed ? 'REVIEWED' : 'NEEDED'],
+        ['Licence file', s.onbFileName ? 'READY' : 'OPTIONAL']
+      ].map(([label, value]) => ({ label, value, style: 'font:700 8.5px ui-monospace,monospace;color:' + (value === 'NEEDED' ? 'var(--ux-signal-text)' : 'var(--ux-accent-text)') })),
+      onbStepCompany: s.onbStep === 0, onbStepStores: s.onbStep === 1, onbStepContacts: s.onbStep === 2,
+      onbStepCommercial: s.onbStep === 3, onbStepDocuments: s.onbStep === 4, onbStepReview: s.onbStep === 5,
+      onbCanBackStep: s.onbStep > 0, onbCanNextStep: s.onbStep < 5,
+      onOnbBackStep: () => this.onbGoStep(s.onbStep - 1), onOnbNextStep: () => this.onbGoStep(s.onbStep + 1),
+      onOnbSaveDraft: () => this.onbSaveDraft(false),
+      onbNextStepLabel: ['Continue to stores','Continue to contacts','Continue to commercial','Continue to documents','Review request'][s.onbStep] || 'Continue',
       onbTypes: ['New store', 'Existing store, people change', 'Existing store, new location'].map(t => ({
         label: t, style: 'padding:9px 12px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.onbType === t ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
-        onPick: () => this.set({ onbType: t }) })),
-      onbEntity: s.onbEntity, onOnbEntity: e => this.set({ onbEntity: e.target.value }),
-      onbDba: s.onbDba, onOnbDba: e => this.set({ onbDba: e.target.value }),
+        pressed: s.onbType === t ? 'true' : 'false', onPick: () => this.set({ onbType: t, onbErr: null }) })),
+      onbEntity: s.onbEntity, onOnbEntity: e => this.set({ onbEntity: e.target.value, onbErr: null }),
+      onbDba: s.onbDba, onOnbDba: e => this.set({ onbDba: e.target.value, onbErr: null }),
       onbStores: s.onbStores.map((store, i) => ({
-        n: String(i + 1), name: store.name, license: store.license, address: store.address,
+        n: String(i + 1), name: store.name, license: store.license, licenseType: store.licenseType || 'Dispensary', expires: store.expires || '', address: store.address,
         onName: e => this.onbSetStore(i, 'name', e.target.value),
-        onLicense: e => this.onbSetStore(i, 'license', e.target.value),
+        onLicense: e => this.onbSetStore(i, 'license', String(e.target.value || '').toUpperCase()),
+        onLicenseType: e => this.onbSetStore(i, 'licenseType', e.target.value),
+        onExpires: e => this.onbSetStore(i, 'expires', e.target.value),
         onAddress: e => this.onbSetStore(i, 'address', e.target.value),
         canRemove: s.onbStores.length > 1, onRemove: () => this.onbRemoveStore(i)
       })),
       onbLocationOptions: s.onbStores.filter(store => store.name.trim() && store.license.trim()).map(store => ({
         value: store.license.trim(), label: store.name.trim() + ' · ' + store.license.trim().toUpperCase()
       })),
-      onbStoreCount: s.onbStores.length + ' of 10', onbCanAddStore: s.onbStores.length < 10,
+      onbStoreCount: s.onbStores.length + ' of 25', onbCanAddStore: s.onbStores.length < 25,
       onAddStore: () => this.onbAddStore(),
-      onbOwnerName: s.onbOwnerName, onOnbOwnerName: e => this.set({ onbOwnerName: e.target.value }),
-      onbOwnerEmail: s.onbOwnerEmail, onOnbOwnerEmail: e => this.set({ onbOwnerEmail: e.target.value }),
-      onbOwnerPhone: s.onbOwnerPhone, onOnbOwnerPhone: e => this.set({ onbOwnerPhone: e.target.value }),
-      onbBuyerName: s.onbBuyerName, onOnbBuyerName: e => this.set({ onbBuyerName: e.target.value }),
-      onbBuyerEmail: s.onbBuyerEmail, onOnbBuyerEmail: e => this.set({ onbBuyerEmail: e.target.value }),
-      onbBuyerLoc: s.onbBuyerLoc, onOnbBuyerLoc: e => this.set({ onbBuyerLoc: e.target.value }),
+      onbOwnerName: s.onbOwnerName, onOnbOwnerName: e => this.set({ onbOwnerName: e.target.value, onbErr: null }),
+      onbOwnerEmail: s.onbOwnerEmail, onOnbOwnerEmail: e => this.set({ onbOwnerEmail: e.target.value, onbErr: null }),
+      onbOwnerPhone: s.onbOwnerPhone, onOnbOwnerPhone: e => this.set({ onbOwnerPhone: e.target.value, onbErr: null }),
+      onbBuyerSame: s.onbBuyerSame, onbBuyerSeparate: !s.onbBuyerSame,
+      onOnbBuyerSame: e => this.set({ onbBuyerSame: e.target.checked, onbErr: null }),
+      onbBuyerName: s.onbBuyerName, onOnbBuyerName: e => this.set({ onbBuyerName: e.target.value, onbErr: null }),
+      onbBuyerEmail: s.onbBuyerEmail, onOnbBuyerEmail: e => this.set({ onbBuyerEmail: e.target.value, onbErr: null }),
+      onbBuyerPhone: s.onbBuyerPhone, onOnbBuyerPhone: e => this.set({ onbBuyerPhone: e.target.value, onbErr: null }),
+      onbBuyerLoc: s.onbBuyerLoc, onOnbBuyerLoc: e => this.set({ onbBuyerLoc: e.target.value, onbErr: null }),
+      onbBillingSame: s.onbBillingSame, onbBillingSeparate: !s.onbBillingSame,
+      onOnbBillingSame: e => this.set({ onbBillingSame: e.target.checked, onbErr: null }),
+      onbBillingName: s.onbBillingName, onOnbBillingName: e => this.set({ onbBillingName: e.target.value, onbErr: null }),
+      onbBillingEmail: s.onbBillingEmail, onOnbBillingEmail: e => this.set({ onbBillingEmail: e.target.value, onbErr: null }),
+      onbBillingPhone: s.onbBillingPhone, onOnbBillingPhone: e => this.set({ onbBillingPhone: e.target.value, onbErr: null }),
       onbBuds: s.onbBud.map((b, i) => ({
         n: String(i + 1), name: b.name, email: b.email, loc: b.loc,
         onName: e => this.onbSetBud(i, 'name', e.target.value),
@@ -16426,6 +16980,41 @@ class Component extends DCLogic {
       onbCount: s.onbBud.length + ' of 5',
       onbAtCap: s.onbBud.length >= 5, onbUnderCap: s.onbBud.length < 5,
       onAddBud: () => this.onbAddBud(),
+      onbDeliveryDayOptions: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(label => ({
+        label, checked: s.onbDeliveryDays.includes(label), onPick: () => this.onbToggleList('onbDeliveryDays', label),
+        style: 'display:flex;gap:6px;align-items:center;padding:8px 10px;border:1px solid rgba(23,14,11,.24);font:11px Archivo,sans-serif;background:'
+          + (s.onbDeliveryDays.includes(label) ? 'var(--ux-surface)' : '#fff')
+      })),
+      onbDeliveryWindow: s.onbDeliveryWindow, onOnbDeliveryWindow: e => this.set({ onbDeliveryWindow: e.target.value, onbErr: null }),
+      onbBrandOptions: [
+        'urbanXtracts (Flower and Concentrates)', 'Made in Xiaolin (Cannagars)', 'Wana (Gummies)', 'Rosa Reta (Vapes)',
+        'HoneyPot (Edibles)', 'Satori (Vapes, Edibles)', 'Moondust (Vapes)', 'Cannaprints (Dots)',
+        'Royal Genetics (Vapes, Edibles)', 'Cannatella (Edibles)', 'Jerry Garcia Brand (Infused Pre-Rolls)',
+        "Joke 'N Toke (Flower Chillums)", 'Leilala & Watson (Rosin Gummies)', 'Flash (Vapes)', 'PAX (Vapes)',
+        'Fernway (Vapes)', 'Olio (Concentrates)', 'Wynk (Beverages)', 'Doobie Labs (Vapes)', 'RAD (Vapes)',
+        'Issa Vibe (Vapes)', 'Kahuna (Ice Pops)', 'Cheetah (Vapes)'
+      ].map(label => ({ label, checked: s.onbBrands.includes(label), onPick: () => this.onbToggleList('onbBrands', label),
+        style: 'display:flex;gap:7px;align-items:flex-start;padding:7px 8px;border:1px solid rgba(23,14,11,.16);font:10.5px/1.35 Archivo,sans-serif;background:'
+          + (s.onbBrands.includes(label) ? 'var(--ux-surface)' : '#fff') })),
+      onbWebsite: s.onbWebsite, onOnbWebsite: e => this.set({ onbWebsite: e.target.value, onbErr: null }),
+      onbMediaSame: s.onbMediaSame, onbMediaSeparate: !s.onbMediaSame,
+      onOnbMediaSame: e => this.set({ onbMediaSame: e.target.checked, onbErr: null }),
+      onbMediaEmail: s.onbMediaEmail, onOnbMediaEmail: e => this.set({ onbMediaEmail: e.target.value, onbErr: null }),
+      onbAdditionalContacts: s.onbAdditionalContacts, onOnbAdditionalContacts: e => this.set({ onbAdditionalContacts: e.target.value, onbErr: null }),
+      onbTermsReviewed: s.onbTermsReviewed, onOnbTermsReviewed: e => this.set({ onbTermsReviewed: e.target.checked, onbErr: null }),
+      onOnbFile: e => this.onbPickFile(e),
+      onbFileLabel: s.onbFileName ? s.onbFileName + ' · ' + Math.max(1, Math.round(s.onbFileSize / 1024)) + ' KB ready for protected scanning' : 'PDF, PNG, or JPEG · 2 MB maximum. Additional location documents can be supplied during qualification.',
+      onbReviewBusiness: s.onbEntity || 'Business name not entered',
+      onbReviewRequest: s.onbType + (s.onbDba ? ' · DBA ' + s.onbDba : ''),
+      onbReviewContact: s.onbOwnerName || 'Primary contact not entered',
+      onbReviewContactMeta: [s.onbOwnerEmail, s.onbOwnerPhone].filter(Boolean).join(' · '),
+      onbReviewStores: s.onbStores.filter(store => store.name.trim() || store.license.trim()).map(store => ({
+        name: store.name || 'Unnamed location', address: store.address || 'Address missing',
+        license: String(store.license || '').toUpperCase(), licenseMeta: (store.licenseType || 'Licence type missing') + ' · expires ' + (store.expires || 'not set')
+      })),
+      onbReviewBuyer: s.onbBuyerSame ? 'Primary contact is the buyer' : [s.onbBuyerName, s.onbBuyerEmail].filter(Boolean).join(' · '),
+      onbReviewDelivery: (s.onbDeliveryDays.length ? s.onbDeliveryDays.join(', ') : 'No preferred days') + ' · ' + (s.onbDeliveryWindow || 'no window'),
+      onbReviewBrands: s.onbBrands.length + ' selected',
       onbHasErr: !!s.onbErr, onbErr: s.onbErr || '',
       onbSent: s.onbSent, onbSubmitting: s.onbSubmitting,
       onbTurnstileVisible: !s.authUser && !!TURNSTILE_SITE_KEY,
@@ -16545,6 +17134,32 @@ class Component extends DCLogic {
       toastChipStyle: 'font:600 9.5px ui-monospace,monospace;letter-spacing:.08em;padding:3px 7px;color:#fff;background:' + (String(s.toastKind).indexOf('BLOCKED') === 0 || s.toastKind === 'DECLINED' || s.toastKind === 'NOT WIRED' ? 'var(--ux-signal)' : 'var(--ux-accent)'),
 
       isDash: s.screen === 'dash' && !isBrandWorkspace, isCatalog: s.screen === 'catalog' && !isBrandWorkspace, isProduct: s.screen === 'product' && !isBrandWorkspace,
+      isStoreDemo: s.screen === 'store-demo' && isInternal && s.authUser && s.authUser.staffRole === 'administrator' && canStaff('store.demo'),
+      storeDemoButton, storeDemoPrimary, storeDemoInput, storeDemoRole, storeDemoStore: s.storeDemoStore || '', storeDemoStores: storeDemo.stores || [],
+      storeDemoBusy: !!s.storeDemoBusy, storeDemoMessage: s.storeDemoMessage || '',
+      storeDemoCommercial: storeDemoRole !== 'budtender', storeDemoCanOrder: ['owner','buyer'].includes(storeDemoRole), storeDemoInternal: storeDemoRole === 'internal',
+      storeDemoGate: storeDemoRole === 'budtender' ? 'Education Only' : storeDemo.orderingReady ? 'Demo Ordering Ready' : 'Onboarding / Finance Review Required',
+      storeDemoTabs: [['catalog','Catalog & Cart'],['orders','Orders'],['company','Company & Onboarding'],['finance','Financials'],['activity','Activity & Reset']]
+        .filter(([id]) => storeDemoRole === 'budtender' ? id === 'catalog' : storeDemoRole === 'buyer' ? !['company','activity'].includes(id) : id !== 'activity' || storeDemoRole === 'internal')
+        .map(([id,label]) => ({ label: storeDemoRole === 'budtender' && id === 'catalog' ? 'Product Education' : label, selected: String(id === storeDemoTab), style: id === storeDemoTab ? storeDemoPrimary : storeDemoButton, onPick: () => this.set({ storeDemoTab: id }) })),
+      storeDemoCompany: storeDemoTab === 'company' && ['owner','internal'].includes(storeDemoRole),
+      storeDemoCatalog: storeDemoTab === 'catalog', storeDemoOrders: storeDemoTab === 'orders' && storeDemoRole !== 'budtender',
+      storeDemoFinance: storeDemoTab === 'finance' && storeDemoRole !== 'budtender', storeDemoActivity: storeDemoTab === 'activity' && storeDemoRole === 'internal',
+      storeDemoProducts, storeDemoCart, storeDemoSections, storeDemoOrderRows, storeDemoOrderCount: storeDemoOrderRows.length + ' Demo Orders at This Location',
+      storeDemoCartTotal: 'Total: ' + MONEY((s.storeDemoCart || []).reduce((total,l) => total + Number(l.quantity || 0) * Number(((storeDemo.products || []).find(p => p.id === l.productId) || {}).priceCents || 0), 0)),
+      storeDemoBrand: s.storeDemoBrand || 'all', onStoreDemoBrand: e => this.set({ storeDemoBrand: e.target.value }),
+      onStoreDemoRefresh: () => this.storeDemoCall('read'), onStoreDemoRole: e => this.storeDemoChangeRole(e.target.value), onStoreDemoStore: e => this.storeDemoChangeStore(e.target.value),
+      onStoreDemoSaveDraft: () => this.storeDemoSaveOrder(false), onStoreDemoSubmitOrder: () => this.storeDemoSaveOrder(true),
+      storeDemoTerms: s.storeDemoTerms === undefined ? storeDemoFinance.terms || '' : s.storeDemoTerms,
+      storeDemoCredit: s.storeDemoCredit === undefined ? (storeDemoFinance.creditLimitCents || 0) / 100 : s.storeDemoCredit,
+      storeDemoFinanceNote: s.storeDemoFinanceNote || '', onStoreDemoTerms: e => this.set({ storeDemoTerms: e.target.value }), onStoreDemoCredit: e => this.set({ storeDemoCredit: e.target.value }),
+      onStoreDemoFinanceNote: e => this.set({ storeDemoFinanceNote: e.target.value }),
+      onStoreDemoFinanceApprove: () => this.storeDemoFinanceReview('approved'), onStoreDemoFinanceHold: () => this.storeDemoFinanceReview('hold'), onStoreDemoPastDue: () => this.storeDemoFinanceReview('past_due'),
+      storeDemoFinanceSummary: String(storeDemoFinance.status || 'Pending').replace(/_/g, ' ') + (storeDemoRole === 'buyer' ? '' : ' · ' + (storeDemoFinance.terms || 'Terms Pending') + ' · Credit Limit ' + MONEY(storeDemoFinance.creditLimitCents || 0))
+        + (storeDemoFinance.reviewedBy ? ' · Reviewed by ' + storeDemoFinance.reviewedBy + ' on ' + formatDateUs(storeDemoFinance.reviewedAt) : ''),
+      storeDemoInvoice: (storeDemo.invoices || []).map(i => i.id + ' · ' + i.status + ' · Balance ' + MONEY(i.balanceCents)).join(' · ') + ' ' + (storeDemo.financialNotice || ''),
+      storeDemoEvents: (storeDemo.events || []).map(e => ({ label: formatDateTimeUs(e.at) + ' · ' + e.action.replace(/-/g,' ') + ' · ' + e.role + ' · ' + e.actor + (e.reference ? ' · ' + e.reference : '') })),
+      onStoreDemoReset: () => { if (confirm('Reset only your synthetic Store demo? Audit history will be retained.')) this.storeDemoCall('reset'); },
       isPricing: s.screen === 'pricing' && (canReviewPricing || ['owner', 'buyer'].includes(role)),
       isInventory: s.screen === 'inventory' && canStaff('inventory.read'),
       isDataControls: s.screen === 'data-controls' && (canStaff('inventory.read') || canStaff('financials.read')),
@@ -17259,7 +17874,7 @@ class Component extends DCLogic {
         : 'Propose prices for the selected store. A proposal never changes catalog or ordering until Administrator, Operations, or Sales approves it.',
       pricingStats: [
         { label: 'Pending review', value: String(pricingScopedProposals.filter(row => row.state === 'pending').length), note: canReviewPricing ? 'Across stores in the approval queue' : 'For ' + loc.name },
-        { label: 'Published prices', value: String(pricingScopedPrices.length + s.pricingDefaults.length), note: canReviewPricing ? 'Default list plus store-specific entries' : 'Available to this store' },
+        { label: 'Published prices', value: String(pricingScopedPrices.length + s.pricingDefaults.length), note: canReviewPricing ? 'Marketplace/defaults plus store-specific entries' : 'Available to this store' },
         { label: 'Publication gate', value: 'Internal', note: 'Administrator · Operations · Sales' }
       ].map((stat, index) => ({ ...stat, style: index ? 'border-left:1px solid rgba(250,247,243,.22);padding-left:20px' : '' })),
       canProposePricing, canReviewPricing,
@@ -17440,7 +18055,7 @@ class Component extends DCLogic {
       pdName: product.name, pdBrand: product.brand, pdCat: product.cat, pdCatDot: catDot(product.cat, 9), pdFormat: product.format,
       pdSku: product.sku, pdStrain: product.strain, pdBand: product.band,
       pdImageUrl: productContent.imageUrl || '', pdHasImage: !!productContent.imageUrl, pdNoImage: !productContent.imageUrl,
-      pdReleaseLabel: product.source === 'CanixPreview' ? 'PORTAL DRAFT PREVIEW' : product.oos && product.source === 'Canix' ? 'ALLOCATED · NOT ORDERABLE' : product.preorder ? 'PRE-ORDER · AWAITING RELEASE' : product.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
+      pdReleaseLabel: product.source === 'CanixPreview' ? 'PORTAL DRAFT PREVIEW' : product.oos && product.source === 'Canix' ? 'ALLOCATED · NOT ORDERABLE' : product.preorder ? 'PRE-ORDER · AWAITING RELEASE' : product.source === 'Canix' && product.marketplace ? 'CANIX MARKETPLACE · RELEASED' : product.source === 'Canix' ? 'CANIX RELEASED' : demoMode ? 'CANIX DEMO SNAPSHOT' : 'CATALOG PREVIEW',
       pdDesc: productContent.longDescription || productContent.shortDescription || (product.source === 'CanixPreview'
         ? 'This preview reflects the current Portal-authored draft. Inventory availability, pricing, release status, and lot allocation are not implied.'
         : product.source === 'Canix'
@@ -17785,8 +18400,8 @@ class Component extends DCLogic {
       isAccountSettings: s.screen === 'account' && role === 'owner',
       ownerProfileName: this.actingOrg(),
       ownerProfileScope: visibleLocations.length + (visibleLocations.length === 1 ? ' store' : ' stores') + ' on this owner profile · owners can reach every qualified store',
-      onAddProfileStore: () => this.set({ screen: 'onboard', onbType: 'Existing store, new location',
-        onbEntity: this.actingOrg(), onbStores: [{ name: '', license: '', address: '' }],
+      onAddProfileStore: () => this.set({ screen: 'onboard', onbStep: 0, onbType: 'Existing store, new location',
+        onbEntity: this.actingOrg(), onbStores: [{ name: '', license: '', licenseType: 'Dispensary', expires: '', address: '' }],
         onbOwnerName: s.authUser ? s.authUser.name || '' : '', onbOwnerEmail: s.authUser ? s.authUser.email || '' : '',
         onbSent: false, onbErr: null }),
       acctLocs: visibleLocations.map(l => {
@@ -18225,7 +18840,7 @@ class Component extends DCLogic {
           + ';color:' + (index + 1 === selectedStageNumber ? 'var(--ux-ground)' : 'var(--ux-muted-strong)') })),
       onboardingReadinessChecks,
       onboardingStoreSummary: selectedReviewedStores + ' of ' + selectedOnboardingStores.length + ' reviewed · '
-        + selectedQualifiedStores + ' qualified · ' + selectedOnboardingStores.length + ' of 10 requested',
+        + selectedQualifiedStores + ' qualified · ' + selectedOnboardingStores.length + ' of 25 requested',
       onboardingRoleRules: [
         { role: 'Store Owner', scope: 'Every qualified store in the retailer organization.' },
         { role: 'Buyer', scope: 'Only the qualified stores assigned in this request.' },
@@ -18302,6 +18917,28 @@ class Component extends DCLogic {
       pubControls: PUBLIC_CONTROLS,
       isAccess: s.screen === 'access' && canStaff('users.manage'), isLineage: s.screen === 'lineage' && canStaff('lineage.read'),
       users, adminTitle: isInternal ? 'Users and access' : 'Your users',
+      showStoreAccessAdmin:isInternal&&canStaff('users.manage')&&s.authUser.staffRole==='administrator'&&!s.impersonating,
+      storeAccessLoaded:!!s.storeAccessData&&s.storeAccessContextId===s.activeWorkspaceId,
+      storeAccessHeld:!!s.storeAccessData&&!s.storeAccessData.enabled,
+      storeAccessError:s.storeAccessError,storeAccessMessage:s.storeAccessMessage,
+      storeAccessPending:s.storeAccessPending?'true':'false',onStoreAccessLoad:()=>this.loadStoreAccess(s.storeAccessOrganizationId),
+      storeAccessOrganizations:((s.storeAccessData || {}).organizations || []).map(row=>({id:row.id,name:row.display_name||row.legal_name})),
+      storeAccessOrganizationId:s.storeAccessOrganizationId,onStoreAccessOrganization:e=>this.loadStoreAccess(e.target.value),
+      storeAccessMembershipId:s.storeAccessMembershipId,onStoreAccessMembership:e=>this.editStoreAccess(e.target.value),
+      storeAccessMembers:((s.storeAccessData || {}).members || []).map(row=>({id:row.id,label:row.fullName+' · '+row.member_role.replace('store_','')+' · '+row.status
+        +(!row.identityEligible?' · Account expired or unavailable':'')})),
+      storeAccessNew:!s.storeAccessMembershipId,storeAccessProfileId:s.storeAccessProfileId,
+      storeAccessProfiles:(s.liveUsers || []).filter(row=>row.active&&row.id).map(row=>({id:row.id,name:row.fullName+' · '+row.email})),
+      onStoreAccessProfile:e=>this.changeStoreAccess({storeAccessProfileId:e.target.value}),
+      storeAccessRole:s.storeAccessRole,onStoreAccessRole:e=>this.changeStoreAccess({storeAccessRole:e.target.value,
+        storeAccessLicenses:e.target.value==='store_owner'?[]:e.target.value==='store_staff'?s.storeAccessLicenses.slice(0,1):s.storeAccessLicenses}),
+      storeAccessStatus:s.storeAccessStatus,onStoreAccessStatus:e=>this.changeStoreAccess({storeAccessStatus:e.target.value}),
+      storeAccessOwner:s.storeAccessRole==='store_owner',storeAccessAssigned:s.storeAccessRole!=='store_owner',
+      storeAccessStores:((s.storeAccessData || {}).stores || []).filter(row=>row.active&&!row.closed_at).map(row=>({license:row.license_number,name:row.display_name,
+        pressed:s.storeAccessLicenses.includes(row.license_number)?'true':'false',onPick:()=>this.changeStoreAccess({storeAccessLicenses:s.storeAccessLicenses.includes(row.license_number)
+          ?s.storeAccessLicenses.filter(v=>v!==row.license_number):s.storeAccessRole==='store_staff'?[row.license_number]:s.storeAccessLicenses.concat(row.license_number)})})),
+      storeAccessReason:s.storeAccessReason,onStoreAccessReason:e=>this.changeStoreAccess({storeAccessReason:e.target.value}),
+      storeAccessSaveDisabled:s.storeAccessPending||!(s.storeAccessData || {}).enabled?'true':'false',onStoreAccessSave:()=>this.saveStoreAccess(),
       showStaffAccess: isInternal,
       staffAccessLabel: String(STAFF_ROLE_LABELS[s.authUser && s.authUser.staffRole] || 'Workforce').toUpperCase(),
       staffAccessCount: staffPermissions.filter(p => p !== 'inventory.sync').length + ' active permissions',
@@ -18370,7 +19007,7 @@ class Component extends DCLogic {
           onOpen: () => this.set({ screen: 'validation' })
         }] : [])
       ],
-      showAccessReviews: s.role === 'internal' && this.hasPermission('users.manage') && accessReviewRows.length > 0,
+      showAccessReviews: false,
       accessReviewRows,
       auOpen: s.auOpen, auClosed: !s.auOpen,
       onAuToggle: () => this.auToggle(),
@@ -18408,7 +19045,7 @@ class Component extends DCLogic {
           + (s.auAccountType === type ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
         onPick: () => this.set({ auAccountType: type, auContractorExpiresOn: type === 'contractor' ? s.auContractorExpiresOn : '', auErr: null })
       })),
-      auRoles: (isInternal ? ['Store owner', 'Buyer', 'Budtender', ...(!loc.demo ? ['Administrator'] : [])] : ['Buyer', 'Budtender']).map(r => ({
+      auRoles: (isInternal && !loc.demo ? ['Administrator'] : []).map(r => ({
         label: r, style: 'padding:8px 11px;font:600 11.5px Archivo,sans-serif;cursor:pointer;border:1px solid rgba(23,14,11,.3);'
           + (s.auRole === r ? 'background:var(--ux-ink);color:var(--ux-ground)' : 'background:transparent'),
         onPick: () => this.set({ auRole: r, auLocs: r === 'Administrator' ? [] : r === 'Budtender' && s.auLocs.length > 1 ? s.auLocs.slice(0, 1) : s.auLocs,
@@ -18484,7 +19121,7 @@ class Component extends DCLogic {
       onAcctStatusNote: e => this.set({ accountStatusNote: e.target.value }),
       acctStatusButtonLabel: s.retailerActionPending === 'status' ? 'Saving\u2026' : 'Save account status',
       onSaveAcctStatus: () => this.saveRetailerStatus(selectedRetailer),
-      acctStoreCapacity: ((selectedRetailer && Array.isArray(selectedRetailer.stores)) ? selectedRetailer.stores.length : 0) + ' of 10 stores',
+      acctStoreCapacity: ((selectedRetailer && Array.isArray(selectedRetailer.stores)) ? selectedRetailer.stores.length : 0) + ' of 25 stores',
       acctStoreName: s.accountStoreName, onAcctStoreName: e => this.set({ accountStoreName: e.target.value }),
       acctStoreLicense: s.accountStoreLicense, onAcctStoreLicense: e => this.set({ accountStoreLicense: e.target.value }),
       acctStoreAddress: s.accountStoreAddress, onAcctStoreAddress: e => this.set({ accountStoreAddress: e.target.value }),

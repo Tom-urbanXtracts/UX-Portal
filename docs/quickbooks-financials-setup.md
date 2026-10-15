@@ -1,5 +1,7 @@
 # QuickBooks financial visibility
 
+Production repair, 10/14/2026: `quickbooks-retailers` v48 restores the configured scheduler authentication path. The deployed v47 gateway required a JWT and rejected secret-only cron requests with HTTP 401 before handler authentication. v48 uses identical function source with `verify_jwt=false`, matching `supabase/config.toml`; the handler still validates either the scheduler secret or a current authorized Internal user. Requests without credentials and with an invalid scheduler secret returned 403. Scheduler-secret verification returned HTTP 200 with `ok:true`, and financial refresh succeeded at 4:19:32 PM America/New_York. QuickBooks remains read-only.
+
 The portal reads QuickBooks Customers, Vendors, Products and Services, Invoices, and Payments through one server-side OAuth connection. QuickBooks remains authoritative. This release displays financial history and supports internal counterparty and item reconciliation only; it does not collect payments, retain bank details, or create accounting transactions.
 
 ## Deploy

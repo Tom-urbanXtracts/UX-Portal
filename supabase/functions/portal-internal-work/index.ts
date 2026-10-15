@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
@@ -73,7 +74,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -460,10 +461,12 @@ async function actorFor(request: Request): Promise<Actor> {
     );
   }
   const user = await response.json() as Row;
-  const { data, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,full_name,role,staff_role,active").eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
+  if (!rawProfile) throw new InternalWorkError(403, "Active workforce identity required.");
+  const data = await requestWorkspace(service, request, user, rawProfile as Row, 'orders.read', {internalOnly:true});
   if (
     !data || data.active === false || data.role !== "internal" ||
     !STAFF_ROLES.has(String(data.staff_role))
@@ -2042,13 +2045,13 @@ Deno.serve(async (request) => {
     }
     throw new InternalWorkError(400, "Unsupported Internal work action.");
   } catch (error) {
-    if (!(error instanceof InternalWorkError)) {
+    if (!((error instanceof InternalWorkError || error instanceof StoreAccessError))) {
       console.error("portal-internal-work", error);
     }
     return json(request, {
-      error: error instanceof InternalWorkError
+      error: (error instanceof InternalWorkError || error instanceof StoreAccessError)
         ? error.message
         : "The Internal workspace is temporarily unavailable.",
-    }, error instanceof InternalWorkError ? error.status : 500);
+    }, (error instanceof InternalWorkError || error instanceof StoreAccessError) ? error.status : 500);
   }
 });

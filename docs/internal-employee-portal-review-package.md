@@ -1,12 +1,13 @@
 # UX OS Internal Employee Portal review package
 
 Status: Approved build baseline. Shared foundation implementation began 8 October 2026; capability status must still be read per section.
+Store planning update: Approved for activation planning on 14 October 2026. See [Store activation architecture](store-workspace-activation-architecture.md) for reconciled boundaries, assignments, and release gates.
 Prepared: 7 October 2026
 Audience: Executive Leadership, department heads, Finance, Operations, HR, Quality/Compliance, IT/Administration, Sales/Commercial, Marketing
 
 ## 1. Internal Portal vision
 
-UX OS should become one controlled operating layer for urbanXtracts employees, Brand partners, and future Store users. The Internal Employee Portal is the employee-facing workspace inside that operating layer.
+UX OS should become one controlled operating layer for urbanXtracts employees, Brand partners, and Store users. Store expansion is approved for activation planning; the Internal Employee Portal is the employee-facing workspace inside that operating layer.
 
 The Internal workspace should give employees a single place to see assigned work, submit requests, complete approvals, find documents, acknowledge policies, review schedules, and manage department operations. It should not replace Canix, QuickBooks, Google Workspace, or other approved systems of record. Instead, it should organize the work around those systems, preserve evidence, route approvals, and show source-labelled projections with freshness timestamps.
 
@@ -57,8 +58,8 @@ These decisions update the build intake after the 7 October 2026 review call and
 | Brand purchase orders | Brand users should be able to submit purchase orders from the Brand workspace in the first demo. The Portal owns order request, notes, fulfillment status, comments, and evidence; QuickBooks is not updated automatically. |
 | Brand financials | Map Brand financials to QuickBooks where approved. Show source-labelled account statements, invoice references, credits, payments, balances, aging, and refresh state. Use scheduled refresh plus an on-page refresh action where available. |
 | Public Brand applications | Public Brand applications should not remain closed only to selected partners; keep anti-abuse controls and internal review before workspace creation. |
-| Store role baseline | Store Owner can view, request, order, approve, export, and manage. Buyer / Manager can view, request, order, approve where delegated or policy allows, and export scoped reports, but cannot manage users or account settings. Budtender can access product education only. |
-| Buyer account statements | Buyer / Manager may see full account statements with invoice references inside assigned scope. |
+| Store role baseline | Store Owner can view, request, order, approve, export, and manage within bounded authority. Buyer can purchase within assigned scope. Store Manager can manage location operations but receives no wholesale pricing, purchasing, approval, financial, or export authority by implication. Budtender can access approved product education only. |
+| Buyer account statements | Buyer may see Finance-approved statement fields with invoice references only inside verified accounting scope; a shared customer spanning an unassigned location is withheld. |
 | Employee login | Work Google account is not required. Personal email/password and IT-created portal credentials are allowed. Google Workspace remains preferred where available. |
 | Contractor access | Contractors require IT and Executive Team approval, a required expiration date, and no default sensitive access. |
 | Administrator access | IT approval only for the current baseline. |
@@ -87,7 +88,7 @@ The department chats should work from one staged build order and one shared serv
 | --- | --- | --- | --- |
 | 1 | Brand Portal demo | urbanXtracts Brand account, Brand home, company/onboarding, products/SKUs, catalog and PO submit, inventory views, read-only QuickBooks financials, documents, users, support/issues | Do not expose retailer identity, internal cost/margin/settlement, bulk/material records, or unapproved internal categories to Brand users. |
 | 2 | Internal Employee Portal foundation | My Work, shared requests/tasks/approvals, access requests, offboarding checklist, controlled documents, audit history, export logging, department views | Use shared workflow, permission, evidence, notification, reporting, and audit services rather than department-specific engines. |
-| 3 | Store/Dispensary expansion | Owner, Buyer/Manager, Budtender, and kiosk role model; reusable ordering/account/education patterns | Store expansion remains held until Brand demo and Internal foundation are stable or the release priority changes. |
+| 3 | Store/Dispensary expansion | Owner, Buyer, non-purchasing Store Manager, Budtender, and kiosk role model; reusable ordering/account/education patterns | Approved for activation planning on 14 October 2026. Reconcile Store Workspace, Store Roles, and architecture inputs; require isolation, eligibility, Brand/Internal regression, pilot, rollback, and separate release approval. |
 
 ### Shared services all chats should reuse
 
@@ -122,16 +123,19 @@ The department chats should work from one staged build order and one shared serv
 | Investigations and employee relations | HR restricted plus legal-hold support | Case notes, evidence, interviews, outcomes, and related comments require restricted access, legal-hold awareness, and full audit history. |
 | Performance records | HR restricted | Requires explicit scope and retention policy before storage; do not treat informal manager notes as formal performance files without policy. |
 
-### Store / Dispensary role baseline for later expansion
+### Store / Dispensary role baseline for activation planning
 
-Store expansion remains held, but the approved role boundaries should be preserved for later build planning.
+Store expansion is approved for activation planning. These role boundaries remain the baseline; delegated administration, Buyer accounting scope, Store Manager separation, and multi-membership compatibility need the assigned acceptance evidence in `store-workspace-first-release-activation-handoff.md` and `store-workspace-activation-architecture.md` before expanded release. The owner approved scoped sellable-item quantities for Store Owner and Buyer on 9 October 2026; Manager remains deferred, and Budtender/kiosk receive no commercial quantities.
 
 | Role | Scope | Can | Cannot |
 | --- | --- | --- | --- |
-| Owner | All assigned organization stores | View, request, order, approve, export, manage users/settings, and see full account statements with invoice references | Bypass server permissions, compliance holds, explicit account holds, or source freshness gates |
-| Buyer / Manager | Assigned stores | View, request, order, approve where delegated or policy allows, export scoped reports, and see full account statements with invoice references | Manage users, account settings, legal identity, or organization-wide access |
+| Owner | All assigned organization stores | View approved sellable-item quantities, request, order, approve, export, manage users/settings, and see full account statements with invoice references | Bypass server permissions, compliance holds, explicit account holds, or source freshness gates; view internal package, ownership, cost, bulk/material, or unrelated-facility data |
+| Buyer | Assigned stores | View approved sellable-item quantities, request, order, receive, export scoped reports where permitted, and see approved statements for verified accounting scope | Manage users/settings, change legal identity, approve orders unless a separate delegation policy is approved, or view quantities outside assigned stores |
+| Store Manager | Assigned stores | Manage location operations, licenses, receiving, requests, support, and announcements | Wholesale pricing, cart/order creation, purchase approval, financial statements, user management, or exports by default |
 | Budtender | Assigned store or shared product-education device | Product education, training, COA lookup, and approved resources | Prices, cart, orders, invoices, account statements, exports, exact inventory, or admin controls |
 | Public kiosk visitor | Store-specific public education link | Approved product education only | Sign-in data, prices, orders, inventory quantities, account information, exports, or administration |
+
+Buyer full statements remain confined to authorized locations; shared accounting-customer totals covering unassigned stores are withheld. Finance reviews payment terms and credit limits before ordering is enabled, and due-date-based past-due accounts remain held until Finance records clearance; a nonzero balance alone is not past due. Existing value-threshold approvals remain Owner-held until a specific delegation policy is approved. Budtender COA wording is subject to the existing authorized-source rules; it does not approve public COA publishing or a new document class. Owner user-management design must revoke only the retailer membership when a user also holds independent Brand/Internal access.
 
 ### Operations and Quality purchase-order controls
 
@@ -218,7 +222,7 @@ The Internal Portal should reuse the existing UX OS pattern:
    - The migration target is a Monday-compatible UX OS Boards layer that copies board structure, records, comments, updates, files, automations, dashboards, permissions evidence, and source identifiers into the Portal without deleting Monday data.
    - New portal-native workflows should stay in UX OS.
    - Monday data may remain as read-only history, a source-labelled mirror, or a parallel-run source during migration.
-   - Store onboarding dependencies remain on hold until Store strategy is reactivated.
+   - Store Workspace activation planning was approved on 14 October 2026. Store Onboarding Portal replaces the failed Store Workspace task. Portal Build accepted the reconciled Store Onboarding, Store Roles, and OS Portal Arch package for planning decomposition only; implementation still waits on each package's mandatory policy and source inputs. This planning approval does not authorize deployment or allow Store capabilities to be represented as live.
    - Detailed planning lives in `docs/monday-compatible-workspaces-migration-plan.md`.
 
 6. **Notification layer**
@@ -362,7 +366,7 @@ These items stay visible in Portal Build, but they do not block the Brand demo u
 | Payment terms and credit limit account gate | Finance | Finance must choose whether missing terms are a hard stop or a controlled soft path. | Onboarding keeps Stage 03 explicitly waiting on payment terms, credit limit, and rate-card policy. |
 | Rep-held ordering approval | Sales Leadership and Legal | Written authority is required before an urbanXtracts rep can hold a Store Owner approval. | Rep-held approval is disabled; Store Owner approval remains the supported retailer approval path. |
 | Draft inventory hold policy | Operations and Sales Operations | The business has not approved whether drafts reserve inventory. | Drafts hold nothing; final submission rechecks inventory and raises the inventory-changed gate. |
-| Store document upload classes | Operations, Quality, and IT/Admin | Store expansion and document-class release controls remain held. | No new Store document class goes live without storage, scan, review owner, retention, export logging, and archive controls. |
+| Store document upload classes | Operations, Quality, and IT/Admin | Store activation planning is approved, but document-class release controls still require reconciled design and release evidence. | No new Store document class goes live without storage, scan, review owner, retention, export logging, archive controls, pilot acceptance, and rollback controls. |
 
 ### Finance and Accounting preliminary decisions
 

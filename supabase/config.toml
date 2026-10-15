@@ -1,5 +1,10 @@
 project_id = "ux-portal"
 
+# Authenticated Internal Administrators only; the handler repeats current
+# profile, membership, explicit action grant and emergency pause checks.
+[functions.portal-store-demo]
+verify_jwt = true
+
 # These endpoints authenticate inside the function because they also accept
 # trusted server-to-server calls that do not carry a Supabase user JWT.
 [functions.canix-inventory]

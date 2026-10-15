@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
@@ -45,7 +46,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -96,12 +97,13 @@ async function callerFor(request: Request): Promise<Caller | null> {
   if (!response.ok) return null;
   if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false || profile.role !== "internal") {
+  if (!rawProfile || rawProfile.active !== true) {
     return null;
   }
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'users.read', { internalOnly: true });
   const { data: grants, error } = await service.from("portal_role_permission")
     .select("permission").eq("staff_role", profile.staff_role);
   if (error) throw error;
@@ -397,6 +399,7 @@ Deno.serve(async (request) => {
     }
     return json(request, { error: "Unsupported asset action" }, 400);
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     const status = error instanceof AssetError ? error.status : 502;
     if (!(error instanceof AssetError)) console.error("portal-assets", error);
     return json(request, {

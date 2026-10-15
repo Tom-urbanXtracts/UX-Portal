@@ -62,8 +62,48 @@ const SUBITEM_COLUMNS = Object.freeze({
 });
 
 const AMRIT_USER_ID = 50414822;
+const PARENT_INTAKE_COLUMNS: ReadonlySet<string> = new Set([
+  COLUMNS.priority,
+  COLUMNS.needBefore,
+  COLUMNS.vendor,
+  COLUMNS.department,
+  COLUMNS.requester,
+  COLUMNS.purchaseLink,
+]);
+const SUBITEM_INTAKE_COLUMNS: ReadonlySet<string> = new Set([
+  SUBITEM_COLUMNS.purchaseLink,
+  SUBITEM_COLUMNS.unitCost,
+  SUBITEM_COLUMNS.quantity,
+  SUBITEM_COLUMNS.sku,
+  SUBITEM_COLUMNS.department,
+  SUBITEM_COLUMNS.expenseCategory,
+  SUBITEM_COLUMNS.expenseSubcategory,
+  SUBITEM_COLUMNS.chartOfAccounts,
+]);
+const WORKFLOW_STATUS_COLUMNS: ReadonlySet<string> = new Set([
+  COLUMNS.approval,
+  COLUMNS.orderStatus,
+]);
 
 type Row = Record<string, unknown>;
+type ProcessContext = {
+  eventType: string;
+  boardId: string;
+  columnId: string | null;
+  isCreate: boolean;
+  isIntakeDataChange: boolean;
+  isWorkflowStatusChange: boolean;
+};
+
+class MondayApiError extends Error {
+  readonly retryableItemLock: boolean;
+
+  constructor(message: string, retryableItemLock = false) {
+    super(message);
+    this.name = "MondayApiError";
+    this.retryableItemLock = retryableItemLock;
+  }
+}
 
 const service = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -145,11 +185,26 @@ async function mondayGraphql(
   });
   const body = await response.json().catch(() => ({})) as Row;
   if (!response.ok || (Array.isArray(body.errors) && body.errors.length)) {
+    const errors = Array.isArray(body.errors) ? body.errors.map(asObject) : [];
+    const retryableItemLock = response.status === 429 ||
+      errors.some((error) => {
+        const extensions = asObject(error.extensions);
+        return clean(extensions.code, 120) ===
+            "TooManyConcurrentRequestsException" ||
+          Number(extensions.status_code) === 429 ||
+          clean(asObject(extensions.error_data).tag, 120) ===
+            "graphql_item_locking_service";
+      });
     console.error(
       "monday-supply-order-api",
       JSON.stringify(body.errors ?? body),
     );
-    throw new Error("Monday API request failed.");
+    throw new MondayApiError(
+      retryableItemLock
+        ? "Monday temporarily locked the item."
+        : "Monday API request failed.",
+      retryableItemLock,
+    );
   }
   return asObject(body.data);
 }
@@ -200,6 +255,30 @@ function requesterIds(values: Map<string, Row>): number[] {
 
 function eventItemId(event: Row): string {
   return clean(event.pulseId ?? event.itemId ?? event.entityId, 80);
+}
+
+function processContext(event: Row): ProcessContext {
+  const boardId = clean(event.boardId, 80);
+  const columnId = text(event.columnId, 80);
+  const eventType = clean(event.type, 80);
+  const isSubitemEvent = boardId === SUBITEM_BOARD_ID ||
+    !!text(event.parentItemId, 80) ||
+    !!text(event.parent_item_id, 80);
+  const isCreate = eventType === "create_pulse" && !columnId;
+  return {
+    eventType,
+    boardId,
+    columnId,
+    isCreate,
+    isIntakeDataChange: columnId
+      ? isSubitemEvent
+        ? SUBITEM_INTAKE_COLUMNS.has(columnId)
+        : PARENT_INTAKE_COLUMNS.has(columnId)
+      : false,
+    isWorkflowStatusChange: !!columnId &&
+      !isSubitemEvent &&
+      WORKFLOW_STATUS_COLUMNS.has(columnId),
+  };
 }
 
 function parentItemId(item: Row): string {
@@ -293,14 +372,33 @@ async function moveToGroup(
   item: Row,
   groupId: string,
 ): Promise<void> {
+  const itemId = clean(item.id, 80);
   if (clean(asObject(item.group).id, 80) === groupId) return;
-  await mondayGraphql(
-    accessToken,
-    `mutation MoveSupplyOrder($itemId: ID!, $groupId: String!) {
-      move_item_to_group(item_id: $itemId, group_id: $groupId) { id }
-    }`,
-    { itemId: clean(item.id, 80), groupId },
-  );
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      await mondayGraphql(
+        accessToken,
+        `mutation MoveSupplyOrder($itemId: ID!, $groupId: String!) {
+          move_item_to_group(item_id: $itemId, group_id: $groupId) { id }
+        }`,
+        { itemId, groupId },
+      );
+      return;
+    } catch (error) {
+      if (!(error instanceof MondayApiError) || !error.retryableItemLock) {
+        throw error;
+      }
+      const refreshed = await fetchSupplyOrder(accessToken, itemId).catch(() =>
+        null
+      );
+      if (refreshed && clean(asObject(refreshed.group).id, 80) === groupId) {
+        return;
+      }
+      if (attempt === 3) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+  }
 }
 
 async function notifyUsers(
@@ -308,22 +406,32 @@ async function notifyUsers(
   itemId: string,
   userIds: number[],
   message: string,
-): Promise<void> {
+): Promise<boolean> {
   const unique = Array.from(new Set(userIds)).filter((id) => id > 0);
+  let delivered = true;
   for (const userId of unique) {
-    await mondayGraphql(
-      accessToken,
-      `mutation NotifySupplyOrder($userId: ID!, $itemId: ID!, $text: String!) {
-        create_notification(
-          user_id: $userId,
-          target_id: $itemId,
-          target_type: Project,
-          text: $text
-        ) { id }
-      }`,
-      { userId: String(userId), itemId, text: message.slice(0, 500) },
-    );
+    try {
+      await mondayGraphql(
+        accessToken,
+        `mutation NotifySupplyOrder($userId: ID!, $itemId: ID!, $text: String!) {
+          create_notification(
+            user_id: $userId,
+            target_id: $itemId,
+            target_type: Project,
+            text: $text
+          ) { id }
+        }`,
+        { userId: String(userId), itemId, text: message.slice(0, 500) },
+      );
+    } catch (error) {
+      delivered = false;
+      console.warn(
+        "monday-supply-order-webhook notification skipped",
+        error instanceof Error ? error.message : "Monday notification failed.",
+      );
+    }
   }
+  return delivered;
 }
 
 async function createUpdate(
@@ -338,6 +446,21 @@ async function createUpdate(
     }`,
     { itemId, body },
   );
+}
+
+async function createUpdateBestEffort(
+  accessToken: string,
+  itemId: string,
+  body: string,
+): Promise<void> {
+  try {
+    await createUpdate(accessToken, itemId, body);
+  } catch (error) {
+    console.warn(
+      "monday-supply-order-webhook update skipped",
+      error instanceof Error ? error.message : "Monday update failed.",
+    );
+  }
 }
 
 async function readState(itemId: string): Promise<Row> {
@@ -360,11 +483,16 @@ async function writeState(itemId: string, changes: Row): Promise<void> {
   if (error) throw error;
 }
 
-async function processOrder(accessToken: string, item: Row): Promise<Row> {
+async function processOrder(
+  accessToken: string,
+  item: Row,
+  context: ProcessContext,
+): Promise<Row> {
   const itemId = clean(item.id, 80);
   const values = columnMap(item);
   const approvalStatus = columnText(values, COLUMNS.approval);
   const orderStatus = columnText(values, COLUMNS.orderStatus);
+  const groupId = clean(asObject(item.group).id, 80);
   const lines = (Array.isArray(item.subitems) ? item.subitems as Row[] : [])
     .map(lineInput);
   const validation = supplyOrderValidation({
@@ -380,86 +508,9 @@ async function processOrder(accessToken: string, item: Row): Promise<Row> {
   );
   const state = await readState(itemId);
 
-  if (!validation.complete) {
-    const missingHash = await sha256(validation.missing.join("|"));
-    await updateColumns(accessToken, itemId, {
-      [COLUMNS.approval]: { label: "Needs Info" },
-      [COLUMNS.orderStatus]: { label: "Hold" },
-    });
-    await moveToGroup(accessToken, item, GROUPS.newRequests);
-    if (state.last_missing_hash !== missingHash) {
-      const missingList = validation.missing.map((field) => `- ${field}`).join(
-        "<br>",
-      );
-      await createUpdate(
-        accessToken,
-        itemId,
-        `<p>This request needs more information before it can be routed for approval.</p><p>${missingList}</p><p>Please update the request information; approval notifications will wait until the request is complete.</p>`,
-      );
-      await notifyUsers(
-        accessToken,
-        itemId,
-        requesterIds(values),
-        `Supply order needs more information before approval: ${
-          validation.missing.slice(0, 4).join(", ")
-        }`,
-      );
-    }
-    await writeState(itemId, {
-      last_state_hash: stateHash,
-      last_missing_hash: missingHash,
-      last_workflow_state: "needs_info",
-      last_total: validation.total,
-      last_approval_status: approvalStatus,
-    });
-    return { action: "needs_info", missing: validation.missing };
-  }
-
-  if (approvalStatus === "Approved") {
-    await moveToGroup(accessToken, item, GROUPS.approved);
-    if (state.last_approved_hash !== stateHash) {
-      await notifyUsers(
-        accessToken,
-        itemId,
-        [AMRIT_USER_ID],
-        `Supply order approved for ordering: ${clean(item.name, 160)}`,
-      );
-      await createUpdate(
-        accessToken,
-        itemId,
-        "<p>This supply order has been approved for ordering. Amrit Kharas has been notified.</p>",
-      );
-    }
-    await writeState(itemId, {
-      last_state_hash: stateHash,
-      last_approved_hash: stateHash,
-      last_workflow_state: "approved_for_ordering",
-      last_total: validation.total,
-      last_approval_status: approvalStatus,
-    });
-    return { action: "approved_notified_amrit", total: validation.total };
-  }
-
-  if (approvalStatus === "Rejected") {
-    await moveToGroup(accessToken, item, GROUPS.canceled);
-    if (state.last_rejected_hash !== stateHash) {
-      await notifyUsers(
-        accessToken,
-        itemId,
-        requesterIds(values),
-        `Supply order rejected: ${clean(item.name, 160)}`,
-      );
-    }
-    await writeState(itemId, {
-      last_state_hash: stateHash,
-      last_rejected_hash: stateHash,
-      last_workflow_state: "rejected",
-      last_total: validation.total,
-      last_approval_status: approvalStatus,
-    });
-    return { action: "rejected", total: validation.total };
-  }
-
+  // Explicit workflow decisions take precedence over intake validation. This
+  // lets invoice, email, and vendor-account purchases continue through
+  // reconciliation when a human has intentionally advanced the order.
   if (orderStatus === "Ordered") {
     await updateColumns(accessToken, itemId, {
       [COLUMNS.orderedOn]: { date: new Date().toISOString().slice(0, 10) },
@@ -474,6 +525,139 @@ async function processOrder(accessToken: string, item: Row): Promise<Row> {
     return { action: "ordered", total: validation.total };
   }
 
+  if (approvalStatus === "Approved") {
+    await moveToGroup(accessToken, item, GROUPS.approved);
+    let approvedNotificationHash = state.last_approved_hash ?? null;
+    if (state.last_approved_hash !== stateHash) {
+      const delivered = await notifyUsers(
+        accessToken,
+        itemId,
+        [AMRIT_USER_ID],
+        `Supply order approved for ordering: ${clean(item.name, 160)}`,
+      );
+      approvedNotificationHash = delivered ? stateHash : null;
+      await createUpdateBestEffort(
+        accessToken,
+        itemId,
+        "<p>This supply order has been approved for ordering. Amrit Kharas has been notified.</p>",
+      );
+    }
+    await writeState(itemId, {
+      last_state_hash: stateHash,
+      last_approved_hash: approvedNotificationHash,
+      last_workflow_state: "approved_for_ordering",
+      last_total: validation.total,
+      last_approval_status: approvalStatus,
+    });
+    return { action: "approved_notified_amrit", total: validation.total };
+  }
+
+  if (approvalStatus === "Rejected") {
+    await moveToGroup(accessToken, item, GROUPS.canceled);
+    let rejectedNotificationHash = state.last_rejected_hash ?? null;
+    if (state.last_rejected_hash !== stateHash) {
+      const delivered = await notifyUsers(
+        accessToken,
+        itemId,
+        requesterIds(values),
+        `Supply order rejected: ${clean(item.name, 160)}`,
+      );
+      rejectedNotificationHash = delivered ? stateHash : null;
+    }
+    await writeState(itemId, {
+      last_state_hash: stateHash,
+      last_rejected_hash: rejectedNotificationHash,
+      last_workflow_state: "rejected",
+      last_total: validation.total,
+      last_approval_status: approvalStatus,
+    });
+    return { action: "rejected", total: validation.total };
+  }
+
+  if (!validation.complete) {
+    const alreadyHeld = approvalStatus === "Needs Info" &&
+      orderStatus === "Hold";
+    const shouldAutoHold = alreadyHeld ||
+      (!context.isWorkflowStatusChange &&
+        (context.isCreate ||
+          context.isIntakeDataChange ||
+          groupId === GROUPS.newRequests ||
+          state.last_workflow_state === "needs_info"));
+    if (!shouldAutoHold) {
+      await writeState(itemId, {
+        last_state_hash: stateHash,
+        last_workflow_state: "incomplete_manual_workflow_change",
+        last_total: validation.total,
+        last_approval_status: approvalStatus,
+      });
+      return {
+        action: "manual_workflow_change_preserved",
+        missing: validation.missing,
+      };
+    }
+
+    const missingHash = await sha256(validation.missing.join("|"));
+    await updateColumns(accessToken, itemId, {
+      [COLUMNS.approval]: { label: "Needs Info" },
+      [COLUMNS.orderStatus]: { label: "Hold" },
+    });
+    await moveToGroup(accessToken, item, GROUPS.newRequests);
+    let missingNotificationHash = state.last_missing_hash ?? null;
+    if (state.last_missing_hash !== missingHash) {
+      const missingList = validation.missing.map((field) => `- ${field}`).join(
+        "<br>",
+      );
+      await createUpdateBestEffort(
+        accessToken,
+        itemId,
+        `<p>This request needs more information before it can be routed for approval.</p><p>${missingList}</p><p>Please update the request information; approval notifications will wait until the request is complete.</p>`,
+      );
+      const delivered = await notifyUsers(
+        accessToken,
+        itemId,
+        requesterIds(values),
+        `Supply order needs more information before approval: ${
+          validation.missing.slice(0, 4).join(", ")
+        }`,
+      );
+      missingNotificationHash = delivered ? missingHash : null;
+    }
+    await writeState(itemId, {
+      last_state_hash: stateHash,
+      last_missing_hash: missingNotificationHash,
+      last_workflow_state: "needs_info",
+      last_total: validation.total,
+      last_approval_status: approvalStatus,
+    });
+    return { action: "needs_info", missing: validation.missing };
+  }
+
+  const alreadyWaitingStatus = approvalStatus === "Waiting" &&
+    orderStatus === ":";
+  const workflowStatusRequestsRouting = context.isWorkflowStatusChange &&
+    context.columnId === COLUMNS.approval &&
+    approvalStatus === "Waiting";
+  const shouldAutoRoute = context.isCreate ||
+    context.isIntakeDataChange ||
+    groupId === GROUPS.newRequests ||
+    alreadyWaitingStatus ||
+    workflowStatusRequestsRouting ||
+    (!context.isWorkflowStatusChange &&
+      (state.last_workflow_state === "needs_info" ||
+        String(state.last_workflow_state ?? "").startsWith("waiting:")));
+  if (!shouldAutoRoute) {
+    await writeState(itemId, {
+      last_state_hash: stateHash,
+      last_workflow_state: "complete_manual_workflow_change",
+      last_total: validation.total,
+      last_approval_status: approvalStatus,
+    });
+    return {
+      action: "manual_workflow_change_preserved",
+      total: validation.total,
+    };
+  }
+
   const route = supplyOrderApprovalRoute(validation.total ?? 0);
   const routeHash = await sha256(`${route.tier}:${validation.total}`);
   await updateColumns(accessToken, itemId, {
@@ -481,8 +665,9 @@ async function processOrder(accessToken: string, item: Row): Promise<Row> {
     [COLUMNS.orderStatus]: { label: ":" },
   });
   await moveToGroup(accessToken, item, GROUPS.waiting);
+  let routeNotificationHash = state.last_route_hash ?? null;
   if (state.last_route_hash !== routeHash) {
-    await notifyUsers(
+    const delivered = await notifyUsers(
       accessToken,
       itemId,
       route.mondayUserIds,
@@ -490,7 +675,8 @@ async function processOrder(accessToken: string, item: Row): Promise<Row> {
         clean(item.name, 160)
       } ($${validation.total?.toFixed(2)})`,
     );
-    await createUpdate(
+    routeNotificationHash = delivered ? routeHash : null;
+    await createUpdateBestEffort(
       accessToken,
       itemId,
       `<p>This complete request has been routed for approval to ${route.authority} based on an estimated total of $${
@@ -500,7 +686,7 @@ async function processOrder(accessToken: string, item: Row): Promise<Row> {
   }
   await writeState(itemId, {
     last_state_hash: stateHash,
-    last_route_hash: routeHash,
+    last_route_hash: routeNotificationHash,
     last_workflow_state: `waiting:${route.tier}`,
     last_total: validation.total,
     last_approval_status: "Waiting",
@@ -575,7 +761,7 @@ Deno.serve(async (request) => {
       });
       return json({ ok: true, ignored: true });
     }
-    const result = await processOrder(token, item);
+    const result = await processOrder(token, item, processContext(event));
     await service.rpc("portal_finish_monday_webhook_event", {
       p_event_key: `supply:${eventKey}`,
       p_state: "processed",

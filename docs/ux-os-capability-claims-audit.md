@@ -1,6 +1,8 @@
 # UX OS capability and claims audit
 
-Updated 8 October 2026 for the Brand-first staged build.
+Updated 14 October 2026 for the Brand-first staged build and approved Store activation planning.
+
+Store activation inputs were prepared 14 October 2026; see the [first-release activation handoff](store-workspace-first-release-activation-handoff.md) and [Store activation architecture](store-workspace-activation-architecture.md). Earlier live claims retain their evidence dates and scope.
 
 The investor-deck material is product direction, not proof that a workflow is live. This audit is the working source for release language: anything described to an external user must match the status below and keep its source boundary visible in the product.
 
@@ -11,6 +13,7 @@ The investor-deck material is product direction, not proof that a workflow is li
 | Live | Implemented behind server-side authorization and covered by release contracts or production evidence | May be described as available for the named role and workspace |
 | In development | Built or partially built, but missing acceptance evidence, source approval, or rollout decision | Describe as planned or in review |
 | Designed intent | Product direction with no released user path | Describe as future vision only |
+| Activation planning approved | Owner approved scoped planning and build reconciliation; Release Readiness, pilot, rollout, rollback, and a separate activation decision remain incomplete | Say "Approved for activation planning"; do not claim deployment, release approval, or live availability |
 | On hold | Deliberately paused by business, compliance, finance, or data-source decision | Do not promise a launch date |
 | Out of scope | Removed from UX OS scope | Do not include in portal capability claims |
 
@@ -32,7 +35,7 @@ The investor-deck material is product direction, not proof that a workflow is li
 | Internal shared work queue | Internal | Live | Portal-owned work items expose status, priority, due date, comments, evidence, source mode, and audit events in one administrative view. |
 | Release readiness register | Internal | Live | Readiness tasks are stored in Supabase with status, owner, evidence, source reference, and completion checks. |
 | Connected source and freshness labels | Shared | Live | Canix, QuickBooks, Monday, Portal, and shop-source states are displayed with last-successful timestamps, stale or unavailable state, and no replacement of unknown values with zero. |
-| Store buying desk | Store | On hold | Store expansion remains paused. Existing Store order, catalog, account, kiosk, and demo surfaces must not be described as the active launch priority. |
+| Store buying desk | Store | Activation planning approved | Store expansion may proceed through reconciled planning only. Store Onboarding Portal replaces the failed Store Workspace task. Existing Store order, catalog, account, kiosk, and demo surfaces must not be described as the approved expanded release until Store Onboarding, Store Roles, and OS Portal Arch inputs are accepted and a separate release decision is recorded. |
 | Promotions and commercial offers | Commerce | On hold | No promotion stacking, eligibility, or automatic price override is enabled until Sales, Finance, and Operations approve the model. |
 | Internal supply and production planning | Internal | On hold | Production planning is not yet a full UX OS planning engine; Canix remains authoritative for physical and compliance inventory. |
 | Forecasts and decision support | Shared | On hold | Reorder-risk, cash-collection, production-demand, and assortment-gap models require named owners, source contracts, validation, explanations, and a disable path. |
@@ -44,7 +47,7 @@ The investor-deck material is product direction, not proof that a workflow is li
 ## Release-language rules
 
 - Use "Brand-first staged build" for the current priority.
-- Use "Store expansion on hold" until the Store strategy is reactivated.
+- Use "Store activation planning approved; expanded release not yet approved" until the cross-workstream plan, Release Readiness evidence, pilot, acceptance tests, rollback controls, and release decision are complete.
 - Do not call QuickBooks or Canix projections live unless the screen shows the source system and last successful refresh.
 - Do not describe Brand sales dollars as live unless Finance approves the definition and QuickBooks line mapping.
 - Do not imply retailer POS sell-through, retailer identity, margin, ownership, payment collection, or public COA/recall publishing from current Brand views.
@@ -52,6 +55,6 @@ The investor-deck material is product direction, not proof that a workflow is li
 
 ## Remaining approval dependencies
 
-The remaining non-code dependencies are the Canix Package Owner reporting route or documented REST property, Finance approval for Brand dollar definitions, Finance and Operations approval of the metric glossary, legal/compliance approval for retention disposition, and reactivation decisions for Store, promotions, planning, forecasts, and AI.
+The remaining non-code dependencies are the Canix Package Owner reporting route or documented REST property, Finance approval for Brand dollar definitions, Finance and Operations approval of the metric glossary, legal/compliance approval for retention disposition, reconciled Store planning inputs, and reactivation decisions for promotions, planning, forecasts, and AI.
 
 The controlled-hold exit criteria are maintained in `docs/ux-os-final-completion-blockers.md`, and copy-ready approval packets are maintained in `docs/ux-os-controlled-hold-approval-packets.md`.

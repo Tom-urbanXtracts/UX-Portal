@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
@@ -34,7 +35,7 @@ function origin(request: Request): string {
 function headers(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -85,9 +86,11 @@ async function actorFor(request: Request): Promise<Row> {
     throw new ProfileError(403, "Forbidden");
   }
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,role,staff_role,active,org").eq("id", user.id).maybeSingle();
   if (error) throw error;
+  if (!rawProfile) throw new ProfileError(403, "Forbidden");
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'catalog.read', {allowBrand:true,denyStore:true});
   if (
     !profile || profile.active === false ||
     !["internal", "brand"].includes(String(profile.role))
@@ -101,6 +104,8 @@ async function permissionSet(
   actor: Row,
   organizationId: string,
 ): Promise<Set<string>> {
+  if (actor.role==='brand' && actor._workspaceOrganizationId!==organizationId)
+    throw new ProfileError(403,'This Brand is outside the selected workspace.');
   if (!/^[0-9a-f-]{36}$/i.test(organizationId)) {
     throw new ProfileError(400, "Choose a valid Brand organization.");
   }
@@ -359,13 +364,13 @@ Deno.serve(async (request) => {
     const organizationId = clean(body.organizationId, 80);
     return json(request, await brandProfile(actor, organizationId));
   } catch (error) {
-    if (!(error instanceof ProfileError)) {
+    if (!((error instanceof ProfileError || error instanceof StoreAccessError))) {
       console.error("portal-brand-profile", error);
     }
     return json(request, {
-      error: error instanceof ProfileError
+      error: (error instanceof ProfileError || error instanceof StoreAccessError)
         ? error.message
         : "The Brand profile is temporarily unavailable.",
-    }, error instanceof ProfileError ? error.status : 500);
+    }, (error instanceof ProfileError || error instanceof StoreAccessError) ? error.status : 500);
   }
 });

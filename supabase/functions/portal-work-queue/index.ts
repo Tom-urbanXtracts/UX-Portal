@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
+  requestWorkspace,
+  StoreAccessError,
+} from "../_shared/request-workspace.ts";
+import {
   ContentScanError,
   scanContent,
   sha256Hex,
@@ -40,7 +44,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -105,9 +109,26 @@ async function administratorFor(request: Request): Promise<Administrator> {
   });
   if (!response.ok) throw new QueueError(403, "Forbidden");
   const user = await response.json() as Row;
-  const { data, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,role,staff_role,active").eq("id", user.id).maybeSingle();
   if (error) throw error;
+  if (!rawProfile) throw new QueueError(403, "Forbidden");
+  let data: Row;
+  try {
+    data = await requestWorkspace(
+      service,
+      request,
+      user,
+      rawProfile as Row,
+      "users.read",
+      { internalOnly: true },
+    );
+  } catch (workspaceError) {
+    if (workspaceError instanceof StoreAccessError) {
+      throw new QueueError(workspaceError.status, workspaceError.message);
+    }
+    throw workspaceError;
+  }
   if (
     !data || data.active === false || data.role !== "internal" ||
     data.staff_role !== "administrator"
@@ -151,7 +172,7 @@ async function queueOverview(): Promise<Row> {
   const storeNames = new Map((storeResult.data ?? []).map((row) => [
     String(row.license_number), String(row.display_name || row.license_number),
   ]));
-  const items = ((itemResult.data ?? []) as Row[]).map((item) => ({
+  const items: Row[] = ((itemResult.data ?? []) as Row[]).map((item): Row => ({
     ...item,
     assigned_user_name: item.assigned_user
       ? profileNames.get(String(item.assigned_user)) ?? "Assigned user"

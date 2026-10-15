@@ -1,3 +1,5 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
+import { checkActor } from '../_shared/store-context.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
@@ -42,7 +44,7 @@ function origin(request: Request): string {
 function headers(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -78,10 +80,11 @@ async function actorFor(request: Request): Promise<Row | null> {
   if (!response.ok) return null;
   if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json();
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,role,staff_role,active,org,locations",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'users.read', { allowBrand: true });
   if (
     profile.role !== "internal" && profile.role !== "owner" &&
     profile.role !== "brand"
@@ -104,6 +107,9 @@ async function brandAccess(
   organizationId: string,
   permission: "brand.users.read" | "brand.users.manage",
 ): Promise<Row> {
+  if (actor.role === 'brand' && actor._workspaceOrganizationId !== organizationId) {
+    throw new AdminError(403,'Select this Brand workspace before managing its members.');
+  }
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(organizationId)) {
     throw new AdminError(400, "Choose a valid Brand organization.");
   }
@@ -223,6 +229,22 @@ function testDemoReason(user: Row, profile: Row): string | null {
 }
 
 async function portalUsers(actor: Row): Promise<Row[]> {
+  if (actor.role === 'owner') {
+    const context=storeContext(actor)!;
+    const {data:members,error}=await service.from('portal_organization_membership').select('id,profile_id,member_role,status')
+      .eq('workspace','store').eq('organization_id',context.organizationId).limit(250);
+    if(error) throw error;
+    return await Promise.all((members||[]).map(async membership=>{
+      const [{data:profile,error:pe},{data:auth,error:ae}]=await Promise.all([
+        service.from('portal_profile').select('id,full_name,active').eq('id',membership.profile_id).maybeSingle(),
+        service.auth.admin.getUserById(String(membership.profile_id)),
+      ]);
+      if(pe||ae||!profile||!auth.user) throw new AdminError(503,'Store member directory could not be verified.');
+      return {id:profile.id,membershipId:membership.id,email:auth.user.email,fullName:profile.full_name,org:actor.org,
+        role:membership.member_role==='store_owner'?'owner':membership.member_role==='store_buyer'?'buyer':'budtender',
+        active:profile.active===true&&membership.status==='active',staffRole:null,locations:'Membership-scoped',testDemo:false};
+    }));
+  }
   if (actor.role !== "internal" && actor.role !== "owner") {
     throw new AdminError(403, "This user directory is outside your access scope.");
   }
@@ -318,6 +340,84 @@ async function accessReviews(actor: Row): Promise<Row[]> {
       createdAt: row.created_at,
     };
   });
+}
+
+async function requireStoreAdministrator(actor: Row): Promise<void> {
+  if (actor.role !== 'internal' || actor.staff_role !== 'administrator' || !(await hasPermission(actor, 'users.manage'))) {
+    throw new AdminError(403, 'Only an Internal Administrator may manage Store memberships initially.');
+  }
+}
+
+async function storeAccessDirectory(actor: Row, organizationId?: string): Promise<Row> {
+  await requireStoreAdministrator(actor);
+  const {data: control, error: ce} = await service.from('portal_store_access_control').select('enabled').eq('id',true).maybeSingle();
+  if (ce) throw new AdminError(503,'Store access controls are not installed. No access was changed.');
+  const {data: organizations, error: oe} = await service.from('portal_organization')
+    .select('id,display_name,legal_name,legacy_retailer_account_id').eq('kind','retailer').eq('status','active').order('legal_name').limit(251);
+  if (oe || (organizations?.length || 0)>250) throw new AdminError(503,'The Store directory requires a paginated review.');
+  const base = {enabled:control?.enabled===true,organizations:organizations || [],members:[],stores:[]};
+  if (!organizationId) return base;
+  const organization = (organizations || []).find(row=>row.id===organizationId);
+  if (!organization?.legacy_retailer_account_id) throw new AdminError(403,'Choose a verified active retailer.');
+  const [{data:members,error:me},{data:stores,error:se}] = await Promise.all([
+    service.from('portal_organization_membership').select('id,profile_id,organization_id,member_role,status,updated_at')
+      .eq('organization_id',organizationId).eq('workspace','store').order('id').limit(251),
+    service.from('portal_store').select('license_number,display_name,active,closed_at')
+      .eq('retailer_account_id',organization.legacy_retailer_account_id).eq('active',true).is('closed_at',null).order('display_name').limit(26),
+  ]);
+  if (me || se || (members?.length || 0)>250 || (stores?.length || 0)>25) throw new AdminError(503,'Store directory could not be verified without truncation.');
+  const assignments = members?.length ? await service.from('portal_membership_store').select('membership_id,license_number')
+    .in('membership_id',members.map(row=>row.id)) : {data:[],error:null};
+  if (assignments.error) throw assignments.error;
+  const rows = await Promise.all((members || []).map(async member=>{
+    const [{data:profile,error:pe},{data:auth,error:ae}] = await Promise.all([
+      service.from('portal_profile').select('id,full_name,active').eq('id',member.profile_id).maybeSingle(),
+      service.auth.admin.getUserById(String(member.profile_id)),
+    ]);
+    if (pe || ae || !profile || !auth.user || auth.user.id!==member.profile_id) throw new AdminError(503,'Member identity requires review.');
+    let eligible=true;
+    try { checkActor({id:auth.user.id,app_metadata:auth.user.app_metadata || {}},new Date()); } catch { eligible=false; }
+    const bannedUntil=(auth.user as unknown as Row).banned_until;
+    if (bannedUntil && Date.parse(String(bannedUntil))>Date.now()) eligible=false;
+    return {...member,fullName:profile.full_name,email:auth.user.email,identityActive:profile.active===true,identityEligible:eligible,
+      licenses:(assignments.data || []).filter(row=>row.membership_id===member.id).map(row=>row.license_number)};
+  }));
+  return {...base,members:rows,stores};
+}
+
+async function manageStoreAccess(actor: Row, body: Row): Promise<Row> {
+  await requireStoreAdministrator(actor);
+  const uuid=(value:unknown)=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  if (!uuid(body.organizationId)||!uuid(body.profileId)||!uuid(body.requestId)
+    || (body.membershipId!=null&&!uuid(body.membershipId)) || !Array.isArray(body.licenses)
+    || body.licenses.length>25 || body.licenses.some(value=>typeof value!=='string'||value.length>200)
+    || !['store_owner','store_buyer','store_staff'].includes(String(body.memberRole))
+    || !['active','disabled'].includes(String(body.status)) || typeof body.reason!=='string'
+    || !body.reason.trim() || body.reason.length>1000) throw new AdminError(400,'Choose a retailer, existing user, role, locations and reason.');
+  const {data:owners,error} = await service.from('portal_organization_membership').select('profile_id')
+    .eq('organization_id',body.organizationId).eq('workspace','store').eq('member_role','store_owner').eq('status','active').limit(251);
+  if (error || (owners?.length || 0)>250) throw new AdminError(503,'Owner recovery requires a complete identity review.');
+  // Server-owned Auth proof only. No values from body.app_metadata/eligibility
+  // are forwarded. Expired/banned Owners cannot be counted as a replacement.
+  const verifiedAt=new Date().toISOString();
+  const identities = await Promise.all([...new Set([String(actor.id),String(body.profileId),...(owners || []).map(row=>String(row.profile_id))])].map(async id=>{
+    const {data,error:ae}=await service.auth.admin.getUserById(id);
+    if(ae||!data.user||data.user.id!==id) throw new AdminError(503,'Current account eligibility could not be verified.');
+    const user=data.user;let eligible=true;
+    try {checkActor({id:user.id,app_metadata:user.app_metadata||{}},new Date());} catch {eligible=false;}
+    const bannedUntil=(user as unknown as Row).banned_until;
+    if(bannedUntil&&Date.parse(String(bannedUntil))>Date.now())eligible=false;
+    return {id,eligible,expiresOn:eligible?(user.app_metadata?.portal_access_expires_on||null):null};
+  }));
+  const {data,error:changeError}=await service.rpc('portal_manage_store_membership',{
+    p_actor_id:actor.id,p_actor_membership_id:actor._workspaceMembershipId,p_organization_id:body.organizationId,
+    p_profile_id:body.profileId,p_membership_id:body.membershipId||null,p_member_role:body.memberRole,
+    p_licenses:body.licenses,p_status:body.status,p_expected_updated_at:body.expectedUpdatedAt||null,
+    p_reason:body.reason.trim(),p_request_id:body.requestId,p_verified_identities:identities,p_verified_at:verifiedAt,
+  });
+  if(changeError) throw new AdminError(changeError.code==='42501'?403:['23514','40001'].includes(changeError.code)?409:changeError.code==='22023'?400:503,
+    ['23514','40001','22023'].includes(changeError.code)?String(changeError.message):'Store membership could not be changed.');
+  return {ok:true,result:data};
 }
 
 async function resolveAccessReview(request: Request, actor: Row, body: Row): Promise<Response> {
@@ -1066,6 +1166,23 @@ Deno.serve(async (request) => {
     if (!actor) return json(request, { error: "Forbidden" }, 403);
     const body = await request.json() as Row;
     const action = text(body.action, 40);
+    if (action==='workspace-permissions') {
+      if(actor.role!=='internal') throw new AdminError(403,'Select an Internal workspace.');
+      const {data,error}=await service.from('portal_role_permission').select('permission').eq('staff_role',actor.staff_role);
+      if(error) throw error;
+      return json(request,{memberRole:actor.staff_role,permissions:(data||[]).map(row=>row.permission)});
+    }
+    if (action==='list-store-access') return json(request,await storeAccessDirectory(actor,text(body.organizationId,36)||undefined));
+    if (action==='manage-store-access') return json(request,await manageStoreAccess(actor,body));
+    if (action === 'revoke-store-membership') {
+      throw new AdminError(409,'Reload Store access and use its reviewed membership change action.');
+    }
+    // Old global-profile operations must never deactivate independent Brand or
+    // Internal access as a side effect of a Store change. No new invitations
+    // are issued until the named live pilot and scoped invitation path pass.
+    if (['invite-user','update-user','invite-onboarding-person','resolve-access-review'].includes(action)) {
+      throw new AdminError(409,'Legacy Store account changes are held. Use a membership-scoped action; live invitations are not enabled.');
+    }
     if (action === "invite-onboarding-person") {
       return await inviteOnboardingPerson(request, actor, body);
     }
@@ -1372,6 +1489,7 @@ Deno.serve(async (request) => {
 
     return json(request, { error: "Unsupported action" }, 400);
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     if (!(error instanceof AdminError)) console.error("portal-admin", error);
     return json(request, {
       error: error instanceof AdminError

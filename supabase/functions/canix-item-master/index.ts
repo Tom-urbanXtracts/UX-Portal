@@ -8,6 +8,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
 const CANIX_API_KEY = Deno.env.get("CANIX_API_KEY") ?? "";
 const CANIX_CRON_SECRET = Deno.env.get("CANIX_CRON_SECRET") ?? "";
 const CANIX_API_BASE = "https://api.canix.com/api/v1";
+const ITEM_FACILITY_NAME = "OCM-DIST-24-000069";
 const PAGE_SIZE = 2000;
 
 type Json = Record<string, unknown>;
@@ -145,12 +146,14 @@ async function canixRequest(path: string, attempt = 0): Promise<Json[]> {
 
 async function fetchAll(
   endpoint: string,
+  filters: Record<string, string> = {},
 ): Promise<{ rows: Json[]; pages: number }> {
   const rows: Json[] = [];
   let offset = 0;
   let pages = 0;
   for (;;) {
     const params = new URLSearchParams({
+      ...filters,
       limit: String(PAGE_SIZE),
       offset: String(offset),
       order_by: "id asc",
@@ -329,15 +332,35 @@ async function syncItemMaster(force = false): Promise<Json> {
   }
 
   try {
-    const [itemResult, facilityResult] = await Promise.all([
-      fetchAll("items"),
-      fetchAll("facilities"),
-    ]);
-    const facilities = new Map<number, Json>();
-    for (const facility of facilityResult.rows) {
-      const id = numberOrNull(facility.id);
-      if (id !== null) facilities.set(id, facility);
+    const facilityResult = await fetchAll("facilities");
+    const matchingFacilities = facilityResult.rows.filter((facility) =>
+      stringOrNull(facility.name) === ITEM_FACILITY_NAME
+    );
+    if (matchingFacilities.length !== 1) {
+      throw new Error(
+        `Expected exactly one Canix facility named ${ITEM_FACILITY_NAME}; found ${matchingFacilities.length}`,
+      );
     }
+    const targetFacility = matchingFacilities[0];
+    const targetFacilityId = numberOrNull(targetFacility.id);
+    if (targetFacilityId === null || !Number.isSafeInteger(targetFacilityId)) {
+      throw new Error(
+        `Canix facility ${ITEM_FACILITY_NAME} does not have a valid numeric ID`,
+      );
+    }
+    const itemResult = await fetchAll("items", {
+      facility_id: String(targetFacilityId),
+    });
+    const outOfScopeItems = itemResult.rows.filter((row) =>
+      numberOrNull(row.facility_id) !== targetFacilityId
+    );
+    if (outOfScopeItems.length) {
+      throw new Error(
+        `Canix returned ${outOfScopeItems.length} Item rows outside facility ${ITEM_FACILITY_NAME}`,
+      );
+    }
+    const facilities = new Map<number, Json>();
+    facilities.set(targetFacilityId, targetFacility);
     const items = itemResult.rows.map((row) =>
       normalizeItem(row, facilities, runId)
     );
@@ -412,6 +435,9 @@ async function syncItemMaster(force = false): Promise<Json> {
       items: items.length,
       item_pages: itemResult.pages,
       facility_pages: facilityResult.pages,
+      facility_id: targetFacilityId,
+      facility_name: ITEM_FACILITY_NAME,
+      facility_license: stringOrNull(targetFacility.license_number),
       latest_source_updated_at: latest,
     };
   } catch (error) {
@@ -447,7 +473,11 @@ Deno.serve(async (request) => {
           "status,last_successful_at,latest_source_updated_at,item_count,item_pages,last_error",
         ).eq("id", 1).single();
       if (error) throw error;
-      return json(request, { source: "Canix GET /items", sync: data });
+      return json(request, {
+        source: "Canix GET /items",
+        scope: { facility_name: ITEM_FACILITY_NAME },
+        sync: data,
+      });
     }
 
     const suppliedSecret = request.headers.get("x-cron-secret") ?? "";
@@ -476,6 +506,8 @@ Deno.serve(async (request) => {
         detail: {
           items: result.items ?? null,
           pages: result.item_pages ?? null,
+          facility_id: result.facility_id ?? null,
+          facility_name: result.facility_name ?? ITEM_FACILITY_NAME,
           skipped: result.skipped ?? false,
         },
       });

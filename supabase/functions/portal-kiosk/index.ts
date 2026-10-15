@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { approvedHttpsUrl } from "../_shared/security-contract.ts";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
+import {
+  requestWorkspace,
+  StoreAccessError,
+} from "../_shared/request-workspace.ts";
 // @ts-ignore qrcode is bundled by esm.sh for the Edge runtime; no Node APIs are used here.
 import QRCode from "https://esm.sh/qrcode@1.5.4?target=deno&no-dts";
 
@@ -49,7 +53,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -101,11 +105,28 @@ async function actorFor(request: Request): Promise<Actor | null> {
   });
   if (!response.ok) return null;
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile").select(
+  const { data: rawProfile, error } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
   ).eq("id", user.id).maybeSingle();
   if (error) throw error;
-  if (!profile || profile.active === false || profile.role !== "internal") return null;
+  if (!rawProfile) return null;
+  let profile: Row;
+  try {
+    profile = await requestWorkspace(
+      service,
+      request,
+      user,
+      rawProfile as Row,
+      "users.read",
+      { internalOnly: true },
+    );
+  } catch (workspaceError) {
+    if (workspaceError instanceof StoreAccessError) {
+      throw new KioskError(workspaceError.status, workspaceError.message);
+    }
+    throw workspaceError;
+  }
+  if (profile.active === false || profile.role !== "internal") return null;
   const { data: grant, error: grantError } = await service.from(
     "portal_role_permission",
   ).select("permission").eq("staff_role", profile.staff_role).eq(
@@ -113,7 +134,7 @@ async function actorFor(request: Request): Promise<Actor | null> {
     "users.manage",
   ).maybeSingle();
   if (grantError) throw grantError;
-  return grant ? { user, profile: profile as unknown as Row } : null;
+  return grant ? { user, profile } : null;
 }
 
 async function audit(actor: Actor, action: string, detail: Row): Promise<void> {

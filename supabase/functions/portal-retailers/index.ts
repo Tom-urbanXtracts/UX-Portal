@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 
@@ -35,7 +36,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     "vary": "Origin",
@@ -63,12 +64,13 @@ async function callerFor(request: Request): Promise<Caller | null> {
   if (!response.ok) return null;
   if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active")
     .eq("id", user.id).maybeSingle();
   if (
-    error || !profile || profile.active === false || profile.role !== "internal"
+    error || !rawProfile || rawProfile.active !== true
   ) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'users.read', { internalOnly: true });
   const { data: grant } = await service.from("portal_role_permission").select(
     "permission",
   )
@@ -94,7 +96,7 @@ function knownDatabaseError(error: Row): PortalError {
     "Store QuickBooks customer must be the retailer account or its direct child",
     "current license expiration date is required",
     "Store QuickBooks customer is required before qualification",
-    "no more than ten stores",
+    "no more than 25 stores",
     "license is already attached",
     "Retailer store not found",
     "Unsupported license status",
@@ -423,6 +425,7 @@ Deno.serve(async (request) => {
     }
     return json(request, { ok: true, result });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     if (!(error instanceof PortalError)) {
       console.error("portal-retailers", error);
     }

@@ -1,3 +1,4 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
@@ -39,7 +40,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -63,10 +64,11 @@ async function callerFor(request: Request): Promise<Caller | null> {
   });
   if (!response.ok) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'claims.read');
   let canManage = false;
   if (profile.role === "internal" && profile.staff_role === "administrator") {
     const { data } = await service.from("portal_role_permission").select("permission")
@@ -81,19 +83,8 @@ async function accessibleLicenses(caller: Caller): Promise<string[] | null> {
     if (!caller.canManage) throw new PortalError(403, "This workforce role cannot review claims.");
     return null;
   }
-  if (caller.profile.role === "owner") {
-    const { data, error } = await service.from("portal_store").select("license_number")
-      .eq("organization", caller.profile.org).eq("active", true);
-    if (error) throw error;
-    return (data ?? []).map((row) => String(row.license_number));
-  }
-  if (caller.profile.role === "buyer") {
-    const { data, error } = await service.from("portal_profile_store").select("license_number")
-      .eq("profile_id", caller.profile.id);
-    if (error) throw error;
-    return (data ?? []).map((row) => String(row.license_number));
-  }
-  throw new PortalError(403, "Receiving claims are available to Store Owners and Buyers.");
+  const context = storeContext(caller.profile);
+  return context ? [...context.licenses] : [];
 }
 
 function serialize(row: Row): Row {
@@ -141,7 +132,7 @@ async function listClaims(caller: Caller, request: Request): Promise<Row> {
     .order("submitted_at", { ascending: false }).limit(250);
   if (licenses !== null) {
     if (!licenses.length) return { claims: [], policy: await claimPolicy() };
-    query = query.in("store_license", licenses);
+    query = query.in("store_license", licenses).eq('retailer_account_id',storeContext(caller.profile)!.retailerAccountId);
   }
   if (state && state !== "all") query = query.eq("state", state);
   const { data, error } = await query;
@@ -199,12 +190,15 @@ async function storeEvidence(claimId: string, caller: Caller, evidence: Evidence
     objectPath, evidence.bytes, { contentType: evidence.contentType, upsert: false },
   );
   if (uploadError) throw uploadError;
-  const { data, error } = await service.from("portal_receiving_claim_evidence").insert({
+  const evidenceRecord = {
     claim_id: claimId, evidence_kind: evidence.evidenceKind, object_path: objectPath,
     original_name: evidence.name, content_type: evidence.contentType,
     size_bytes: evidence.bytes.byteLength, sha256: evidence.digest, scan_state: "clean",
     uploaded_by: caller.profile.id, uploaded_by_email: caller.user.email || null,
-  }).select("id,evidence_kind,original_name,created_at").single();
+  };
+  const { data, error } = caller.profile.role === 'internal'
+    ? await service.from('portal_receiving_claim_evidence').insert(evidenceRecord).select('id,evidence_kind,original_name,created_at').single()
+    : await storeCommand(service, caller.profile, 'claim.evidence', evidenceRecord);
   if (error) {
     await service.storage.from("portal-claim-evidence").remove([objectPath]);
     throw error;
@@ -217,7 +211,7 @@ async function claimForAccess(caller: Caller, claimId: string): Promise<Row> {
   if (error) throw error;
   if (!data) throw new PortalError(404, "Claim not found.");
   if (caller.canManage) return data as Row;
-  if (!new Set(["owner", "buyer"]).has(String(caller.profile.role)) || data.organization !== caller.profile.org) {
+  if (!new Set(["owner", "buyer"]).has(String(caller.profile.role)) || data.retailer_account_id !== storeContext(caller.profile)!.retailerAccountId) {
     throw new PortalError(403, "That claim is outside your organization.");
   }
   const licenses = await accessibleLicenses(caller);
@@ -250,10 +244,10 @@ async function createClaim(caller: Caller, body: Row, lateOverride = false): Pro
     throw new PortalError(400, "Shortage, damaged, and wrong-item claims require a photo, manifest, or proof-of-delivery file.");
   }
   const { data: order, error } = await service.from("portal_order").select(
-    "id,organization,location_license,state",
+    "id,organization,location_license,state,retailer_account_id",
   ).eq("id", orderId).maybeSingle();
   if (error) throw error;
-  if (!order || order.state !== "delivered" || (!lateOverride && order.organization !== caller.profile.org)) {
+  if (!order || order.state !== "delivered" || (!lateOverride && order.retailer_account_id !== storeContext(caller.profile)!.retailerAccountId)) {
     throw new PortalError(403, "That delivered order is outside your organization.");
   }
   if (!lateOverride) {
@@ -264,14 +258,17 @@ async function createClaim(caller: Caller, body: Row, lateOverride = false): Pro
   }
   const overrideReason = clean(body.lateOverrideReason, 1000);
   if (lateOverride && overrideReason.length < 8) throw new PortalError(400, "Enter the Administrator reason for accepting this late claim.");
-  const { data, error: createError } = await service.rpc("portal_create_receiving_claim", {
+  const commandPayload = {
     p_order_id: orderId, p_order_line_id: orderLineId,
     p_organization: order.organization, p_store_license: order.location_license,
     p_claim_type: claimType, p_quantity: quantity, p_narrative: narrative,
     p_submitted_by: caller.profile.id, p_submitted_by_email: caller.user.email || "",
     p_late_override_by: lateOverride ? caller.profile.id : null,
     p_late_override_reason: lateOverride ? overrideReason : null,
-  });
+  };
+  const { data, error: createError } = caller.profile.role === 'internal'
+    ? await service.rpc('portal_create_receiving_claim', commandPayload)
+    : await storeCommand(service, caller.profile, 'claim.create', commandPayload);
   if (createError) {
     if (/quantity|delivered|scope|line|window|override|evidence/i.test(createError.message || "")) {
       throw new PortalError(409, createError.message);
@@ -281,6 +278,7 @@ async function createClaim(caller: Caller, body: Row, lateOverride = false): Pro
   let created = data as Row;
   if (evidence) {
     await storeEvidence(String(created.id), caller, evidence);
+    if (caller.profile.role !== 'internal') return serialize(await claimForAccess(caller,String(created.id)));
     const { data: updated, error: updateError } = await service.from("portal_receiving_claim").update({
       evidence_state: "clean", state: created.state === "more_information" ? "submitted" : created.state,
     }).eq("id", created.id).select("*,portal_receiving_claim_evidence(id,evidence_kind,original_name,created_at)").single();
@@ -299,6 +297,7 @@ async function addEvidence(caller: Caller, body: Row): Promise<Row> {
   }
   const evidence = await prepareEvidence(body.evidence, body.evidenceKind);
   await storeEvidence(claimId, caller, evidence);
+  if (caller.profile.role !== 'internal') return serialize(await claimForAccess(caller,claimId));
   const nextState = claim.state === "more_information" ? "submitted" : claim.state;
   const { data, error } = await service.from("portal_receiving_claim").update({
     evidence_state: "clean", state: nextState,
@@ -348,6 +347,7 @@ Deno.serve(async (request) => {
     if (action === "decide") return json(request, { claim: await decideClaim(caller, body) });
     throw new PortalError(400, "Unsupported claims action.");
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     if (!(error instanceof PortalError)) console.error("portal-claims", error);
     return json(request, { error: error instanceof PortalError ? error.message : "The receiving-claims service is temporarily unavailable." },
       error instanceof PortalError ? error.status : 502);

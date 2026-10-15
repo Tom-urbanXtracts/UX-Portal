@@ -1,0 +1,1404 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-15",
+  "productionProject": "cbhsavfbtcpdyxcvguay",
+  "stagingProject": "nqnmgxnxwllstowavjjt",
+  "sourceSchemaSha256": "4abd55dc3a914a5e5e63f1edb1bb3b9a133222531b1cc830bd2d87aa59170297",
+  "basis": "Staging was bootstrapped from a schema-only production dump, with no production rows, Auth users, Vault secrets, schedules, or connector credentials.",
+  "counts": {
+    "repository": 138,
+    "productionHistory": 134,
+    "stagingHistory": 3,
+    "exactVersionAndName": 116,
+    "versionAliases": 17,
+    "productionOnly": 1,
+    "repositoryOnly": 5
+  },
+  "productionHistory": [
+    {
+      "version": "20260825064821",
+      "name": "portal_profile_base"
+    },
+    {
+      "version": "20260825064852",
+      "name": "portal_profile_security"
+    },
+    {
+      "version": "20260825075840",
+      "name": "portal_pending_profile"
+    },
+    {
+      "version": "20260825080357",
+      "name": "portal_user_provisioning"
+    },
+    {
+      "version": "20260901062000",
+      "name": "canix_inventory_sync"
+    },
+    {
+      "version": "20260901090000",
+      "name": "portal_staff_access"
+    },
+    {
+      "version": "20260901101500",
+      "name": "portal_admin_and_quickbooks"
+    },
+    {
+      "version": "20260901123000",
+      "name": "store_pricing_workflow"
+    },
+    {
+      "version": "20260901133000",
+      "name": "order_policy_and_preorders"
+    },
+    {
+      "version": "20260901150000",
+      "name": "durable_portal_orders"
+    },
+    {
+      "version": "20260901170000",
+      "name": "retailer_accounts_and_onboarding"
+    },
+    {
+      "version": "20260901190000",
+      "name": "catalog_content_and_coa"
+    },
+    {
+      "version": "20260901210000",
+      "name": "quickbooks_financials"
+    },
+    {
+      "version": "20260901230000",
+      "name": "economic_ownership"
+    },
+    {
+      "version": "20260901240000",
+      "name": "canix_availability_contract"
+    },
+    {
+      "version": "20260901250000",
+      "name": "security_and_inventory_commitments"
+    },
+    {
+      "version": "20260901260000",
+      "name": "deterministic_sso_provisioning"
+    },
+    {
+      "version": "20260901270000",
+      "name": "safe_canix_stage_cleanup"
+    },
+    {
+      "version": "20260901280000",
+      "name": "private_portal_assets"
+    },
+    {
+      "version": "20260901290000",
+      "name": "quickbooks_oauth_broker"
+    },
+    {
+      "version": "20260901300000",
+      "name": "order_outbox_cron"
+    },
+    {
+      "version": "20260901310000",
+      "name": "monday_oauth_and_signed_webhooks"
+    },
+    {
+      "version": "20260901320000",
+      "name": "canix_brand_economic_partners"
+    },
+    {
+      "version": "20260902010000",
+      "name": "wholesale_default_pricing"
+    },
+    {
+      "version": "20260902020000",
+      "name": "quickbooks_intuit_trace_ids"
+    },
+    {
+      "version": "20260902030000",
+      "name": "quickbooks_sync_cron"
+    },
+    {
+      "version": "20260902040000",
+      "name": "mfa_enforcement"
+    },
+    {
+      "version": "20260902050000",
+      "name": "quickbooks_environment_isolation"
+    },
+    {
+      "version": "20260902060000",
+      "name": "quickbooks_environment_safe_cache_clear"
+    },
+    {
+      "version": "20260902070000",
+      "name": "inbound_lot_integrity"
+    },
+    {
+      "version": "20260902080000",
+      "name": "lot_integrity_cron"
+    },
+    {
+      "version": "20260902090000",
+      "name": "canix_sync_cron_vault"
+    },
+    {
+      "version": "20260902100000",
+      "name": "lot_review_staging"
+    },
+    {
+      "version": "20260902110000",
+      "name": "canix_item_master"
+    },
+    {
+      "version": "20260902120000",
+      "name": "canix_item_sync_cron"
+    },
+    {
+      "version": "20260902130000",
+      "name": "monday_item_master_sync"
+    },
+    {
+      "version": "20260902140000",
+      "name": "monday_item_master_batch_tuning"
+    },
+    {
+      "version": "20260902150000",
+      "name": "monday_item_master_retarget"
+    },
+    {
+      "version": "20260905120000",
+      "name": "asset_review_retention_policy"
+    },
+    {
+      "version": "20260905130000",
+      "name": "retailer_store_accounting_controls"
+    },
+    {
+      "version": "20260905140000",
+      "name": "retailer_store_control_followup"
+    },
+    {
+      "version": "20260905150000",
+      "name": "canix_stale_sync_recovery"
+    },
+    {
+      "version": "20260914131500",
+      "name": "cost_object_source_boundary"
+    },
+    {
+      "version": "20260914160000",
+      "name": "lot_cost_object_decisions"
+    },
+    {
+      "version": "20260914173000",
+      "name": "public_store_kiosk_links"
+    },
+    {
+      "version": "20260914190000",
+      "name": "operational_expansion"
+    },
+    {
+      "version": "20260914203000",
+      "name": "canix_owner_reporting_gap_and_readiness_closure"
+    },
+    {
+      "version": "20260914214500",
+      "name": "store_minimum_order_and_lead_time"
+    },
+    {
+      "version": "20260914223000",
+      "name": "reorder_signals_readiness_closure"
+    },
+    {
+      "version": "20260914233000",
+      "name": "trusted_documents_communications_claims_and_payments"
+    },
+    {
+      "version": "20260914234500",
+      "name": "complete_production_document_scanner"
+    },
+    {
+      "version": "20260914235500",
+      "name": "off_portal_quality_payments_and_free_notifications"
+    },
+    {
+      "version": "20260915000000",
+      "name": "retailer_source_evidence_event"
+    },
+    {
+      "version": "20260917090000",
+      "name": "workforce_admin_invitation"
+    },
+    {
+      "version": "20260917120000",
+      "name": "kiosk_brand_product_scope"
+    },
+    {
+      "version": "20260923120000",
+      "name": "sku_intake_workflow"
+    },
+    {
+      "version": "20260929170000",
+      "name": "three_workspace_foundation"
+    },
+    {
+      "version": "20260929190000",
+      "name": "quickbooks_vendor_cache"
+    },
+    {
+      "version": "20260929193000",
+      "name": "quickbooks_sync_request_timeout"
+    },
+    {
+      "version": "20260929194710",
+      "name": "brand_workspace_access"
+    },
+    {
+      "version": "20260929201636",
+      "name": "disable_portal_mfa"
+    },
+    {
+      "version": "20260929203927",
+      "name": "brand_company_onboarding"
+    },
+    {
+      "version": "20260930033615",
+      "name": "restrict_rls_maintenance_helper"
+    },
+    {
+      "version": "20260930033814",
+      "name": "optimize_portal_profile_rls"
+    },
+    {
+      "version": "20260930035105",
+      "name": "retire_legacy_demo_stores_and_configure_brand_profile"
+    },
+    {
+      "version": "20260930042527",
+      "name": "brand_operations_workspace"
+    },
+    {
+      "version": "20260930053009",
+      "name": "apply_brand_governance_decisions"
+    },
+    {
+      "version": "20260930152000",
+      "name": "canix_owner_reporting_bridge"
+    },
+    {
+      "version": "20260930201440",
+      "name": "brand_portal_governance_policy"
+    },
+    {
+      "version": "20260930215634",
+      "name": "brand_agreement_workflow"
+    },
+    {
+      "version": "20260930234911",
+      "name": "conditional_requirement_rules"
+    },
+    {
+      "version": "20261001023030",
+      "name": "complete_brand_profiles_and_reporting_health"
+    },
+    {
+      "version": "20261001101500",
+      "name": "canix_marketplace_catalog_reconciliation"
+    },
+    {
+      "version": "20261001114500",
+      "name": "canix_marketplace_sync_cron"
+    },
+    {
+      "version": "20261001121500",
+      "name": "pause_marketplace_schedule_without_shop_credential"
+    },
+    {
+      "version": "20261001160000",
+      "name": "monday_brand_milestone_callback"
+    },
+    {
+      "version": "20261001160500",
+      "name": "recover_interrupted_monday_authorization"
+    },
+    {
+      "version": "20261001175353",
+      "name": "portal_native_workflows"
+    },
+    {
+      "version": "20261001183218",
+      "name": "complete_portal_p1_workflows"
+    },
+    {
+      "version": "20261001190243",
+      "name": "finalize_receiving_claim_policy"
+    },
+    {
+      "version": "20261001211720",
+      "name": "brand_purchase_order_catalog_fulfillment"
+    },
+    {
+      "version": "20261001215500",
+      "name": "hold_brand_order_followups"
+    },
+    {
+      "version": "20261002025729",
+      "name": "brand_onboarding_document_exports"
+    },
+    {
+      "version": "20261002032619",
+      "name": "brand_profile_documents_and_wana_pilot"
+    },
+    {
+      "version": "20261002034909",
+      "name": "brand_supply_chain_workflows"
+    },
+    {
+      "version": "20261002041420",
+      "name": "brand_catalog_document_linking_and_inventory_classification"
+    },
+    {
+      "version": "20261002051009",
+      "name": "brand_workspace_refinement_and_test_brand"
+    },
+    {
+      "version": "20261002053244",
+      "name": "seed_test_brand_demo_documents"
+    },
+    {
+      "version": "20261002054347",
+      "name": "complete_test_brand_required_documents"
+    },
+    {
+      "version": "20261002060622",
+      "name": "brand_quality_support_workspace"
+    },
+    {
+      "version": "20261002144900",
+      "name": "agreement_commercial_terms_and_six_section_sku"
+    },
+    {
+      "version": "20261002160944",
+      "name": "brand_sku_intake_access"
+    },
+    {
+      "version": "20261002193733",
+      "name": "public_brand_application"
+    },
+    {
+      "version": "20261002204932",
+      "name": "fix_brand_application_resume_link"
+    },
+    {
+      "version": "20261007110000",
+      "name": "investor_deck_product_roadmap"
+    },
+    {
+      "version": "20261008033119",
+      "name": "readiness_claims_and_reporting_policy"
+    },
+    {
+      "version": "20261008033910",
+      "name": "complete_role_visual_system_evidence"
+    },
+    {
+      "version": "20261008034536",
+      "name": "final_controlled_hold_completion_state"
+    },
+    {
+      "version": "20261008034837",
+      "name": "controlled_hold_approval_packets"
+    },
+    {
+      "version": "20261008035136",
+      "name": "controlled_hold_readiness_evidence"
+    },
+    {
+      "version": "20261008044951",
+      "name": "internal_workflow_foundation"
+    },
+    {
+      "version": "20261008045528",
+      "name": "atomic_access_request_submission"
+    },
+    {
+      "version": "20261008045759",
+      "name": "workforce_offboarding_control"
+    },
+    {
+      "version": "20261008050111",
+      "name": "it_governance_reviews_and_system_inventory"
+    },
+    {
+      "version": "20261008050419",
+      "name": "record_it_governance_actor_email"
+    },
+    {
+      "version": "20261008050553",
+      "name": "emergency_change_retrospective_control"
+    },
+    {
+      "version": "20261008051500",
+      "name": "shared_department_request_intake"
+    },
+    {
+      "version": "20261008051633",
+      "name": "department_request_notifications"
+    },
+    {
+      "version": "20261008052705",
+      "name": "repair_department_request_audit"
+    },
+    {
+      "version": "20261008053155",
+      "name": "finance_purchase_requests_and_notification_routing"
+    },
+    {
+      "version": "20261008101123",
+      "name": "strengthen_purchase_requests_and_auth_helpers"
+    },
+    {
+      "version": "20261008102224",
+      "name": "repair_purchase_request_runtime_state"
+    },
+    {
+      "version": "20261008161122",
+      "name": "suppress_test_notification_recipients"
+    },
+    {
+      "version": "20261008161710",
+      "name": "enforce_notification_suppression"
+    },
+    {
+      "version": "20261008164743",
+      "name": "restore_public_identity_helpers"
+    },
+    {
+      "version": "20261009150230",
+      "name": "update_purchase_approval_limits"
+    },
+    {
+      "version": "20261009150836",
+      "name": "set_purchase_500_boundary_to_eric"
+    },
+    {
+      "version": "20261009155745",
+      "name": "supply_order_webhook_state"
+    },
+    {
+      "version": "20261009223504",
+      "name": "portal_native_data_control_center"
+    },
+    {
+      "version": "20261009223533",
+      "name": "index_portal_data_control_foreign_keys"
+    },
+    {
+      "version": "20261009232405",
+      "name": "recover_abandoned_canix_item_sync"
+    },
+    {
+      "version": "20261012054838",
+      "name": "supply_order_workspace_v1"
+    },
+    {
+      "version": "20261012063642",
+      "name": "supply_order_departments_and_brand_scope"
+    },
+    {
+      "version": "20261012065923",
+      "name": "supply_order_passwordless_approvals"
+    },
+    {
+      "version": "20261012070035",
+      "name": "repair_supply_order_passwordless_audit_actor"
+    },
+    {
+      "version": "20261012083637",
+      "name": "persistent_item_mapping_center"
+    },
+    {
+      "version": "20261012084346",
+      "name": "index_item_mapping_approver"
+    },
+    {
+      "version": "20261012085932",
+      "name": "portal_sku_master_and_assisted_matching"
+    },
+    {
+      "version": "20261012090639",
+      "name": "activate_catalog_finished_products"
+    },
+    {
+      "version": "20261012091834",
+      "name": "add_source_item_classification_queue"
+    },
+    {
+      "version": "20261012092620",
+      "name": "add_cross_source_item_suggestions"
+    },
+    {
+      "version": "20261012151840",
+      "name": "add_work_queue_sla_and_blocking"
+    },
+    {
+      "version": "20261014194814",
+      "name": "refresh_canix_marketplace_browser_snapshot"
+    },
+    {
+      "version": "20261014203620",
+      "name": "store_activation_admin_demo"
+    }
+  ],
+  "repositoryMigrations": [
+    {
+      "version": "20260825064821",
+      "name": "portal_profile_base",
+      "md5": "6c27e454d46ab166463bfcfb20f205c0"
+    },
+    {
+      "version": "20260825064852",
+      "name": "portal_profile_security",
+      "md5": "a39476bd4719cbd3221eee9bcf10942f"
+    },
+    {
+      "version": "20260825075840",
+      "name": "portal_pending_profile",
+      "md5": "e0ebf004b238cd3c4db110a452a176b4"
+    },
+    {
+      "version": "20260825080357",
+      "name": "portal_user_provisioning",
+      "md5": "7ebc8409e12bc81023c70bf7c13673e1"
+    },
+    {
+      "version": "20260901062000",
+      "name": "canix_inventory_sync",
+      "md5": "3af6a81834eebe0f5d3ae171cf966299"
+    },
+    {
+      "version": "20260901090000",
+      "name": "portal_staff_access",
+      "md5": "0824665431eeb3238101b51273a5a04a"
+    },
+    {
+      "version": "20260901101500",
+      "name": "portal_admin_and_quickbooks",
+      "md5": "23fe9f12adf5cc8ea86b4720e73a443a"
+    },
+    {
+      "version": "20260901123000",
+      "name": "store_pricing_workflow",
+      "md5": "202e2739b59b61f1ff55a85e5a0c84b0"
+    },
+    {
+      "version": "20260901133000",
+      "name": "order_policy_and_preorders",
+      "md5": "10f7159f24cb16d7be5607b89a634fd3"
+    },
+    {
+      "version": "20260901150000",
+      "name": "durable_portal_orders",
+      "md5": "a05970f75629f60905bbb3441e635649"
+    },
+    {
+      "version": "20260901170000",
+      "name": "retailer_accounts_and_onboarding",
+      "md5": "5722ec0d1ad25fc128b016bd4f800fdc"
+    },
+    {
+      "version": "20260901190000",
+      "name": "catalog_content_and_coa",
+      "md5": "4029232b73327db6ae39c0bf9c736fd6"
+    },
+    {
+      "version": "20260901210000",
+      "name": "quickbooks_financials",
+      "md5": "64058dc6e0dd6cc817b4114665b22d31"
+    },
+    {
+      "version": "20260901230000",
+      "name": "economic_ownership",
+      "md5": "d6c5ede9d21554b91fc207577c32d1ff"
+    },
+    {
+      "version": "20260901240000",
+      "name": "canix_availability_contract",
+      "md5": "c03001d3cf18a6c9f73b2460d9a075b2"
+    },
+    {
+      "version": "20260901250000",
+      "name": "security_and_inventory_commitments",
+      "md5": "36517bbfcd99fdb1ce75a91213812aeb"
+    },
+    {
+      "version": "20260901260000",
+      "name": "deterministic_sso_provisioning",
+      "md5": "1683530b5391713d9ef05d43c707d2a6"
+    },
+    {
+      "version": "20260901270000",
+      "name": "safe_canix_stage_cleanup",
+      "md5": "b7f2ef1f73224d3c13f01d10695b94a1"
+    },
+    {
+      "version": "20260901280000",
+      "name": "private_portal_assets",
+      "md5": "d018b562112d209a6530295d2f36dd8e"
+    },
+    {
+      "version": "20260901290000",
+      "name": "quickbooks_oauth_broker",
+      "md5": "4f97e32b1c1b81e35998346d03cde4eb"
+    },
+    {
+      "version": "20260901300000",
+      "name": "order_outbox_cron",
+      "md5": "b4e4c3a14bc80d6800e6f9836f3819cf"
+    },
+    {
+      "version": "20260901310000",
+      "name": "monday_oauth_and_signed_webhooks",
+      "md5": "ae44bb4575d7da450910316c3a55b2d1"
+    },
+    {
+      "version": "20260901320000",
+      "name": "canix_brand_economic_partners",
+      "md5": "a680250e324461538b017cc8f6a8224c"
+    },
+    {
+      "version": "20260902010000",
+      "name": "wholesale_default_pricing",
+      "md5": "16c40c0fd5e5c406cb0eacdec19122b6"
+    },
+    {
+      "version": "20260902020000",
+      "name": "quickbooks_intuit_trace_ids",
+      "md5": "4e11fb5f6d4e7dcc3624401ea25795f5"
+    },
+    {
+      "version": "20260902030000",
+      "name": "quickbooks_sync_cron",
+      "md5": "e3e7a6f54c9e237420a2a52bbfdf7dfb"
+    },
+    {
+      "version": "20260902040000",
+      "name": "mfa_enforcement",
+      "md5": "3ab3f267b23c6d288f1af2d71d558749"
+    },
+    {
+      "version": "20260902050000",
+      "name": "quickbooks_environment_isolation",
+      "md5": "23ac9c2654432ba76bfddf723b59fe60"
+    },
+    {
+      "version": "20260902060000",
+      "name": "quickbooks_environment_safe_cache_clear",
+      "md5": "39767ac46da2b240d37da821c9c7bb01"
+    },
+    {
+      "version": "20260902070000",
+      "name": "inbound_lot_integrity",
+      "md5": "8f6a6c1b8117fbcf20837cff8760c84c"
+    },
+    {
+      "version": "20260902080000",
+      "name": "lot_integrity_cron",
+      "md5": "b345611f7b820901e5cc33dea4041470"
+    },
+    {
+      "version": "20260902090000",
+      "name": "canix_sync_cron_vault",
+      "md5": "504bb0cabbc4d53c7ebfa0115049bc24"
+    },
+    {
+      "version": "20260902100000",
+      "name": "lot_review_staging",
+      "md5": "e0763e9fbaca51ff1f723194ac0e937e"
+    },
+    {
+      "version": "20260902110000",
+      "name": "canix_item_master",
+      "md5": "ec9e20732344c14f46b2363ba724b175"
+    },
+    {
+      "version": "20260902120000",
+      "name": "canix_item_sync_cron",
+      "md5": "104e767ae007939c6c18fe2e6604552e"
+    },
+    {
+      "version": "20260902130000",
+      "name": "monday_item_master_sync",
+      "md5": "784101d465fac5019d922c4f1795da58"
+    },
+    {
+      "version": "20260902140000",
+      "name": "monday_item_master_batch_tuning",
+      "md5": "28ecb0078a3b2f1f687feb190c4878cd"
+    },
+    {
+      "version": "20260902150000",
+      "name": "monday_item_master_retarget",
+      "md5": "d606f669cd7daa993ca14db79e9eb1c7"
+    },
+    {
+      "version": "20260905120000",
+      "name": "asset_review_retention_policy",
+      "md5": "d0a43db53f0b51d323847c9717888070"
+    },
+    {
+      "version": "20260905130000",
+      "name": "retailer_store_accounting_controls",
+      "md5": "2fd36104d62bd4db2fffc0a7ccd624c3"
+    },
+    {
+      "version": "20260905140000",
+      "name": "retailer_store_control_followup",
+      "md5": "ff5faf87ca80066c07b3fe9c2b1d9b0d"
+    },
+    {
+      "version": "20260905150000",
+      "name": "canix_stale_sync_recovery",
+      "md5": "6cad3e1decc38b72358fc97aaff26140"
+    },
+    {
+      "version": "20260914131500",
+      "name": "cost_object_source_boundary",
+      "md5": "e3566efe2052b0e227e5d560ed6e2019"
+    },
+    {
+      "version": "20260914160000",
+      "name": "lot_cost_object_decisions",
+      "md5": "7b7263ce64a34f043885afca6aafc484"
+    },
+    {
+      "version": "20260914173000",
+      "name": "public_store_kiosk_links",
+      "md5": "5501c69c58481f2e076eff58cf9a0654"
+    },
+    {
+      "version": "20260914190000",
+      "name": "operational_expansion",
+      "md5": "9a590b1a7c28873891c6acc329aeeaae"
+    },
+    {
+      "version": "20260914203000",
+      "name": "canix_owner_reporting_gap_and_readiness_closure",
+      "md5": "7bec93d605c54ede575e574ff5f305a6"
+    },
+    {
+      "version": "20260914214500",
+      "name": "store_minimum_order_and_lead_time",
+      "md5": "e71614c39367ab4004f28c416c9fe7a6"
+    },
+    {
+      "version": "20260914223000",
+      "name": "reorder_signals_readiness_closure",
+      "md5": "51d8ce9cbf7ef8b4deed85484856ec0d"
+    },
+    {
+      "version": "20260914233000",
+      "name": "trusted_documents_communications_claims_and_payments",
+      "md5": "71dffd02a68d90aac87c42a2b55e0550"
+    },
+    {
+      "version": "20260914234500",
+      "name": "complete_production_document_scanner",
+      "md5": "ab33d2a8a61bdccdab0ca080a03232a0"
+    },
+    {
+      "version": "20260914235500",
+      "name": "off_portal_quality_payments_and_free_notifications",
+      "md5": "b3a24047817023178e3a0bcd5bd5d9fa"
+    },
+    {
+      "version": "20260915000000",
+      "name": "retailer_source_evidence_event",
+      "md5": "672f9cd9cd8a1d1be88da16bdf9eed30"
+    },
+    {
+      "version": "20260917090000",
+      "name": "workforce_admin_invitation",
+      "md5": "1cf0394a815c7c82f0951a4c73f683b1"
+    },
+    {
+      "version": "20260917120000",
+      "name": "kiosk_brand_product_scope",
+      "md5": "0b2c7236d5b1a688d1772a97db61b264"
+    },
+    {
+      "version": "20260923120000",
+      "name": "sku_intake_workflow",
+      "md5": "669fda6398137a345900b8f4a604ddaa"
+    },
+    {
+      "version": "20260929170000",
+      "name": "three_workspace_foundation",
+      "md5": "b8ff9bbfd31554cd1d6a89e5088cbb7e"
+    },
+    {
+      "version": "20260929190000",
+      "name": "quickbooks_vendor_cache",
+      "md5": "97be2b5ad92ef9f29f924759da1708c8"
+    },
+    {
+      "version": "20260929193000",
+      "name": "quickbooks_sync_request_timeout",
+      "md5": "c0b41b75be572f6b7fc4b6f273805732"
+    },
+    {
+      "version": "20260929194710",
+      "name": "brand_workspace_access",
+      "md5": "baed1fe342d4a3c1f6ebf32c072a3c63"
+    },
+    {
+      "version": "20260929201636",
+      "name": "disable_portal_mfa",
+      "md5": "b940a50123a3be049da525919ad503a3"
+    },
+    {
+      "version": "20260929203927",
+      "name": "brand_company_onboarding",
+      "md5": "b1fae5889c6abdb1df47692494bda18d"
+    },
+    {
+      "version": "20260930033615",
+      "name": "restrict_rls_maintenance_helper",
+      "md5": "23ff93930fd4667ae339b4ce36a9929c"
+    },
+    {
+      "version": "20260930033814",
+      "name": "optimize_portal_profile_rls",
+      "md5": "ee80e1b3454f16864649153b1d8c875c"
+    },
+    {
+      "version": "20260930035105",
+      "name": "retire_legacy_demo_stores_and_configure_brand_profile",
+      "md5": "99647a4498c0fa9daf2a978f8652c260"
+    },
+    {
+      "version": "20260930042527",
+      "name": "brand_operations_workspace",
+      "md5": "958c3535653b2e9d2b60804fca2614a7"
+    },
+    {
+      "version": "20260930053009",
+      "name": "apply_brand_governance_decisions",
+      "md5": "edfdacad5c278f17acc3f22060ba3535"
+    },
+    {
+      "version": "20260930152000",
+      "name": "canix_owner_reporting_bridge",
+      "md5": "4ba786ec7c7afcb13b2be538806ad126"
+    },
+    {
+      "version": "20260930201440",
+      "name": "brand_portal_governance_policy",
+      "md5": "80164154115b223640f61bbfd54c8e40"
+    },
+    {
+      "version": "20260930215634",
+      "name": "brand_agreement_workflow",
+      "md5": "3a647589b9d47ab1741a249ad08ccf92"
+    },
+    {
+      "version": "20260930234911",
+      "name": "conditional_requirement_rules",
+      "md5": "2f4af7865dc24022419ba4c3834d2b3d"
+    },
+    {
+      "version": "20261001023030",
+      "name": "complete_brand_profiles_and_reporting_health",
+      "md5": "0751554c4f114cd6eef8585e8bf469e8"
+    },
+    {
+      "version": "20261001101500",
+      "name": "canix_marketplace_catalog_reconciliation",
+      "md5": "933d84b1ee26b6e2b2cd445978ac7b59"
+    },
+    {
+      "version": "20261001114500",
+      "name": "canix_marketplace_sync_cron",
+      "md5": "3499e7a06410834f97fc6074ac5103e3"
+    },
+    {
+      "version": "20261001121500",
+      "name": "pause_marketplace_schedule_without_shop_credential",
+      "md5": "8961937da9b270e1666a75d76a975109"
+    },
+    {
+      "version": "20261001160000",
+      "name": "monday_brand_milestone_callback",
+      "md5": "a02e04bd385d62449591367bec32951a"
+    },
+    {
+      "version": "20261001160500",
+      "name": "recover_interrupted_monday_authorization",
+      "md5": "cdd52b0a1ef645a4efb2025424308c38"
+    },
+    {
+      "version": "20261001175353",
+      "name": "portal_native_workflows",
+      "md5": "1f1412acffa9a618293221aa23d9281b"
+    },
+    {
+      "version": "20261001183218",
+      "name": "complete_portal_p1_workflows",
+      "md5": "283732dd88948c6e473365dcb8ee73d4"
+    },
+    {
+      "version": "20261001190243",
+      "name": "finalize_receiving_claim_policy",
+      "md5": "ae97444a38829d0d8c44d3fb078a1013"
+    },
+    {
+      "version": "20261001211720",
+      "name": "brand_purchase_order_catalog_fulfillment",
+      "md5": "8a21f5ebda4bc81c82192461474ddd6b"
+    },
+    {
+      "version": "20261001215500",
+      "name": "hold_brand_order_followups",
+      "md5": "5fbdba5d4c2de8d3a6f69b58b213eef7"
+    },
+    {
+      "version": "20261002025729",
+      "name": "brand_onboarding_document_exports",
+      "md5": "e04b6486dc8fb17b2ea2f0006815a897"
+    },
+    {
+      "version": "20261002032619",
+      "name": "brand_profile_documents_and_wana_pilot",
+      "md5": "af974c89464276878bdf3391494bdb3b"
+    },
+    {
+      "version": "20261002034909",
+      "name": "brand_supply_chain_workflows",
+      "md5": "7cc42d164d50a2809dc0116a3c326aea"
+    },
+    {
+      "version": "20261002041420",
+      "name": "brand_catalog_document_linking_and_inventory_classification",
+      "md5": "e7ce18f9aa693bd72c1da50200fbba22"
+    },
+    {
+      "version": "20261002051009",
+      "name": "brand_workspace_refinement_and_test_brand",
+      "md5": "a2dd29436143f1c10af641995d3f1e10"
+    },
+    {
+      "version": "20261002053244",
+      "name": "seed_test_brand_demo_documents",
+      "md5": "db66b19c9282892fb28a34c725b78a9d"
+    },
+    {
+      "version": "20261002054347",
+      "name": "complete_test_brand_required_documents",
+      "md5": "d833b0c100ea67bec72f9bd675f532e5"
+    },
+    {
+      "version": "20261002060622",
+      "name": "brand_quality_support_workspace",
+      "md5": "cecb796f45126e6403b77074eb5fe92b"
+    },
+    {
+      "version": "20261002144900",
+      "name": "agreement_commercial_terms_and_six_section_sku",
+      "md5": "ea0f29a6832e9ae827ad669273b8b080"
+    },
+    {
+      "version": "20261002160944",
+      "name": "brand_sku_intake_access",
+      "md5": "2748dbb92648e6719215a4f7223e1381"
+    },
+    {
+      "version": "20261002193733",
+      "name": "public_brand_application",
+      "md5": "8f08fb76f35bc3f023d96f0ceac83e71"
+    },
+    {
+      "version": "20261002204932",
+      "name": "fix_brand_application_resume_link",
+      "md5": "8066275629cfb2c414090106d11f08f7"
+    },
+    {
+      "version": "20261007110000",
+      "name": "investor_deck_product_roadmap",
+      "md5": "079628e490083578ebdcca0f0fde8449"
+    },
+    {
+      "version": "20261008033119",
+      "name": "readiness_claims_and_reporting_policy",
+      "md5": "4c74a16ac7bc044be842b14b23fb2d06"
+    },
+    {
+      "version": "20261008033910",
+      "name": "complete_role_visual_system_evidence",
+      "md5": "1bcbde80979b6dee70d0369b99755510"
+    },
+    {
+      "version": "20261008034536",
+      "name": "final_controlled_hold_completion_state",
+      "md5": "07e2c2a15aa271aa59c827584f1688ab"
+    },
+    {
+      "version": "20261008034837",
+      "name": "controlled_hold_approval_packets",
+      "md5": "2a534f89b8d69f8854a9d0544e68071a"
+    },
+    {
+      "version": "20261008035136",
+      "name": "controlled_hold_readiness_evidence",
+      "md5": "ac050b565dd5fcadf0b7fe0c3f7e9205"
+    },
+    {
+      "version": "20261008044951",
+      "name": "internal_workflow_foundation",
+      "md5": "b187d397d75fa7b03ea64c4062e36421"
+    },
+    {
+      "version": "20261008045528",
+      "name": "atomic_access_request_submission",
+      "md5": "3a75b6496e7a671445aa84515ee47d6c"
+    },
+    {
+      "version": "20261008045759",
+      "name": "workforce_offboarding_control",
+      "md5": "7a37049d8366005419f151e76e58f705"
+    },
+    {
+      "version": "20261008050111",
+      "name": "it_governance_reviews_and_system_inventory",
+      "md5": "69e9bc5844f468a1aefd0f9ab9cdf086"
+    },
+    {
+      "version": "20261008050419",
+      "name": "record_it_governance_actor_email",
+      "md5": "b57f95845d722cb7595ee197bc9e5933"
+    },
+    {
+      "version": "20261008050553",
+      "name": "emergency_change_retrospective_control",
+      "md5": "3b2667217c2e64083f12bc72ae7360f1"
+    },
+    {
+      "version": "20261008051500",
+      "name": "shared_department_request_intake",
+      "md5": "aa1efdbd230f389898871979f3f590df"
+    },
+    {
+      "version": "20261008051633",
+      "name": "department_request_notifications",
+      "md5": "8e21e95dc0ab71db610f6bb847126e83"
+    },
+    {
+      "version": "20261008052705",
+      "name": "repair_department_request_audit",
+      "md5": "44b5fdaa507e2093bc72388beff3046a"
+    },
+    {
+      "version": "20261008053155",
+      "name": "finance_purchase_requests_and_notification_routing",
+      "md5": "5f56756c6cf8d5252a42425759bf6e38"
+    },
+    {
+      "version": "20261008101123",
+      "name": "strengthen_purchase_requests_and_auth_helpers",
+      "md5": "dc0189d33a2bb1faf0931728c28dc4c3"
+    },
+    {
+      "version": "20261008102224",
+      "name": "repair_purchase_request_runtime_state",
+      "md5": "c272adfadd03991ab00e47e73263caf3"
+    },
+    {
+      "version": "20261008161122",
+      "name": "suppress_test_notification_recipients",
+      "md5": "13696d9bb9d1215c2851fbc5191dc9d3"
+    },
+    {
+      "version": "20261008161710",
+      "name": "enforce_notification_suppression",
+      "md5": "f7e413f86c02a01304a5efe4794e00f4"
+    },
+    {
+      "version": "20261008164743",
+      "name": "restore_public_identity_helpers",
+      "md5": "f7a11665b0ab5664054ca20df35213af"
+    },
+    {
+      "version": "20261009152000",
+      "name": "update_purchase_approval_limits",
+      "md5": "0e7a9ad61052fe2783e48b348c86b3e9"
+    },
+    {
+      "version": "20261009153500",
+      "name": "set_purchase_500_boundary_to_eric",
+      "md5": "6043c1b54011454fe498b1f8fb56d64d"
+    },
+    {
+      "version": "20261009155529",
+      "name": "supply_order_webhook_state",
+      "md5": "c605a5a18be699626d1870ba9f810c33"
+    },
+    {
+      "version": "20261009223102",
+      "name": "portal_native_data_control_center",
+      "md5": "8a7d66529278373715051261895f09bb"
+    },
+    {
+      "version": "20261009223526",
+      "name": "index_portal_data_control_foreign_keys",
+      "md5": "c070090c5adeaf6657262c11959e7a99"
+    },
+    {
+      "version": "20261009233000",
+      "name": "recover_abandoned_canix_item_sync",
+      "md5": "800b836aa348a6ba17d7ef1fe5bebcdb"
+    },
+    {
+      "version": "20261012083356",
+      "name": "persistent_item_mapping_center",
+      "md5": "dec2dc63ec22127a53641167402a22f4"
+    },
+    {
+      "version": "20261012084322",
+      "name": "index_item_mapping_approver",
+      "md5": "f735b3ed28742e53a08df52ba66bcd7c"
+    },
+    {
+      "version": "20261012133000",
+      "name": "supply_order_workspace_v1",
+      "md5": "04dc4771b3e5b3c684781fe9c0142201"
+    },
+    {
+      "version": "20261012143000",
+      "name": "supply_order_departments_and_brand_scope",
+      "md5": "fa9e8d3975a3d121cecb3da5d0fd65ac"
+    },
+    {
+      "version": "20261012150000",
+      "name": "supply_order_passwordless_approvals",
+      "md5": "921f53e26e482c49ffd9c83ee335dc48"
+    },
+    {
+      "version": "20261012151632",
+      "name": "add_work_queue_sla_and_blocking",
+      "md5": "57fd3f68887e2d7237b47076d221adf1"
+    },
+    {
+      "version": "20261012181500",
+      "name": "portal_sku_master_and_assisted_matching",
+      "md5": "25bc526ba603f7d1132b07fd4fb3d746"
+    },
+    {
+      "version": "20261012194500",
+      "name": "activate_catalog_finished_products",
+      "md5": "880e70051f1723f0db98c97b20ed2f4d"
+    },
+    {
+      "version": "20261012203000",
+      "name": "add_source_item_classification_queue",
+      "md5": "4041dad2e0321f37792caebd5f498093"
+    },
+    {
+      "version": "20261012213000",
+      "name": "add_cross_source_item_suggestions",
+      "md5": "a0144e42655f2f37afb7de2bd496d527"
+    },
+    {
+      "version": "20261014194814",
+      "name": "refresh_canix_marketplace_browser_snapshot",
+      "md5": "79714428773349932a30351b2bae799c"
+    },
+    {
+      "version": "20261014202834",
+      "name": "store_activation_admin_demo",
+      "md5": "82438481c52c75803b35025f10ff2e05"
+    },
+    {
+      "version": "20261014213000",
+      "name": "approve_store_workspace_activation_planning",
+      "md5": "1dfa554a42797959a3ee0dfbcb1660c9"
+    },
+    {
+      "version": "20261014215429",
+      "name": "store_membership_access_foundation",
+      "md5": "204804aabab22580d43c530450d8d0af"
+    },
+    {
+      "version": "20261014220938",
+      "name": "store_endpoint_access_commands",
+      "md5": "3790c37cb7a7ed696c0810ad7ae06fde"
+    },
+    {
+      "version": "20261014223749",
+      "name": "store_membership_administration",
+      "md5": "f11fe4dcc2dde9341c36a7b708b7f4af"
+    },
+    {
+      "version": "20261015003000",
+      "name": "provision_workforce_workspace_membership",
+      "md5": "a392d28dcb294b80e9cbf3020736ccd3"
+    }
+  ],
+  "versionAliases": [
+    {
+      "name": "update_purchase_approval_limits",
+      "repositoryVersion": "20261009152000",
+      "productionAppliedVersion": "20261009150230"
+    },
+    {
+      "name": "set_purchase_500_boundary_to_eric",
+      "repositoryVersion": "20261009153500",
+      "productionAppliedVersion": "20261009150836"
+    },
+    {
+      "name": "supply_order_webhook_state",
+      "repositoryVersion": "20261009155529",
+      "productionAppliedVersion": "20261009155745"
+    },
+    {
+      "name": "portal_native_data_control_center",
+      "repositoryVersion": "20261009223102",
+      "productionAppliedVersion": "20261009223504"
+    },
+    {
+      "name": "index_portal_data_control_foreign_keys",
+      "repositoryVersion": "20261009223526",
+      "productionAppliedVersion": "20261009223533"
+    },
+    {
+      "name": "recover_abandoned_canix_item_sync",
+      "repositoryVersion": "20261009233000",
+      "productionAppliedVersion": "20261009232405"
+    },
+    {
+      "name": "persistent_item_mapping_center",
+      "repositoryVersion": "20261012083356",
+      "productionAppliedVersion": "20261012083637"
+    },
+    {
+      "name": "index_item_mapping_approver",
+      "repositoryVersion": "20261012084322",
+      "productionAppliedVersion": "20261012084346"
+    },
+    {
+      "name": "supply_order_workspace_v1",
+      "repositoryVersion": "20261012133000",
+      "productionAppliedVersion": "20261012054838"
+    },
+    {
+      "name": "supply_order_departments_and_brand_scope",
+      "repositoryVersion": "20261012143000",
+      "productionAppliedVersion": "20261012063642"
+    },
+    {
+      "name": "supply_order_passwordless_approvals",
+      "repositoryVersion": "20261012150000",
+      "productionAppliedVersion": "20261012065923"
+    },
+    {
+      "name": "add_work_queue_sla_and_blocking",
+      "repositoryVersion": "20261012151632",
+      "productionAppliedVersion": "20261012151840"
+    },
+    {
+      "name": "portal_sku_master_and_assisted_matching",
+      "repositoryVersion": "20261012181500",
+      "productionAppliedVersion": "20261012085932"
+    },
+    {
+      "name": "activate_catalog_finished_products",
+      "repositoryVersion": "20261012194500",
+      "productionAppliedVersion": "20261012090639"
+    },
+    {
+      "name": "add_source_item_classification_queue",
+      "repositoryVersion": "20261012203000",
+      "productionAppliedVersion": "20261012091834"
+    },
+    {
+      "name": "add_cross_source_item_suggestions",
+      "repositoryVersion": "20261012213000",
+      "productionAppliedVersion": "20261012092620"
+    },
+    {
+      "name": "store_activation_admin_demo",
+      "repositoryVersion": "20261014202834",
+      "productionAppliedVersion": "20261014203620"
+    }
+  ],
+  "productionOnly": [
+    {
+      "version": "20261012070035",
+      "name": "repair_supply_order_passwordless_audit_actor"
+    }
+  ],
+  "productionOnlyResolution": [
+    {
+      "productionName": "repair_supply_order_passwordless_audit_actor",
+      "productionVersion": "20261012070035",
+      "productionStatementsMd5": "921f53e26e482c49ffd9c83ee335dc48",
+      "equivalentRepositoryFile": "supabase/migrations/20261012150000_supply_order_passwordless_approvals.sql",
+      "repositoryFileMd5": "921f53e26e482c49ffd9c83ee335dc48",
+      "resolution": "Byte-identical reapplication under a different production migration name; no missing SQL source."
+    }
+  ],
+  "repositoryOnly": [
+    {
+      "version": "20261014213000",
+      "name": "approve_store_workspace_activation_planning",
+      "md5": "1dfa554a42797959a3ee0dfbcb1660c9"
+    },
+    {
+      "version": "20261014215429",
+      "name": "store_membership_access_foundation",
+      "md5": "204804aabab22580d43c530450d8d0af"
+    },
+    {
+      "version": "20261014220938",
+      "name": "store_endpoint_access_commands",
+      "md5": "3790c37cb7a7ed696c0810ad7ae06fde"
+    },
+    {
+      "version": "20261014223749",
+      "name": "store_membership_administration",
+      "md5": "f11fe4dcc2dde9341c36a7b708b7f4af"
+    },
+    {
+      "version": "20261015003000",
+      "name": "provision_workforce_workspace_membership",
+      "md5": "a392d28dcb294b80e9cbf3020736ccd3"
+    }
+  ],
+  "stagingHistory": [
+    {
+      "version": "20261014230219",
+      "name": "staging_prerequisites"
+    },
+    {
+      "version": "20261014230641",
+      "name": "staging_restore_explicit_rpc_boundary"
+    },
+    {
+      "version": "20261015003000",
+      "name": "provision_workforce_workspace_membership"
+    }
+  ],
+  "releaseStrategy": [
+    "Treat the production schema-only snapshot as the historical staging baseline; do not replay historical migrations against it.",
+    "Treat the 17 same-name timestamp differences as applied-version aliases.",
+    "Apply only reviewed repository-only candidate migrations to production, in repository order, after all release gates pass.",
+    "Do not use automatic db push against this staging history. Use the explicit reviewed migration list until a dedicated squash/baseline project is approved.",
+    "Store access must remain disabled and Store ordering held after any rehearsal or failed release."
+  ],
+  "conclusions": [
+    "The production-only migration is byte-identical to the repository passwordless-approval migration; no SQL source is missing.",
+    "Historical migration names are reconciled and the timestamp aliases are enumerated.",
+    "The current staging database was built from the production schema baseline plus candidate migrations, but its migration ledger is intentionally not a replayable history.",
+    "A clean commit or pull request and an approved explicit candidate migration list are still required before production deployment."
+  ]
+}

@@ -1,6 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import {
+  requestWorkspace,
+  StoreAccessError,
+} from "../_shared/request-workspace.ts";
+import {
   ContentScanError,
   scanContent,
   sha256Hex,
@@ -177,7 +181,7 @@ function origin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -358,14 +362,28 @@ async function actorFor(request: Request): Promise<Actor | null> {
   });
   if (!response.ok) return null;
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,full_name,org,role,staff_role,active").eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
-  if (
-    !profile || profile.active === false ||
-    !["internal", "brand"].includes(String(profile.role))
-  ) {
+  if (!rawProfile) return null;
+  let profile: Row;
+  try {
+    profile = await requestWorkspace(
+      service,
+      request,
+      user,
+      rawProfile as Row,
+      "catalog.read",
+      { allowBrand: true, denyStore: true },
+    );
+  } catch (workspaceError) {
+    if (workspaceError instanceof StoreAccessError) {
+      throw new IntakeError(workspaceError.status, workspaceError.message);
+    }
+    throw workspaceError;
+  }
+  if (!["internal", "brand"].includes(String(profile.role))) {
     return null;
   }
   return {
@@ -395,6 +413,10 @@ async function brandHas(
   permission: "brand.products.read" | "brand.products.contribute",
 ): Promise<boolean> {
   if (!/^[0-9a-f-]{36}$/i.test(organizationId)) return false;
+  if (
+    actor.actorType === "brand" &&
+    actor.profile._workspaceOrganizationId !== organizationId
+  ) return false;
   const { data: organization, error: organizationError } = await service.from(
     "portal_organization",
   ).select("id,kind,status").eq("id", organizationId).eq("kind", "brand")

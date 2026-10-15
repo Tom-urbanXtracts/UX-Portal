@@ -1,3 +1,4 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { configuredQuickBooksEnvironment } from "../_shared/quickbooks-oauth.ts";
@@ -43,7 +44,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -87,9 +88,10 @@ async function callerFor(request: Request): Promise<Caller | null> {
   if (!response.ok) return null;
   if (!verifiedTokenIsAuthenticated(authorization)) return null;
   const user = await response.json() as Row;
-  const { data: profile, error } = await service.from("portal_profile")
+  const { data: rawProfile, error } = await service.from("portal_profile")
     .select("id,org,role,staff_role,active").eq("id", user.id).maybeSingle();
-  if (error || !profile || profile.active === false) return null;
+  if (error || !rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'financials.read');
   if (profile.role === "internal") {
     const { data: grant } = await service.from("portal_role_permission").select(
       "permission",
@@ -119,7 +121,7 @@ async function customerScope(
   let accountQuery = service.from("portal_retailer_account")
     .select("id,organization_name,display_name,quickbooks_customer_id");
   if (!caller.internal) {
-    accountQuery = accountQuery.eq("organization_name", caller.profile.org);
+    accountQuery = accountQuery.eq("id", storeContext(caller.profile)!.retailerAccountId);
   }
   const { data: accounts, error: accountError } = await accountQuery;
   if (accountError) throw accountError;
@@ -150,7 +152,7 @@ async function customerScope(
     ]),
   );
   const { data: collisionStores, error: collisionError } = !caller.internal &&
-      caller.profile.role === "buyer" && candidateCustomerIds.length
+      candidateCustomerIds.length
     ? await service.from("portal_store")
       .select(
         "retailer_account_id,organization,display_name,license_number,quickbooks_customer_id,active,closed_at",
@@ -159,7 +161,7 @@ async function customerScope(
     : { data: allStores, error: null };
   if (collisionError) throw collisionError;
   const { data: collisionAccounts, error: collisionAccountError } =
-    !caller.internal && caller.profile.role === "buyer" &&
+    !caller.internal &&
       candidateCustomerIds.length
       ? await service.from("portal_retailer_account")
         .select("id,organization_name,quickbooks_customer_id")
@@ -172,14 +174,7 @@ async function customerScope(
 
   let allowedLicenses: string[] | null = null;
   if (!caller.internal && caller.profile.role === "buyer") {
-    const { data: assignments, error: assignmentError } = await service.from(
-      "portal_profile_store",
-    )
-      .select("license_number").eq("profile_id", caller.profile.id);
-    if (assignmentError) throw assignmentError;
-    allowedLicenses = (assignments ?? []).map((assignment) =>
-      String(assignment.license_number)
-    );
+    allowedLicenses = [...storeContext(caller.profile)!.licenses];
   }
 
   const accountById = new Map(
@@ -231,11 +226,10 @@ async function customerScope(
         !allowedLicenses?.includes(String(candidate.license_number))
       );
     if (
-      caller.profile.role === "buyer" &&
-      (parentCustomerOutsideOrganization || parentCustomerOutsideAssignment ||
-        allMappedStores.some((mapped) =>
-          !allowedLicenses?.includes(String(mapped.license_number))
-        ))
+      !caller.internal && (parentCustomerOutsideOrganization ||
+        allMappedStores.some(mapped => String(mapped.retailer_account_id) !== String(store.retailer_account_id)) ||
+        (caller.profile.role === "buyer" && (parentCustomerOutsideAssignment ||
+          allMappedStores.some(mapped => !allowedLicenses?.includes(String(mapped.license_number))))))
     ) {
       if (!deniedSharedCustomers.has(customerId)) {
         missing.push({
@@ -267,7 +261,12 @@ async function customerScope(
   if (caller.internal || caller.profile.role === "owner") {
     for (const account of accounts ?? []) {
       const customerId = clean(account.quickbooks_customer_id);
-      if (!customerId || rows.has(customerId)) continue;
+      if (!customerId || rows.has(customerId) || deniedSharedCustomers.has(customerId)) continue;
+      if (!caller.internal && ((collisionAccounts ?? []).some(other => clean(other.quickbooks_customer_id) === customerId && String(other.id) !== String(account.id)) ||
+        (collisionStores ?? []).some(other => clean(other.quickbooks_customer_id) === customerId && String(other.retailer_account_id) !== String(account.id)))) {
+        missing.push({ organization: account.organization_name, reason: "shared_quickbooks_customer_outside_organization" });
+        continue;
+      }
       rows.set(customerId, {
         customerId,
         organization: String(account.organization_name),
@@ -570,6 +569,7 @@ Deno.serve(async (request) => {
       },
     });
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     console.error("quickbooks-financials", error);
     if (error instanceof PortalError) {
       return json(request, { error: error.message }, error.status);

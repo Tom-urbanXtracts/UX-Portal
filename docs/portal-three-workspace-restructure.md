@@ -1,6 +1,7 @@
 # UX Portal three-workspace restructure
 
 Status: Phase 1 production foundation released; authenticated Tom-profile acceptance test pending
+Store planning status: **Approved for activation planning**, 14 October 2026. Expanded Store release awaits reconciled planning, acceptance, pilot, rollback, and separate release approval; see [Store activation architecture](store-workspace-activation-architecture.md).
 Source: UX OS meeting notes, 2026-09-29
 Working principle: preserve the Canix, QuickBooks, Monday.com, and Supabase connections while replacing the store-first information architecture.
 
@@ -13,6 +14,8 @@ The portal becomes one operating system with three scoped workspaces:
 3. **Store** — licensed retailers browse the sellable catalog, order product, review their account, and manage their stores and users.
 
 The immediate delivery priority is the **Brand workspace**, tested first with urbanXtracts as the pilot brand. Store features remain available behind their existing access boundaries, but store-only navigation should not dominate the product while the Brand workspace is being validated.
+
+The owner has reactivated Store expansion planning. The activation architecture is the current input for membership/switching, retailer tenancy, Store roles, shared services, integrations, confidentiality, and release gates; earlier phase evidence below retains its original scope and dates.
 
 ## 2. Entry and workspace routing
 
@@ -123,7 +126,7 @@ Production and fulfillment milestones are part of the purchase-order timeline ra
 ### Catalog and shopping
 
 - Store-specific published catalog and price
-- Availability state without internal exact quantities
+- Owner/Buyer sellable-item quantities within authorized location scope; package-level and other internal inventory details remain withheld
 - Draft order, approval, submission, and reorder
 - Contract, store, promotion, and default pricing precedence
 
@@ -135,7 +138,7 @@ Production and fulfillment milestones are part of the purchase-order timeline ra
 
 ### Account
 
-- Organization, up to ten stores, licenses, users, delivery details, and account history
+- Organization, up to 25 stores, licenses, users, delivery details, and account history; deployed ten-store controls remain unchanged until the coordinated update is accepted
 - QuickBooks-backed customer identity and receivables
 - Future payment action remains deferred
 

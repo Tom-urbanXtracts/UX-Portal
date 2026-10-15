@@ -1,3 +1,4 @@
+import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Webhook } from "https://esm.sh/svix@1.81.0?target=denonext";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
@@ -45,7 +46,7 @@ function allowedOrigin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -137,10 +138,11 @@ async function callerFor(request: Request): Promise<Caller | null> {
   });
   if (!response.ok) return null;
   const user = await response.json() as Row;
-  const { data: profile } = await service.from("portal_profile").select(
+  const { data: rawProfile } = await service.from("portal_profile").select(
     "id,full_name,org,role,staff_role,active",
   ).eq("id", user.id).maybeSingle();
-  if (!profile || profile.active === false) return null;
+  if (!rawProfile || rawProfile.active === false) return null;
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'notifications.read', { allowBrand: true });
   const permissions = new Set<string>();
   if (profile.role === "internal") {
     const { data } = await service.from("portal_role_permission").select(
@@ -228,6 +230,13 @@ async function profileRecipient(
 }
 
 async function deliver(outbox: Row, template: Row): Promise<Row> {
+  if (outbox.audience === 'store' || template.audience === 'store') {
+    const {data,error}=await service.from('portal_notification_outbox').update({state:'held_policy',
+      last_error:'Store delivery requires approved membership-scoped recipient and financial/document policies.',updated_at:new Date().toISOString()})
+      .eq('id',outbox.id).select('*').single();
+    if(error) throw error;
+    return data as Row;
+  }
   const recipientEmail = String(outbox.recipient_email || "").trim()
     .toLowerCase();
   const { data: suppression, error: suppressionError } = await service.from(
@@ -391,6 +400,7 @@ async function queueOne(
 async function sendTemplate(caller: Caller, body: Row): Promise<Row> {
   requireManage(caller);
   const template = await templateFor(clean(body.templateKey, 80));
+  if (template.audience === 'store') throw new PortalError(409,'Store email delivery remains held pending recipient-policy acceptance.');
   const recipient = await profileRecipient(clean(body.recipientProfileId, 80));
   if (template.audience === "store" && recipient.profile.role === "internal") {
     throw new PortalError(409, "Choose a store user for this template.");
@@ -417,93 +427,9 @@ async function sendTemplate(caller: Caller, body: Row): Promise<Row> {
   return await queueOne(template, recipient.email, variables);
 }
 
-async function sendInvoiceNotice(caller: Caller, body: Row): Promise<Row[]> {
+async function sendInvoiceNotice(caller: Caller, _body: Row): Promise<Row[]> {
   requireManage(caller);
-  if (!caller.permissions.has("financials.read")) {
-    throw new PortalError(403, "Financial access is required.");
-  }
-  const invoiceId = clean(body.invoiceId, 120);
-  const { data: sync } = await service.from("quickbooks_sync_state").select(
-    "last_financial_run_id",
-  )
-    .eq("id", 1).maybeSingle();
-  if (!sync?.last_financial_run_id) {
-    throw new PortalError(409, "A successful QuickBooks snapshot is required.");
-  }
-  const { data: invoice, error } = await service.from(
-    "quickbooks_invoice_cache",
-  ).select("*")
-    .eq("sync_run_id", sync.last_financial_run_id).eq(
-      "quickbooks_invoice_id",
-      invoiceId,
-    ).maybeSingle();
-  if (error) throw error;
-  if (!invoice || Number(invoice.balance || 0) <= 0) {
-    throw new PortalError(
-      409,
-      "Choose an open invoice from the latest QuickBooks snapshot.",
-    );
-  }
-  const customerId = String(invoice.quickbooks_customer_id);
-  const { data: stores } = await service.from("portal_store").select(
-    "license_number,display_name,organization,retailer_account_id",
-  ).eq("quickbooks_customer_id", customerId).eq("active", true);
-  const { data: account } = await service.from("portal_retailer_account")
-    .select("id,organization_name,display_name")
-    .eq("quickbooks_customer_id", customerId).maybeSingle();
-  const organization = String(
-    stores?.[0]?.organization || account?.organization_name || "",
-  );
-  if (!organization) {
-    throw new PortalError(
-      409,
-      "The invoice is not mapped to a portal retailer.",
-    );
-  }
-  const { data: profiles } = await service.from("portal_profile").select(
-    "id,full_name,role,active",
-  )
-    .eq("org", organization).eq("active", true).in("role", ["owner", "buyer"]);
-  const template = await templateFor("invoice_notice");
-  const results: Row[] = [];
-  for (const profile of profiles ?? []) {
-    if (profile.role === "buyer" && stores?.length) {
-      const { data: assignments } = await service.from("portal_profile_store")
-        .select("license_number")
-        .eq("profile_id", profile.id).in(
-          "license_number",
-          stores.map((store) => store.license_number),
-        );
-      if (!assignments?.length) continue;
-    }
-    const recipient = await profileRecipient(String(profile.id));
-    results.push(
-      await queueOne(template, recipient.email, {
-        invoiceNumber: invoice.doc_number || invoice.quickbooks_invoice_id,
-        storeName: stores?.length === 1
-          ? stores[0].display_name
-          : account?.display_name || organization,
-        balance: new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: String(invoice.currency || "USD"),
-        }).format(Number(invoice.balance || 0)),
-        dueDate: invoice.due_date || "not recorded",
-      }, {
-        eventKey:
-          `invoice-notice:${invoiceId}:${profile.id}:${invoice.balance}`,
-        retailerAccountId: stores?.[0]?.retailer_account_id || account?.id ||
-          null,
-        storeLicense: stores?.length === 1 ? stores[0].license_number : null,
-      }),
-    );
-  }
-  if (!results.length) {
-    throw new PortalError(
-      409,
-      "No active Store Owner or assigned Buyer has a deliverable email address.",
-    );
-  }
-  return results;
+  throw new PortalError(409,'Store invoice notices remain held until membership-scoped financial recipients are approved.');
 }
 
 async function listFor(caller: Caller): Promise<Row> {
@@ -565,11 +491,19 @@ async function listFor(caller: Caller): Promise<Row> {
     };
   }
   const email = clean(caller.user.email, 320).toLowerCase();
-  const { data, error } = await service.from("portal_notification_outbox")
+  let notificationsQuery = service.from("portal_notification_outbox")
     .select(
       "id,event_type,template_key,state,payload,mandatory,sent_at,delivered_at,created_at",
     ).eq("recipient_email", email).in("state", ["sent", "delivered", "bounced"])
     .order("created_at", { ascending: false }).limit(100);
+  if (caller.profile.role==='brand') {
+    notificationsQuery=notificationsQuery.eq('audience','brand').eq('payload->>organizationId',caller.profile._workspaceOrganizationId);
+  } else {
+    const context=storeContext(caller.profile)!;
+    notificationsQuery=notificationsQuery.eq('audience','store').eq('retailer_account_id',context.retailerAccountId);
+    if(context.memberRole!=='store_owner') notificationsQuery=notificationsQuery.in('store_license',[...context.licenses]);
+  }
+  const { data, error }=await notificationsQuery;
   if (error) throw error;
   return { notifications: data ?? [] };
 }
@@ -601,6 +535,7 @@ Deno.serve(async (request) => {
     }
     throw new PortalError(400, "Unsupported notification action.");
   } catch (error) {
+    if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);
     if (!(error instanceof PortalError)) {
       console.error("portal-notifications", error);
     }

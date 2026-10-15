@@ -17,6 +17,11 @@ import {
   supplyOrderApprovalRoute,
   supplyOrderValidation,
 } from "../functions/_shared/supply-order-contract.ts";
+import {
+  MARKETPLACE_PRICE_MAX_AGE_MS,
+  marketplacePriceCents,
+  marketplaceSnapshotError,
+} from "../functions/_shared/marketplace-ordering.ts";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
@@ -45,6 +50,44 @@ Deno.test("Canix lab release accepts only exact TestPassed status", () => {
   assert(
     labFailed({ lab_test_status: "TestFailed" }),
     "TestFailed should be excluded",
+  );
+});
+
+Deno.test("Marketplace ordering fails closed on partial or stale snapshots", () => {
+  const now = Date.parse("2026-10-14T20:00:00Z");
+  const valid = {
+    status: "success",
+    snapshot_scope: "full_shop",
+    last_successful_run_id: "run-1",
+    last_successful_at: new Date(now - 60_000).toISOString(),
+  };
+  assert(
+    marketplaceSnapshotError(valid, now) === null,
+    "fresh full-shop snapshots should pass",
+  );
+  assert(
+    marketplaceSnapshotError(
+      { ...valid, snapshot_scope: "brand_filtered" },
+      now,
+    ) !== null,
+    "partial Marketplace snapshots must not power ordering",
+  );
+  assert(
+    marketplaceSnapshotError({
+      ...valid,
+      last_successful_at: new Date(now - MARKETPLACE_PRICE_MAX_AGE_MS - 1)
+        .toISOString(),
+    }, now) !== null,
+    "stale Marketplace prices must pause ordering",
+  );
+  assert(
+    marketplacePriceCents(800) === 800,
+    "positive integer cents should pass",
+  );
+  assert(marketplacePriceCents(0) === null, "zero price should fail closed");
+  assert(
+    marketplacePriceCents(8.5) === null,
+    "fractional cents should fail closed",
   );
 });
 
@@ -180,8 +223,8 @@ Deno.test("supply order validation blocks placeholder request data", () => {
   assert(!result.complete, "placeholder data should require correction");
   assert(result.total === 3200, "valid cost and quantity still total");
   assert(
-    result.missing.includes("Item 1: purchase link"),
-    "placeholder purchase link is missing",
+    !result.missing.includes("Item 1: purchase link"),
+    "invoice-based orders can proceed without a product link",
   );
   assert(result.missing.includes("Item 1: SKU"), "placeholder SKU is missing");
   assert(

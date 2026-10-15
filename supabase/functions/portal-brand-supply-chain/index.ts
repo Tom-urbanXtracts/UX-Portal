@@ -1,3 +1,4 @@
+import { requestWorkspace, StoreAccessError } from "../_shared/request-workspace.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { ContentScanError, scanContent, sha256Hex } from "../_shared/content-scanner.ts";
@@ -87,7 +88,7 @@ function origin(request: Request): string {
 function cors(request: Request): HeadersInit {
   return {
     "access-control-allow-origin": origin(request),
-    "access-control-allow-headers": "authorization, apikey, content-type",
+    "access-control-allow-headers": "x-ux-membership-id, x-ux-organization-id, authorization, apikey, content-type",
     "access-control-allow-methods": "POST, OPTIONS",
     "access-control-max-age": "86400",
     vary: "Origin",
@@ -121,10 +122,12 @@ async function actorFor(request: Request, organizationId: string): Promise<Actor
   });
   if (!response.ok) throw new SupplyError(403, "Forbidden");
   const user = await response.json() as Row;
-  const { data: profile, error: profileError } = await service.from("portal_profile")
+  const { data: rawProfile, error: profileError } = await service.from("portal_profile")
     .select("id,full_name,role,staff_role,active").eq("id", user.id).maybeSingle();
   if (profileError) throw profileError;
-  if (!profile || profile.active === false) throw new SupplyError(403, "Forbidden");
+  if (!rawProfile || rawProfile.active === false) throw new SupplyError(403, "Forbidden");
+  const profile = await requestWorkspace(service, request, user, rawProfile as Row, 'catalog.read',
+    {allowBrand:true,denyStore:true,brandOrganizationId:organizationId});
   const { data: organization, error: organizationError } = await service
     .from("portal_organization").select("id,kind,legal_name,display_name,status")
     .eq("id", organizationId).eq("kind", "brand").maybeSingle();
@@ -809,7 +812,7 @@ Deno.serve(async (request) => {
     } else throw new SupplyError(400, "Unknown Brand supply-chain action.");
     return json(request, { ok: true, ...(await snapshotFor(actor)) });
   } catch (error) {
-    const status = error instanceof SupplyError ? error.status : 500;
+    const status = (error instanceof SupplyError || error instanceof StoreAccessError) ? error.status : 500;
     if (status === 500) console.error("portal-brand-supply-chain", error);
     return json(request, {
       error: status === 500

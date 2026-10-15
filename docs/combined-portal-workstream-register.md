@@ -1,6 +1,6 @@
 # UX OS Combined Workstream Register
 
-Last reconciled: 10/08/2026
+Last reconciled: 10/14/2026 (Store activation planning; earlier live evidence retains its recorded dates)
 
 This register consolidates the current recommendations and unresolved items from the UX OS architecture, Internal, Brand, Store, department, role, integration, security, audit, and shared-workflow planning tasks. It separates accepted live foundations from work that still requires implementation or leadership review. Designed intent is not represented as live functionality.
 
@@ -59,9 +59,12 @@ This register consolidates the current recommendations and unresolved items from
 
 ### Store
 
-- Store expansion remains held until the Brand and Internal foundations are accepted.
-- Preserve the approved future boundaries: Owner across assigned organization stores; Buyer by assigned store; Budtender limited to one store; kiosk as a revocable education-only public capability.
-- No Store or kiosk user may mutate Canix or QuickBooks or access internal package, financial-control, role-administration, or compliance data.
+- **Approved for activation planning**, by owner decision on 14 October 2026. Brand remains the primary staged focus; expanded Store release requires reconciled Store Workspace, Store Roles, and architecture inputs plus a separate release decision.
+- Build contract: [Store Workspace first-release activation handoff](store-workspace-first-release-activation-handoff.md). Architecture input and assigned conflicts: [Store activation architecture](store-workspace-activation-architecture.md), SA-01 through SA-12 and gates A through G.
+- Active Portal Build package: **UX OS Store Workspace Activation**, recorded in the [Store Workspace Portal Build planning queue](store-workspace-portal-build-planning-queue.md). It includes entry-gate assessment and the requested foundation, Store experience, and projection/control phases. Mandatory inputs must be accepted before affected implementation; readiness evidence and a separate activation decision govern release.
+- Preserve strict retailer/location isolation and the approved first-pilot boundaries: Owner across approved organization locations; Buyer by assigned location; Budtender limited to approved education; kiosk as a revocable education-only public capability. Candidate Store Manager activation is excluded from the first pilot, and existing Buyers are not converted automatically. Owner administration is tenant-bounded; broader delegation needs role and identity reconciliation.
+- No Store or kiosk user may gain Internal/Brand access by implication, mutate Canix or QuickBooks, or access Internal package, financial-control, workforce-role administration, or compliance-control data. Buyer statements must not expose unassigned-store financials through a shared accounting customer.
+- Remaining launch inputs are tracked as **SW-IN-01 through SW-IN-10** in the [Store activation decision register](deferred-items-decision-brief.md#store-activation--remaining-inputs-10142026). Technical access preparation may proceed independently; the Administrator-only demo restriction remains unchanged. See [technical preparation and evidence](store-access-technical-preparation-2026-10-14.md).
 
 ## Integration backlog
 
@@ -115,7 +118,7 @@ These items are not implementation defects; they need an owner or policy decisio
 
 ## Explicit controlled holds
 
-- Store onboarding and Store workspace expansion.
+- Expanded Store production activation until the reconciled plan, isolation/eligibility evidence, pilot, rollback, and separate release decision are complete. Store onboarding and expansion planning are approved.
 - Google Calendar synchronization for the first release.
 - Restricted HR case files and PTO balance calculation.
 - Automatic cross-system deactivation, MDM, automated access reviews, and portal MFA.
@@ -131,6 +134,14 @@ These items are not implementation defects; they need an owner or policy decisio
 - Automated forecasting, production planning, and AI-generated regulated or financial decisions.
 
 ## Acceptance principles
+
+Store endpoint migration and Shop catalog review: [10/14/2026 technical evidence and remaining gates](store-access-technical-preparation-2026-10-14.md#endpoint-migration-follow-up). Eleven adapters are prepared locally; production is unchanged. The 120 existing Shop listings are the selected Store product source. [Store inputs and technical gates](deferred-items-decision-brief.md#store-technical-release-gates) remain separate from the Administrator-only demo.
+
+Initial scoped Store administration evidence: [existing-account controls and browser evidence](store-access-technical-preparation-2026-10-14.md#scoped-administration-and-browser-follow-up). Administrator-only role/location changes and membership disable/reactivation passed local desktop/mobile integration tests before the staging follow-up below. The deployed Administrator demo remains isolated from live Store grants and source writes.
+
+Approved staging follow-up: [isolated staging and real sign-in acceptance](store-access-technical-preparation-2026-10-14.md#isolated-staging-and-real-sign-in-acceptance). UX OS Staging is created at $0, with no production business-data or credential copy. Twenty-one migrated handlers, 192 main-suite tests, 24 grouped SQL scenarios and eight real-Auth groups pass. Older Brand/Internal/Store selected-workspace access and misleading dashboard/notification placeholders were repaired in the candidate. Staging source connection, remaining end-to-end/asset/SSO tests and coordinated rollback/history reconciliation remain gates. **Production deployment is held**, Store access is disabled and the demo remains Internal Administrator-only.
+
+Supervised Shop follow-up: [snapshot and expanded journey evidence](store-access-technical-preparation-2026-10-14.md#supervised-shop-refresh-and-expanded-staging-journeys). With explicit owner approval, 120 Shop listings were refreshed into staging only (14 Brands, 98 images); personal login credentials were not collected. Nine additional full-schema journey groups and six Administrator browser scenario groups pass, including multi-item ordering, preorder holds, claims and direct Data API denial. The candidate SQL license-state mismatch was fixed and the local fixture now enforces the real constraint. Synthetic workflow history is retained, temporary source fixtures removed, Store access disabled, and email/source schedules remain off. Broader private-asset/SSO/exposure review and coordinated baseline/rollback acceptance remain open. **No production deployment or unattended Shop connection.**
 
 - Every capability must be labelled Live, In Development, Designed Intent, On Hold, or Out of Scope.
 - Missing or stale source data must never be presented as zero.

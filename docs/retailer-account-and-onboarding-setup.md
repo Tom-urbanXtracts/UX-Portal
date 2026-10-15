@@ -68,7 +68,9 @@ Every account/status/store mutation is performed by the server and writes a reta
 
 ## Onboarding durability
 
-The request-access form sends a stable `clientRequestId`. `portal-intake` atomically stores the organization, one to ten stores, owner, optional buyer, and budtenders before forwarding to Monday. The request ID is included in the Monday payload as `portalOnboardingRequestId`.
+The request-access form sends a stable `clientRequestId`. Its Brand-style workspace has six sections: Company Profile, Store & Licence, Contacts & Access, Delivery & Commercial, Documents & Terms, and Review & Submit. Together they collect the legal and DBA identity; one to ten licensed locations with licence type, expiration, and address; primary, buyer, billing, and optional budtender contacts; delivery preferences; brand interests; website and media contact; optional notes; acknowledgement of the wholesale terms; and an optional primary-store licence file up to 2 MB. Explicit draft saves retain only the form fields for the current browser-tab session; the file must be reselected, and nothing is sent until final submission. `portal-intake` atomically stores the organization, stores, owner, optional buyer, and budtenders before forwarding the sanitized partner-intake metadata to Monday. The request ID is included in the Monday payload as `portalOnboardingRequestId`.
+
+The browser exposes a local-only `#onboarding-preview` route for design and regression review. Production hosts ignore this route and continue to start at the normal authentication or approved public-entry screen.
 
 The Monday scenario must return JSON containing `mondayItemId` (or `itemId`/`id`) and preferably `mondayBoardId`. If Monday times out, rejects the request, or omits an item identifier, the portal record becomes `needs_reconciliation`; the requester receives its portal reference and must not resubmit it. A repeated accepted client request returns the existing record without creating a second Monday item.
 

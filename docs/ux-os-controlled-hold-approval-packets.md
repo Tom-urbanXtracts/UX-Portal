@@ -1,6 +1,6 @@
 # UX OS controlled-hold approval packets
 
-Updated 8 October 2026.
+Updated 14 October 2026 for Store activation planning; other packets retain their existing scope.
 
 Use these packets to move a controlled hold forward. Each packet has three valid outcomes:
 
@@ -82,25 +82,25 @@ Required approvals:
 - Disable path.
 - Export policy.
 
-## 5. Store buying desk reactivation
+## 5. Store buying desk activation planning approved
 
 Owner: Sales / Operations / Product
 
-Decision needed: whether to restart Store workspace build.
+Decision recorded: owner approved **activation planning** on 14 October 2026. The general Store planning hold is lifted; expanded production release requires Release Readiness, acceptance, a controlled pilot, rollback evidence, and a separate decision.
 
-Approval request:
+Build contract: [Store Workspace first-release activation handoff](store-workspace-first-release-activation-handoff.md). Architecture input: [Store activation architecture](store-workspace-activation-architecture.md). Portal Build must reconcile Store Workspace, Store Roles, and architecture inputs before finalizing shared-contract implementation tasks. Saved lists, multi-location cart behavior, new media/document classes, and broader delegation need scoped design and acceptance; activation does not approve every buying-desk feature automatically.
 
-> The current staged plan is Brand first, then Internal and Store. Store expansion remains preserved but held. Please decide whether to reactivate the Store buying desk, and if so, approve the first release scope: catalog, saved lists, reorder actions, cart, order history, billing visibility, product media, multi-location purchasing, and role-scoped permissions.
-
-Required approvals:
+Required release inputs:
 
 - Launch timing.
-- Store roles: Owner, Buyer/Manager, Budtender.
+- Store roles: Owner, Buyer, non-purchasing Store Manager, Budtender, and public kiosk.
 - Account-statement visibility.
 - Ordering and approval rules.
 - Pricing and availability boundaries.
 - Confidentiality rules.
 - Store export policy.
+- Membership compatibility, strict tenant isolation, shared-service regression, migration reconciliation, controlled pilot, and rollback evidence.
+- Canix inventory/compliance authority, QuickBooks accounting authority/read-only boundary, preserved Monday history, and no new active Monday dependency.
 
 ## 6. Promotions and commercial offers
 

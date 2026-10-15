@@ -3,6 +3,9 @@ import { resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const source = await readFile(resolve(root, "ux-portal-prototype.dc.html"), "utf8");
+const storeDemoHandler = await readFile(resolve(root, "supabase/functions/portal-store-demo/index.ts"), "utf8");
+const storeDemoContract = await readFile(resolve(root, "supabase/functions/_shared/store-demo.ts"), "utf8");
+const storeDemoMigration = await readFile(resolve(root, "supabase/migrations/20261014202834_store_activation_admin_demo.sql"), "utf8");
 const siteBuild = await readFile(resolve(root, "scripts/build-sites.mjs"), "utf8");
 const supabaseConfig = await readFile(resolve(root, "supabase/config.toml"), "utf8");
 const inventory = await readFile(resolve(root, "supabase/functions/canix-inventory/index.ts"), "utf8");
@@ -51,6 +54,7 @@ const notificationSuppressionMigration = await readFile(resolve(root, "supabase/
 const notificationSuppressionGateMigration = await readFile(resolve(root, "supabase/migrations/20261008161710_enforce_notification_suppression.sql"), "utf8");
 const identityHelperCompatibilityMigration = await readFile(resolve(root, "supabase/migrations/20261008164743_restore_public_identity_helpers.sql"), "utf8");
 const marketplaceSync = await readFile(resolve(root, "supabase/functions/canix-marketplace-sync/index.ts"), "utf8");
+const marketplaceOrdering = await readFile(resolve(root, "supabase/functions/_shared/marketplace-ordering.ts"), "utf8");
 const scanner = await readFile(resolve(root, "services/document-scanner/server.mjs"), "utf8");
 const quickbooksOAuth = await readFile(resolve(root, "supabase/functions/quickbooks-oauth/index.ts"), "utf8");
 const quickbooksRetailers = await readFile(resolve(root, "supabase/functions/quickbooks-retailers/index.ts"), "utf8");
@@ -102,6 +106,7 @@ const sourceItemClassificationMigration = await readFile(resolve(root, "supabase
 const kioskMigration = await readFile(resolve(root, "supabase/migrations/20260914173000_public_store_kiosk_links.sql"), "utf8");
 const kioskBrandMigration = await readFile(resolve(root, "supabase/migrations/20260917120000_kiosk_brand_product_scope.sql"), "utf8");
 const threeWorkspaceMigration = await readFile(resolve(root, "supabase/migrations/20260929170000_three_workspace_foundation.sql"), "utf8");
+const workforceWorkspaceProvisioningMigration = await readFile(resolve(root, "supabase/migrations/20261015003000_provision_workforce_workspace_membership.sql"), "utf8");
 const brandAccessMigration = await readFile(resolve(root, "supabase/migrations/20260929194710_brand_workspace_access.sql"), "utf8");
 const brandOnboardingMigration = await readFile(resolve(root, "supabase/migrations/20260929203927_brand_company_onboarding.sql"), "utf8");
 const brandOnboardingExportMigration = await readFile(resolve(root, "supabase/migrations/20261002025729_brand_onboarding_document_exports.sql"), "utf8");
@@ -118,6 +123,8 @@ const brandReportingMigration = await readFile(resolve(root, "supabase/migration
 const marketplaceMigration = await readFile(resolve(root, "supabase/migrations/20261001101500_canix_marketplace_catalog_reconciliation.sql"), "utf8");
 const marketplaceCronMigration = await readFile(resolve(root, "supabase/migrations/20261001114500_canix_marketplace_sync_cron.sql"), "utf8");
 const marketplaceCredentialGateMigration = await readFile(resolve(root, "supabase/migrations/20261001121500_pause_marketplace_schedule_without_shop_credential.sql"), "utf8");
+const marketplaceBrowserRefreshMigration = await readFile(resolve(root, "supabase/migrations/20261014194814_refresh_canix_marketplace_browser_snapshot.sql"), "utf8");
+const marketplaceBrowserSnapshot = JSON.parse(await readFile(resolve(root, "data/canix-marketplace-listings-2026-10-14.json"), "utf8"));
 const brandMilestoneCallbackMigration = await readFile(resolve(root, "supabase/migrations/20261001160000_monday_brand_milestone_callback.sql"), "utf8");
 const portalNativeWorkflowMigration = await readFile(resolve(root, "supabase/migrations/20261001175353_portal_native_workflows.sql"), "utf8");
 const portalP1WorkflowMigration = await readFile(resolve(root, "supabase/migrations/20261001183218_complete_portal_p1_workflows.sql"), "utf8");
@@ -136,6 +143,9 @@ const metricGlossaryDoc = await readFile(resolve(root, "docs/metric-glossary-rep
 const brandDesignQa = await readFile(resolve(root, "design-qa.md"), "utf8");
 const completionBlockersDoc = await readFile(resolve(root, "docs/ux-os-final-completion-blockers.md"), "utf8");
 const holdApprovalPacketsDoc = await readFile(resolve(root, "docs/ux-os-controlled-hold-approval-packets.md"), "utf8");
+const storeActivationArchitectureDoc = await readFile(resolve(root, "docs/store-workspace-activation-architecture.md"), "utf8");
+const storeActivationHandoffDoc = await readFile(resolve(root, "docs/store-workspace-first-release-activation-handoff.md"), "utf8");
+const storeActivationPlanningMigration = await readFile(resolve(root, "supabase/migrations/20261014213000_approve_store_workspace_activation_planning.sql"), "utf8");
 const holdReadinessEvidenceMigration = await readFile(resolve(root, "supabase/migrations/20261008035136_controlled_hold_readiness_evidence.sql"), "utf8");
 const functionNames = (await readdir(resolve(root, "supabase/functions"), { withFileTypes: true }))
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_")).map((entry) => entry.name).sort();
@@ -185,6 +195,10 @@ assertContract(inventory.includes("availability_rule:") && inventory.includes("a
 assertContract(inventory.includes('reservation_state: reservation.field ? "known" : "unknown"'), "unknown reservation coverage is explicit");
 assertContract(catalog.includes('groupingPolicy: "canix_item_id_v1"'), "catalog grouping is the approved Canix item contract");
 assertContract(catalog.includes('orderableUnits(row) > 0'), "zero-orderable packages are excluded from the catalog");
+assertContract(marketplaceOrdering.includes('ORDER_FACILITY_ID = 4467') && marketplaceOrdering.includes('ORDER_FACILITY_NAME = "OCM-DIST-24-000069"') && catalog.includes('.eq("facility_id", ORDER_FACILITY_ID)') && pricing.includes('"facility_id",\n      ORDER_FACILITY_ID') && intake.includes('"facility_id",\n            ORDER_FACILITY_ID'), "store catalog, pricing, and checkout share the approved distribution-facility boundary");
+assertContract(marketplaceOrdering.includes("MARKETPLACE_PRICE_MAX_AGE_MS") && marketplaceOrdering.includes('snapshot_scope !== "full_shop"') && catalog.includes("marketplaceSnapshotError") && pricing.includes("marketplaceSnapshotError") && intake.includes("marketplaceSnapshotError"), "store ordering fails closed when the full-shop Marketplace publication is missing or stale");
+assertContract(catalog.includes("marketplaceByProductId") && catalog.includes("marketplace_product_id") && pricing.includes("packagesByMarketplaceProduct") && intake.includes("marketplaceProductIds.length !== 1"), "Marketplace products join to facility inventory by authoritative Canix Product ID and reject ambiguous identities");
+assertContract(pricing.includes('priceSource: "canix_marketplace"') && intake.includes('price_source: "canix_marketplace"') && source.includes("defaultEntry.priceSource === 'canix_marketplace'"), "Marketplace prices are the buyer-facing default while approved store prices retain override precedence");
 assertContract(intake.includes("store.enforce_case_quantity === true"), "case enforcement is verified server-side");
 assertContract(intake.includes("orderable_units"), "order intake uses reservation-adjusted availability");
 assertContract(policy.includes('action === "update-case-policy"'), "case policy has a protected update action");
@@ -211,9 +225,10 @@ assertContract(lotIntegrityCronMigration.includes("portal-lot-integrity-daily") 
 assertContract(!/[A-Fa-f0-9]{64}/.test(lotIntegrityCronMigration), "the lot-integrity scheduler migration contains no embedded high-entropy secret");
 assertContract(canixCronMigration.includes("canix-inventory-sync-5m") && canixCronMigration.includes("vault.decrypted_secrets") && canixCronMigration.includes("portal_canix_scheduler_state"), "Canix refresh uses a Vault-backed five-minute scheduler and protected readiness state");
 assertContract(!/[A-Fa-f0-9]{64}/.test(canixCronMigration) && !canixCronMigration.includes("sb_publishable_"), "the Canix scheduler migration contains no embedded cron secret or public API key");
-assertContract(itemMaster.includes('fetchAll("items")') && !itemMaster.includes('fetchAll("items",') && itemMaster.includes("Canix returned duplicate Item IDs"), "Item Master sync fetches every active and inactive Canix item and fails closed on incomplete identity");
+assertContract(itemMaster.includes('fetchAll("facilities")') && itemMaster.includes('fetchAll("items", {') && itemMaster.includes("Canix returned duplicate Item IDs"), "Item Master resolves its approved facility, fetches its active and inactive Canix items, and fails closed on incomplete identity");
 assertContract(itemMaster.includes('const reportQuantityTotals = quantityType === "WeightBased"') && itemMaster.includes("total_for_sale: reportQuantityTotals"), "Item Master retains every item definition without publishing volume quantities");
 assertContract(itemMaster.includes('service.from("canix_item_sync_stage").upsert') && itemMaster.includes('"canix_publish_item_sync_run"') && itemMasterMigration.includes("delete from public.canix_item_current where sync_run_id <> p_run_id"), "Canix Item Master publishes atomically from an independent private stage");
+assertContract(itemMaster.includes('const ITEM_FACILITY_NAME = "OCM-DIST-24-000069"') && itemMaster.includes('fetchAll("items", {') && itemMaster.includes('facility_id: String(targetFacilityId)') && itemMaster.includes("outOfScopeItems.length"), "Canix Item Master fetches only the approved distribution facility and fails closed on out-of-scope rows");
 assertContract(itemMasterMigration.includes("source_payload jsonb") && itemMasterMigration.includes("revoke all on table public.canix_item_current from public, anon, authenticated"), "complete Canix Item source objects remain server-only");
 assertContract(itemMasterCronMigration.includes("canix-item-master-sync-5m") && itemMasterCronMigration.includes("vault.decrypted_secrets") && itemMasterCronMigration.includes("portal_canix_item_scheduler_state"), "Canix Item Master has an independent Vault-backed five-minute scheduler");
 assertContract(!/[A-Fa-f0-9]{64}/.test(itemMasterCronMigration) && !itemMasterCronMigration.includes("sb_publishable_"), "the Item Master scheduler migration contains no embedded cron secret or public API key");
@@ -247,10 +262,17 @@ assertContract(admin.includes("selected store must have a qualified license") &&
 assertContract(quickbooksRetailers.includes("parentCustomerId: row.parent_customer_id") && retailerStoreControlsMigration.includes("Store QuickBooks customer must be the retailer account or its direct child"), "store accounting identity is an explicit QuickBooks parent-or-child relationship");
 assertContract(portalRetailers.includes("Start the retailer account from the top-level QuickBooks customer") && source.includes("A child customer cannot become a second retailer organisation"), "QuickBooks child customers map to stores rather than duplicate retailer organizations");
 assertContract(retailerStoreControlsMigration.includes("portal_set_onboarding_store_details") && retailerStoreControlsMigration.includes("license_expires_on <= current_date") && retailerStoreControlsMigration.includes("A license review note is required"), "store onboarding records QuickBooks identity, current license expiration, and review evidence before qualification");
-assertContract(retailerStoreControlsMigration.includes("store_count >= 10") && retailerStoreControlsMigration.includes("no more than ten stores") && retailerStoreControlsMigration.includes("At least one active Store Owner is required"), "multi-store onboarding enforces the ten-store cap and requires an active Owner before completion");
+assertContract(storeDemoMigration.includes("store_count >= 25") && storeDemoMigration.includes("open_store_count>=25") && storeDemoMigration.includes("jsonb_array_length(p_stores) > 25") && retailerStoreControlsMigration.includes("At least one active Store Owner is required"), "multi-store onboarding replaces the legacy cap with 25 while preserving active-Owner completion controls");
+assertContract(storeDemoMigration.includes("pg_advisory_xact_lock") && storeDemoMigration.includes("retailer_account_id,closed_at") && source.includes("onbStores.length >= 25") && source.includes("onbStores.slice(0, 25)"), "the Store cap covers concurrent inserts, reopenings, draft restoration and UI additions");
+assertContract(storeDemoHandler.includes('profile.staff_role !== "administrator"') && storeDemoHandler.includes('"permission", "store.demo"') && storeDemoHandler.includes('"member_role", "administrator"') && storeDemoHandler.includes('"status", "active"'), "Store demonstration requires a current active Internal Administrator profile, membership and explicit action grant");
+assertContract(storeDemoMigration.includes("revoke all on public.portal_store_demo_control, public.portal_store_demo_session") && storeDemoMigration.includes("security invoker") && storeDemoMigration.includes("revision") && storeDemoMigration.includes("Store demonstration is paused"), "synthetic Store storage is private, auditable, revision-checked and server-pausable");
+assertContract(!/from\(["'](?:portal_order|portal_inventory_commitment|portal_notification_outbox|quickbooks_|canix_)/.test(storeDemoHandler) && !/monday|resend|quickbooks-oauth|marketplace-ordering/.test(storeDemoHandler + storeDemoContract), "synthetic Store workflows have no live order, inventory, accounting, Monday or email write dependency");
+assertContract(source.includes("storeDemoCall") && source.includes("Synthetic demo · Internal Administrators only") && source.includes("Store Demo") && source.includes("this._workspaceEpoch") && source.includes("discarded the previous response"), "Store demonstration has a labelled Administrator entry and workspace-bound response handling");
+assertContract(source.includes("quantity: (s.storeDemoQuantities || {})[p.id] ?? 1") && !source.includes("quantity: (s.storeDemoQuantities || {})[p.id] || 1"), "quantity drafts preserve an empty edit value instead of resetting to one while typing");
 assertContract(intake.includes('if (!store.license_expires_on)') && intake.includes('if (!store.quickbooks_customer_id)'), "stores fail closed on missing license dates or accounting identity at order intake");
 assertContract(intake.includes("const threshold = store.approval_threshold_cents") && intake.includes('"awaiting_owner_approval"') && intake.includes("owner-approval threshold verified server-side"), "store approval thresholds are rechecked by the server when an order is submitted");
 assertContract(source.includes("onbLocationOptions") && source.includes("All qualified stores") && source.includes("Choose exactly one store"), "onboarding binds buyer and Budtender scope to submitted stores instead of free text");
+assertContract(source.includes("STORE WORKSPACE · PARTNER ONBOARDING") && source.includes("Company Profile") && source.includes("Store & Licence") && source.includes("Contacts & Access") && source.includes("Delivery & Commercial") && source.includes("Documents & Terms") && source.includes("Review & Submit") && source.includes("STORE_ONBOARDING_DRAFT_KEY") && source.includes("partnerDetails:") && intake.includes("partnerIntake: partnerDetails") && intake.includes("2 * 1024 * 1024"), "public Store Workspace onboarding mirrors the six-section Brand workspace, retains browser-local drafts, persists sanitized commercial preferences, and bounds optional files to 2 MB");
 assertContract(source.includes("accounts.rows.concat(QUICKBOOKS_DEMO_ACCOUNTS)") && source.includes("retailerOnboarding: onboarding.rows"), "the onboarding queue remains available when QuickBooks is temporarily unavailable");
 assertContract(source.includes("onboardingPanel: 'queue'") && source.includes("Store onboarding sections") && source.includes("onboardingReadinessChecks"), "store onboarding uses compact switchable sections with visible readiness gates");
 const internalNavSource = source.match(/if \(role === 'internal'\) \{([\s\S]*?)\n    \}/)?.[1] || "";
@@ -408,7 +430,7 @@ assertContract(wholesaleSourceScript.includes('rows.length !== 118') && wholesal
 assertContract(wholesaleMigration.includes('portal_verify_wholesale_price_source') && wholesaleMigration.includes('portal_publish_wholesale_price_source') && wholesaleMigration.includes("review_state <> 'verified'") && wholesaleMigration.includes('pricing.wholesale_default_published'), "default wholesale publication requires verified current Canix identity and writes an audit event");
 assertContract(pricing.includes('verify-exact-wholesale') && pricing.includes('publish-verified-wholesale') && pricing.includes('wholesalePriceSnapshot') && source.includes('Wholesale list to Canix review queue'), "pricing managers receive a protected wholesale identity, verification, and publication queue");
 assertContract(pricing.includes('structuredIdentityKey') && pricing.includes('reviewState = "structured_review"') && source.includes("structured_review: 'Structured candidate'"), "same-Brand reordered or internally prefixed wholesale names surface as review-only structured candidates without weakening exact auto-verification");
-assertContract(intake.includes('portal_default_price') && intake.indexOf('defaultPriceResult.data') < intake.indexOf('storePriceResult.data'), "order intake uses published default wholesale pricing with approved store prices taking precedence");
+assertContract(intake.includes('portal_default_price') && intake.includes('price_source: "canix_marketplace"') && intake.indexOf('price_source: "canix_marketplace"') < intake.indexOf('for (const row of storePriceRows)'), "order intake uses the current Marketplace default while approved store prices take precedence");
 assertContract(source.includes("Monday to Canix Review Queue") && source.includes("approveExactCatalogMappings") && source.includes("onCatalogMappingApproveExact") && source.includes("Verify & link") && source.includes("catalogMappingPending"), "catalog managers can batch exact matches while retaining the protected review queue");
 assertContract(source.includes("Export filtered CSV") && source.includes("exportCatalogMappingReview") && source.includes("CATALOG REVIEW EXPORTED") && source.includes("^[\\t\\r\\n ]*[=+\\-@]"), "catalog managers can export spreadsheet-safe filtered identity exceptions for offline review");
 assertContract(productContent.includes("reviewItems: reviewItems.slice(0, 1000)") && source.includes("SEARCH REVIEW QUEUE") && source.includes("catalogMappingStatusOptions") && source.includes("catalogMappingFilteredCount"), "every awaiting Monday-to-Canix identity is returned in a searchable, filterable, sortable review table");
@@ -419,6 +441,9 @@ assertContract(readiness.includes("Lot-level Cost Object decisions") && readines
 assertContract(gitignore.includes("/data/canix-inventory-snapshot.json"), "live Canix snapshots are excluded from source control");
 assertContract(source.includes("PORTAL_READINESS_API"), "portal includes protected live release diagnostics");
 assertContract(threeWorkspaceMigration.includes("portal_organization_membership") && threeWorkspaceMigration.includes("workspace in ('internal', 'brand', 'store')") && threeWorkspaceMigration.includes("portal_my_workspaces"), "the additive identity foundation resolves Internal, Brand, and Store workspaces without replacing legacy profiles");
+assertContract(workforceWorkspaceProvisioningMigration.includes("create or replace function public.handle_new_portal_user()") && workforceWorkspaceProvisioningMigration.includes("insert into public.portal_organization_membership") && workforceWorkspaceProvisioningMigration.includes("'internal'") && workforceWorkspaceProvisioningMigration.includes("'viewer'") && workforceWorkspaceProvisioningMigration.includes("on conflict (profile_id, organization_id, workspace) do nothing"), "first-time workforce SSO provisioning creates the required least-privilege Internal Viewer workspace membership idempotently");
+assertContract(workforceWorkspaceProvisioningMigration.includes("raise exception 'Active urbanXtracts Internal organization is not configured'") && workforceWorkspaceProvisioningMigration.includes("drop trigger if exists on_auth_user_created on auth.users") && workforceWorkspaceProvisioningMigration.includes("after insert on auth.users"), "workforce SSO provisioning fails closed when its Internal organization is unavailable and remains bound to Auth user creation");
+assertContract(workforceWorkspaceProvisioningMigration.includes("create or replace function public.portal_repair_workforce_workspace_memberships()") && workforceWorkspaceProvisioningMigration.indexOf("select organization.id") < workforceWorkspaceProvisioningMigration.indexOf("insert into public.portal_profile") && workforceWorkspaceProvisioningMigration.includes("select public.portal_repair_workforce_workspace_memberships();"), "workforce repair resolves the required Internal organization before profile writes and runs through the atomic repair function");
 assertContract(threeWorkspaceMigration.includes("portal_brand_account") && threeWorkspaceMigration.includes("canix_brand_id") && threeWorkspaceMigration.includes("canix_owner_id") && threeWorkspaceMigration.includes("monday_account_item_id"), "Brand organizations retain explicit Canix and Monday identities instead of overloading retailer organization text");
 assertContract(threeWorkspaceMigration.includes("enable row level security") && threeWorkspaceMigration.includes("membership.profile_id = (select auth.uid())") && threeWorkspaceMigration.includes("membership.workspace = 'brand'") && threeWorkspaceMigration.includes("security invoker"), "workspace and Brand-account reads remain caller-scoped through RLS");
 assertContract(source.includes("/rest/v1/rpc/portal_my_workspaces") && source.includes("normalizeWorkspaceRows") && source.includes("switchWorkspace(workspaceId)"), "sign-in resolves server-authoritative workspaces and supports explicit switching");
@@ -498,6 +523,35 @@ assertContract(brandOperations.includes("matchedBrandOwnerRecords") && brandOper
 assertContract(brandReportingMigration.includes("company_owned") && brandReportingMigration.includes("manufacturing_sales_distribution") && brandReportingMigration.includes("canix_owner_mapping_required"), "urbanXtracts and Wana relationship activities are configured while unresolved Wana ownership remains an explicit gate");
 assertContract(source.includes("Download Brand sales CSV") && source.includes("downloadBrandSalesReport") && brandOperations.includes('retailerDetailVisibility: "withheld_by_policy"'), "Brand sales downloads remain aggregated and exclude retailer identity");
 assertContract(marketplaceMigration.includes("canix_marketplace_product_snapshot") && marketplaceMigration.includes("browser_verified_snapshot") && marketplaceMigration.includes("total_shop_product_count") && marketplaceMigration.includes("37"), "the verified 37-product urbanXtracts Marketplace snapshot remains separate from physical Canix inventory");
+assertContract(
+  marketplaceBrowserSnapshot.source?.sourceMode === "browser_verified_snapshot"
+    && marketplaceBrowserSnapshot.source?.snapshotScope === "full_shop"
+    && marketplaceBrowserSnapshot.source?.declaredProductCount === 120
+    && marketplaceBrowserSnapshot.source?.capturedProductCount === 120
+    && marketplaceBrowserSnapshot.products?.length === 120
+    && new Set(marketplaceBrowserSnapshot.products.map((product) => product.marketplaceProductId)).size === 120,
+  "the current browser-verified Marketplace snapshot contains all 120 unique shop listings",
+);
+assertContract(
+  marketplaceBrowserSnapshot.products.every((product) =>
+    product.marketplaceProductId
+      && product.productGid
+      && product.productName
+      && product.brandName
+      && product.itemCategoryName
+      && Number.isFinite(product.priceCents)
+      && Number.isFinite(product.availableQuantity)
+      && product.saleUnit === "each"
+      && product.productUrl?.startsWith("https://app.canix.com/marketplace/urbanXtracts/products/")
+  )
+    && marketplaceBrowserRefreshMigration.includes("'full_shop'")
+    && marketplaceBrowserRefreshMigration.includes("120,\n  120,")
+    && marketplaceBrowserSnapshot.products.every((product) =>
+      marketplaceBrowserRefreshMigration.includes(`'${product.marketplaceProductId}'`)
+        && marketplaceBrowserRefreshMigration.includes(`'${product.productGid}'`)
+    ),
+  "the full-shop browser snapshot is complete and feeds the existing portal Marketplace tables",
+);
 assertContract(marketplaceCronMigration.includes("canix-marketplace-sync-5m") && marketplaceCronMigration.includes("vault.decrypted_secrets") && marketplaceCronMigration.includes("x-canix-cron-secret") && marketplaceCronMigration.includes("command not like"), "Marketplace refresh runs every five minutes with the existing Vault-held Canix scheduler credential");
 assertContract(marketplaceCredentialGateMigration.includes("canix_marketplace_token") && marketplaceCredentialGateMigration.includes("Automatic refresh is paused") && marketplaceCredentialGateMigration.includes("cron.unschedule"), "Marketplace scheduling pauses safely when the general Canix API key lacks durable Shop access while the verified snapshot remains available");
 assertContract(marketplaceSync.includes("CANIX_MARKETPLACE_TOKEN") && marketplaceSync.includes("ShopListItemsQuery") && marketplaceSync.includes("last_successful_run_id") && marketplaceSync.includes("catalog.manage"), "Marketplace refresh is server-side, credentialed, paginated, and limited to catalog administrators or the trusted scheduler");
@@ -554,10 +608,41 @@ assertContract(source.includes('https://www.urbanxtracts.com/contact') && source
 assertContract(!source.includes("Need store access?") && !source.includes(">Request an account</button>"), "sign-in temporarily hides public store-account requests while retaining the protected onboarding workflow");
 assertContract(source.includes("params.set('prompt', 'select_account')") && source.includes("params.set('hd', SSO_DOMAIN)"), "Google Workspace SSO always offers account selection and hints the approved workforce domain");
 assertContract(claimsAuditDoc.includes("| Brand workspace home | Brand | Live |")
-  && claimsAuditDoc.includes("| Store buying desk | Store | On hold |")
+  && claimsAuditDoc.includes("| Store buying desk | Store | Activation planning approved |")
+  && claimsAuditDoc.includes("do not claim deployment, release approval, or live availability")
   && claimsAuditDoc.includes("| Payment collection | Finance | Out of scope |")
   && claimsAuditDoc.includes("Do not describe Brand sales dollars as live unless Finance approves"),
-  "capability claims audit distinguishes live Brand/Internal surfaces from held Store, AI, payment, and publication claims");
+  "capability claims audit distinguishes live Brand/Internal surfaces and approved Store planning from held AI, payment, and publication claims");
+assertContract(source.includes("STORE WORKSPACE · ACTIVATION PLANNING APPROVED")
+  && source.includes("status: 'ACTIVATION PLANNING APPROVED'")
+  && source.includes("name: 'Store Workspace', stage: 'Activation planning'")
+  && source.includes("Not live or release approved.")
+  && source.includes("role: 'Store Manager'")
+  && source.includes("No wholesale pricing, cart or order creation, purchase approvals, financial statements, user management, or exports by implication."),
+  "planning UI records Store activation approval without granting live status or implicit Store Manager purchasing access");
+assertContract(storeActivationHandoffDoc.includes("Owner conditionally authorized accepted demo/gated deployment after checks")
+  && storeActivationHandoffDoc.includes("## 3. First-release capability slices")
+  && storeActivationHandoffDoc.includes("## 4. Role and permission baseline")
+  && storeActivationHandoffDoc.includes("## 5. Strict tenancy contract")
+  && storeActivationHandoffDoc.includes("## 8. Shared-service dependency checklist")
+  && storeActivationHandoffDoc.includes("## 10. Acceptance criteria")
+  && storeActivationHandoffDoc.includes("## 11. Pilot, rollout, and rollback gates")
+  && storeActivationHandoffDoc.includes("## 12. Conflicts for OS Portal Arch")
+  && storeActivationHandoffDoc.includes("Canix remains authoritative")
+  && storeActivationHandoffDoc.includes("QuickBooks remains authoritative")
+  && storeActivationHandoffDoc.includes("Store membership grants Store access only")
+  && storeActivationHandoffDoc.includes("no new active Monday dependency"),
+  "Store activation handoff is build-consumable and preserves authority, tenancy, shared-service, readiness, pilot, rollout, and rollback boundaries");
+assertContract(storeActivationArchitectureDoc.includes("Planning status: **Approved for activation planning**")
+  && storeActivationArchitectureDoc.includes("Broad live-retailer rollout is not accepted")
+  && storeActivationArchitectureDoc.includes("| Store Manager |")
+  && storeActivationArchitectureDoc.includes("creates no new active Monday dependency"),
+  "Store architecture input matches the approved planning status, separated role model, and Monday boundary");
+assertContract(storeActivationPlanningMigration.includes("where task_key = 'retailer-buying-desk'")
+  && storeActivationPlanningMigration.includes("status = 'in_progress'")
+  && storeActivationPlanningMigration.includes("Store activation planning decision")
+  && storeActivationPlanningMigration.includes("This does not authorize production activation or a live claim"),
+  "readiness migration moves the Store buying desk from controlled hold to active planning without claiming release");
 assertContract(metricGlossaryDoc.includes("Unknown values stay unknown; they are never replaced with zero.")
   && metricGlossaryDoc.includes("| Sales dollars | Finance-approved dollars")
   && metricGlossaryDoc.includes("QuickBooks is read-only in the current portal release.")

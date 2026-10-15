@@ -172,7 +172,7 @@ These classifications are planning baselines from the existing repository docume
 | `UX Inbound Lot Register` board `18429359264` | Existing lot register plus Canix Item Master mirror groups | Mirror or hold; Canix remains authoritative |
 | Historical Portal Orders board | Prior order workflow and handoff history | Historical copy for old records; live replacement only for approved new Portal order workflows |
 | Licensed Retailers / account lookup boards | Historical account lookup and mirrored license/AR fields | Mirror temporarily until retailer/store identity and QuickBooks mapping are accepted |
-| Store onboarding boards | Store onboarding migration is explicitly held | Hold |
+| Store onboarding boards | Activation planning approved on 14 October 2026; map sources, tenant/license identities, attachments, and reconciliation before any controlled cutover. Preserve Monday history and create no new active Monday dependency, board, automation, or write path without approval. | Historical copy for old records; retain an existing approved handoff only when explicitly source-labelled. Mirror/parallel/live replacement requires OS Portal Arch source-mode approval and Store activation readiness evidence |
 | Employee roster board | Current Monday roster is mirrored for now | Mirror until HR and IT approve UX OS authority |
 | Monday Supply Order Form 2026 | Pattern retained for Finance purchase request workflow | Historical copy for old records; Portal-native for new Finance purchase requests |
 | Marketing/product asset boards | Asset and product-image controls still require approvals | Hold or mirror until scanner, Quality review, publication, archive, and retention controls are approved |

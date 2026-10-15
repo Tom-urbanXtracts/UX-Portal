@@ -1,6 +1,6 @@
 # UX OS final completion blockers
 
-Updated 8 October 2026 after the Brand-first portal release evidence pass.
+Updated 14 October 2026 after Store Workspace activation planning was approved.
 
 UX OS buildable work for the Brand-first foundation is complete. The remaining items are not unfinished portal plumbing; they are controlled holds that require a named business approval, external system access, or a reactivation decision before work may safely resume.
 
@@ -12,11 +12,18 @@ UX OS buildable work for the Brand-first foundation is complete. The remaining i
 | Metric glossary and reporting policy | `docs/metric-glossary-reporting-policy.md` defines source/freshness rules, metric meanings, export logging/redaction, QuickBooks read-only boundary, Finance approval routing, preparer/reviewer separation, and archive-not-delete retention stance. | Finance and Operations still need to approve the policy before UX OS can treat sales dollars, revenue, opportunity, receivables risk, or future write boundaries as approved business definitions. | Finance and Operations approve the policy version, name approvers, date the approval, and accept any remaining carveouts. |
 | Document retention deletion | UX OS supports archive-oriented records, legal-hold-aware policy planning, private storage, scanning, versioning, and evidence. Automatic deletion is disabled. | The user decision is archive, not delete. Deletion/disposition needs legal/compliance policy, reviewer separation, legal-hold checks, and retained deletion evidence before any worker exists. | Legal/compliance approves record classes, retention start events, hold/release authority, disposition review, deletion evidence, and the exact records eligible for automated deletion. |
 | Brand account opportunity model | Current Brand reporting stays aggregated and source-labelled. Retailer/store identity and POS sell-through are withheld. | Opportunity scoring would require Sales Operations, Data, and Legal approval for retailer-identity boundaries, minimum data, explanation text, and scoring rules. | Approve scoring inputs, privacy boundary, explanation text, confidence rules, disable path, and acceptance tests. |
-| Store buying desk | Store expansion remains on hold. Existing Store/demo surfaces are preserved but not the current launch priority. | The current staged plan prioritizes Brand Portal first, then Internal and Store. | Reactivate Store strategy and approve pricing, availability, role, account-statement, ordering, approval, and confidentiality rules. |
 | Promotions and commercial offers | No promotion stacking or automatic commercial-offer override is live. | Promotions can affect contracts, store terms, pricing precedence, and Finance treatment. | Sales, Finance, and Operations approve ownership, eligibility, dates, stacking, retirement, and pricing precedence. |
 | Supply and production planning | Brand POs, production milestones, and evidence exist; full planning remains held. | Planning would need system-of-record authority, reservation behavior, BOM/recipe source, and department ownership. | Operations, Production, Quality, and Data approve authority, write path, reservation behavior, ownership, and acceptance tests. |
 | Decision-support forecasts | Current dashboards show source-labelled facts, not predictive decisions. | Forecasts need owners, source contracts, minimum-data rules, validation, explanations, and a disable path. | Finance, Operations, Sales Operations, and Data approve model definitions, validation evidence, confidence thresholds, and disable path. |
 | AI buying assistant | No AI ordering assistant is live. | Assistant actions require catalog reliability, permissions, privacy review, grounding, evaluation, audit, and cost limits. | Product, Security, Legal, and Sales approve action boundaries, sources, privacy assessment, human confirmation, evaluation set, and cost ceiling. |
+
+## Approved activation planning — not deployment approval
+
+Store Workspace expansion is no longer a controlled hold. The owner approved it for activation planning on 14 October 2026. Existing Store and demo behavior must still not be represented as the approved expanded Store release.
+
+The build contract is recorded in [Store Workspace first-release activation handoff](store-workspace-first-release-activation-handoff.md). Architecture input and conflict assignments are recorded in [Store activation architecture](store-workspace-activation-architecture.md), SA-01 through SA-12 and gates A through G. In particular, mixed-workspace membership compatibility, Owner delegated administration, Buyer shared-customer statement visibility, Store Manager separation, and deployed catalog/pricing contract reconciliation need evidence before expanded activation.
+
+Portal Build has accepted the reconciled Store Onboarding Portal, Store Roles Portal, and OS Portal Arch package for planning decomposition in [Store Workspace Portal Build planning queue](store-workspace-portal-build-planning-queue.md). Implementation tasks may be finalized only where mandatory policy and source inputs are accepted. The plan retains shared-service dependencies, strict retailer and Store isolation, Canix and QuickBooks system-of-record boundaries, Release Readiness criteria, a pilot strategy, acceptance testing, rollback controls, and a separate release decision before deployment or production activation.
 
 ## Completion rule
 

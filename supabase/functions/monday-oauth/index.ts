@@ -27,10 +27,21 @@ const BRAND_BOARD_ID = Deno.env.get("MONDAY_BRAND_MILESTONE_BOARD_ID") ??
 const BRAND_BOARD_NAME = "UX OS Brand Production Milestones";
 const BRAND_WEBHOOK_URL = Deno.env.get("MONDAY_BRAND_MILESTONE_WEBHOOK_URL") ??
   `${SUPABASE_URL}/functions/v1/monday-brand-webhook`;
+const SUPPLY_ORDER_BOARD_ID = Deno.env.get("MONDAY_SUPPLY_ORDER_BOARD_ID") ??
+  "18393924684";
+const LEGACY_SUPPLY_ORDER_WEBHOOK_IDS = new Set([
+  "640465216",
+  "640465226",
+  "640465236",
+  "640465241",
+  "640465246",
+]);
 const REQUESTED_SCOPES = [
   "me:read",
   "boards:read",
   "boards:write",
+  "notifications:write",
+  "updates:write",
   "webhooks:read",
   "webhooks:write",
 ] as const;
@@ -247,6 +258,20 @@ async function listAppWebhooks(
   return existing;
 }
 
+async function listBoardWebhooks(
+  accessToken: string,
+  boardId: string,
+): Promise<Row[]> {
+  const data = await mondayGraphql(
+    accessToken,
+    `query BoardWebhooks($boardId: ID!) {
+      webhooks(board_id: $boardId) { id event board_id config }
+    }`,
+    { boardId },
+  );
+  return Array.isArray(data.webhooks) ? data.webhooks as Row[] : [];
+}
+
 function matchingOrderWebhooks(existing: Row[]): Row[] {
   return existing.filter((row) =>
     String(row.event) === "change_status_column_value" &&
@@ -292,6 +317,69 @@ async function deleteWebhook(
   ) {
     throw new Error("Monday did not confirm the stale webhook deletion.");
   }
+}
+
+async function manageSupplyOrderWebhooks(
+  request: Request,
+  caller: Caller,
+  removeLegacy: boolean,
+): Promise<Response> {
+  const accessToken = await mondayAccessToken(service, {
+    encryptionKey: TOKEN_ENCRYPTION_KEY,
+    clientId: MONDAY_CLIENT_ID,
+    clientSecret: MONDAY_CLIENT_SECRET,
+  }, ["boards:read", "boards:write", "webhooks:read", "webhooks:write"]);
+  if (!accessToken) {
+    return json(request, {
+      error: "Monday must be connected before supply-order webhooks can be managed.",
+    }, 409);
+  }
+
+  const observedBefore = await listBoardWebhooks(
+    accessToken,
+    SUPPLY_ORDER_BOARD_ID,
+  );
+  const removable = observedBefore.filter((row) =>
+    LEGACY_SUPPLY_ORDER_WEBHOOK_IDS.has(String(row.id ?? "")) &&
+    String(row.board_id ?? "") === SUPPLY_ORDER_BOARD_ID
+  );
+  const removedWebhookIds: string[] = [];
+  if (removeLegacy) {
+    for (const webhook of removable) {
+      const webhookId = String(webhook.id ?? "");
+      await deleteWebhook(accessToken, webhookId, SUPPLY_ORDER_BOARD_ID);
+      removedWebhookIds.push(webhookId);
+    }
+  }
+
+  const observedAfter = removeLegacy
+    ? await listBoardWebhooks(accessToken, SUPPLY_ORDER_BOARD_ID)
+    : observedBefore;
+  const remainingLegacyWebhookIds = observedAfter.map((row) =>
+    String(row.id ?? "")
+  ).filter((id) => LEGACY_SUPPLY_ORDER_WEBHOOK_IDS.has(id));
+  await service.from("portal_admin_audit").insert({
+    actor_id: caller.id,
+    actor_org: caller.org,
+    action: removeLegacy
+      ? "monday.supply_order_legacy_webhooks_removed"
+      : "monday.supply_order_webhooks_audited",
+    detail: {
+      boardId: SUPPLY_ORDER_BOARD_ID,
+      legacyWebhookIds: Array.from(LEGACY_SUPPLY_ORDER_WEBHOOK_IDS),
+      removedWebhookIds,
+      remainingLegacyWebhookIds,
+      observedBefore: webhookAuditSummary(observedBefore),
+      observedAfter: webhookAuditSummary(observedAfter),
+    },
+  });
+  return json(request, {
+    boardId: SUPPLY_ORDER_BOARD_ID,
+    legacyWebhookIds: Array.from(LEGACY_SUPPLY_ORDER_WEBHOOK_IDS),
+    removedWebhookIds,
+    remainingLegacyWebhookIds,
+    webhooks: webhookAuditSummary(observedAfter),
+  });
 }
 
 async function brandBoardColumns(accessToken: string): Promise<Row[]> {
@@ -921,11 +1009,20 @@ Deno.serve(async (request) => {
     return json(request, { error: "Method not allowed" }, 405);
   }
   try {
+    const body = request.method === "POST"
+      ? await request.json().catch(() => ({})) as Row
+      : {};
+    const action = String(body.action ?? "").toLowerCase();
     const caller = await administratorFor(request);
     if (!caller) return json(request, { error: "Forbidden" }, 403);
     if (request.method === "POST") {
-      const body = await request.json().catch(() => ({})) as Row;
-      if (String(body.action ?? "").toLowerCase() === "refresh-webhook") {
+      if (action === "audit-supply-order-webhooks") {
+        return await manageSupplyOrderWebhooks(request, caller, false);
+      }
+      if (action === "remove-legacy-supply-order-webhooks") {
+        return await manageSupplyOrderWebhooks(request, caller, true);
+      }
+      if (action === "refresh-webhook") {
         return await refreshWebhook(request, caller);
       }
       return await startAuthorization(request, caller);
