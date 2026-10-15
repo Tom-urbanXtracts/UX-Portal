@@ -71,9 +71,11 @@ The previous Site saved version remains the UI rollback target. The prior Edge s
 
 IT owns controlled-demo acceptance and monitoring. Review demo API errors, conflict/denial events and the restricted audit trail after deployment and before expanding access. Existing integration-health/outbox monitoring continues unchanged. No new email alert policy or supply-order sending is enabled.
 
-## Catalog source update — repository only, not deployed
+## Catalog source update — staging function deployed, production site unchanged
 
-The four fabricated `demo-` products are replaced by the 120-listing browser-verified **Shop UrbanXtracts** snapshot captured 10/14/2026 (`data/canix-marketplace-listings-2026-10-14.json`). The record above describes the deployed fixture catalog and is unchanged. This update is not deployed, and `scripts/verify-store-demo-ui.mjs` now uses source product names.
+The four fabricated `demo-` products are replaced by the 120-listing browser-verified **Shop UrbanXtracts** snapshot captured 10/14/2026 (`data/canix-marketplace-listings-2026-10-14.json`). Commit `7a7da2434480e5eaefc72bce4301cfd2fe02d1ab` was deployed on 10/15/2026 only to `portal-store-demo` v3 in isolated **UX OS Staging** (`nqnmgxnxwllstowavjjt`). An authenticated post-deploy probe returned 120 unique products, 13 canonical brands, 6 Cannaprint rows, 98 source images and 22 missing-image records; a quantity of 7 for product `18780` (minimum 8) returned 400 without changing the session revision. A Viewer returned 403, the demo remained enabled, external Store access remained disabled and Store ordering remained on `hold`.
+
+The production Sites project remains on version 172 and was not republished. Its coordinated production runbook gates remain open, so the new search/category/placeholder frontend is still available only in the verified local preview. No database migration, production function, permission, credential, Store-access switch or notification setting changed in this staging deployment. `scripts/verify-store-demo-ui.mjs` now uses source product names.
 
 - `scripts/generate-store-demo-catalog.mjs` produces `supabase/functions/_shared/store-demo-catalog.ts` from the snapshot. `npm run verify` fails if that file drifts from the snapshot. Edit the snapshot, never the generated file.
 - Identity is the Marketplace Product ID only. Product names are display text.
