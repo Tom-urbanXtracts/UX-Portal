@@ -32,7 +32,7 @@ The deployable unit is the whole three-workspace restructure, not the Store slic
 - One frontend bundle: `dist/portal.html` and `dist/server/index.js`, published through the Sites project.
 - Five database migrations, listed in deployment readiness.
 
-The production schema is otherwise current. Of 138 repository migrations, 133 are already applied to production (116 exact matches plus 17 timestamp aliases) and one production-only entry is byte-identical to its repository source. Only the five candidates are outstanding.
+The production schema is otherwise current. Of 139 repository migrations, 133 are already applied to production (116 exact matches plus 17 timestamp aliases) and one production-only entry is byte-identical to its repository source. Only the six candidates are outstanding; candidate 6 (`20261015120000_store_financial_hold_and_license_lifecycle.sql`, local code only) carries a rollout prerequisite recorded in [deployment readiness](deployment-readiness.md#store-release-candidate-migrations--15-october-2026).
 
 ## 3. Ordered sequence
 

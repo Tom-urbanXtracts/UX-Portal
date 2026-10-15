@@ -14,6 +14,7 @@ function module(path,deps,names){return runInNewContext(`(()=>{${clean(read(path
 const store=module('_shared/store-context.ts',{},['resolveStoreContext','checkActor','StoreAccessError','revokeStoreMembership']);
 const workspace=module('_shared/request-workspace.ts',store,['requestWorkspace','storeContext','storeRows','storeCommand']);
 const auth=module('_shared/auth.ts',{},['verifiedTokenIsAuthenticated']);
+const policy=module('_shared/store-account-policy.ts',{},['DEFAULT_PAYMENT_TERMS','effectivePaymentTerms','quickBooksFreshness','storeFinancialAccess']);
 const uuid=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
 const actor=uuid(1),membership=uuid(2),org=uuid(3),account=uuid(4);
 function fixture({kind='internal',memberRole='administrator',status='active',enabled=true,rawRole='brand',grant=true,active=true}={}) {
@@ -33,7 +34,7 @@ function fixture({kind='internal',memberRole='administrator',status='active',ena
   const token='fixture.'+btoa(JSON.stringify({sub:actor,role:'authenticated'}))+'.fixture';
   const request=(headers={})=>new Request('https://fixture.invalid/handler',{method:'POST',headers:{Authorization:'Bearer '+token,
     'Content-Type':'application/json','x-ux-membership-id':membership,'x-ux-organization-id':org,...headers},body:JSON.stringify({action:'unsupported',kind:'order',payload:{}})});
-  const dependencies={...store,...workspace,...auth,createClient:()=>service,
+  const dependencies={...store,...workspace,...auth,...policy,createClient:()=>service,
     contentScannerConfigured:()=>false,configuredQuickBooksEnvironment:()=> 'sandbox',
     Deno:{env:{get:key=>key==='SUPABASE_URL'?'https://fixture.invalid':'fixture'},serve:handler=>{dependencies.handler=handler;}},
     fetch:async url=>{assert.equal(String(url),'https://fixture.invalid/auth/v1/user','Unexpected outbound connection');return new Response(JSON.stringify(user));},
@@ -41,7 +42,7 @@ function fixture({kind='internal',memberRole='administrator',status='active',ena
   return {service,request,dependencies,tables};
 }
 const endpoints=[['portal-orders','callerFor'],['portal-order-policy','callerFor'],['portal-pricing','callerFor'],['quickbooks-financials','callerFor'],
-  ['portal-claims','callerFor'],['portal-notifications','callerFor'],['portal-admin','actorFor'],['portal-intake','identity'],['canix-catalog','authenticate'],['portal-assets','callerFor'],['portal-retailers','callerFor']];
+  ['portal-claims','callerFor'],['portal-notifications','callerFor'],['portal-admin','actorFor'],['portal-intake','identity'],['canix-catalog','authenticate'],['portal-assets','callerFor'],['portal-retailers','callerFor'],['portal-license-document','callerFor']];
 for(const endpoint of ['portal-brand-documents','portal-brand-support','portal-brand-supply-chain','portal-brand-onboarding','portal-brand-profile','portal-brand-operations','portal-internal-work']) {
   test(endpoint+': selected Store cannot borrow a legacy Internal Administrator profile',async()=>{
     const f=fixture({kind:'store',memberRole:'store_buyer',rawRole:'internal',enabled:false});
@@ -104,7 +105,13 @@ for(const [endpoint,fn] of endpoints) {
   });
   test(endpoint+': explicit Store scope is bounded or intentionally Internal-only',async()=>{
     const f=fixture({kind:'store',memberRole:endpoint==='portal-admin'?'store_owner':'store_buyer'}),api=load(f);
-    if(['portal-assets','portal-retailers'].includes(endpoint)){await assert.rejects(api[fn](f.request()),e=>e instanceof store.StoreAccessError&&e.status===403);return;}
+    if(['portal-assets','portal-retailers','portal-license-document'].includes(endpoint)){await assert.rejects(api[fn](f.request()),e=>e instanceof store.StoreAccessError&&e.status===403);return;}
+    if(endpoint==='quickbooks-financials'){
+      // Buyers receive ordering information only; the Account Owner reads own-account financials.
+      await assert.rejects(api[fn](f.request()),e=>e instanceof store.StoreAccessError&&e.status===403);
+      const owner=fixture({kind:'store',memberRole:'store_owner'}),p=profile(await load(owner)[fn](owner.request()));
+      assert.equal(p.role,'owner');assert.equal(p._storeContext.retailerAccountId,account);return;
+    }
     const p=profile(await api[fn](f.request()));assert.equal(p.role,endpoint==='portal-admin'?'owner':'buyer');assert.equal(p.org,'Verified retailer');assert.equal(p._storeContext.retailerAccountId,account);
   });
   test(endpoint+': real HTTP handler returns denial without source-system calls',async()=>{
@@ -224,4 +231,101 @@ test('Mismatched Auth identity cannot supply Store membership eligibility',async
   const f=fixture();f.service.auth={admin:{getUserById:async()=>({data:{user:{id:uuid(99),app_metadata:{}}},error:null})}};
   const api=module('portal-admin/index.ts',f.dependencies,['actorFor','manageStoreAccess']),actorProfile=await api.actorFor(f.request());
   await assert.rejects(api.manageStoreAccess(actorProfile,{organizationId:uuid(41),profileId:uuid(40),memberRole:'store_owner',status:'active',licenses:[],reason:'Synthetic test',requestId:uuid(43)}),/eligibility could not be verified/);
+});
+test('Authorized billing user reads own-account financials only and every other Store API denies it',async()=>{
+  const f=fixture({kind:'store',memberRole:'store_billing'});
+  const p=await module('quickbooks-financials/index.ts',f.dependencies,['callerFor']).callerFor(f.request());
+  assert.equal(p.profile.role,'billing');assert.equal(p.profile._storeContext.retailerAccountId,account);assert.equal(p.internal,false);
+  for(const [endpoint,fn] of endpoints.filter(([name])=>name!=='quickbooks-financials')){
+    const g=fixture({kind:'store',memberRole:'store_billing'}),api=module(endpoint+'/index.ts',g.dependencies,[fn]);
+    await assert.rejects(api[fn](g.request()),e=>e instanceof store.StoreAccessError&&e.status===403,endpoint);
+  }
+});
+test('Final onboarding approval calls only the atomic, state-bound database operation',async()=>{
+  const f=fixture(),calls=[];module('portal-retailers/index.ts',f.dependencies,['callerFor']);
+  f.service.rpc=(name,args)=>{calls.push([name,args]);return Promise.resolve({data:{id:uuid(70),stage:'ready'},error:null});};
+  const send=body=>f.dependencies.handler(new Request(f.request(),{body:JSON.stringify(body)}));
+  const response=await send({action:'advance-onboarding',requestId:uuid(70),targetStage:'ready',currentStage:'access',note:'All sections and licenses verified'});
+  assert.equal(response.status,200);
+  assert.deepEqual(calls.map(([name])=>name),['portal_complete_store_onboarding']);
+  assert.equal(JSON.stringify(calls[0][1]),JSON.stringify({p_actor_id:actor,p_request_id:uuid(70),p_expected_stage:'access',p_evidence:'All sections and licenses verified',p_actor_email:'fixture@example.invalid'}));
+  // Earlier stages keep the one-step advance and never write an approval.
+  calls.length=0;await send({action:'advance-onboarding',requestId:uuid(70),targetStage:'access',note:'Terms recorded'});
+  assert.deepEqual(calls.map(([name])=>name),['portal_advance_onboarding_request']);
+  // A database refusal of the atomic operation surfaces as a denial, not a partial success.
+  f.service.rpc=()=>Promise.resolve({data:null,error:{code:'42501',message:'Compliance, Finance or an Internal portal Administrator must approve onboarding'}});
+  assert.equal((await send({action:'advance-onboarding',requestId:uuid(70),targetStage:'ready',currentStage:'access',note:'x'})).status,403);
+});
+test('License verification forwards a document UUID and never free-text document references',async()=>{
+  const f=fixture(),calls=[];module('portal-retailers/index.ts',f.dependencies,['callerFor']);
+  f.service.rpc=(name,args)=>{calls.push([name,args]);return Promise.resolve({data:{result:'verified'},error:null});};
+  const send=body=>f.dependencies.handler(new Request(f.request(),{body:JSON.stringify({action:'verify-store-license',licenseNumber:'A1',result:'verified',
+    licenseExpiresOn:'2027-10-15',evidence:'Checked OCM record',requestId:uuid(70),...body})}));
+  assert.equal((await send({documentId:uuid(80)})).status,200);
+  assert.equal(calls[0][0],'portal_verify_store_license');assert.equal(calls[0][1].p_document_id,uuid(80));assert.equal('p_document_ref' in calls[0][1],false);
+  for(const documentId of ['DOC-A1','',undefined,'00000000-0000-4000-8000-00000000008z']){
+    calls.length=0;const response=await send({documentId,documentRef:'DOC-A1'});
+    assert.equal(response.status,400,String(documentId));assert.equal(calls.length,0);
+  }
+});
+// License document links: database authorization and audit first, then a short-lived signed URL only.
+const docs={[uuid(80)]:{account,scan:'clean',request:uuid(70)},[uuid(81)]:{account:uuid(5),scan:'clean',request:uuid(71)},
+  [uuid(82)]:{account,scan:'pending_provider',request:uuid(70)},[uuid(83)]:{account,scan:'clean',request:uuid(70),forgedPath:true}};
+const sha='a'.repeat(64);
+function licenseFixture(options,internalRoles={administrator:'administrator',operations:'finance',quality:'compliance'}){
+  const f=fixture(options),calls=[],signed=[];const resolve=f.service.rpc;
+  f.service.rpc=(name,args)=>{
+    if(name==='portal_resolve_store_context')return resolve(name,args);
+    calls.push([name,args]);assert.equal(name,'portal_authorize_license_document');
+    const d=docs[args.p_document_id];
+    const internalRole=args.p_membership_id===null?internalRoles[options?.memberRole||'administrator']:null;
+    const ownerOk=args.p_membership_id===membership&&(options?.memberRole==='store_owner')&&d?.account===account;
+    if(!d||d.scan!=='clean'||!(internalRole||ownerOk))return Promise.resolve({data:null,error:{code:'42501'}});
+    const path=d.forgedPath?'../other/'+sha+'.pdf':d.request+'/'+sha+'.pdf';
+    return Promise.resolve({data:{documentId:args.p_document_id,onboardingRequestId:d.request,sha256:sha,objectPath:path,originalName:'license.pdf',contentType:'application/pdf'},error:null});
+  };
+  f.service.storage={from:bucket=>({createSignedUrl:(path,ttl,opts)=>{signed.push({bucket,path,ttl,opts});
+    return Promise.resolve({data:{signedUrl:`https://fixture.invalid/storage/v1/object/sign/${bucket}/${path}?token=signed`},error:null});}})};
+  const api=module('portal-license-document/index.ts',f.dependencies,['callerFor','issueLicenseDocumentLink']);
+  return {...f,calls,signed,api};
+}
+test('License documents: owning Account Owner and Internal Compliance, Finance and Administrator receive a 60-second signed link after audit',async()=>{
+  for(const options of [{kind:'store',memberRole:'store_owner'},{memberRole:'administrator'},{memberRole:'operations'},{memberRole:'quality'}]){
+    const f=licenseFixture(options),caller=await f.api.callerFor(f.request());
+    const link=await f.api.issueLicenseDocumentLink(caller,{action:'issue',documentId:uuid(80),access:'download'});
+    assert.equal(f.calls.length,1,'authorization/audit RPC runs exactly once');
+    assert.equal(f.calls[0][1].p_actor_id,actor);assert.equal(f.calls[0][1].p_membership_id,options.kind==='store'?membership:null);
+    assert.equal(JSON.stringify(f.signed),JSON.stringify([{bucket:'portal-onboarding-documents',path:uuid(70)+'/'+sha+'.pdf',ttl:60,opts:{download:'license.pdf'}}]));
+    assert.equal(link.expiresInSeconds,60);assert.match(link.signedUrl,/\/storage\/v1\/object\/sign\/portal-onboarding-documents\/.*[?&]token=/);
+    assert.equal(JSON.stringify(link).includes('objectPath'),false);assert.equal('path' in link,false);
+  }
+});
+test('License documents: Buyer, Budtender and billing users are denied before any database document lookup',async()=>{
+  for(const memberRole of ['store_buyer','store_staff','store_billing']){
+    const f=licenseFixture({kind:'store',memberRole});
+    await assert.rejects(f.api.callerFor(f.request()),e=>e instanceof store.StoreAccessError&&e.status===403,memberRole);
+    assert.equal(f.calls.length,0);assert.equal(f.signed.length,0);
+  }
+});
+test('License documents: other account, Sales, guessed ID, dirty scan and forged path never produce a link',async()=>{
+  const cases=[[{kind:'store',memberRole:'store_owner'},uuid(81)],[{kind:'store',memberRole:'store_owner'},uuid(900)],
+    [{kind:'store',memberRole:'store_owner'},uuid(82)],[{memberRole:'administrator'},uuid(83)],[{memberRole:'sales'},uuid(80)],[{memberRole:'viewer'},uuid(80)]];
+  for(const [options,documentId] of cases){
+    const f=licenseFixture(options),caller=await f.api.callerFor(f.request());
+    await assert.rejects(f.api.issueLicenseDocumentLink(caller,{action:'issue',documentId,access:'read'}),e=>e.status===403,documentId);
+    assert.equal(f.signed.length,0,'no URL is signed on denial');
+  }
+});
+test('License documents: forged membership and browser-supplied paths are rejected without signing',async()=>{
+  const f=licenseFixture({kind:'store',memberRole:'store_owner'});
+  await assert.rejects(f.api.callerFor(f.request({'x-ux-membership-id':uuid(99)})),e=>e instanceof store.StoreAccessError&&e.status===403);
+  const caller=await f.api.callerFor(f.request());
+  for(const body of [{action:'issue',documentId:uuid(80),objectPath:'a/doc.pdf'},{action:'issue',documentId:uuid(80),path:'x'},
+    {action:'issue',documentId:uuid(80),membershipId:uuid(99)},{action:'issue',documentId:'DOC-A1'},{action:'issue',documentId:uuid(80),access:'delete'}]){
+    await assert.rejects(f.api.issueLicenseDocumentLink(caller,body),e=>e.status===400,JSON.stringify(body));
+  }
+  assert.equal(f.calls.length,0);assert.equal(f.signed.length,0);
+  // An unsigned or foreign URL from storage fails closed.
+  f.service.storage={from:()=>({createSignedUrl:()=>Promise.resolve({data:{signedUrl:'https://fixture.invalid/storage/v1/object/public/portal-onboarding-documents/x.pdf'},error:null})})};
+  await assert.rejects(f.api.issueLicenseDocumentLink(caller,{action:'issue',documentId:uuid(80)}),e=>e.status===503);
 });

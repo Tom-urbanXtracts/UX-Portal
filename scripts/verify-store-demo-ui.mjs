@@ -52,22 +52,34 @@ if (mode === 'submit-sections') {
   for (let i = 0; i < 6; i++) {
     const p = await observeReady();
     if (!p.includes('button "Approve Section"')) break;
+    // License approval requires verification evidence; the note is harmless for other sections.
+    bsk('fill', refFor(p, 'textbox', 'Review note'), '--value', 'Synthetic license verification evidence');
     await click('Approve Section'); console.log('Approved synthetic section ' + (i + 1));
   }
   const p = await observeReady();
   if (p.includes('button "Approve Section"') || !p.includes('APPROVED')) throw new Error('Onboarding review incomplete.');
-} else if (mode === 'finance-clear') {
-  await role('internal'); await click('Financials');
-  let p = await observeReady(); bsk('fill', refFor(p, 'textbox', 'Demo Finance note'), '--value', 'Synthetic acceptance review — no live financial decision');
-  await click('Clear for Ordering');
-  p = await observeReady(); if (!p.includes('approved')) throw new Error('Finance clearance not visible.');
+} else if (mode === 'finance-warning') {
+  // Overdue accounting is a visible warning only; it creates no hold.
+  await role('internal'); await click('Account & License');
+  await click('Overdue Invoice');
+  const p = await observeReady();
+  if (!p.includes('invoice overdue') || !p.includes('Manual financial hold: None') || !p.includes('never block ordering')) throw new Error('Overdue warning-only state not visible.');
 } else if (mode === 'budtender') {
   const page = await role('budtender');
   const p = page.slice(page.indexOf('region "Internal Administrator Store Demo"'));
-  for (const label of ['Add to Draft','Save Draft','Submit Order','Company & Onboarding','Financials','Orders']) {
+  for (const label of ['Add to Draft','Save Draft','Submit Order','Company & Onboarding','Account & License','Orders']) {
     if (p.includes('button "' + label + '"')) throw new Error('Budtender has a commercial/admin action: ' + label);
   }
   if (p.includes('Snapshot displayed') || p.includes('Demo remaining') || p.includes('Minimum ') || /StaticText "\$\d/.test(p)) throw new Error('Commercial quantities, minimums or prices leaked.');
+} else if (mode === 'billing') {
+  // Billing is read-only own-account financials: one finance tab, no ordering, onboarding, license or internal controls.
+  const page = await role('billing');
+  const p = page.slice(page.indexOf('region "Internal Administrator Store Demo"'));
+  if (!p.includes('button "Account Financials"') || !p.includes('Account financials · Read only') || !p.includes('Payment terms:')) throw new Error('Billing did not land on Account Financials.');
+  for (const label of ['Catalog & Cart','Orders','Company & Onboarding','Activity & Reset','Add to Draft','Save Draft','Submit Order','Save Account Terms','Place Manual Hold','Release Manual Hold','Overdue Invoice','Record Renewed License (synthetic, no file)','Verify Renewed License','Reset My Demo']) {
+    if (p.includes('button "' + label + '"')) throw new Error('Billing has an ordering/admin action: ' + label);
+  }
+  if (p.includes('Product ID ') || p.includes('Snapshot displayed') || p.includes('Control Audit') || p.includes('Ordering paused')) throw new Error('Billing received catalog, audit or ordering-gate content.');
 } else if (mode === 'paused') {
   const p = await click('Refresh');
   if (!p.includes('Store demonstration is paused.')) throw new Error('Emergency pause was not enforced.');
@@ -91,15 +103,17 @@ if (mode === 'submit-sections') {
   bsk('fill', refFor(p, 'spinbutton', 'Quantity for UXT - Berry Lemonade - Cannabis Flower - 14g'), '--value', '30');
   await click('Add to Draft');
   await click('Save Draft');
-  await role('internal'); await click('Financials');
-  p = await observeReady(); bsk('fill', refFor(p, 'textbox', 'Demo Finance note'), '--value', 'Synthetic past-due hold acceptance');
-  await click('Simulate Past Due');
+  await role('internal'); await click('Account & License');
+  p = await observeReady(); bsk('fill', refFor(p, 'textbox', 'Demo control reason'), '--value', 'Synthetic manual hold acceptance');
+  p = await observeReady(); bsk('fill', refFor(p, 'textbox', 'Demo control evidence'), '--value', 'DEMO-EVIDENCE-UI');
+  await click('Place Manual Hold');
   await role('buyer'); await click('Catalog & Cart');
   p = await click('Submit Order');
-  if (!p.includes('Finance has not cleared ordering') || !p.includes('Cart quantity for UXT - Berry Lemonade - Cannabis Flower - 14g')) throw new Error('Hold did not preserve the Buyer draft.');
-  await role('internal'); await click('Financials');
-  p = await observeReady(); bsk('fill', refFor(p, 'textbox', 'Demo Finance note'), '--value', 'Synthetic Finance clearance acceptance');
-  await click('Clear for Ordering');
+  if (!p.includes('Ordering is on hold for this account') || !p.includes('Cart quantity for UXT - Berry Lemonade - Cannabis Flower - 14g')) throw new Error('Hold did not preserve the Buyer draft.');
+  await role('internal'); await click('Account & License');
+  await click('Release Manual Hold');
+  // An overdue warning after release does not block the Buyer.
+  await click('Overdue Invoice');
   await role('buyer'); await click('Catalog & Cart'); await click('Submit Order');
   p = await click('Orders');
   if (!p.includes('Awaiting Owner Approval') || p.includes('button "Approve Buyer Order"')) throw new Error('Buyer approval boundary failed.');

@@ -1216,6 +1216,20 @@ async function createDurableOrder(
     : await storeCommand(service, caller.profile, 'order.create', commandPayload);
   if (error) {
     const message = String(error.message || "");
+    // Raised only by an explicit audited manual hold, including staff-entered orders.
+    if ((error as { code?: string }).code === "UXH01") {
+      throw new IntakeError(
+        409,
+        "Ordering is on hold for this account. The draft was preserved.",
+      );
+    }
+    // Raised for missing, unverified, expired, inactive or closed license scope.
+    if ((error as { code?: string }).code === "UXL01") {
+      throw new IntakeError(
+        409,
+        "Ordering is paused for this location until a current store license is verified. The draft was preserved.",
+      );
+    }
     if (
       message.includes(
         "exceeds Canix availability after active portal commitments",

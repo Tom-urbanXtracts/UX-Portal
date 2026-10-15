@@ -6,13 +6,13 @@
   "sourceSchemaSha256": "4abd55dc3a914a5e5e63f1edb1bb3b9a133222531b1cc830bd2d87aa59170297",
   "basis": "Staging was bootstrapped from a schema-only production dump, with no production rows, Auth users, Vault secrets, schedules, or connector credentials.",
   "counts": {
-    "repository": 138,
+    "repository": 139,
     "productionHistory": 134,
     "stagingHistory": 3,
     "exactVersionAndName": 116,
     "versionAliases": 17,
     "productionOnly": 1,
-    "repositoryOnly": 5
+    "repositoryOnly": 6
   },
   "productionHistory": [
     {
@@ -1242,6 +1242,11 @@
       "version": "20261015003000",
       "name": "provision_workforce_workspace_membership",
       "md5": "a392d28dcb294b80e9cbf3020736ccd3"
+    },
+    {
+      "version": "20261015120000",
+      "name": "store_financial_hold_and_license_lifecycle",
+      "md5": "3e8427010802cf427486bc87ba15b794"
     }
   ],
   "versionAliases": [
@@ -1372,6 +1377,11 @@
       "version": "20261015003000",
       "name": "provision_workforce_workspace_membership",
       "md5": "a392d28dcb294b80e9cbf3020736ccd3"
+    },
+    {
+      "version": "20261015120000",
+      "name": "store_financial_hold_and_license_lifecycle",
+      "md5": "3e8427010802cf427486bc87ba15b794"
     }
   ],
   "stagingHistory": [

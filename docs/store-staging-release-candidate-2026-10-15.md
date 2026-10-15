@@ -84,13 +84,13 @@ None of these is needed for the Internal-only synthetic demo. All are required b
 
 | Item | Value | Status |
 | --- | --- | --- |
-| Ordering gate | Finance reviews payment terms before ordering is enabled. No review means no ordering. | Decided |
-| Per-retailer payment terms, Finance reviewer and supporting evidence | None documented | Unanswered |
-| Past-due assessment | Determined from verified QuickBooks invoice due dates and outstanding amounts. A nonzero balance alone is not past due. A past-due account stays blocked until Finance records clearance. | Decided |
-| Exact past-due assessment rule (e.g. any grace period) | None documented | Unanswered |
-| Hold-release / exception authority and reviewer permissions | Finance clears holds; the named authority within Finance is not specified. | Unanswered |
-| Clearance evidence | Record reviewer, authority, terms decision, timestamp, scope, source snapshot, reason and append-only evidence. Payment refresh never silently clears a hold. | Proposed/default (architecture) |
-| Maximum QuickBooks data age | No value documented. Unknown or stale evidence cannot clear a hold. | Unanswered; fail-closed default |
+| Ordering gate | Superseded 10/15/2026: no financial review gate. Only an explicit, audited manual hold placed by Finance or an Internal portal Administrator blocks ordering for financial reasons. Onboarding, license and other gates remain independent. | Decided (Portal checklist 10/15/2026) |
+| Payment terms | Global default Net 30; at most one retailer-account override, inherited by every location; no location override. Finance or an Internal portal Administrator changes terms with reason and evidence. | Decided; implemented locally, not deployed |
+| Migrate existing Finance-approved terms as account overrides | Not decided | Decision pending |
+| Past-due assessment | Superseded 10/15/2026: overdue invoices and nonzero balances are warning-only and never create, clear or substitute for a hold. | Decided (Portal checklist 10/15/2026) |
+| Hold-release / exception authority | Finance or any Internal portal Administrator. Retailer/Store administrators cannot place or release their own hold. | Decided; two-person release review pending |
+| Hold evidence | Actor, internal role, retailer account, prior/new state, reason, evidence and timestamp, append-only. Payment or QuickBooks refresh never places or clears a hold. | Decided; implemented locally, not deployed |
+| Maximum QuickBooks data age | Stale exactly 24 hours after the last successful sync. Warning only; never displayed as zero and never blocks ordering. | Decided; implemented locally, not deployed |
 
 **Finance with Operations and Compliance; IT implements** — QuickBooks field/export allowlists — [SW-IN-03](deferred-items-decision-brief.md#store-activation--remaining-inputs-10142026), DEP-06, OSPA-03, SW-TECH-04
 

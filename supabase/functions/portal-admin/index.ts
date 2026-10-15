@@ -241,7 +241,7 @@ async function portalUsers(actor: Row): Promise<Row[]> {
       ]);
       if(pe||ae||!profile||!auth.user) throw new AdminError(503,'Store member directory could not be verified.');
       return {id:profile.id,membershipId:membership.id,email:auth.user.email,fullName:profile.full_name,org:actor.org,
-        role:membership.member_role==='store_owner'?'owner':membership.member_role==='store_buyer'?'buyer':'budtender',
+        role:({store_owner:'owner',store_buyer:'buyer',store_billing:'billing'} as Record<string,string>)[membership.member_role]||'budtender',
         active:profile.active===true&&membership.status==='active',staffRole:null,locations:'Membership-scoped',testDemo:false};
     }));
   }

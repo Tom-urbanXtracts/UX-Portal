@@ -155,14 +155,15 @@ main h1,main h2,main h3,main h4{text-transform:capitalize}
 <sc-if value="{{ isStoreDemo }}" hint-placeholder-val="{{ false }}">
 <section aria-label="Internal Administrator Store Demo" style="max-width:1200px">
 <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><div style="flex:1"><h1>urbanXtracts Store</h1><p style="margin:5px 0;font-size:12px;color:var(--ux-muted)">Synthetic demo · Internal Administrators only · No emails or live system writes</p></div><button onClick="{{ onStoreDemoRefresh }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Refresh</button></div>
-<div style="display:flex;gap:12px;flex-wrap:wrap;padding:12px;background:var(--ux-surface);margin-bottom:14px"><label>Demo view <select aria-label="Demo view" value="{{ storeDemoRole }}" onChange="{{ onStoreDemoRole }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><option value="owner">Store Owner</option><option value="buyer">Store Buyer</option><option value="budtender">Budtender</option><option value="internal">Internal Review</option></select></label><label>Location <select aria-label="Demo location" value="{{ storeDemoStore }}" onChange="{{ onStoreDemoStore }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><sc-for list="{{ storeDemoStores }}" as="store"><option value="{{ store.id }}">{{ store.name }}</option></sc-for></select></label><span style="align-self:center;font-size:12px">{{ storeDemoGate }}</span></div>
+<div role="group" aria-label="Demo controls" style="display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end;padding:12px 14px;background:var(--ux-surface)"><label style="display:flex;flex-direction:column;flex:0 1 260px;min-width:180px;font:600 11px Archivo,sans-serif;letter-spacing:.02em;color:var(--ux-muted-strong)">Demo view <select aria-label="Demo view" value="{{ storeDemoRole }}" onChange="{{ onStoreDemoRole }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><option value="owner">Store Owner</option><option value="buyer">Store Buyer</option><option value="billing">Billing</option><option value="budtender">Budtender</option><option value="internal">Internal Review</option></select></label><label style="display:flex;flex-direction:column;flex:0 1 260px;min-width:180px;font:600 11px Archivo,sans-serif;letter-spacing:.02em;color:var(--ux-muted-strong)">Location <select aria-label="Demo location" value="{{ storeDemoStore }}" onChange="{{ onStoreDemoStore }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoInput }}"><sc-for list="{{ storeDemoStores }}" as="store"><option value="{{ store.id }}">{{ store.name }}</option></sc-for></select></label></div>
+<section aria-label="Demo status" style="border:1px solid var(--ux-faint-2);border-top:0;border-left:3px solid {{ storeDemoStatusColor }};background:#fff;padding:10px 14px 11px;margin-bottom:14px"><div style="font:600 10px ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:{{ storeDemoStatusColor }}">{{ storeDemoStatusLabel }}</div><ul style="margin:6px 0 0;padding-left:18px;font-size:12.5px;line-height:1.55;color:var(--ux-ink);max-width:90ch"><sc-for list="{{ storeDemoStatusItems }}" as="item"><li style="margin:2px 0">{{ item.text }}</li></sc-for></ul></section>
 <div role="status" style="font-size:12px;margin-bottom:10px">{{ storeDemoMessage }}</div>
 <nav aria-label="Store demo sections" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px"><sc-for list="{{ storeDemoTabs }}" as="tab"><button onClick="{{ tab.onPick }}" aria-pressed="{{ tab.selected }}" style="{{ tab.style }}">{{ tab.label }}</button></sc-for></nav>
 <sc-if value="{{ storeDemoCompany }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px"><sc-for list="{{ storeDemoSections }}" as="section"><section style="border:1px solid var(--ux-faint-2);padding:14px;background:#fff"><div style="display:flex;justify-content:space-between;gap:8px"><h2 style="font-size:16px;margin:0 0 12px">{{ section.name }}</h2><span style="font-size:10px">{{ section.status }}</span></div><sc-for list="{{ section.fields }}" as="field"><label style="display:block;font-size:11px;margin-bottom:8px">{{ field.label }}<input aria-label="{{ field.label }}" value="{{ field.value }}" onInput="{{ field.onInput }}" readOnly="{{ section.readOnly }}" style="{{ storeDemoInput }}"></label></sc-for><p style="font-size:11px;color:var(--ux-signal)">{{ section.note }}</p><sc-if value="{{ section.canEdit }}"><div style="display:flex;gap:8px"><button onClick="{{ section.onSave }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ section.onSubmit }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Section</button></div></sc-if><sc-if value="{{ section.canReview }}"><label style="font-size:11px">Review note<input value="{{ section.reviewNote }}" onInput="{{ section.onNote }}" style="{{ storeDemoInput }}"></label><div style="display:flex;gap:8px;margin-top:8px"><button onClick="{{ section.onApprove }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Approve Section</button><button onClick="{{ section.onReturn }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Return Section</button></div></sc-if></section></sc-for></div></sc-if>
 <sc-if value="{{ storeDemoCatalog }}"><p role="note" style="font-size:11px;color:var(--ux-muted);border-left:3px solid var(--ux-faint);padding:6px 10px;margin:0 0 12px">{{ storeDemoCatalogNotice }}</p><div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px"><label>Search <input aria-label="Demo product search" value="{{ storeDemoSearch }}" onInput="{{ onStoreDemoSearch }}" placeholder="Name, brand or Product ID" style="{{ storeDemoInput }}"></label><label>Brand <select aria-label="Demo Brand filter" value="{{ storeDemoBrand }}" onChange="{{ onStoreDemoBrand }}" style="{{ storeDemoInput }}"><option value="all">All Brands</option><sc-for list="{{ storeDemoBrandOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><label>Category <select aria-label="Demo Category filter" value="{{ storeDemoCategory }}" onChange="{{ onStoreDemoCategory }}" style="{{ storeDemoInput }}"><option value="all">All Categories</option><sc-for list="{{ storeDemoCategoryOptions }}" as="option" hint-placeholder-count="4"><option value="{{ option.value }}">{{ option.label }}</option></sc-for></select></label><span style="font-size:12px;padding-bottom:12px">{{ storeDemoResultCount }}</span></div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px"><sc-for list="{{ storeDemoProducts }}" as="product"><article style="border:1px solid var(--ux-faint-2);background:#fff;padding:16px"><div style="height:150px;margin:-16px -16px 12px;background:var(--ux-surface);display:flex;align-items:center;justify-content:center;overflow:hidden"><sc-if value="{{ product.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ product.imageUrl }}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:contain"></sc-if><sc-if value="{{ product.noImage }}" hint-placeholder-val="{{ true }}"><span style="font:700 8.5px ui-monospace,monospace;color:var(--ux-faint);letter-spacing:.08em">NO IMAGE IN SOURCE</span></sc-if></div><div style="font-size:11px;color:var(--ux-muted)">{{ product.brand }} · {{ product.category }}</div><h2 style="font-size:17px;margin:8px 0">{{ product.name }}</h2><sc-if value="{{ storeDemoCommercial }}"><p style="font-size:12px;margin:0 0 4px">{{ product.price }} per {{ product.saleUnit }} · Minimum {{ product.minimumOrderQuantity }} {{ product.saleUnit }}</p><div style="font-size:12px;margin-bottom:4px">{{ product.availability }}</div><div style="font:10px ui-monospace,monospace;color:var(--ux-muted);margin-bottom:10px">Product ID {{ product.id }}</div><sc-if value="{{ storeDemoCanOrder }}"><label style="font-size:11px">Quantity<input aria-label="{{ product.quantityLabel }}" type="number" min="{{ product.minimumOrderQuantity }}" step="1" max="{{ product.available }}" value="{{ product.quantity }}" onChange="{{ product.onQuantity }}" style="{{ storeDemoInput }}"></label><button onClick="{{ product.onAdd }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Add to Draft</button></sc-if></sc-if></article></sc-for></div>
 <sc-if value="{{ storeDemoCanOrder }}"><section style="background:var(--ux-surface);padding:16px;margin-top:18px"><h2 style="font-size:18px;margin:0 0 10px">Draft Order</h2><sc-for list="{{ storeDemoCart }}" as="line"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--ux-faint-2)"><span style="flex:1;min-width:180px">{{ line.name }}</span><label>Units <input aria-label="{{ line.quantityLabel }}" type="number" value="{{ line.quantity }}" onChange="{{ line.onQuantity }}" min="{{ line.minimum }}" step="1" style="width:72px;padding:8px"></label><span>{{ line.total }}</span><button onClick="{{ line.onRemove }}" style="{{ storeDemoButton }}">Remove</button></div></sc-for><p>{{ storeDemoCartTotal }}</p><div style="display:flex;gap:8px"><button onClick="{{ onStoreDemoSaveDraft }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Save Draft</button><button onClick="{{ onStoreDemoSubmitOrder }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Submit Order</button></div></section></sc-if></sc-if>
 <sc-if value="{{ storeDemoOrders }}"><p style="font-size:12px">{{ storeDemoOrderCount }}</p><sc-for list="{{ storeDemoOrderRows }}" as="order"><article style="border:1px solid var(--ux-faint-2);padding:16px;margin-bottom:10px;background:#fff"><div style="display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap"><strong>{{ order.id }} · {{ order.location }}</strong><span>{{ order.status }} · {{ order.total }}</span></div><div style="font-size:12px;margin-top:8px">{{ order.linesLabel }}</div><div style="font-size:11px;color:var(--ux-muted);margin:8px 0">{{ order.reviewLabel }}</div><div style="display:flex;gap:8px"><sc-for list="{{ order.actions }}" as="action"><button onClick="{{ action.onClick }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">{{ action.label }}</button></sc-for></div></article></sc-for></sc-if>
-<sc-if value="{{ storeDemoFinance }}"><section style="border:1px solid var(--ux-faint-2);padding:16px;max-width:700px;background:#fff"><h2 style="font-size:18px;margin-top:0">Finance Review</h2><p>{{ storeDemoFinanceSummary }}</p><sc-if value="{{ storeDemoInternal }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px"><label>Payment terms<input aria-label="Demo payment terms" value="{{ storeDemoTerms }}" onInput="{{ onStoreDemoTerms }}" style="{{ storeDemoInput }}"></label></div><label>Decision note<input aria-label="Demo Finance note" value="{{ storeDemoFinanceNote }}" onInput="{{ onStoreDemoFinanceNote }}" style="{{ storeDemoInput }}"></label><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button onClick="{{ onStoreDemoFinanceApprove }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Clear for Ordering</button><button onClick="{{ onStoreDemoFinanceHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Place Hold</button><button onClick="{{ onStoreDemoPastDue }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Simulate Past Due</button></div></sc-if><h3 style="font-size:15px">Synthetic Invoice</h3><p style="font-size:12px">{{ storeDemoInvoice }}</p></section></sc-if>
+<sc-if value="{{ storeDemoFinance }}"><section style="border:1px solid var(--ux-faint-2);padding:16px;max-width:760px;background:#fff"><h2 style="font-size:18px;margin-top:0">Account Terms, Holds &amp; License</h2><p>{{ storeDemoFinanceSummary }}</p><p role="note" style="font-size:12px;border-left:3px solid var(--ux-faint);padding:6px 10px">{{ storeDemoAccountingNotice }}</p><sc-if value="{{ storeDemoInternal }}"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px"><label>Account payment terms (blank = Net 30 default)<input aria-label="Demo account payment terms" value="{{ storeDemoTerms }}" onInput="{{ onStoreDemoTerms }}" style="{{ storeDemoInput }}"></label><label>Reason<input aria-label="Demo control reason" value="{{ storeDemoControlReason }}" onInput="{{ onStoreDemoControlReason }}" style="{{ storeDemoInput }}"></label><label>Evidence reference<input aria-label="Demo control evidence" value="{{ storeDemoControlEvidence }}" onInput="{{ onStoreDemoControlEvidence }}" style="{{ storeDemoInput }}"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button onClick="{{ onStoreDemoSetTerms }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Save Account Terms</button><button onClick="{{ onStoreDemoPlaceHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Place Manual Hold</button><button onClick="{{ onStoreDemoReleaseHold }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Release Manual Hold</button></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;align-items:center">Simulate synthetic accounting (warning only):<sc-for list="{{ storeDemoAccountingScenarios }}" as="scenario"><button onClick="{{ scenario.onClick }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">{{ scenario.label }}</button></sc-for></div></sc-if><h3 style="font-size:15px">Synthetic Invoice</h3><p style="font-size:12px">{{ storeDemoInvoice }}</p><h3 style="font-size:15px">License</h3><p style="font-size:12px">{{ storeDemoLicenseSummary }}</p><sc-if value="{{ storeDemoCanUploadRenewal }}"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><label>Renewed license expiration<input type="text" inputMode="numeric" maxLength="10" aria-label="Demo renewed license expiration" placeholder="MM/DD/YYYY" value="{{ storeDemoRenewalDate }}" onInput="{{ onStoreDemoRenewalDate }}" style="{{ storeDemoInput }}"></label><button onClick="{{ onStoreDemoUploadRenewal }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Record Renewed License (synthetic, no file)</button></div></sc-if><sc-if value="{{ storeDemoCanVerifyRenewal }}"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button onClick="{{ onStoreDemoVerifyLicense }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoPrimary }}">Verify Renewed License</button><button onClick="{{ onStoreDemoRejectLicense }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Reject Renewal</button></div></sc-if><sc-if value="{{ storeDemoInternal }}"><h3 style="font-size:15px">Control Audit (append-only)</h3><sc-for list="{{ storeDemoControlEvents }}" as="event"><p style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--ux-faint-2)">{{ event.label }}</p></sc-for></sc-if></section></sc-if>
 <sc-if value="{{ storeDemoActivity }}"><h2 style="font-size:18px">Demo Activity</h2><sc-for list="{{ storeDemoEvents }}" as="event"><p style="font-size:12px;padding:9px;border-bottom:1px solid var(--ux-faint-2)">{{ event.label }}</p></sc-for><button onClick="{{ onStoreDemoReset }}" disabled="{{ storeDemoBusy }}" style="{{ storeDemoButton }}">Reset My Demo</button></sc-if>
 </section>
 </sc-if>
@@ -2631,7 +2632,7 @@ Owner: {{ c.owner }} · {{ c.clock }} &mdash; neither is rendered in the store&r
 <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Licence expiry</div><div>Read from the licence record. A renewal is uploaded under Documents and an urbanXtracts reviewer updates the record &mdash; landing a file does not lift the gate by itself.</div></div>
 <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Adding or closing a location</div><div>Handled at onboarding, because a new location needs a licence qualified against the state record before it can order.</div></div>
 <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Banking and remittance</div><div>Not on this page and nowhere else in the portal. Those details stay in the onboarding record by design.</div></div>
-<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payment terms</div><div>Set by urbanXtracts finance. No credit limit applies. Owners and Buyers can see returned QuickBooks history under Financials; neither side edits accounting data here.</div></div>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:20px;padding:12px 0;border-bottom:1px solid rgba(23,14,11,.14);font-size:13px;align-items:baseline"><div style="font-weight:700">Payment terms</div><div>Set by urbanXtracts finance. No credit limit applies. The Account Owner and an authorized Billing contact can see returned QuickBooks history under Financials; Buyers receive ordering information only. QuickBooks stays read-only here.</div></div>
 </div>
 </sc-if>
 
@@ -3764,7 +3765,7 @@ const CATS = ['All', 'Vape cartridge', 'Infused edible', 'Infused pre-roll', 'Pa
 
 const LOCATIONS = [];
 const EMPTY_LOCATION = {
-  id: '', name: 'No store assigned', license: '', expired: false, pastDue: false,
+  id: '', name: 'No store assigned', license: '', expired: false, manualHold: false,
   demo: false, qboCustomerId: null
 };
 
@@ -3791,7 +3792,7 @@ const VALIDATION = [
     { severity: 'DECIDED', screen: 'Inventory', question: 'How does the deployed portal authenticate to the Canix reporting API?', detail: 'Resolved 31 Aug 2026: a Supabase Edge Function holds the Canix credential, writes a private cache on a five-minute cron and exposes only the authenticated read endpoint to the browser. Canix credentials never enter the client bundle.', blocks: 'Nothing \u2014 closed', owner: 'Data engineering', evidence: 'Deployed server-side connector, private cache and successful five-minute scheduled sync' },
     { severity: 'Review queue', screen: 'Internal account view', question: 'Can store visit reports be read as the account-notes source?', detail: 'A store visit reports board exists in the workflow system. Its structure was not read, so the account view shows the field as sourced but unverified.', blocks: 'Account notes and follow-up activity', owner: 'Sales operations', evidence: 'A read of the board columns' },
     { severity: 'Review queue', screen: 'Inventory · Internal lot view', question: 'How does Canix Package Owner reach the portal without becoming Economic Owner?', detail: 'Brand is the market identity; Canix Owner is the operational Canix user assigned to a package; Economic Owner is the entity carrying production risk. Canix Reporting supplies owner_id and owner_name, but the public REST Package schema does not document them and the latest REST-backed portal snapshot returned no assignments. The portal fields and filters remain ready but blank until IT connects a supported Reporting bridge or Canix documents the REST property. Economic Owner remains effective-dated, may be blank, and never inherits Brand or Canix Owner.', blocks: 'Only Canix operational-owner filtering and reporting; Economic Owner classification remains independent', owner: 'IT / Data, with Canix', evidence: 'A supported server-side Reporting route or documented REST property, a five-minute sync, and package-ID coverage/removal tests' },
-    { severity: 'Review queue', screen: 'Financials · Store performance', question: 'Is the portal authorized to read the production QuickBooks company?', detail: 'The encrypted OAuth broker and read-only Customer, Invoice, and Payment snapshot functions are deployed, but the portal connection is disconnected and no successful snapshot exists. Development credentials must not be used to authorize the live company.', blocks: 'Live QuickBooks financial views', owner: 'Finance and IT', evidence: 'Intuit production approval, read-only authorization, successful snapshot, and Owner/Buyer/Budtender scope tests' },
+    { severity: 'Review queue', screen: 'Financials · Store performance', question: 'Is the portal authorized to read the production QuickBooks company?', detail: 'The encrypted OAuth broker and read-only Customer, Invoice, and Payment snapshot functions are deployed, but the portal connection is disconnected and no successful snapshot exists. Development credentials must not be used to authorize the live company.', blocks: 'Live QuickBooks financial views', owner: 'Finance and IT', evidence: 'Intuit production approval, read-only authorization, successful snapshot, and Owner/Billing/Buyer/Budtender scope tests' },
     { severity: 'Review queue', screen: 'Admin', question: 'How is an organisation resolved when a chain holds several licenses?', detail: 'License number is the account key. Location switching and organisation-level receivables both assume a reliable mapping from several licenses to one organisation.', blocks: 'Location switching at scale', owner: 'Administration', evidence: 'A test with a multi-license chain' },
   ] },
   { cls: 'FINANCE DECISION', closedBy: 'Closed by the finance owner', items: [
@@ -4682,7 +4683,7 @@ const DEMO_ORDER_POLICIES = [];
 
 const RETIRED_DEMO_TOUR_STEPS = [
   { screen: 'dash', loc: 'l-demo', title: 'One organization, three store conditions',
-    body: 'Start with the organization-wide view. Demo Downtown is ready to order, Demo Riverside demonstrates a past-due gate, and Demo Northgate demonstrates an expired license.',
+    body: 'Start with the organization-wide view. Demo Downtown is ready to order, Demo Riverside shows an outstanding balance as a warning only, and Demo Northgate demonstrates an expired license.',
     prompt: 'Compare available inventory, open orders, and the location selector without touching production data.' },
   { screen: 'catalog', loc: 'l-demo', title: 'Canix-backed catalog and pre-order separation',
     body: 'Released and pending-release finished goods share one searchable catalog, but their order modes never blur together. Retailers do not receive exact on-hand quantities.',
@@ -5162,7 +5163,7 @@ class Component extends DCLogic {
     skuIntakeUploadPending: null,
     kioskMode: 'counter', kioskSearch: '', lineagePackage: null, lineageSearch: '', lineageCoa: 'all',
     recallInput: '', recallTag: null, recallMsg: null, recallMsgKind: 'NOT FOUND', recallIssued: false, recallAcks: [], apiRevoked: ['Legacy spreadsheet import'], delegateTo: null, delegateExpiry: '30 Sep 2026',
-    metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
+    metrics: { t0: 0, sessionStart: 0, firstSubmitMs: null, submits: 0, blocks: { licence: 0, manualHold: 0, quantity: 0, readOnly: 0 },
       searches: 0, filters: 0, adds: 0, kioskScan: 0, kioskTyped: 0, kioskAmbiguous: 0, byStore: 0, byRep: 0, calls: 0 },
     repNotes: {}, repNoteFor: null, repNoteText: '',
     deliverySettings: JSON.parse(JSON.stringify(DELIVERY)), acctEditing: null, acctWindow: '', acctInstr: '', acctContact: '',
@@ -5189,16 +5190,17 @@ class Component extends DCLogic {
         this.set({ storeDemoData: body, storeDemoRole: role, storeDemoStore: store,
           ...(restoresDraft ? { storeDemoCart: draft.lines || [], storeDemoRequestId: draft.requestId || crypto.randomUUID() } : {}),
           ...(action === 'reset' ? { storeDemoSectionDrafts: {} } : {}), storeDemoBusy: false,
-          storeDemoTab: role === 'budtender' ? 'catalog' : this.state.storeDemoTab || 'catalog',
+          storeDemoTab: role === 'budtender' ? 'catalog' : role === 'billing' ? 'finance' : this.state.storeDemoTab || 'catalog',
           storeDemoMessage: action === 'read' ? '' : 'Saved in the isolated demo. No external systems or emails changed.' });
       }).catch(error => {
         if (sequence === this._storeDemoSequence) this.set({ storeDemoBusy: false, storeDemoMessage: error.message,
-          ...([401,403].includes(error.status) ? { storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoReviewNotes: {}, storeDemoFinanceNote: '' } : {}) });
+          ...([401,403].includes(error.status) ? { storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoReviewNotes: {}, storeDemoControlReason: '', storeDemoControlEvidence: '', storeDemoRenewalDate: '' } : {}) });
       });
   }
   storeDemoChangeRole(role) {
     if (this.state.storeDemoBusy) return;
-    this.set({ storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoTab: 'catalog' });
+    // Billing has only the account financials tab; never land it on a hidden catalog tab.
+    this.set({ storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoTab: role === 'billing' ? 'finance' : 'catalog' });
     this.storeDemoCall('read', {}, role);
   }
   storeDemoChangeStore(store) {
@@ -5221,10 +5223,9 @@ class Component extends DCLogic {
     if (values.expiration) values.expiration = usDateToIso(values.expiration);
     return this.storeDemoCall(submit ? 'submit-section' : 'save-section', { sectionId: section.id, values });
   }
-  storeDemoFinanceReview(decision) {
-    const finance = (this.state.storeDemoData || {}).finance || {};
-    return this.storeDemoCall('finance-review', { decision, terms: this.state.storeDemoTerms === undefined ? finance.terms : this.state.storeDemoTerms,
-      note: this.state.storeDemoFinanceNote || '' });
+  storeDemoControl(action, extra = {}) {
+    // Reason and evidence are required server-side for every terms, hold and license decision.
+    return this.storeDemoCall(action, { reason: this.state.storeDemoControlReason || '', evidence: this.state.storeDemoControlEvidence || '', ...extra });
   }
 
   showDemoTourStep(index) {
@@ -5699,7 +5700,7 @@ class Component extends DCLogic {
     this._sessionRefreshPromise = null;
     const preferred=workspaces.find(row=>row.isDefault)||workspaces[0];
     const roleLabel=preferred.workspace==='internal'?'Account management':preferred.workspace==='brand'?'Brand member'
-      :({store_owner:'Store owner',store_buyer:'Buyer',store_staff:'Budtender'}[preferred.memberRole]);
+      :({store_owner:'Store owner',store_buyer:'Buyer',store_billing:'Billing contact',store_staff:'Budtender'}[preferred.memberRole]);
     this.set({ loginBusy: false, sessionRestoring: false, ssoBusy: false, loginErr: null, ssoErr: null, loginInvalidField: null,
       loginUser: '', loginPass: '', token: token, refreshToken: refreshToken || null, pwNotice: weak || null });
     this.signIn({ name: me.full_name, email: email, org: me.org, role: roleLabel, locs: me.locations || '', last: 'Now',
@@ -5789,9 +5790,10 @@ class Component extends DCLogic {
       || workspaces.find(workspace => workspace.workspace === (role === 'internal' ? 'internal' : role === 'brand' ? 'brand' : 'store'))
       || workspaces[0];
     const landing = preferredWorkspace.workspace === 'brand' ? 'brand-home'
-      : preferredWorkspace.memberRole === 'store_staff' && preferredWorkspace.workspace === 'store' ? 'kiosk' : 'dash';
+      : preferredWorkspace.memberRole === 'store_staff' && preferredWorkspace.workspace === 'store' ? 'kiosk'
+      : preferredWorkspace.memberRole === 'store_billing' && preferredWorkspace.workspace === 'store' ? 'receivables' : 'dash';
     const workspaceRole = preferredWorkspace.workspace === 'internal' ? 'internal' : preferredWorkspace.workspace === 'brand' ? 'brand'
-      : ({ store_owner: 'owner', store_buyer: 'buyer', store_staff: 'budtender' }[preferredWorkspace.memberRole] || 'budtender');
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[preferredWorkspace.memberRole] || 'budtender');
     this.set({ authUser: { ...u, workspaces,staffRole:preferredWorkspace.workspace==='internal'?preferredWorkspace.memberRole:null,
       permissions:preferredWorkspace.permissions || [] }, role: workspaceRole, workspaces, activeWorkspaceId: preferredWorkspace.id,
       verifiedStoreLocations: [], pricingLoaded: false,
@@ -5839,9 +5841,10 @@ class Component extends DCLogic {
     this._workspaceEpoch = (this._workspaceEpoch || 0) + 1;
     this._storeDemoSequence = (this._storeDemoSequence || 0) + 1;
     const landing = workspace.workspace === 'brand' ? 'brand-home'
-      : workspace.memberRole === 'store_staff' && workspace.workspace === 'store' ? 'kiosk' : 'dash';
+      : workspace.memberRole === 'store_staff' && workspace.workspace === 'store' ? 'kiosk'
+      : workspace.memberRole === 'store_billing' && workspace.workspace === 'store' ? 'receivables' : 'dash';
     const role = workspace.workspace === 'internal' ? 'internal' : workspace.workspace === 'brand' ? 'brand'
-      : ({ store_owner: 'owner', store_buyer: 'buyer', store_staff: 'budtender' }[workspace.memberRole] || 'budtender');
+      : ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[workspace.memberRole] || 'budtender');
     this.logAudit('Workspace changed', workspace.organization, workspace.workspace + ' workspace selected.');
     // A workspace change is a security-boundary change. Discard every loaded
     // connected projection so data from the previous scope cannot remain in
@@ -5921,7 +5924,7 @@ class Component extends DCLogic {
     this.set({
       storeDemoData: null, storeDemoCart: [], storeDemoSectionDrafts: {}, storeDemoRole: 'owner', storeDemoTab: 'catalog',
       storeDemoMessage: '', storeDemoBusy: false, storeDemoQuantities: {}, storeDemoReviewNotes: {},
-      storeDemoTerms: undefined, storeDemoFinanceNote: '', storeDemoRequestId: null,
+      storeDemoTerms: undefined, storeDemoControlReason: '', storeDemoControlEvidence: '', storeDemoRenewalDate: '', storeDemoRequestId: null,
       authUser: null, token: null, refreshToken: null, sessionRestoring: false, workspaces: [], activeWorkspaceId: null,
       activeWorkspace: null, workspaceResolution: null, screen: 'signin', order: null, confirmed: null, toast: null,
       loginErr: null, loginInvalidField: null, impersonating: null,
@@ -7142,7 +7145,9 @@ class Component extends DCLogic {
 
   loadFinancials(force) {
     const s = this.state;
-    const allowed = ['owner', 'buyer'].includes(s.role)
+    // Buyers receive ordering information only; financials are Account Owner, authorized Billing (own account
+    // through the server-scoped endpoint) and Internal Finance scope.
+    const allowed = s.role === 'owner' || s.role === 'billing'
       || (s.role === 'internal' && this.hasPermission('financials.read'));
     if (!s.authUser || !s.token || !allowed || this.loc().demo || s.financialLoading
       || (!force && s.financialLoaded)) return Promise.resolve();
@@ -7393,7 +7398,8 @@ class Component extends DCLogic {
       this.set({ toast: targetStage === 'rejected' ? 'Enter the rejection reason first.' : 'Record the commercial-terms decision before account creation.', toastKind: 'REVIEW NOTE REQUIRED' });
       return;
     }
-    this.onboardingAction('advance-onboarding', { requestId: request.id, targetStage,
+    // currentStage binds final approval to the stage this reviewer saw; the server refuses a stale one.
+    this.onboardingAction('advance-onboarding', { requestId: request.id, targetStage, currentStage: request.stage,
       note: this.state.onboardingNote },
     'Onboarding advanced to ' + String(targetStage).replace(/_/g, ' ') + '.');
   }
@@ -11349,7 +11355,7 @@ class Component extends DCLogic {
       && !this.state.ordersLoaded && !this.state.ordersLoading) {
       this.loadOrders();
     }
-    const financialRoleAllowed = ['owner', 'buyer'].includes(this.state.role)
+    const financialRoleAllowed = this.state.role === 'owner' || this.state.role === 'billing'
       || (this.state.role === 'internal' && this.hasPermission('financials.read'));
     const financialScreen = ['dash', 'locations', 'receivables'].includes(this.state.screen);
     if (this.state.authUser && this.state.token && financialRoleAllowed && financialScreen
@@ -12021,7 +12027,8 @@ class Component extends DCLogic {
     if (this.state.role === 'internal' && !this.state.impersonating) return LOCATIONS.slice();
     const org = this.actingOrg();
     const pool = org === DEMO_ORG ? LOCATIONS.filter(location => location.demo) : LOCATIONS.filter(location => !location.demo);
-    if (this.state.role === 'owner') return pool;
+    // The billing grant is account-level across locations, like the Owner's financial view.
+    if (this.state.role === 'owner' || this.state.role === 'billing') return pool;
     const user = this.state.impersonating || this.state.authUser || {};
     const scope = String(user.locs || '').toLowerCase();
     if (/\ball\b.*\blocation/.test(scope)) return pool;
@@ -12096,7 +12103,8 @@ class Component extends DCLogic {
     if (st.impersonating) { this.blocked('readOnly'); this.set({ toast: 'This is a read-only administrator session — an order cannot be submitted from it.', toastKind: 'BLOCKED — READ ONLY' }); return; }
     const l = this.loc();
     if (l.expired) { this.blocked('licence'); this.set({ toast: 'Cannot submit: the license record for ' + l.name + ' has expired. Other locations are unaffected.', toastKind: 'BLOCKED — LICENSE' }); return; }
-    if (l.pastDue) { this.blocked('receivables'); this.set({ toast: 'Cannot submit: ' + l.name + ' has an explicit account ordering hold. The portal checks that store status at order entry; QuickBooks balance display does not create or clear it. The draft is kept as it is.', toastKind: 'BLOCKED — ACCOUNT HOLD' }); return; }
+    // Only an explicit, audited manual hold blocks for financial reasons; past-due, balances and QuickBooks freshness are warnings.
+    if (l.manualHold === true) { this.blocked('manualHold'); this.set({ toast: 'Cannot submit: ordering is on hold for this account. Your draft is kept as it is; contact urbanXtracts.', toastKind: 'BLOCKED — ACCOUNT HOLD' }); return; }
     const submissionPolicy = this.approvalPolicyFor(l);
     const submissionTotalCents = lines.reduce((total, line) => total + line.price * line.qty, 0);
     if (submissionPolicy.minimumOrderCents !== null && submissionPolicy.minimumOrderCents !== undefined
@@ -12338,6 +12346,8 @@ class Component extends DCLogic {
       ['brand-tasks', 'Tasks & Requests', 'orders'], ['brand-support', 'Support & Issues', 'bell']
       ].filter(([id]) => id === 'brand-home' || grants.has((BRAND_SECTIONS.find(section => section.screen === id) || {}).permission));
     }
+    // Authorized billing user: own-account invoices, balances, payment history and terms only.
+    if (role === 'billing') return [['receivables', 'Financials', 'economics']];
     if (role === 'budtender') return [['kiosk', 'Product Lookup', 'kiosk'], ['catalog', 'Browse Products', 'catalog'], ['compare', 'Compare', 'compare'], ['training', 'Training', 'training']];
     if (role === 'internal') {
       const grants = new Set(Array.isArray(permissions) ? permissions : []);
@@ -12351,7 +12361,7 @@ class Component extends DCLogic {
         });
     }
     if (role === 'owner') return [['dash', 'Dashboard', 'dash'], ['locations', 'Store Performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store Pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft Order', 'cart'], ['orders', 'Orders and Approvals', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['account', 'Account and Delivery', 'accounts'], ['approval', 'Approval Authority', 'orders'], ['users', 'Your Users', 'admin'], ['documents', 'Documents', 'admin'], ['records', 'Your Records', 'audit'], ['training', 'Training', 'training']];
-    return [['dash', 'Dashboard', 'dash'], ['locations', 'Store Performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store Pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft Order', 'cart'], ['orders', 'Orders', 'orders'], ['receivables', 'Financials', 'economics'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your Records', 'audit'], ['training', 'Training', 'training']];
+    return [['dash', 'Dashboard', 'dash'], ['locations', 'Store Performance', 'accounts'], ['catalog', 'Catalog', 'catalog'], ['pricing', 'Store Pricing', 'economics'], ['compare', 'Compare', 'compare'], ['cart', 'Draft Order', 'cart'], ['orders', 'Orders', 'orders'], ['notifications', 'Notifications', 'bell'], ['documents', 'Documents', 'admin'], ['records', 'Your Records', 'audit'], ['training', 'Training', 'training']];
   }
 
   renderVals() {
@@ -12368,7 +12378,7 @@ class Component extends DCLogic {
     const workspaceRole = activeWorkspace ? activeWorkspace.memberRole : '';
     const role = activeWorkspaceType === 'brand' ? 'brand'
       : activeWorkspaceType === 'store'
-        ? ({ store_owner: 'owner', store_buyer: 'buyer', store_staff: 'budtender' }[workspaceRole] || s.role)
+        ? ({ store_owner: 'owner', store_buyer: 'buyer', store_billing: 'billing', store_staff: 'budtender' }[workspaceRole] || s.role)
         : s.role;
     const invData = s.inventoryData || CANIX_INVENTORY_SNAPSHOT;
     const invNumber = (value, digits) => value === null || value === undefined
@@ -12848,8 +12858,8 @@ class Component extends DCLogic {
     const loc = this.loc();
     const demoMode = !isInternal && !isBrandWorkspace && !!loc.demo;
     const licenseBlocked = canOrder && loc.expired;
-    const arBlocked = canOrder && !!loc.pastDue;
-    const submitBlocked = licenseBlocked || arBlocked || s.orderSubmitting;
+    const holdBlocked = canOrder && loc.manualHold === true;
+    const submitBlocked = licenseBlocked || holdBlocked || s.orderSubmitting;
 
     const scopedOrders = demoMode ? s.orders.filter(order => order.demo) : s.orders.filter(order => !order.demo);
     const scopedDocs = demoMode ? DEMO_DOCS : DOCS;
@@ -12902,12 +12912,12 @@ class Component extends DCLogic {
     }).filter(group => group.items.length);
     if (navGroups.length && !navGroups.some(group => group.open)) navGroups[0].open = true;
 
-    const roleTabs = [['owner', 'Owner'], ['buyer', 'Buyer'], ['budtender', 'Budtender'], ['internal', 'Internal']].map(([id, label]) => ({
+    const roleTabs = [['owner', 'Owner'], ['buyer', 'Buyer'], ['billing', 'Billing'], ['budtender', 'Budtender'], ['internal', 'Internal']].map(([id, label]) => ({
       label,
       style: 'border:0;padding:8px 12px;font:' + (role === id ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer;background:' +
         (role === id ? 'var(--ux-ink)' : 'transparent') + ';color:' + (role === id ? 'var(--ux-ground)' : 'var(--ux-ink)'),
       pressed: role === id ? 'true' : 'false',
-      onPick: () => this.set({ role: id, screen: id === 'budtender' ? 'kiosk' : 'dash', order: null, toast: null,
+      onPick: () => this.set({ role: id, screen: id === 'budtender' ? 'kiosk' : id === 'billing' ? 'receivables' : 'dash', order: null, toast: null,
         pricingLoaded: false, orderPoliciesLoaded: false, orderPolicyAmount: '',
         orderMinimumAmount: '', orderLeadTimeDays: '',
         financialData: null, financialLoaded: false, financialError: null, financialLicense: 'all', financialStatus: 'all' })
@@ -13306,7 +13316,7 @@ class Component extends DCLogic {
     const preorderLines = cart.filter(line => P(line.id).preorder);
     if (preorderLines.length) warnings.push({ kind: 'PRE-ORDER · RELEASE HOLD', text: preorderLines.length + ' line(s) are available to order before release. The order may be approved, but it cannot move into processing or delivery until Canix reports a passing lab result.' });
     if (licenseBlocked) warnings.push({ kind: 'ORDERING PAUSED', text: 'The license record for ' + loc.name + ' has expired, so this location cannot submit an order. Other locations are unaffected.' });
-    if (arBlocked && cart.length) warnings.push({ kind: 'ACCOUNT ORDERING HOLD — SUBMISSION BLOCKED', text: 'This store has an explicit portal ordering hold. Lines can still be built and saved. QuickBooks balance history is visible to the Owner and assigned Buyer, but a balance never creates or clears this hold automatically.' });
+    if (holdBlocked && cart.length) warnings.push({ kind: 'ACCOUNT ON HOLD — SUBMISSION BLOCKED', text: 'urbanXtracts placed an explicit manual hold on this account. Lines can still be built and saved. Past-due invoices, balances and QuickBooks freshness never place or clear a hold.' });
     if (role === 'buyer' && cart.length) warnings.push({
       kind: buyerNeedsApproval ? 'STORE OWNER APPROVAL REQUIRED' : 'NO STORE OWNER APPROVAL REQUIRED',
       text: buyerNeedsApproval
@@ -13533,7 +13543,7 @@ class Component extends DCLogic {
        organisation; anyone else — including an administrator in a view-as session —
        is scoped to one. Rows are filtered server-side in a real build; this mirrors it. */
     const actingOrg = s.impersonating ? s.impersonating.org : (isInternal ? (loc.demo ? DEMO_ORG : null) : this.actingOrg());
-    const userRoleLabel = { internal: 'Workforce', owner: 'Store owner', buyer: 'Buyer', budtender: 'Budtender' };
+    const userRoleLabel = { internal: 'Workforce', owner: 'Store owner', buyer: 'Buyer', billing: 'Billing contact', budtender: 'Budtender' };
     const connectedUsers = s.liveUsers.map(row => ({
       name: row.fullName || row.email || 'Unnamed user', email: row.email || '', org: row.org || '',
       role: row.role === 'internal' ? (STAFF_ROLE_LABELS[row.staffRole] || 'Workforce') : (userRoleLabel[row.role] || row.role || 'Not assigned'),
@@ -15810,7 +15820,7 @@ class Component extends DCLogic {
     return {
       roleBadge: s.screen === 'purchase-approval' ? 'SUPPLY ORDER APPROVAL' : s.screen === 'brand-application' ? 'BRAND APPLICATION' : s.screen === 'sku-section' ? 'SKU CONTRIBUTOR' : s.screen === 'public-kiosk' ? 'PUBLIC KIOSK' : !s.authUser ? ''
         : isBrandWorkspace ? 'BRAND · ' + String(activeWorkspace && activeWorkspace.memberRole || 'MEMBER').replace(/^brand_/, '').replace(/_/g, ' ').toUpperCase()
-          : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
+          : role === 'owner' ? 'STORE OWNER' : role === 'buyer' ? 'STORE BUYER' : role === 'billing' ? 'STORE BILLING · READ ONLY' : role === 'budtender' ? 'BUDTENDER · KIOSK' : String(STAFF_ROLE_LABELS[s.authUser.staffRole] || 'WORKFORCE').toUpperCase(),
       roleBadgeStyle: !s.authUser && !['purchase-approval','public-kiosk','sku-section','brand-application'].includes(s.screen) ? 'display:none' : '',
       showWorkspaceSwitcher: !!s.authUser && !s.impersonating && workspaceOptions.length > 1,
       workspaceOptions,
@@ -17144,14 +17154,20 @@ class Component extends DCLogic {
       isStoreDemo: s.screen === 'store-demo' && isInternal && s.authUser && s.authUser.staffRole === 'administrator' && canStaff('store.demo'),
       storeDemoButton, storeDemoPrimary, storeDemoInput, storeDemoRole, storeDemoStore: s.storeDemoStore || '', storeDemoStores: storeDemo.stores || [],
       storeDemoBusy: !!s.storeDemoBusy, storeDemoMessage: s.storeDemoMessage || '',
-      storeDemoCommercial: storeDemoRole !== 'budtender', storeDemoCanOrder: ['owner','buyer'].includes(storeDemoRole), storeDemoInternal: storeDemoRole === 'internal',
-      storeDemoGate: storeDemoRole === 'budtender' ? 'Education Only' : storeDemo.orderingReady ? 'Demo Ordering Ready' : 'Onboarding / Finance Review Required',
-      storeDemoTabs: [['catalog','Catalog & Cart'],['orders','Orders'],['company','Company & Onboarding'],['finance','Financials'],['activity','Activity & Reset']]
-        .filter(([id]) => storeDemoRole === 'budtender' ? id === 'catalog' : storeDemoRole === 'buyer' ? !['company','activity'].includes(id) : id !== 'activity' || storeDemoRole === 'internal')
-        .map(([id,label]) => ({ label: storeDemoRole === 'budtender' && id === 'catalog' ? 'Product Education' : label, selected: String(id === storeDemoTab), style: id === storeDemoTab ? storeDemoPrimary : storeDemoButton, onPick: () => this.set({ storeDemoTab: id }) })),
+      storeDemoCommercial: !['budtender','billing'].includes(storeDemoRole), storeDemoCanOrder: ['owner','buyer'].includes(storeDemoRole), storeDemoInternal: storeDemoRole === 'internal',
+      // Status panel: Billing is read-only account financials and Budtender is education only; neither shows an ordering gate.
+      storeDemoStatusLabel: storeDemoRole === 'billing' ? 'Account financials · Read only' : storeDemoRole === 'budtender' ? 'Product education only · No ordering'
+        : !s.storeDemoData ? 'Ordering status loading' : storeDemo.orderingReady ? 'Demo ordering ready' : 'Ordering paused',
+      storeDemoStatusColor: storeDemoRole === 'billing' || storeDemoRole === 'budtender' || !s.storeDemoData ? 'var(--ux-muted-strong)' : storeDemo.orderingReady ? 'var(--ux-accent)' : 'var(--ux-signal)',
+      storeDemoStatusItems: (storeDemoRole === 'billing' ? ['Own-account terms, invoices, balances and manual-hold status across every location on this account. No ordering, onboarding or license document controls.']
+        : storeDemoRole === 'budtender' ? ['Product education fields only. Prices, availability and ordering are not shown.']
+        : ((storeDemo.ordering || {}).blocks || [])).map(text => ({ text })),
+      storeDemoTabs: [['catalog','Catalog & Cart'],['orders','Orders'],['company','Company & Onboarding'],['finance','Account & License'],['activity','Activity & Reset']]
+        .filter(([id]) => storeDemoRole === 'budtender' ? id === 'catalog' : storeDemoRole === 'billing' ? id === 'finance' : storeDemoRole === 'buyer' ? !['company','finance','activity'].includes(id) : id !== 'activity' || storeDemoRole === 'internal')
+        .map(([id,label]) => ({ label: storeDemoRole === 'budtender' && id === 'catalog' ? 'Product Education' : storeDemoRole === 'billing' && id === 'finance' ? 'Account Financials' : label, selected: String(id === storeDemoTab), style: id === storeDemoTab ? storeDemoPrimary : storeDemoButton, onPick: () => this.set({ storeDemoTab: id }) })),
       storeDemoCompany: storeDemoTab === 'company' && ['owner','internal'].includes(storeDemoRole),
-      storeDemoCatalog: storeDemoTab === 'catalog', storeDemoOrders: storeDemoTab === 'orders' && storeDemoRole !== 'budtender',
-      storeDemoFinance: storeDemoTab === 'finance' && storeDemoRole !== 'budtender', storeDemoActivity: storeDemoTab === 'activity' && storeDemoRole === 'internal',
+      storeDemoCatalog: storeDemoTab === 'catalog' && storeDemoRole !== 'billing', storeDemoOrders: storeDemoTab === 'orders' && !['budtender','billing'].includes(storeDemoRole),
+      storeDemoFinance: storeDemoTab === 'finance' && ['owner','billing','internal'].includes(storeDemoRole), storeDemoActivity: storeDemoTab === 'activity' && storeDemoRole === 'internal',
       storeDemoProducts, storeDemoCart, storeDemoSections, storeDemoOrderRows, storeDemoOrderCount: storeDemoOrderRows.length + ' Demo Orders at This Location',
       storeDemoCartTotal: 'Total: ' + MONEY((s.storeDemoCart || []).reduce((total,l) => total + Number(l.quantity || 0) * Number(((storeDemo.products || []).find(p => p.id === l.productId) || {}).priceCents || 0), 0)),
       storeDemoBrand: storeDemoBrandFilter, onStoreDemoBrand: e => this.set({ storeDemoBrand: e.target.value }),
@@ -17162,13 +17178,37 @@ class Component extends DCLogic {
       storeDemoCatalogNotice: (storeDemo.catalog || {}).notice || '',
       onStoreDemoRefresh: () => this.storeDemoCall('read'), onStoreDemoRole: e => this.storeDemoChangeRole(e.target.value), onStoreDemoStore: e => this.storeDemoChangeStore(e.target.value),
       onStoreDemoSaveDraft: () => this.storeDemoSaveOrder(false), onStoreDemoSubmitOrder: () => this.storeDemoSaveOrder(true),
-      storeDemoTerms: s.storeDemoTerms === undefined ? storeDemoFinance.terms || '' : s.storeDemoTerms,
-      storeDemoFinanceNote: s.storeDemoFinanceNote || '', onStoreDemoTerms: e => this.set({ storeDemoTerms: e.target.value }),
-      onStoreDemoFinanceNote: e => this.set({ storeDemoFinanceNote: e.target.value }),
-      onStoreDemoFinanceApprove: () => this.storeDemoFinanceReview('approved'), onStoreDemoFinanceHold: () => this.storeDemoFinanceReview('hold'), onStoreDemoPastDue: () => this.storeDemoFinanceReview('past_due'),
-      storeDemoFinanceSummary: String(storeDemoFinance.status || 'Pending').replace(/_/g, ' ') + (storeDemoRole === 'buyer' ? '' : ' · ' + (storeDemoFinance.terms || 'Terms Pending'))
-        + (storeDemoFinance.reviewedBy ? ' · Reviewed by ' + storeDemoFinance.reviewedBy + ' on ' + formatDateUs(storeDemoFinance.reviewedAt) : ''),
+      storeDemoTerms: s.storeDemoTerms === undefined ? (storeDemoFinance.termsSource === 'account_override' ? storeDemoFinance.terms : '') : s.storeDemoTerms,
+      onStoreDemoTerms: e => this.set({ storeDemoTerms: e.target.value }),
+      storeDemoControlReason: s.storeDemoControlReason || '', onStoreDemoControlReason: e => this.set({ storeDemoControlReason: e.target.value }),
+      storeDemoControlEvidence: s.storeDemoControlEvidence || '', onStoreDemoControlEvidence: e => this.set({ storeDemoControlEvidence: e.target.value }),
+      onStoreDemoSetTerms: () => this.storeDemoControl('set-terms', { terms: s.storeDemoTerms === undefined ? (storeDemoFinance.termsSource === 'account_override' ? storeDemoFinance.terms : '') : s.storeDemoTerms }),
+      onStoreDemoPlaceHold: () => this.storeDemoControl('place-hold'), onStoreDemoReleaseHold: () => this.storeDemoControl('release-hold'),
+      storeDemoAccountingScenarios: [['current','Current'],['overdue','Overdue Invoice'],['stale','Stale (24h)'],['unknown','Unknown Sync']]
+        .map(([scenario,label]) => ({ label, onClick: () => this.storeDemoCall('simulate-accounting', { scenario }) })),
+      // Terms, hold state and accounting warnings. Warnings never block; only an explicit manual hold does.
+      storeDemoFinanceSummary: 'Payment terms: ' + (storeDemoFinance.terms || 'Unavailable')
+        + (storeDemoFinance.termsSource === 'account_override' ? ' (account override, applies to every location)' : ' (global default)')
+        + ' · Manual financial hold: ' + ((storeDemoFinance.hold || {}).active ? 'ACTIVE — ordering blocked' : 'None')
+        + (storeDemoRole === 'internal' && (storeDemoFinance.hold || {}).active && storeDemoFinance.hold.reason ? ' — ' + storeDemoFinance.hold.reason : ''),
+      storeDemoAccountingNotice: (() => { const a = storeDemoFinance.accounting || {}, w = storeDemoFinance.warnings || [];
+        return 'Synthetic QuickBooks last successful sync: ' + (a.lastSuccessfulSyncAt ? formatDateTimeUs(a.lastSuccessfulSyncAt) : 'unknown')
+          + ' · ' + String(a.state || 'unknown').toUpperCase() + (a.state === 'stale' ? ' (older than 24 hours)' : '')
+          + (w.length ? ' · Warnings: ' + w.map(x => x.replace(/_/g, ' ')).join(', ') : '') + '. Warnings only — they never block ordering.'; })(),
       storeDemoInvoice: (storeDemo.invoices || []).map(i => i.id + ' · ' + i.status + ' · Balance ' + MONEY(i.balanceCents)).join(' · ') + ' ' + (storeDemo.financialNotice || ''),
+      storeDemoLicenseSummary: (() => { const l = storeDemo.license || {};
+        return (l.verifiedExpiresOn ? 'Verified license valid through ' + formatDateUs(l.verifiedExpiresOn) : 'No verified license on record')
+          + ((l.pendingRenewal || l.renewalAwaitingVerification) ? ' · Renewed license recorded and awaiting verification — ordering stays paused until Compliance, Finance or an Internal Administrator verifies it.' : '')
+          + ' Renewal reminders are planned at 30 days before expiration; delivery is off until notification release.'; })(),
+      storeDemoCanUploadRenewal: storeDemoRole === 'owner',
+      storeDemoRenewalDate: s.storeDemoRenewalDate || '', onStoreDemoRenewalDate: e => this.set({ storeDemoRenewalDate: e.target.value }),
+      onStoreDemoUploadRenewal: () => this.storeDemoCall('upload-renewal', { expiration: usDateToIso(s.storeDemoRenewalDate || '') }),
+      storeDemoCanVerifyRenewal: storeDemoRole === 'internal' && !!(storeDemo.license || {}).pendingRenewal,
+      onStoreDemoVerifyLicense: () => this.storeDemoCall('verify-license', { decision: 'verified', evidence: s.storeDemoControlEvidence || '' }),
+      onStoreDemoRejectLicense: () => this.storeDemoCall('verify-license', { decision: 'rejected', evidence: s.storeDemoControlEvidence || '' }),
+      storeDemoControlEvents: (storeDemo.controlEvents || []).slice().reverse().map(e => ({ label: formatDateTimeUs(e.at) + ' · ' + String(e.control).replace(/_/g,' ')
+        + (e.result ? ' · ' + e.result : '') + ' · ' + e.actor + ' (' + e.internalRole + ') · ' + JSON.stringify(e.prior) + ' → ' + JSON.stringify(e.next)
+        + ' · Reason: ' + e.reason + ' · Evidence: ' + e.evidence + (e.documentId ? ' · Document ' + e.documentId : '') })),
       storeDemoEvents: (storeDemo.events || []).map(e => ({ label: formatDateTimeUs(e.at) + ' · ' + e.action.replace(/-/g,' ') + ' · ' + e.role + ' · ' + e.actor + (e.reference ? ' · ' + e.reference : '') })),
       onStoreDemoReset: () => { if (confirm('Reset only your synthetic Store demo? Audit history will be retained.')) this.storeDemoCall('reset'); },
       isPricing: s.screen === 'pricing' && (canReviewPricing || ['owner', 'buyer'].includes(role)),
@@ -18139,7 +18179,7 @@ class Component extends DCLogic {
       backToProduct: () => this.set({ screen: 'product' }),
       showProductPerformance: !isKioskRole,
 
-      cartSub: licenseBlocked ? 'This location cannot submit while its license record is expired.' : arBlocked ? 'This location cannot submit while its balance is past due — the check runs here, not at shipping.' : 'Each line uses the approved rate for this store. Review before submitting.',
+      cartSub: licenseBlocked ? 'This location cannot submit while its license record is expired.' : holdBlocked ? 'Ordering is on hold for this account. The check runs here, at order entry.' : 'Each line uses the approved rate for this store. Review before submitting.',
       cartEmpty: cart.length === 0, cartHasLines: cart.length > 0,
       cartLines, cartTotal: MONEY(cartTotalCents), cartWarnings: warnings,
       oosLines, hasOos: oosLines.length > 0,
@@ -18151,13 +18191,13 @@ class Component extends DCLogic {
           ';border:1px solid ' + (s.delivery === d ? 'var(--ux-ink)' : 'rgba(23,14,11,.25)') + ';padding:8px 11px;font:' + (s.delivery === d ? '700' : '500') + ' 12px Archivo,sans-serif;cursor:pointer',
         onPick: () => this.set({ delivery: d })
       })),
-      submitLabel: s.orderSubmitting ? 'Sending…' : licenseBlocked ? 'Blocked — license expired' : arBlocked ? 'Blocked — balance past due'
+      submitLabel: s.orderSubmitting ? 'Sending…' : licenseBlocked ? 'Blocked — license expired' : holdBlocked ? 'Blocked — account on hold'
         : role === 'buyer' && buyerNeedsApproval ? 'Submit for Owner approval' : preorderLines.length ? 'Submit pre-order' : 'Submit order',
       submitStyle: 'width:100%;background:' + (submitBlocked ? 'var(--ux-faint)' : 'var(--ux-accent)') + ';color:#fff;border:0;padding:12px 14px;font:700 13px Archivo,sans-serif;text-align:left;cursor:' + (submitBlocked ? 'not-allowed' : 'pointer'),
       submitNote: licenseBlocked
         ? 'Upload the renewal for this location, or contact your account manager. Ordering at your other locations is unaffected.'
-        : arBlocked
-          ? 'Clearing the balance releases submission. Your draft is kept exactly as it is in the meantime — nothing is discarded.'
+        : holdBlocked
+          ? 'Only urbanXtracts can release a manual hold. Your draft is kept exactly as it is in the meantime — nothing is discarded.'
           : role === 'buyer'
             ? buyerNeedsApproval
               ? 'This verified order value requires Store Owner approval before urbanXtracts processes it.'
@@ -18344,7 +18384,7 @@ class Component extends DCLogic {
           measureRows: rows.map(r => ({ ...r, valueStyle: 'font:800 20px/1.15 Archivo,sans-serif;letter-spacing:-.01em' })),
           measureSession: m.sessionStart ? 'Session started ' + Math.round((Date.now() - m.sessionStart) / 1000) + 's ago' : 'Session clock not started',
           onMeasureReset: () => this.bump({ sessionStart: Date.now(), firstSubmitMs: null, submits: 0,
-            blocks: { licence: 0, receivables: 0, quantity: 0, readOnly: 0 },
+            blocks: { licence: 0, manualHold: 0, quantity: 0, readOnly: 0 },
             searches: 0, filters: 0, adds: 0, kioskScan: 0, kioskTyped: 0, kioskAmbiguous: 0, byStore: 0, byRep: 0, calls: 0 })
         };
       })(),
@@ -18404,7 +18444,7 @@ class Component extends DCLogic {
       onSkuSectionReopen: () => this.reopenSkuSection(skuSelectedSection),
       isRecall: false,
       isRecords: s.screen === 'records',
-      isReceivables: s.screen === 'receivables' && (role === 'owner' || role === 'buyer' || canStaff('financials.read')),
+      isReceivables: s.screen === 'receivables' && (role === 'owner' || role === 'billing' || canStaff('financials.read')),
       // Customer Store API is intentionally excluded from the product.
       isApi: false,
       isApproval: s.screen === 'approval' && role === 'owner',
@@ -18548,8 +18588,10 @@ class Component extends DCLogic {
                 text: 'Open or refresh this screen after the server-side QuickBooks connector is configured.',
                 color: 'var(--ux-signal-text)' }
           : {
-              label: source.stale ? 'SHOWING LAST SUCCESSFUL QUICKBOOKS SNAPSHOT' : 'QUICKBOOKS \u00b7 READ ONLY',
-              text: 'Last successful sync ' + dateLabel(source.lastSuccessfulSyncAt)
+              label: source.freshness === 'unknown' ? 'QUICKBOOKS SYNC TIME UNKNOWN \u00b7 WARNING'
+                : source.stale ? 'STALE \u00b7 LAST SUCCESSFUL QUICKBOOKS SYNC OVER 24 HOURS AGO' : 'QUICKBOOKS \u00b7 READ ONLY',
+              text: (source.stale ? 'Warning only: stale or overdue accounting never blocks ordering; only an explicit Finance hold does. ' : '')
+                + 'Last successful sync ' + dateLabel(source.lastSuccessfulSyncAt)
                 + (source.ageMinutes === null || source.ageMinutes === undefined ? '' : ' \u00b7 ' + source.ageMinutes + ' minutes ago')
                 + (mappingMissing.length ? '. ' + mappingMissing.length + ' accessible store'
                   + (mappingMissing.length === 1 ? ' is' : 's are')
@@ -19234,7 +19276,7 @@ class Component extends DCLogic {
             : 'No order history';
           const financial = allFinancialRows.find(row => row.license === location.license) || {};
           const explicitStatus = location.expired ? 'Paused \u2014 license'
-            : location.pastDue ? 'Paused \u2014 explicit account hold' : 'Open';
+            : location.manualHold === true ? 'Paused \u2014 manual account hold' : 'Open';
           return {
             orders: String(orders.length), value: MONEY(total),
             average: orders.length ? MONEY(Math.round(total / orders.length)) : '\u2014',

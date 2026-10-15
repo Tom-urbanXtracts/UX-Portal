@@ -126,9 +126,26 @@ function knownDatabaseError(error: Row): PortalError {
     "Every requested user must be invited",
     "At least one active Store Owner",
     "A rejection note is required",
+    // 2026-10-15 policy: authority is enforced in the database for every caller.
+    "Finance or an Internal portal Administrator is required",
+    "Compliance, Finance or an Internal portal Administrator must",
+    "License activation requires an authorized, audited verification",
+    "Onboarding approval by Compliance, Finance or an Internal portal Administrator is required",
+    "require a reason and evidence reference",
+    "requires a reason and evidence reference",
+    "License verification requires the license, document, result and evidence",
+    "The license document must be a clean OCM license upload for this onboarding request and license",
+    "Onboarding must be at the access stage",
+    "Every qualified license needs a current audited verification",
+    "A current license expiration date is required",
+    "Onboarding approval requires evidence",
+    "The global default payment terms are required",
+    "Those payment terms are already in effect",
+    "The financial hold is already in that state",
   ].find((candidate) => message.includes(candidate));
+  const code = String(error.code || "");
   return known
-    ? new PortalError(message.includes("not found") ? 404 : 409, known)
+    ? new PortalError(code === "42501" ? 403 : code === "22023" ? 400 : message.includes("not found") ? 404 : 409, known)
     : new PortalError(
       500,
       "The retailer account service could not save that change.",
@@ -412,6 +429,57 @@ Deno.serve(async (request) => {
           .trim().slice(0, 120),
         p_license_expires_on: expires,
         ...actor,
+      });
+    } else if (action === "set-payment-terms") {
+      // One account-level override (blank clears it) or, with no account, the
+      // global default. There is no location-level terms command.
+      if (body.licenseNumber !== undefined || body.storeLicense !== undefined) {
+        throw new PortalError(400, "Payment terms apply to the whole retailer account; location overrides are not allowed.");
+      }
+      result = await rpc("portal_set_payment_terms", {
+        p_actor_id: caller.profile.id,
+        p_account_id: String(body.accountId || "").trim() || null,
+        p_terms: String(body.terms ?? "").trim().slice(0, 80),
+        p_reason: String(body.reason || "").trim().slice(0, 2000),
+        p_evidence: String(body.evidence || "").trim().slice(0, 2000),
+      });
+    } else if (action === "set-financial-hold") {
+      if (typeof body.active !== "boolean") throw new PortalError(400, "Choose whether to place or release the hold.");
+      result = await rpc("portal_set_financial_hold", {
+        p_actor_id: caller.profile.id,
+        p_account_id: String(body.accountId || ""),
+        p_active: body.active,
+        p_reason: String(body.reason || "").trim().slice(0, 2000),
+        p_evidence: String(body.evidence || "").trim().slice(0, 2000),
+      });
+    } else if (action === "verify-store-license") {
+      const expires = String(body.licenseExpiresOn || "").trim();
+      if (expires && !/^\d{4}-\d{2}-\d{2}$/.test(expires)) {
+        throw new PortalError(400, "Enter the license expiration as YYYY-MM-DD.");
+      }
+      // The verified document is identified by its stored UUID, never free text.
+      const documentId = String(body.documentId || "").trim().toLowerCase();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(documentId)) {
+        throw new PortalError(400, "Choose the uploaded OCM license document to verify.");
+      }
+      result = await rpc("portal_verify_store_license", {
+        p_actor_id: caller.profile.id,
+        p_license_number: String(body.licenseNumber || "").trim().slice(0, 120),
+        p_document_id: documentId,
+        p_result: String(body.result || ""),
+        p_license_expires_on: expires || null,
+        p_evidence: String(body.evidence || "").trim().slice(0, 2000),
+        p_onboarding_request_id: String(body.requestId || "").trim() || null,
+      });
+    } else if (action === "advance-onboarding" && String(body.targetStage || "") === "ready") {
+      // Final approval and the transition to ready are one database transaction
+      // bound to the exact pre-ready stage; a failed transition keeps no approval.
+      result = await rpc("portal_complete_store_onboarding", {
+        p_actor_id: caller.profile.id,
+        p_request_id: String(body.requestId || ""),
+        p_expected_stage: String(body.currentStage || "access"),
+        p_evidence: String(body.note || "").trim().slice(0, 2000),
+        p_actor_email: caller.user.email ?? null,
       });
     } else if (action === "advance-onboarding") {
       result = await rpc("portal_advance_onboarding_request", {

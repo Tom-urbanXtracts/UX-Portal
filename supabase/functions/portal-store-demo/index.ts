@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
-import { DemoError, demoRole, initialDemoState, mutateDemo, projectDemo, type DemoState } from "../_shared/store-demo.ts";
+import { DemoError, demoRole, mutateDemo, normalizeDemoState, projectDemo } from "../_shared/store-demo.ts";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -39,17 +39,19 @@ Deno.serve(async request => {
     const role = demoRole(body.role);
     const { data: session, error } = await service.from("portal_store_demo_session").select("revision,state").eq("actor_id", user.id).maybeSingle();
     if (error) throw error;
-    let state = (session?.state || initialDemoState()) as DemoState;
+    // Sessions saved before the warning-only finance policy are normalized; no hold is inferred.
+    let state = normalizeDemoState(session?.state);
+    const now = new Date().toISOString();
     let revision = Number(session?.revision || 0);
     if (body.action !== "read") {
       if (!Number.isInteger(body.revision) || body.revision !== revision) throw new DemoError(409, "Demonstration changed; refresh before saving. Your unsaved fields are retained.");
-      state = mutateDemo(state, role, body, String(profile.full_name || user.email), new Date().toISOString());
+      state = mutateDemo(state, role, body, String(profile.full_name || user.email), now);
       const result = await service.rpc("portal_commit_store_demo", { p_actor_id: user.id, p_revision: revision, p_state: state, p_action: body.action });
       if (result.error) throw new DemoError(result.error.code === "40001" ? 409 : result.error.code === "42501" ? 403 : 500,
         result.error.code === "40001" ? "Demonstration changed; refresh before saving." : "The demonstration could not save that change.");
       revision = Number(result.data.revision);
     }
-    return reply(projectDemo(state, role, revision));
+    return reply(projectDemo(state, role, revision, now));
   } catch (error) {
     if (error instanceof DemoError) return reply({ error: error.message }, error.status);
     console.error("portal-store-demo request failed");

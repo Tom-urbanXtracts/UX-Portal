@@ -4,10 +4,11 @@
  */
 export type StoreAction = 'education.read' | 'catalog.read' | 'inventory.quantity.read'
   | 'orders.read' | 'orders.submit' | 'orders.approve' | 'financials.read' | 'users.read'
-  | 'pricing.read' | 'pricing.propose' | 'policy.read' | 'claims.read' | 'claims.submit' | 'notifications.read';
+  | 'pricing.read' | 'pricing.propose' | 'policy.read' | 'claims.read' | 'claims.submit' | 'notifications.read'
+  | 'license_documents.read';
 export type StoreContext = Readonly<{
   actorId: string; membershipId: string; organizationId: string;
-  retailerAccountId: string; memberRole: 'store_owner' | 'store_buyer' | 'store_staff';
+  retailerAccountId: string; memberRole: 'store_owner' | 'store_buyer' | 'store_staff' | 'store_billing';
   licenses: readonly string[];
 }>;
 export class StoreAccessError extends Error {
@@ -16,10 +17,16 @@ export class StoreAccessError extends Error {
 }
 const uuid = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 const actions: Record<StoreContext['memberRole'], readonly StoreAction[]> = {
-  store_owner: ['education.read','catalog.read','inventory.quantity.read','orders.read','orders.submit','orders.approve','financials.read','users.read','pricing.read','pricing.propose','policy.read','claims.read','claims.submit','notifications.read'],
-  store_buyer: ['education.read','catalog.read','inventory.quantity.read','orders.read','orders.submit','financials.read','pricing.read','pricing.propose','policy.read','claims.read','claims.submit','notifications.read'],
+  store_owner: ['education.read','catalog.read','inventory.quantity.read','orders.read','orders.submit','orders.approve','financials.read','users.read','pricing.read','pricing.propose','policy.read','claims.read','claims.submit','notifications.read','license_documents.read'],
+  // Buyers receive ordering information only: no invoices, balances, payment history or terms.
+  store_buyer: ['education.read','catalog.read','inventory.quantity.read','orders.read','orders.submit','pricing.read','pricing.propose','policy.read','claims.read','claims.submit','notifications.read'],
   store_staff: ['education.read'],
+  // Authorized billing user: own-account invoices, balances, payment history and
+  // terms only. No ordering, approval, license documents or user administration.
+  store_billing: ['financials.read'],
 };
+// Account-level reads that need no location selection.
+const accountLevel: readonly StoreAction[] = ['financials.read','users.read','license_documents.read'];
 export interface StoreContextSource {
   rpc(name: string, parameters: Record<string, unknown>): PromiseLike<{ data: unknown; error: { code?: string } | null }>;
 }
@@ -58,11 +65,11 @@ export async function resolveStoreContext(source: StoreContextSource, verifiedAc
   if (row.memberRole === 'store_staff' && row.licenses.length !== 1) throw new StoreAccessError(403, 'Budtender requires one active Store.');
   if (!actions[row.memberRole].includes(selection.action)) throw new StoreAccessError(403, 'This action is not available to this Store role.');
   // Financial row/field scoping remains a separate mandatory projection gate.
-  // Buyers must select one assigned location, including for financial reads.
+  // Buyers must select one assigned location; financial reads are Owner/billing-only.
   // Only server adapters may choose a collection operation. It does not grant
   // a record/location outside the returned allowlist or bypass mutation checks.
   if (selection.assignedCollection && !row.licenses.length) throw new StoreAccessError(403, 'No active Store is assigned.');
-  const locationRequired = !selection.assignedCollection && (row.memberRole !== 'store_owner' || !['financials.read','users.read'].includes(selection.action));
+  const locationRequired = !selection.assignedCollection && (!['store_owner','store_billing'].includes(row.memberRole) || !accountLevel.includes(selection.action));
   if ((locationRequired || selection.license !== undefined) && (typeof selection.license !== 'string' || !row.licenses.includes(selection.license))) {
     throw new StoreAccessError(403, 'The selected Store is outside your current assignment.');
   }

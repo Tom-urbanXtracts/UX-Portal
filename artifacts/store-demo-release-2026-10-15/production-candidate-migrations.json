@@ -104,13 +104,39 @@
       ],
       "selfExecutingRepair": true,
       "notes": "requestWorkspace requires an active portal_organization_membership row. The prior Auth trigger created a profile without that membership, so this must be applied before the handlers deploy or affected workforce identities receive 403. The migration calls portal_repair_workforce_workspace_memberships() itself and fails closed when the active Internal organization is absent."
+    },
+    {
+      "order": 6,
+      "version": "20261015120000",
+      "name": "store_financial_hold_and_license_lifecycle",
+      "md5": "3e8427010802cf427486bc87ba15b794",
+      "kind": "ddl",
+      "productionLedgerRow": "absent",
+      "productionEffects": "not_applied",
+      "stagingApplication": "not_applied",
+      "rerunSafe": true,
+      "rerunSafeBasis": "CREATE TABLE/INDEX IF NOT EXISTS, CREATE OR REPLACE functions, DROP ... IF EXISTS before every trigger, constraint and retired signature, ON CONFLICT DO NOTHING seeds, and a guarded one-time rename of portal_store_command; supabase/tests/store_account_controls_database_test.mjs applies it twice in a disposable container.",
+      "dependsOn": [
+        "20261014215429",
+        "20261014220938"
+      ],
+      "gates": [
+        "supabase/functions/portal-retailers/index.ts",
+        "supabase/functions/quickbooks-financials/index.ts",
+        "supabase/functions/portal-license-document/index.ts",
+        "supabase/functions/portal-store-demo/index.ts",
+        "all 21 handlers importing _shared/request-workspace.ts"
+      ],
+      "blockingDecision": "Every portal_order insert pauses (UXL01) at a location without an audited verification of its current expiration, including locations activated before this migration and staff-entered orders. A verification backfill or plan must be approved before apply.",
+      "notes": "Approved 2026-10-15 Store account policy: manual-hold-only financial block, inherited account payment terms, document-UUID license verification, atomic state-bound onboarding completion, license order boundary, store_billing role, T-30 reminder intents with delivery locked off, audited license-document access. Replaces portal_resolve_store_context and renames portal_store_command to portal_store_command_core behind a wrapper. Store access remains disabled."
     }
   ],
   "ordering": [
     "Apply candidates 1 through 5 in listed order before deploying any handler that imports _shared/request-workspace.ts.",
     "Candidate 5 must precede handler deployment so existing workforce identities retain an active Internal membership.",
     "Candidates 2 and 3 must both be applied before any handler deployment; storeCommand and resolveStoreContext fail closed (503/403) when their functions are absent, which degrades Store paths rather than opening them.",
-    "Internal and Brand request paths return before resolveStoreContext is reached, so they are unaffected by candidate 2 and 3 timing."
+    "Internal and Brand request paths return before resolveStoreContext is reached, so they are unaffected by candidate 2 and 3 timing.",
+    "Candidate 6 follows candidates 2 and 3 (it replaces portal_resolve_store_context and wraps portal_store_command) and deploys only together with its gated handlers, after its blocking decision is closed."
   ],
   "prohibited": [
     "supabase db push against production or the staging project",

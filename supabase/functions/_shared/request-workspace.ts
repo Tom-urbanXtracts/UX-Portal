@@ -44,7 +44,8 @@ export async function requestWorkspace(service:WorkspaceDatabase,request:Request
   const {data:account,error:ae}=await service.from('portal_retailer_account').select('id,organization_name').eq('id',context.retailerAccountId).maybeSingle();
   if(ae) throw new StoreAccessError(503,'Retailer scope could not be verified.');
   if(!account?.organization_name) throw new StoreAccessError(403,'A verified retailer relationship is required.');
-  return {...base,role:context.memberRole==='store_owner'?'owner':context.memberRole==='store_buyer'?'buyer':'budtender',
+  const role={store_owner:'owner',store_buyer:'buyer',store_billing:'billing',store_staff:'budtender'}[context.memberRole];
+  return {...base,role,
     staff_role:null,org:account.organization_name,locations:context.licenses.join(', '),_storeContext:context};
 }
 export function storeContext(profile:Row):StoreContext|null {
@@ -69,5 +70,9 @@ export async function storeCommand(service:WorkspaceDatabase,profile:Row,command
     p_organization_id:context.organizationId,p_command:command,p_payload:payload});
   if (result.error?.code==='42501') throw new StoreAccessError(403,'Your current Store membership no longer authorizes this change.');
   if (result.error?.code==='40001') throw new StoreAccessError(409,'The source or Store state changed. Your draft is preserved; refresh and review it.');
+  // Only an explicit audited manual hold raises UXH01; balances and QuickBooks state never do.
+  if (result.error?.code==='UXH01') throw new StoreAccessError(409,'Ordering is on hold for this account. Your draft is preserved; contact urbanXtracts.');
+  // Missing, unverified, expired, inactive or closed license scope at this location.
+  if (result.error?.code==='UXL01') throw new StoreAccessError(409,'Ordering is paused for this location until a current store license is verified. Your draft is preserved.');
   return result;
 }

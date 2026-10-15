@@ -2,6 +2,7 @@ import { requestWorkspace, storeContext, storeRows, storeCommand, StoreAccessErr
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifiedTokenIsAuthenticated } from "../_shared/auth.ts";
 import { configuredQuickBooksEnvironment } from "../_shared/quickbooks-oauth.ts";
+import { DEFAULT_PAYMENT_TERMS, effectivePaymentTerms, quickBooksFreshness, storeFinancialAccess } from "../_shared/store-account-policy.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -106,10 +107,12 @@ async function callerFor(request: Request): Promise<Caller | null> {
     }
     return { user, profile: profile as Row, internal: true };
   }
-  if (!["owner", "buyer"].includes(String(profile.role))) {
+  // Approved matrix: Account Owner and authorized billing user (store_billing)
+  // only, own account. Buyers receive ordering information; Budtenders none.
+  if (!storeFinancialAccess(profile.role).invoices) {
     throw new PortalError(
       403,
-      "Financial history is available only to Store Owners and Buyers.",
+      "Financial information is available only to the Account Owner and authorized billing users.",
     );
   }
   return { user, profile: profile as Row, internal: false };
@@ -255,10 +258,11 @@ async function customerScope(
     });
   }
 
-  // An Owner may see organization-level accounting records in addition to all
-  // stores. A Buyer never inherits this parent ID because it could include
-  // invoices for stores outside that Buyer's assignment.
-  if (caller.internal || caller.profile.role === "owner") {
+  // An Owner or authorized billing user may see organization-level accounting
+  // records for its own account in addition to all stores. A Buyer never
+  // inherits this parent ID because it could include invoices for stores outside
+  // that Buyer's assignment.
+  if (caller.internal || ["owner", "billing"].includes(String(caller.profile.role))) {
     for (const account of accounts ?? []) {
       const customerId = clean(account.quickbooks_customer_id);
       if (!customerId || rows.has(customerId) || deniedSharedCustomers.has(customerId)) continue;
@@ -288,6 +292,17 @@ function invoiceState(
     return { state: "past_due", daysPastDue: dayDistance(due, today) };
   }
   return { state: "open", daysPastDue: 0 };
+}
+
+// Own-account terms only. An unreadable policy is reported as unavailable,
+// never silently replaced with the default.
+async function accountPaymentTerms(accountId: string): Promise<Row> {
+  const [{ data: policy, error: policyError }, { data: override, error: overrideError }] = await Promise.all([
+    service.from("portal_payment_terms_default").select("terms").eq("id", true).maybeSingle(),
+    service.from("portal_retailer_payment_terms").select("terms").eq("retailer_account_id", accountId).maybeSingle(),
+  ]);
+  if (policyError || overrideError || !policy?.terms) return { terms: null, source: "unavailable" };
+  return effectivePaymentTerms(override?.terms as string | null, String(policy.terms || DEFAULT_PAYMENT_TERMS));
 }
 
 function sortRows(rows: Row[], key: string, direction: string): Row[] {
@@ -338,18 +353,24 @@ Deno.serve(async (request) => {
       )
       .eq("id", 1).maybeSingle();
     if (stateError) throw stateError;
-    if (
-      state?.connection_environment !== QBO_ENVIRONMENT ||
-      !state?.last_financial_run_id
-    ) {
+    // Stale exactly 24 hours after the last successful sync; warning only.
+    const loaded = state?.connection_environment === QBO_ENVIRONMENT && Boolean(state?.last_financial_run_id);
+    const freshness = quickBooksFreshness(loaded ? state?.financial_last_successful_at : null, new Date());
+    const freshnessSource = { stale: freshness.stale, freshness: freshness.state, lastSuccessfulSyncAt: freshness.lastSuccessfulSyncAt,
+      ageMinutes: freshness.ageMinutes, staleAfterHours: freshness.staleAfterHours };
+    const policy = { paymentCollectionEnabled: false, orderingGateInferredFromBalance: false, financialOrderBlock: "manual_hold_only" };
+    const paymentTerms = caller.internal ? undefined : await accountPaymentTerms(storeContext(caller.profile)!.retailerAccountId);
+    if (!loaded) {
       return json(request, {
         source: {
           system: "QuickBooks",
           environment: QBO_ENVIRONMENT,
           connectionMode: "not_loaded",
-          stale: true,
+          ...freshnessSource,
         },
         summary: null,
+        paymentTerms,
+        policy,
         byStore: [],
         invoices: [],
         payments: [],
@@ -366,17 +387,12 @@ Deno.serve(async (request) => {
           system: "QuickBooks",
           environment: QBO_ENVIRONMENT,
           connectionMode: "mapped_no_data",
-          stale: state.status === "error",
-          lastSuccessfulSyncAt: state.financial_last_successful_at,
+          ...freshnessSource,
         },
-        summary: {
-          outstandingCents: 0,
-          pastDueCents: 0,
-          paidCents: 0,
-          openInvoiceCount: 0,
-          invoiceCount: 0,
-          paymentCount: 0,
-        },
+        // No attributable customer: totals are withheld, not shown as zero.
+        summary: null,
+        paymentTerms,
+        policy,
         byStore: [],
         invoices: [],
         payments: [],
@@ -523,18 +539,13 @@ Deno.serve(async (request) => {
     const pastDue = invoicesAll.filter((invoice) =>
       invoice.state === "past_due"
     );
-    const sourceTime = String(state.financial_last_successful_at || "");
-    const ageMinutes = sourceTime
-      ? Math.max(0, Math.floor((Date.now() - Date.parse(sourceTime)) / 60_000))
-      : null;
     return json(request, {
       source: {
         system: "QuickBooks",
         environment: QBO_ENVIRONMENT,
         connectionMode: "server_snapshot",
-        stale: state.status === "error",
-        lastSuccessfulSyncAt: state.financial_last_successful_at,
-        ageMinutes,
+        ...freshnessSource,
+        lastRunStatus: state.status,
       },
       summary: {
         outstandingCents: open.reduce(
@@ -561,10 +572,8 @@ Deno.serve(async (request) => {
       invoices,
       payments,
       mappingIncomplete: scope.missing,
-      policy: {
-        paymentCollectionEnabled: false,
-        orderingGateInferredFromBalance: false,
-      },
+      paymentTerms,
+      policy,
     });
   } catch (error) {
     if (error instanceof StoreAccessError) return json(request, { error: error.message }, error.status);

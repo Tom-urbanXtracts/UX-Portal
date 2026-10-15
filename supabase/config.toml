@@ -65,6 +65,11 @@ verify_jwt = false
 [functions.portal-data-controls]
 verify_jwt = true
 
+# License-document links require a signed-in session at the gateway, then the
+# database authorizes and audits each read before a 60-second signed URL issues.
+[functions.portal-license-document]
+verify_jwt = true
+
 # User and role administration requires a signed-in portal session at the
 # gateway and repeats server-side profile/capability checks before mutation.
 [functions.portal-admin]
