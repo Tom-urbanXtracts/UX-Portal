@@ -961,7 +961,7 @@ def answer_financial_question(cycle: str, question: str) -> str:
         if "transaction prices" in q:
             return prefix(cycle, "Approved standard prices, contract or store prices, volume terms, promotions, and discounts are applied according to the approved commercial rules and frozen on the submitted order. Finance reviews variable consideration, returns, credits, taxes, and any non-standard term before invoicing and recognition.")
         if "granting credit" in q or "granted credit" in q or "credit limits" in q:
-            return prefix(cycle, "Finance should approve credit status and limits using QuickBooks history, payment behavior, financial information, and management-approved exceptions. The portal must not infer an order hold solely from a QuickBooks balance; any hold or exception must be explicit and approved.")
+            return prefix(cycle, "Stores and Brands have no credit cap. Finance approves payment terms and any explicit hold or exception using appropriate evidence, such as QuickBooks history, payment behavior, and financial information. The portal must not infer an order hold solely from a QuickBooks balance; any hold or exception must be explicit and approved.")
         if "sales invoices" in q and ("generated" in q or "recorded" in q):
             return prefix(cycle, "Finance manually creates the QuickBooks invoice after verifying the customer, approved order, shipment or service evidence, price, discount, tax, and terms. UX OS has no invoice-creation route and displays only the later QuickBooks snapshot.")
         if "allocated to customer accounts" in q or "correct customer account" in q:

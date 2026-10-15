@@ -65,7 +65,7 @@ Planned or unaccepted capabilities retain **Designed Intent** or **In Developmen
 - Existing Monday history and already approved handoffs are preserved. This intake creates no new Monday board, automation, write path, or dependency.
 - Candidate Store Manager activation is excluded from the first pilot. Existing Buyers are not converted automatically.
 - Store Owner and Buyer may receive approved current sellable-item quantities only within their authorized organization/location scope. Store Manager remains deferred; Budtender and kiosk receive no commercial quantities. Package tags, ownership, cost, bulk/material inventory, reservations, compliance-only fields, and unrelated facilities remain withheld.
-- Finance reviews payment terms and credit limits before ordering is enabled. A due-date-based past-due state blocks ordering until Finance records clearance; a nonzero balance alone is not past due.
+- Finance reviews payment terms before ordering is enabled. Stores and Brands have no credit cap; committed order value never blocks ordering. A due-date-based past-due state blocks ordering until Finance records clearance; a nonzero balance alone is not past due.
 - The owner-approved retailer-organization limit is 25 stores. Existing ten-store controls remain unchanged until database, API, UI, and concurrency enforcement are updated and accepted together.
 - Draft orders reserve nothing. First-pilot submitted orders belong to one licensed delivery location.
 - Optional or unresolved capabilities fail closed or remain outside the first release.

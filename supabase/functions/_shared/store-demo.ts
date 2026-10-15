@@ -21,7 +21,8 @@ export const DEMO_SECTIONS = [
 ];
 export type DemoState = {
   sections: Record<string, { status: string; values: Record<string, string>; note: string }>;
-  finance: { status: string; terms: string; creditLimitCents: number; note: string; reviewedBy?: string; reviewedAt?: string };
+  // creditLimitCents is legacy and inert: Stores have no credit cap. It is kept only so stored sessions round-trip.
+  finance: { status: string; terms: string; creditLimitCents?: number; note: string; reviewedBy?: string; reviewedAt?: string };
   orders: Row[];
   drafts: Record<string, Row>;
   events: Row[];
@@ -37,7 +38,7 @@ export function initialDemoState(): DemoState {
   };
   return {
     sections: Object.fromEntries(DEMO_SECTIONS.map(s => [s.id, { status: "draft", values: example[s.id], note: "" }])),
-    finance: { status: "pending", terms: "Net 30", creditLimitCents: 500000, note: "Finance review required" },
+    finance: { status: "pending", terms: "Net 30", note: "Finance review required" },
     orders: [], drafts: {}, events: [],
   };
 }
@@ -105,10 +106,10 @@ export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: s
   } else if (action === "finance-review") {
     requireValue(role === "internal", "Internal Finance review is required.", 403);
     requireValue(["approved", "hold", "past_due"].includes(String(body.decision)), "Choose a Finance decision.");
-    const credit = Number(body.creditLimitCents);
     const terms = String(body.terms || "").trim().slice(0, 80), note = String(body.note || "").trim().slice(0, 1000);
-    requireValue(terms && note && Number.isSafeInteger(credit) && credit >= 0 && credit <= 100000000, "Add payment terms, a valid credit limit and a review note.");
-    next.finance = { status: String(body.decision), terms, creditLimitCents: credit, note, reviewedBy: actor, reviewedAt: now };
+    requireValue(terms && note, "Add payment terms and a review note.");
+    const legacy = state.finance.creditLimitCents === undefined ? {} : { creditLimitCents: state.finance.creditLimitCents };
+    next.finance = { status: String(body.decision), terms, note, reviewedBy: actor, reviewedAt: now, ...legacy };
   } else if (["save-draft", "submit-order"].includes(action)) {
     requireValue(role === "owner" || role === "buyer", "This demo view cannot place orders.", 403);
     requireValue(demoStoreAllowed(role, body.storeId), "That location is outside this demo view.", 403);
@@ -125,8 +126,6 @@ export function mutateDemo(state: DemoState, role: DemoRole, body: Row, actor: s
       }
       requireValue(DEMO_SECTIONS.every(s => next.sections[s.id].status === "approved"), "Onboarding must be approved. Your draft is preserved.", 409);
       requireValue(next.finance.status === "approved", "Finance has not cleared ordering. Your draft is preserved.", 409);
-      const committed = next.orders.filter(o => !["declined", "delivered"].includes(String(o.status))).reduce((n, o) => n + Number(o.totalCents), 0);
-      requireValue(committed + totalCents <= next.finance.creditLimitCents, "The demo credit limit would be exceeded. Your draft is preserved.", 409);
       for (const line of lines) {
         const product = DEMO_PRODUCTS.find(p => p.id === line.productId)!;
         const allocated = next.orders.filter(o => o.status !== "declined").flatMap(o => o.lines as Row[]).filter(l => l.productId === product.id).reduce((n, l) => n + Number(l.quantity), 0);
@@ -168,7 +167,7 @@ export function projectDemo(state: DemoState, role: DemoRole, revision: number):
     stores: DEMO_STORES.filter(s => demoStoreAllowed(role, s.id)),
     ...(commercial ? { orderingReady: DEMO_SECTIONS.every(s => state.sections[s.id].status === "approved") && state.finance.status === "approved",
       orders: allowedOrders, drafts: Object.fromEntries(Object.entries(state.drafts).filter(([key]) => key.startsWith(role + ":"))),
-      finance: role === "internal" ? state.finance : role === "owner" ? { status: state.finance.status, terms: state.finance.terms, creditLimitCents: state.finance.creditLimitCents } : { status: state.finance.status },
+      finance: role === "internal" ? (({ creditLimitCents: _legacy, ...finance }) => finance)(state.finance) : role === "owner" ? { status: state.finance.status, terms: state.finance.terms } : { status: state.finance.status },
       invoices: role === "buyer" ? [] : [{ id: "DEMO-INV-001", amountCents: 120000, balanceCents: state.finance.status === "past_due" ? 120000 : 0, status: state.finance.status === "past_due" ? "Past Due" : "Paid", synthetic: true }],
       financialNotice: role === "buyer" ? "Organization-wide statements are withheld: this Buyer is assigned to only one of two stores sharing an accounting account." : "Synthetic invoice — not a QuickBooks record." } : {}),
     ...(["owner", "internal"].includes(role) ? { sections: DEMO_SECTIONS.map(s => ({ ...s, ...state.sections[s.id] })) } : {}),

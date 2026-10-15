@@ -14,7 +14,7 @@ A coordinated release candidate is staged, tested and waiting on human approvals
 
 ## What the pending release changes
 
-Pull request #2 on `Tom-urbanXtracts/UX-Portal`, branch `codex/three-workspace-restructure`, head `e36ef47`. The deployable unit is the whole three-workspace restructure, not a Store-only slice:
+Pull request #2 on `Tom-urbanXtracts/UX-Portal`, branch `codex/three-workspace-restructure`. Publish only from the head SHA recorded in the PR #2 approval and IT release acceptance. Do not take a head from this file. The deployable unit is the whole three-workspace restructure, not a Store-only slice:
 
 - five database migrations;
 - 16 new and 22 changed Supabase edge functions;
@@ -68,7 +68,7 @@ Keep `portal.urbanxtracts.com` in the Supabase Auth redirect allow-list and keep
 
 ## Gates still open on the business side
 
-Finance terms/credit values and reviewer authority; QuickBooks field and export allowlists; catalog case/minimum/increment values and price precedence; the mandatory retailer document class list; notification audiences and templates; named pilot users; and a named real retailer cohort before any live-retailer activation. Synthetic demonstration evidence cannot satisfy real licence or accounting readiness, and none of these is closed by publishing the site.
+Finance payment terms and hold-release authority (no credit cap applies); QuickBooks field and export allowlists; catalog case/minimum/increment values and price precedence; the mandatory retailer document class list; notification audiences and templates; named pilot users; and a named real retailer cohort before any live-retailer activation. Synthetic demonstration evidence cannot satisfy real licence or accounting readiness, and none of these is closed by publishing the site.
 
 ## Where to read more
 

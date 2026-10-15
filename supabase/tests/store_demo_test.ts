@@ -12,7 +12,7 @@ function ready() {
     s = apply(s, "owner", { action: "submit-section", sectionId: section.id, values: s.sections[section.id].values });
     s = apply(s, "internal", { action: "review-section", sectionId: section.id, decision: "approved" });
   }
-  return apply(s, "internal", { action: "finance-review", decision: "approved", terms: "Net 30", creditLimitCents: 500000, note: "Synthetic review" });
+  return apply(s, "internal", { action: "finance-review", decision: "approved", terms: "Net 30", note: "Synthetic review" });
 }
 const order = (quantity = 1, requestId = "00000000-0000-4000-8000-000000000001", storeId = DEMO_STORES[0].id, productId = DEMO_PRODUCTS[0].id) => ({
   action: "submit-order", requestId, storeId, lines: [{ productId, quantity, priceCents: 1 }] });
@@ -88,19 +88,33 @@ Deno.test("Finance pending, holds and due-date scenarios block without destroyin
   let s = ready();
   s = apply(s, "owner", { ...order(), action: "save-draft" });
   for (const decision of ["hold", "past_due"]) {
-    const held = apply(s, "internal", { action: "finance-review", decision, terms: "Net 30", creditLimitCents: 500000, note: "Test hold" });
+    const held = apply(s, "internal", { action: "finance-review", decision, terms: "Net 30", note: "Test hold" });
     rejects(() => apply(held, "owner", order()), 409);
     assert(Object.keys(held.drafts).length === 1);
   }
-  rejects(() => apply(s, "owner", { action: "finance-review", decision: "approved", terms: "Net 30", creditLimitCents: 500000, note: "Self approve" }), 403);
+  rejects(() => apply(s, "owner", { action: "finance-review", decision: "approved", terms: "Net 30", note: "Self approve" }), 403);
 });
-Deno.test("Credit and aggregate demo stock are checked across already submitted orders", () => {
-  let s = ready();
-  s.finance.creditLimitCents = 100;
-  rejects(() => apply(s, "owner", order()), 409);
-  s = ready(); s.finance.creditLimitCents = 1000000;
-  s = apply(s, "owner", order(200));
+Deno.test("Aggregate demo stock is checked across already submitted orders", () => {
+  let s = apply(ready(), "owner", order(200));
   rejects(() => apply(s, "owner", order(41, "00000000-0000-4000-8000-000000000002")), 409);
+  s = apply(s, "owner", order(40, "00000000-0000-4000-8000-000000000002"));
+  assert(s.orders.length === 2);
+});
+Deno.test("No Store credit cap: committed totals never block, and legacy credit-limit data is inert", () => {
+  let s = ready();
+  assert(!("creditLimitCents" in initialDemoState().finance) && !("creditLimitCents" in s.finance));
+  // A stored legacy cap far below the order value must not block submission.
+  s.finance.creditLimitCents = 1;
+  s = apply(s, "owner", order(240, "00000000-0000-4000-8000-000000000001", DEMO_STORES[0].id, DEMO_PRODUCTS[0].id));
+  s = apply(s, "owner", order(360, "00000000-0000-4000-8000-000000000002", DEMO_STORES[1].id, DEMO_PRODUCTS[1].id));
+  assert(s.orders.length === 2 && s.orders.every(o => o.status === "ordered"));
+  for (const role of ["owner", "buyer", "internal"] as DemoRole[]) assert(!JSON.stringify(projectDemo(s, role, 1)).includes("creditLimit"), role);
+  // A submitted cap is ignored; a stored legacy value is preserved, not erased.
+  const reviewed = apply(s, "internal", { action: "finance-review", decision: "approved", terms: "Net 15", creditLimitCents: 5, note: "Terms only" });
+  assert(reviewed.finance.creditLimitCents === 1 && reviewed.finance.terms === "Net 15");
+  assert(!("creditLimitCents" in apply(ready(), "internal", { action: "finance-review", decision: "approved", terms: "Net 30", creditLimitCents: 5, note: "Terms only" }).finance));
+  rejects(() => apply(ready(), "internal", { action: "finance-review", decision: "approved", terms: "", note: "Missing terms" }));
+  rejects(() => apply(ready(), "internal", { action: "finance-review", decision: "approved", terms: "Net 30", note: "" }));
 });
 Deno.test("Order transitions cannot skip milestones and preorders cannot ship", () => {
   let s = apply(ready(), "owner", order());

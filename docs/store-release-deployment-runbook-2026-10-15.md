@@ -2,7 +2,7 @@
 
 Status: **prepared, not authorized.** Every step below is written to be executed by a person after the approval gates in section 1 are recorded. Nothing in this document authorizes a deployment, and no step here was executed in preparing it.
 
-Release artifact: [pull request #2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2), branch `codex/three-workspace-restructure`, head `e36ef47`. Evidence: [staging release candidate](store-staging-release-candidate-2026-10-15.md). Migration list: [deployment readiness](deployment-readiness.md#store-release-candidate-migrations--15-october-2026).
+Release artifact: [pull request #2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2), branch `codex/three-workspace-restructure`. Read the current head from the PR; the approved SHA is recorded in the PR #2 approval and IT release acceptance, not in this file. Evidence: [staging release candidate](store-staging-release-candidate-2026-10-15.md). Migration list: [deployment readiness](deployment-readiness.md#store-release-candidate-migrations--15-october-2026).
 
 ## 1. Gates that must be closed first
 
@@ -10,9 +10,10 @@ Do not begin section 3 until all of these are recorded. None of them is a techni
 
 | Gate | Owner | Current state |
 | --- | --- | --- |
-| Coordinated review and approval of PR #2 | OS Portal Arch with IT | Open — no review decision on PR #2 |
+| Coordinated review and approval of PR #2, recording the approved head SHA | OS Portal Arch with IT | Open — no review decision on PR #2 |
+| CI and `npm run verify` green at that exact approved head | IT | Open — staging evidence is anchored to `d14683e`; later commits changed executable code ([details](store-staging-release-candidate-2026-10-15.md#release-head-and-re-verification)) |
 | Approval of the candidate migration list | IT with OS Portal Arch | Open — `approvedBy` and `approvedAt` are null in `production-candidate-migrations.json` |
-| Finance terms/credit values, reviewer authority, freshness policy | Finance with Systems Integrations | Open — DEP-08, OSPA-06 |
+| Finance payment terms, hold-release authority, freshness policy (no credit cap applies) | Finance with Systems Integrations | Open — DEP-08, OSPA-06 |
 | QuickBooks financial field and export allowlists | Finance | Open — DEP-06 |
 | Catalog case/minimum/increment values and price precedence | Sales, Operations, Quality, Systems Integrations | Open — DEP-04, OSPA-04 |
 | Mandatory retailer document class list | Quality, Operations, IT/Compliance | Open — OSPA-05 |
@@ -61,13 +62,13 @@ Deploying handlers before the migrations degrades closed, not open: `resolveStor
 
 ### 3.4 Publish the site bundle
 
-Publish `dist/server/index.js` through the Sites project, producing the version after 172. CI already verifies the committed `dist` matches source (`git diff --exit-code -- dist`), so publish the committed artifact rather than a local rebuild.
+Publish `dist/server/index.js` from the approved head through the Sites project, producing the version after 172. CI already verifies the committed `dist` matches source (`git diff --exit-code -- dist`), so publish the committed artifact rather than a local rebuild.
 
 ## 4. Post-deployment verification
 
 Run, and record the output with the release record:
 
-- `npm run verify` — 578 release contracts, 138 Node tests, 54 Deno tests.
+- `npm run verify` — all release contracts, Node tests and Deno tests pass. Record the counts with the release record. They must equal the CI run at the approved head. For reference, `d14683e` recorded 578/138/54.
 - `npm run verify:migration-baseline` — now also asserts the candidate list matches the reconciliation and the files on disk.
 - `npm run verify:remote` — probes every deployed production function anonymously and asserts each denies. This uses only the public Supabase URL and anon key already embedded in the portal source; it sends no credentials and writes nothing.
 - Confirm the Store access switch is still disabled, Store ordering still held, notifications still off, and the Internal Administrator demo still reachable only by active Internal Administrators with `store.demo` authority.

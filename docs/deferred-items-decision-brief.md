@@ -107,30 +107,32 @@ See `docs/ux-os-final-completion-blockers.md` for the current controlled-hold re
 
 ## Store activation — remaining inputs, 10/14/2026
 
-This is the current Store input register. These are **not answered** by the synthetic demo. The owner authorized technical access and testing preparation while keeping the demo limited to Internal Administrators. No dates, product approvals, credit values, or document requirements are inferred.
+This is the current Store input register. These are **not answered** by the synthetic demo. The owner authorized technical access and testing preparation while keeping the demo limited to Internal Administrators. No dates, product approvals, payment terms, or document requirements are inferred.
 
 | ID | Priority / status | What we need answered or supplied | Who provides it | What stays held until then |
 | --- | --- | --- | --- | --- |
 | SW-IN-01 | P0 · Pending source | Send the current Monday partner-onboarding board/form and every question shown for Dispensaries. Identify obsolete questions and confirm required, optional, and Internal-only fields. | Omeed / Operations | Final real onboarding form and migration field crosswalk |
 | SW-IN-02 | P0 · On Hold | Which retailer documents are always required, which depend on the relationship, who reviews them, and when they expire? | Operations / Compliance | New mandatory upload rules and document classes |
 | SW-IN-03 | P0 · Pending approval | Which Store roles may view/download each document and financial field? Which report/statement exports are approved? | Finance / Operations / Compliance, with IT implementing controls | New document sharing and exports; no guessed allocation of shared QuickBooks totals |
-| SW-IN-04 | P0 · Pending values | Supply each retailer's approved payment terms and credit limit, with the Finance reviewer and supporting evidence. | Finance / Amrit | Real ordering activation for that retailer |
+| SW-IN-04 | P0 · Pending values | Supply each retailer's approved payment terms, with the Finance reviewer and supporting evidence. No credit limit is required. | Finance / Amrit | Real ordering activation for that retailer |
 | SW-IN-05 | P0 · Pending details | Confirm the exact due-date-based past-due assessment, any exception authority, clearance evidence, and the maximum acceptable age of QuickBooks data. | Finance / Amrit | Live Finance assessment/clearance and stale-data exceptions |
 | SW-IN-06 | P0 · Pending values | Set the initial Buyer-order approval threshold for each Store. Confirm whether a Store uses no threshold or Owner approval for every Buyer order. | Sales / Operations / Admin | Real threshold configuration; the demo's $500 is illustrative only |
 | SW-IN-07 | P0 · Product source selected; rules pending | Use the 120 Marketplace listings approved in **Shop UrbanXtracts**, not a duplicate import. Verify per-item case quantities, minimums, increments, release/pre-order eligibility and approved placeholders for the 22 listings without images. The current source has 120 unique positive-stock Canix item matches and prices. | Operations / Sales / Quality | Live catalog/checkout acceptance and enforcement of any unresolved product rule |
 | SW-IN-08 | P0 · Pending data completion | Resolve missing Owners; approve applicable Lot records and package-to-Lot links; assign approved Cost Objects or record an evidenced Not Required decision where applicable. | Operations / Finance | Claims that inventory ownership, lot links and required costing data are complete; do not invent IDs or require fields outside the accepted product contract |
-| SW-IN-09 | P0 before pilot · Not named | Name the first real retailer, Store locations, Owner/Buyer/Budtender testers, and Omeed-side acceptance participants. IT remains the technical acceptance owner. | Omeed / Operations / IT | Live invitations and pilot activation |
+| SW-IN-09 | Deferred to production-only acceptance (10/14/2026) · Not named; not a current demo blocker | Name the first real retailer, Store locations, Owner/Buyer/Budtender testers, and Omeed-side acceptance participants. IT remains the technical acceptance owner. | Omeed / Operations / IT | Live invitations and pilot activation |
 | SW-IN-10 | P0 before pilot · Not named | Name the operational support contact and the person responsible for pausing ordering and coordinating rollback. | Operations / IT | Live pilot sign-off |
 | SW-IN-11 | Interim supervised staging refresh approved; unattended refresh not pursued | The available credential is a normal Shop email/password, not a service credential. The authorized supervised browser refresh captured all 120 listings on 10/14/2026 at 7:46 p.m. Eastern and imported them into staging only: 14 Brands, 98 images, stable IDs/prices/quantities unchanged from the earlier snapshot. No password, cookie or browser token was extracted or installed. The owner decided not to pursue Canix Support; the unsent support draft was moved to Trash. Repeat the controlled supervised refresh before the snapshot expires and retain its source/as-of label. | IT / Canix integration owner | Unattended Shop refresh is outside the current release plan. The supervised Shop snapshot does not satisfy five-minute physical-inventory freshness. |
 
 ### Already decided — do not reopen as unanswered
 
 - Initial demo: Internal Administrators only; urbanXtracts Store, Demo Store #1 and Demo Store #2, synthetic records, no external invitations or integration/email writes.
+- Current demo tester (10/14/2026): the existing synthetic Store demo, reached from the Internal Administrator account, is the only tester for the current demo phase. External retailer pilots and named external Store users (SW-IN-09) are deferred to production-only acceptance. No access, users, real customer data, Store access/ordering or notifications are added by this decision.
 - Up to 25 Store locations per retailer organization; one QuickBooks account covers the organization.
 - Owner: all approved organization locations. Buyer: assigned locations. Budtender: one location and education only. Store Manager activation remains deferred.
 - Owner and Buyer may see authorized sellable-item quantities; Budtender/kiosk may not. This does not grant package, ownership, cost, or internal reservation detail.
 - Buyers may not approve their own or another Buyer's order. Administrators control queues initially.
-- Finance explicitly enables ordering after reviewing terms and credit. Past-due accounts stay blocked until Finance clears them; a nonzero balance alone is not past due.
+- Finance explicitly enables ordering after reviewing payment terms. Past-due accounts stay blocked until Finance clears them; a nonzero balance alone is not past due.
+- Stores and Brands have no credit cap (10/14/2026). No credit-limit value is collected, displayed or enforced; balances, receivables, invoices, payment terms and explicit Finance holds are unaffected. Legacy synthetic demo credit-limit values are retained but inert.
 - Live submit uses the five-minute Canix successful-snapshot limit. Drafts reserve no inventory and survive blocked submission. This is separate from the unresolved QuickBooks freshness policy.
 - Monday history is preserved; new Store workflows remain portal-native. Canix and QuickBooks remain authoritative, read-only sources for this scope.
 

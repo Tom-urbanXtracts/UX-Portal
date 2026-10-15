@@ -108,7 +108,7 @@ These items are not implementation defects; they need an owner or policy decisio
 - Lot ID and Cost Object assignment rules.
 - Wholesale price identity review and immutable Canix Item IDs.
 - Finance cost components, coverage threshold, and margin formula.
-- Payment terms and credit-limit hard-stop versus exception policy.
+- Payment terms hard-stop versus exception policy. (No Store or Brand credit cap applies; credit limits are not a requirement.)
 - Multi-license retailer organization mapping.
 - Draft inventory reservation policy.
 - Store document classes and release controls.

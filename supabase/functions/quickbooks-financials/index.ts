@@ -517,7 +517,6 @@ Deno.serve(async (request) => {
             Math.max(oldest, Number(invoice.daysPastDue || 0)),
           0,
         ),
-        creditLimitCents: null,
       };
     });
     const open = invoicesAll.filter((invoice) => invoice.state !== "paid");
@@ -557,7 +556,6 @@ Deno.serve(async (request) => {
         openInvoiceCount: open.length,
         invoiceCount: invoicesAll.length,
         paymentCount: paymentsAll.length,
-        creditLimitCents: null,
       },
       byStore,
       invoices,
