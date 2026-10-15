@@ -39,7 +39,7 @@ The staging database was intentionally created from a schema-only production bas
 
 ## Remaining release blockers
 
-1. The working tree must be converted into a reviewed commit or pull request. The explicit candidate migration/function/frontend list must be approved as one coordinated release artifact.
+1. [Pull request #2](https://github.com/Tom-urbanXtracts/UX-Portal/pull/2) now contains the coordinated migration, function, frontend, staging, and verification release artifact. It still requires coordinated review and approval before merge or any production deployment.
 2. Required Finance, Operations, catalog-rule, recipient/export and real-pilot inputs remain held in the decision register.
 3. External Store acceptance remains held until pilot users are named. The current demonstration stays Internal Administrator-only.
 
